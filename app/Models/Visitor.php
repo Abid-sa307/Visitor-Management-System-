@@ -3,10 +3,29 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Visitor extends Model
 {
-    //
+    use HasFactory;
+
+    protected $fillable = [
+        'company_id',
+        'name',
+        'visitor_category_id',
+        'email',
+        'phone',
+        'photo',
+        'department_id',
+        'purpose',
+        'person_to_visit',
+        'documents',
+    ];
+
+    protected $casts = [
+        'documents' => 'array',
+    ];
+
     public function company()
     {
         return $this->belongsTo(Company::class);
@@ -31,5 +50,4 @@ class Visitor extends Model
     {
         return $this->hasMany(VisitorLog::class);
     }
-
 }
