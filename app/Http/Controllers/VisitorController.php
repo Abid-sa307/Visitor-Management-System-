@@ -36,17 +36,30 @@ class VisitorController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'purpose' => 'nullable|string|max:255',
             'person_to_visit' => 'nullable|string|max:255',
+            'in_time' => 'nullable|date',
+            'out_time' => 'nullable|date',
+            'status' => 'required|in:Pending,Approved,Rejected',
             'documents' => 'nullable|array',
+            'documents.*' => 'file|max:5120',
         ]);
 
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('photos', 'public');
         }
 
+        if ($request->hasFile('documents')) {
+            $paths = [];
+            foreach ($request->file('documents') as $doc) {
+                $paths[] = $doc->store('documents', 'public');
+            }
+            $validated['documents'] = $paths;
+        }
+
         Visitor::create($validated);
 
         return redirect()->route('visitors.index')->with('success', 'Visitor added successfully.');
     }
+
 
     public function edit(Visitor $visitor)
     {
@@ -58,6 +71,15 @@ class VisitorController extends Controller
 
     public function update(Request $request, Visitor $visitor)
     {
+        if ($request->has('status') && $request->only('status')) {
+            $request->validate([
+                'status' => 'required|in:Pending,Approved,Rejected',
+            ]);
+
+            $visitor->update(['status' => $request->status]);
+            return back()->with('success', 'Visitor status updated.');
+        }
+        
         $validated = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'name' => 'required|string|max:255',
@@ -68,17 +90,30 @@ class VisitorController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'purpose' => 'nullable|string|max:255',
             'person_to_visit' => 'nullable|string|max:255',
+            'in_time' => 'nullable|date',
+            'out_time' => 'nullable|date',
+            'status' => 'required|in:Pending,Approved,Rejected',
             'documents' => 'nullable|array',
+            'documents.*' => 'file|max:5120',
         ]);
 
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('photos', 'public');
         }
 
+        if ($request->hasFile('documents')) {
+            $paths = [];
+            foreach ($request->file('documents') as $doc) {
+                $paths[] = $doc->store('documents', 'public');
+            }
+            $validated['documents'] = $paths;
+        }
+
         $visitor->update($validated);
 
         return redirect()->route('visitors.index')->with('success', 'Visitor updated successfully.');
     }
+
 
     public function destroy(Visitor $visitor)
     {
