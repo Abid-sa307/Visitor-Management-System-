@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DepartmentController;
 use App\Models\Visitor;
 
 /*
@@ -37,6 +38,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('companies', CompanyController::class);
     Route::resource('visitors', VisitorController::class);
     Route::resource('users', UserController::class);
+    Route::resource('departments', DepartmentController::class);
+
 });
 
 // Auth scaffolding routes

@@ -2,8 +2,10 @@
 
 @section('content')
 <div class="container">
-    <h2>Users</h2>
-    <a href="{{ route('users.create') }}" class="btn btn-primary mb-3">Add User</a>
+    <div class="h4  fw-bold m-0" style="padding-top: 2rem; padding-bottom: 2rem; color: teal;">
+        <h2 > Users</h2>
+    </div>
+        <a href="{{ route('users.create') }}" class="btn btn-primary mb-3">Add User</a>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>

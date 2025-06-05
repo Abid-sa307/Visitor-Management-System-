@@ -68,15 +68,17 @@
               </div>
               @if($visitor->status === 'Pending')
               <div class="d-flex justify-content-center gap-1 mt-2">
-                <form action="{{ route('visitors.update', $visitor->id) }}" method="POST">
-                  @csrf @method('PUT')
-                  <input type="hidden" name="status" value="Approved">
-                  <button class="btn btn-success btn-sm px-3">Approve</button>
+                <form action="{{ route('visitors.update', $visitor->id) }}" method="POST" style="display: inline-block;">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="status" value="Approved">
+                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
                 </form>
-                <form action="{{ route('visitors.update', $visitor->id) }}" method="POST">
-                  @csrf @method('PUT')
-                  <input type="hidden" name="status" value="Rejected">
-                  <button class="btn btn-outline-danger btn-sm px-3">Reject</button>
+                <form action="{{ route('visitors.update', $visitor->id) }}" method="POST" style="display: inline-block;">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="status" value="Rejected">
+                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
                 </form>
               </div>
               @endif

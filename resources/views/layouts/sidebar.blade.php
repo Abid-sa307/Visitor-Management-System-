@@ -25,6 +25,21 @@
             </a>
         </li>
         <li class="nav-item mb-2">
+            <a href="{{ route('users.index') }}" class="nav-link text-dark d-flex align-items-center">
+                <i class="bi bi bi-person-bounding-box me-2"></i> Users
+            </a>
+        </li>
+        <li class="nav-item mb-2">
+            <a href="{{ route('companies.index') }}" class="nav-link text-dark d-flex align-items-center">
+                <i class="bi bi bi-buildings-fill me-2"></i> Companies
+            </a>
+        </li>
+        <li class="nav-item mb-2">
+            <a href="{{ route('departments.index') }}" class="nav-link text-dark d-flex align-items-center">
+                <i class="bi bi bi-building me-2"></i> Departments
+            </a>
+        </li>
+        <li class="nav-item mb-2">
             <a href="#" class="nav-link text-dark d-flex align-items-center">
                 <i class="bi bi-gear me-2"></i> Settings
             </a>
