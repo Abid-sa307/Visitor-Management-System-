@@ -6,6 +6,7 @@ use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\VisitorCategoryController;
 use App\Models\Visitor;
 
 /*
@@ -39,6 +40,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('visitors', VisitorController::class);
     Route::resource('users', UserController::class);
     Route::resource('departments', DepartmentController::class);
+    Route::resource('visitor-categories', VisitorCategoryController::class);
+
+
 
 });
 

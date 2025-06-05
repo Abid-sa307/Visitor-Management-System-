@@ -39,6 +39,11 @@
                 <i class="bi bi bi-building me-2"></i> Departments
             </a>
         </li>
+        <li>
+            <a href="{{ route('visitor-categories.index') }}" class="nav-link text-dark d-flex align-items-center">
+                <i class="bi bi bi-person-rolodex me-2"></i> Visitor Categories
+            </a>
+        </li>
         <li class="nav-item mb-2">
             <a href="#" class="nav-link text-dark d-flex align-items-center">
                 <i class="bi bi-gear me-2"></i> Settings

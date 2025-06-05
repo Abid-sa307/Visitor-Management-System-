@@ -15,6 +15,9 @@
                     <a href="{{ route('companies.index') }}" class="btn btn-primary shadow-sm px-4 rounded-pill">
                         <i class="bi bi-people-fill me-1"></i> Companies
                     </a>
+                    <a href="{{ route('visitor-categories.index') }}" class="btn btn-primary shadow-sm px-4 rounded-pill">
+                        <i class="bi bi bi-person-rolodex me-1"></i> Visitor Categories
+                    </a>
                 </div>
             </div>
 
