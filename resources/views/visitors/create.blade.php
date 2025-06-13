@@ -73,19 +73,6 @@
                value="{{ old('person_to_visit', $visitor->person_to_visit ?? '') }}">
       </div>
 
-      <div class="row mb-3">
-        <div class="col">
-          <label class="form-label">In Time</label>
-          <input type="datetime-local" name="in_time" class="form-control"
-                 value="{{ old('in_time', isset($visitor->in_time) ? \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d\TH:i') : '') }}">
-        </div>
-        <div class="col">
-          <label class="form-label">Out Time</label>
-          <input type="datetime-local" name="out_time" class="form-control"
-                 value="{{ old('out_time', isset($visitor->out_time) ? \Carbon\Carbon::parse($visitor->out_time)->format('Y-m-d\TH:i') : '') }}">
-        </div>
-      </div>
-
       <div class="mb-3">
         <label class="form-label">Purpose</label>
         <input type="text" name="purpose" class="form-control"

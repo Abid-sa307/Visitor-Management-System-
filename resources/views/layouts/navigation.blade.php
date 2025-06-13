@@ -16,6 +16,8 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+                <a href="{{ route('visitors.entry.page') }}" class="btn btn-outline-dark">Visitor Entry</a>
+
             </div>
 
             <!-- Settings Dropdown -->

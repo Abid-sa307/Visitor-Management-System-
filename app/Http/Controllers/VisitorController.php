@@ -112,4 +112,60 @@ class VisitorController extends Controller
         $visitor->delete();
         return redirect()->route('visitors.index')->with('success', 'Visitor deleted successfully.');
     }
+
+    public function history(Request $request)
+    {
+        $query = Visitor::query();
+
+        if ($request->has('status') && $request->status !== null) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('company_id') && $request->company_id !== null) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        if ($request->has('from') && $request->has('to')) {
+            $query->whereBetween('in_time', [$request->from, $request->to]);
+        }
+
+        $visitors = $query->latest()->paginate(10);
+        $companies = \App\Models\Company::all();
+
+        return view('visitors.history', compact('visitors', 'companies'));
+    }
+
+    public function entryPage()
+    {
+        $visitors = Visitor::orderByDesc('created_at')->paginate(10);
+        return view('visitors.entry', compact('visitors'));
+    }
+
+    public function toggleEntry($id)
+    {
+        if (auth()->user()->role === 'guard') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $visitor = Visitor::findOrFail($id);
+
+        if (!$visitor->in_time) {
+            $visitor->in_time = now();
+            $visitor->status = 'Approved';
+        } elseif (!$visitor->out_time) {
+            $visitor->out_time = now();
+            $visitor->status = 'Completed';
+        }
+
+        $visitor->save();
+
+        return back()->with('success', 'Visitor entry updated.');
+    }    
+
+    public function printPass($id)
+    {
+        $visitor = Visitor::with('company')->findOrFail($id);
+        return view('visitors.pass', compact('visitor'));
+    }
+
 }

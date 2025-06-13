@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,5 +23,20 @@ class DatabaseSeeder extends Seeder
             VisitorCategorySeeder::class,
             // Add other seeders here as you create them
         ]);
+
+        // User::create([
+        //     'name' => 'Admin User',
+        //     'email' => 'admin@gmail.com',
+        //     'password' => Hash::make('password'),
+        //     'role' => 'admin',
+        // ]);
+
+        // User::create([
+        //     'name' => 'Guard User',
+        //     'email' => 'guard@gmail.com',
+        //     'password' => Hash::make('password'),
+        //     'role' => 'guard',
+        // ]);
     }
+    
 }

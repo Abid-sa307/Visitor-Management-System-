@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container py-5">
+  
   <div class="bg-white p-4 rounded-4 shadow-lg">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="fw-bold text-primary m-0">All Visitors</h2>
@@ -22,11 +23,11 @@
             <th>Photo</th>
             <th>Name</th>
             <th>Phone</th>
+            <th>Visitor category</th>
             <th>Company</th>
             <th>Department</th>
             <th>Purpose</th>
             <th>Status</th>
-            <th>In Time</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -42,6 +43,7 @@
             </td>
             <td class="fw-semibold">{{ $visitor->name }}</td>
             <td>{{ $visitor->phone }}</td>
+            <td>{{ $visitor->visitor_categories ?? 'N/A'}}</td>
             <td>{{ $visitor->company->name ?? 'N/A' }}</td>
             <td>{{ $visitor->department->name ?? 'N/A' }}</td>
             <td>{{ $visitor->purpose }}</td>
@@ -54,9 +56,6 @@
                 };
               @endphp
               <span class="badge bg-{{ $badgeClass }}">{{ $visitor->status }}</span>
-            </td>
-            <td>
-              {{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M Y, h:i A') : '—' }}
             </td>
             <td>
               <div class="d-flex justify-content-center gap-2">
@@ -83,6 +82,17 @@
               </div>
               @endif
             </td>
+          </tr>
+          @endforeach
+          @foreach($visitors as $visitor)
+          <tr>
+              <td>{{ $visitor->name }}</td>
+              <td>{{ $visitor->purpose }}</td>
+              <td>
+                  <a href="{{ route('visitors.pass', $visitor->id) }}" class="btn btn-sm btn-outline-secondary">
+                      <i class="bi bi-printer"></i> Print Pass
+                  </a>
+              </td>
           </tr>
           @endforeach
         </tbody>

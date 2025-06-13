@@ -25,6 +25,12 @@
             </a>
         </li>
         <li class="nav-item mb-2">
+            <a href="{{ route('visitors.history') }}" class="nav-link text-dark">
+                <i class="bi bi-clock-history me-2"></i> Visitor History
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
             <a href="{{ route('users.index') }}" class="nav-link text-dark d-flex align-items-center">
                 <i class="bi bi bi-person-bounding-box me-2"></i> Users
             </a>
@@ -42,6 +48,16 @@
         <li>
             <a href="{{ route('visitor-categories.index') }}" class="nav-link text-dark d-flex align-items-center">
                 <i class="bi bi bi-person-rolodex me-2"></i> Visitor Categories
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('employees.index') }}" class="nav-link text-dark d-flex align-items-center">
+                <i class="bi bi bi-person-rolodex me-2"></i> Employees
+            </a>
+        </li>
+        <li class="nav-item mb-2">
+            <a href="{{ route('visitors.entry.page') }}" class="nav-link text-dark">
+                <i class="bi bi-clock-history me-2"></i> Visitor In and Out
             </a>
         </li>
         <li class="nav-item mb-2">
