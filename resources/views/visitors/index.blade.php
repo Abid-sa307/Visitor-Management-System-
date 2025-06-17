@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.sb')
 
 @section('content')
 <div class="container py-5">
-  
+
   <div class="bg-white p-4 rounded-4 shadow-lg">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="fw-bold text-primary m-0">All Visitors</h2>
@@ -23,7 +23,7 @@
             <th>Photo</th>
             <th>Name</th>
             <th>Phone</th>
-            <th>Visitor category</th>
+            <th>Category</th>
             <th>Company</th>
             <th>Department</th>
             <th>Purpose</th>
@@ -32,7 +32,7 @@
           </tr>
         </thead>
         <tbody>
-          @foreach($visitors as $visitor)
+          @forelse($visitors as $visitor)
           <tr>
             <td>
               @if($visitor->photo)
@@ -43,7 +43,7 @@
             </td>
             <td class="fw-semibold">{{ $visitor->name }}</td>
             <td>{{ $visitor->phone }}</td>
-            <td>{{ $visitor->visitor_categories ?? 'N/A'}}</td>
+            <td>{{ $visitor->visitorCategory->name ?? 'N/A' }}</td>
             <td>{{ $visitor->company->name ?? 'N/A' }}</td>
             <td>{{ $visitor->department->name ?? 'N/A' }}</td>
             <td>{{ $visitor->purpose }}</td>
@@ -58,43 +58,25 @@
               <span class="badge bg-{{ $badgeClass }}">{{ $visitor->status }}</span>
             </td>
             <td>
-              <div class="d-flex justify-content-center gap-2">
+              <div class="d-flex justify-content-center gap-2 flex-wrap">
                 <a href="{{ route('visitors.edit', $visitor->id) }}" class="btn btn-warning btn-sm rounded-pill px-3">Edit</a>
-                <form action="{{ route('visitors.destroy', $visitor->id) }}" method="POST">
+
+                <a href="{{ route('visitors.pass', $visitor->id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                  <i class="bi bi-printer"></i> Pass
+                </a>
+
+                <form action="{{ route('visitors.destroy', $visitor->id) }}" method="POST" onsubmit="return confirm('Delete this visitor?')">
                   @csrf @method('DELETE')
-                  <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="return confirm('Delete this visitor?')">Delete</button>
+                  <button class="btn btn-danger btn-sm rounded-pill px-3">Delete</button>
                 </form>
               </div>
-              @if($visitor->status === 'Pending')
-              <div class="d-flex justify-content-center gap-1 mt-2">
-                <form action="{{ route('visitors.update', $visitor->id) }}" method="POST" style="display: inline-block;">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="status" value="Approved">
-                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                </form>
-                <form action="{{ route('visitors.update', $visitor->id) }}" method="POST" style="display: inline-block;">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="status" value="Rejected">
-                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                </form>
-              </div>
-              @endif
             </td>
           </tr>
-          @endforeach
-          @foreach($visitors as $visitor)
+          @empty
           <tr>
-              <td>{{ $visitor->name }}</td>
-              <td>{{ $visitor->purpose }}</td>
-              <td>
-                  <a href="{{ route('visitors.pass', $visitor->id) }}" class="btn btn-sm btn-outline-secondary">
-                      <i class="bi bi-printer"></i> Print Pass
-                  </a>
-              </td>
+            <td colspan="9" class="text-muted">No visitors found.</td>
           </tr>
-          @endforeach
+          @endforelse
         </tbody>
       </table>
     </div>

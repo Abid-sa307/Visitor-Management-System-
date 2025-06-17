@@ -61,6 +61,11 @@
             </a>
         </li>
         <li class="nav-item mb-2">
+            <a href="{{ route('visitors.report') }}" class="nav-link text-dark">
+                <i class="bi bi-graph-up-arrow me-2"></i> Visitor Reports
+            </a>
+        </li>
+        <li class="nav-item mb-2">
             <a href="#" class="nav-link text-dark d-flex align-items-center">
                 <i class="bi bi-gear me-2"></i> Settings
             </a>

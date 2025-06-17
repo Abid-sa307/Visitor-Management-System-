@@ -1,104 +1,174 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="container-fluid px-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="h4 text-dark fw-bold m-0">Keep Smiling :)</h2>
-            </div>
+@extends('layouts.sb')
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="d-flex gap-3">
-                    <a href="{{ route('visitors.index') }}" class="btn btn-primary shadow-sm px-4 rounded-pill">
-                        <i class="bi bi-people-fill me-1"></i> Visitors
-                    </a>
-                    <a href="{{ route('users.index') }}" class="btn btn-outline-primary shadow-sm px-4 rounded-pill">
-                        <i class="bi bi-person-fill me-1"></i> Users
-                    </a>
-                    <a href="{{ route('companies.index') }}" class="btn btn-primary shadow-sm px-4 rounded-pill">
-                        <i class="bi bi-building me-1"></i> Companies
-                    </a>
-                    <a href="{{ route('visitor-categories.index') }}" class="btn btn-primary shadow-sm px-4 rounded-pill">
-                        <i class="bi bi-person-rolodex me-1"></i> Visitor Categories
-                    </a>
+@section('content')
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 text-gray-800">Dashboard</h1>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Approved Visitors</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $approvedCount }}</div>
                 </div>
-            </div>
-
-            <!-- Recent Visitors Table -->
-            <div class="d-flex justify-content-end mt-4">
-                <div class="card shadow-sm border-0" style="width: 60%; background-color: #eaf3ff; border-radius: 12px;">
-                    <div class="card-header text-white fw-semibold" style="background-color: #3b82f6; border-top-left-radius: 12px; border-top-right-radius: 12px;">
-                        Recent Visitors
-                    </div>
-                    <div class="card-body p-0">
-                        @if($latestVisitors->isNotEmpty())
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover table-bordered align-middle mb-0 text-center" style="border-radius: 12px;">
-                                    <thead class="table-light text-secondary small">
-                                        <tr>
-                                            <th class="py-3">Name</th>
-                                            <th class="py-3">Purpose</th>
-                                            <th class="py-3">Status</th>
-                                            <th class="py-3">In Time</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($latestVisitors as $visitor)
-                                            <tr>
-                                                <td class="fw-semibold">{{ $visitor->name }}</td>
-                                                <td>{{ $visitor->purpose ?? '—' }}</td>
-                                                <td>
-                                                    <span class="badge rounded-pill bg-{{ 
-                                                        $visitor->status === 'Approved' ? 'success' : 
-                                                        ($visitor->status === 'Rejected' ? 'danger' : 'secondary') }}">
-                                                        {{ $visitor->status }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-muted">
-                                                    {{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <div class="p-4 text-center text-muted">No visitors found.</div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chart Section -->
-            <div class="card mt-4 shadow-sm">
-                <div class="card-header bg-primary text-white fw-semibold">
-                    Monthly Visitor Report
-                </div>
-                <div class="card-body">
-                    <canvas id="visitorChartCanvas" height="100"></canvas>
-                </div>
-            </div>
-
-        </div>
-    </x-slot>
-
-    <div class="py-5">
-        <div class="container">
-            <div class="alert alert-info text-center fw-semibold shadow-sm">
-                You're logged in!
+                <i class="fas fa-user-check fa-2x text-success"></i>
             </div>
         </div>
     </div>
-<!-- Chart.js CDN -->
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Visitors</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pendingCount }}</div>
+                </div>
+                <i class="fas fa-user-clock fa-2x text-warning"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Rejected Visitors</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $rejectedCount }}</div>
+                </div>
+                <i class="fas fa-user-times fa-2x text-danger"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart and Recent Visitors -->
+<div class="row">
+    <!-- Chart -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">Monthly Visitor Report</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="visitorChartCanvas" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Visitors -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-info text-white">
+                <h6 class="m-0 font-weight-bold">Recent Visitors</h6>
+            </div>
+            <div class="card-body">
+                @if($latestVisitors->isNotEmpty())
+                <ul class="list-group list-group-flush">
+                    @foreach($latestVisitors as $visitor)
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ $visitor->name }}</strong> <br>
+                                <small class="text-muted">{{ $visitor->purpose ?? '—' }}</small>
+                            </div>
+                            <span class="badge bg-{{ 
+                                $visitor->status == 'Approved' ? 'success' : 
+                                ($visitor->status == 'Rejected' ? 'danger' : 'secondary') }}">
+                                {{ $visitor->status }}
+                            </span>
+                        </li>
+                        @endforeach
+                    </ul>
+                    @else
+                    <p class="text-muted">No recent visitors.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Visitors by Date -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-secondary text-white">
+            <h6 class="m-0 font-weight-bold">Visitors by Selected Date</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ route('dashboard') }}" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Select Date</label>
+                    <input type="date" name="date" id="date" class="form-control" value="{{ request('date') ?? now()->toDateString() }}">
+                </div>
+                        <div class="col-md-2">
+                <button type="submit" class="btn btn-dark w-100">Filter</button>
+            </div>
+            </form>
+
+            @if(request('date'))
+                <hr>
+                <h6 class="mb-3 mt-3">Results for: <strong>{{ \Carbon\Carbon::parse(request('date'))->format('d M, Y') }}</strong></h6>
+
+                @if($visitorsByDate->count())
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Purpose</th>
+                                    <th>Status</th>
+                                    <th>In Time</th>
+                                    <th>Out Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($visitorsByDate as $visitor)
+                                    <tr>
+                                        <td>{{ $visitor->name }}</td>
+                                        <td>{{ $visitor->purpose ?? '—' }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 
+                                                $visitor->status == 'Approved' ? 'success' : 
+                                                ($visitor->status == 'Rejected' ? 'danger' : 'secondary') }}">
+                                                {{ $visitor->status }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('h:i A') : '—' }}</td>
+                                        <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('h:i A') : '—' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="alert alert-warning mt-3 mb-0">
+                        No visitors found for selected date.
+                    </div>
+                @endif
+            @endif
+        </div>
+    </div>
+
+<!-- Chart Data Setup -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Chart Data from PHP -->
-<script type="application/javascript">
-    window.chartLabels = {!! json_encode($chartLabels) !!};
-    window.chartData = {!! json_encode($chartData) !!};
+<script>
+    const ctx = document.getElementById('visitorChartCanvas').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {!! json_encode($chartLabels) !!},
+            datasets: [{
+                label: 'Visitors per Month',
+                data: {!! json_encode($chartData) !!},
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
 </script>
-
-
-<!-- Custom Chart Rendering -->
-<script src="{{ asset('js/visitorChart.js') }}"></script>
-
-
-</x-app-layout>
+@endsection

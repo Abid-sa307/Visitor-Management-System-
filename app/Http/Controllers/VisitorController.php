@@ -130,7 +130,7 @@ class VisitorController extends Controller
         }
 
         $visitors = $query->latest()->paginate(10);
-        $companies = \App\Models\Company::all();
+        $companies = Company::all();
 
         return view('visitors.history', compact('visitors', 'companies'));
     }
@@ -166,6 +166,27 @@ class VisitorController extends Controller
     {
         $visitor = Visitor::with('company')->findOrFail($id);
         return view('visitors.pass', compact('visitor'));
+    }
+
+    public function report()
+    {
+        $today = \Carbon\Carbon::today();
+        $month = \Carbon\Carbon::now()->month;
+
+        $todayVisitors = Visitor::whereDate('created_at', $today)->count();
+        $monthVisitors = Visitor::whereMonth('created_at', $month)->count();
+
+        $statusCounts = Visitor::select('status', \DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $visitors = Visitor::latest()->paginate(10);
+        return view('visitors.report', compact('visitors'));    
+    }
+
+    public function approvals()
+    {
+        $pendingVisitors = Visitor::where('status', 'Pending')->latest()->paginate(10);
+        return view('visitors.approvals', compact('pendingVisitors'));
     }
 
 }

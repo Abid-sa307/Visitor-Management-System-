@@ -1,37 +1,57 @@
-@extends('layouts.app')
+@extends('layouts.sb')
 
 @section('content')
-<div class="container">
-    <div class="h4  fw-bold m-0" style="padding-top: 2rem; padding-bottom: 2rem; color: teal;">
-        <h2 > Users</h2>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary">Users</h2>
+        <a href="{{ route('users.create') }}" class="btn btn-sm btn-primary shadow-sm">
+            <i class="bi bi-person-plus-fill me-1"></i> Add User
+        </a>
     </div>
-        <a href="{{ route('users.create') }}" class="btn btn-primary mb-3">Add User</a>
 
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     @endif
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Company</th><th>Department</th><th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach($users as $user)
-            <tr>
-                <td>{{ $user->name }}</td><td>{{ $user->email }}</td><td>{{ $user->phone }}</td><td>{{ $user->role }}</td>
-                <td>{{ $user->company->name ?? 'N/A' }}</td><td>{{ $user->department->name ?? 'N/A' }}</td>
-                <td>
-                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                    <form action="{{ route('users.destroy', $user->id) }}" method="POST" style="display:inline-block">
-                        @csrf @method('DELETE')
-                        <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this user?')">Delete</button>
-                    </form>
-                </td>
-            </tr>
-        @endforeach
-        </tbody>
-    </table>
+    <div class="table-responsive shadow-sm border rounded">
+        <table class="table table-striped table-hover text-center align-middle mb-0">
+            <thead class="table-light text-uppercase">
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Company</th>
+                    <th>Department</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($users as $user)
+                    <tr>
+                        <td class="fw-semibold">{{ $user->name }}</td>
+                        <td>{{ $user->email }}</td>
+                        <td>{{ $user->phone ?? '—' }}</td>
+                        <td><span class="badge bg-info text-dark">{{ ucfirst($user->role) }}</span></td>
+                        <td>{{ $user->company->name ?? '—' }}</td>
+                        <td>{{ $user->department->name ?? '—' }}</td>
+                        <td>
+                            <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-outline-warning me-1">Edit</a>
+                            <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline"
+                                  onsubmit="return confirm('Delete this user?')">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7" class="text-muted">No users found.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
 @endsection
