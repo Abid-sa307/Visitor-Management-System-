@@ -1,11 +1,13 @@
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Topbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm border-bottom">
     <div class="container-fluid">
         <!-- Logo -->
         <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ route('dashboard') }}">
-            <img src="{{ asset('assets/logo.png') }}" alt="Logo" height="30" class="me-2">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" height="30" class="me-2">
             VMS
         </a>
+
 
         <!-- Mobile toggle -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#vmsNavbar"
@@ -47,3 +49,6 @@
     </div>
 </nav>
 <!-- End of Topbar -->
+ <!-- Bootstrap Bundle (includes Popper.js) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+

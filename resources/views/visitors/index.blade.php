@@ -64,6 +64,10 @@
                 <a href="{{ route('visitors.pass', $visitor->id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                   <i class="bi bi-printer"></i> Pass
                 </a>
+                <a href="{{ route('visitors.checkup', $visitor->id) }}" class="btn btn-sm btn-outline-secondary">
+                    Security Check
+                </a>
+
 
                 <form action="{{ route('visitors.destroy', $visitor->id) }}" method="POST" onsubmit="return confirm('Delete this visitor?')">
                   @csrf @method('DELETE')

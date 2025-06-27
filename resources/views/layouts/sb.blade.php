@@ -12,6 +12,43 @@
 
     
     @stack('styles')
+
+    <style>
+    /* Make sidebar sticky and scrollable */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 1030;
+    }
+
+    /* Shift content wrapper to the right */
+    #content-wrapper {
+        margin-left: 250px; /* width of the sidebar */
+        min-height: 100vh;
+    }
+
+    /* Prevent content from overlapping under topbar */
+    #content {
+        padding-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .sidebar {
+            position: relative;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        #content-wrapper {
+            margin-left: 0;
+        }
+    }
+</style>
+
 </head>
 
 <body id="page-top">

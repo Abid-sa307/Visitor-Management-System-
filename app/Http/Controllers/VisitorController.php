@@ -189,4 +189,5 @@ class VisitorController extends Controller
         return view('visitors.approvals', compact('pendingVisitors'));
     }
 
+    
 }
