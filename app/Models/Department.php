@@ -23,4 +23,8 @@ class Department extends Model
     {
         return $this->hasMany(Visitor::class);
     }
+    public function users()
+    {   
+        return $this->belongsToMany(User::class);
+    }
 }

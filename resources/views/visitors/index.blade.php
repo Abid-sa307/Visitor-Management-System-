@@ -17,73 +17,65 @@
     @endif
 
     <div class="table-responsive">
-      <table class="table table-striped table-hover align-middle text-center border shadow-sm rounded-4 overflow-hidden">
-        <thead class="table-primary text-uppercase">
-          <tr>
-            <th>Photo</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Category</th>
-            <th>Company</th>
-            <th>Department</th>
-            <th>Purpose</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @forelse($visitors as $visitor)
-          <tr>
-            <td>
-              @if($visitor->photo)
-                <img src="{{ asset('storage/' . $visitor->photo) }}" width="40" height="40" class="rounded-circle" alt="photo">
-              @else
-                <span class="text-muted">N/A</span>
-              @endif
-            </td>
-            <td class="fw-semibold">{{ $visitor->name }}</td>
-            <td>{{ $visitor->phone }}</td>
-            <td>{{ $visitor->visitorCategory->name ?? 'N/A' }}</td>
-            <td>{{ $visitor->company->name ?? 'N/A' }}</td>
-            <td>{{ $visitor->department->name ?? 'N/A' }}</td>
-            <td>{{ $visitor->purpose }}</td>
-            <td>
-              @php
-                $badgeClass = match($visitor->status) {
-                  'Approved' => 'success',
-                  'Rejected' => 'danger',
-                  default => 'secondary',
-                };
-              @endphp
-              <span class="badge bg-{{ $badgeClass }}">{{ $visitor->status }}</span>
-            </td>
-            <td>
-              <div class="d-flex justify-content-center gap-2 flex-wrap">
-                <a href="{{ route('visitors.edit', $visitor->id) }}" class="btn btn-warning btn-sm rounded-pill px-3">Edit</a>
+  <table class="table table-striped table-hover align-middle text-center border shadow-sm rounded-4 overflow-hidden">
+    <thead class="table-primary text-uppercase">
+  <tr>
+    <th>Photo</th>
+    <th>Name</th>
+    <th>Phone</th>
+    <th>Company</th>
+    <th>Department</th>
+    <th>To Visit</th>
+    <th>Vehicle #</th>
+    <th>Status</th>
+    <th>Actions</th>
+  </tr>
+</thead>
+<tbody>
+  @forelse($visitors as $visitor)
+    <tr>
+      <td>
+        @if($visitor->photo)
+          <img src="{{ asset('storage/' . $visitor->photo) }}" width="40" height="40" class="rounded-circle" alt="photo">
+        @else
+          <span class="text-muted">N/A</span>
+        @endif
+      </td>
+      <td>{{ $visitor->name }}</td>
+      <td>{{ $visitor->phone }}</td>
+      <td>{{ $visitor->company->name ?? '—' }}</td>
+      <td>{{ $visitor->department->name ?? '—' }}</td>
+      <td>{{ $visitor->person_to_visit ?? '—' }}</td>
+      <td>{{ $visitor->vehicle_number ?? '—' }}</td>
+      <td>
+        @php
+          $badgeClass = match($visitor->status) {
+            'Approved' => 'success',
+            'Rejected' => 'danger',
+            default => 'secondary',
+          };
+        @endphp
+        <span class="badge bg-{{ $badgeClass }}">{{ $visitor->status }}</span>
+      </td>
+      <td>
+        <div class="d-flex justify-content-center gap-2">
+          <a href="{{ route('visitors.edit', $visitor->id) }}" class="btn btn-sm btn-warning">Edit</a>
+          <a href="{{ route('visitors.visit.form', $visitor->id) }}" class="btn btn-sm btn-info">Visit</a>
+          <form action="{{ route('visitors.destroy', $visitor->id) }}" method="POST" onsubmit="return confirm('Delete this visitor?')">
+            @csrf @method('DELETE')
+            <button class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+  @empty
+    <tr><td colspan="9" class="text-muted">No visitors found.</td></tr>
+  @endforelse
+</tbody>
 
-                <a href="{{ route('visitors.pass', $visitor->id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                  <i class="bi bi-printer"></i> Pass
-                </a>
-                <a href="{{ route('visitors.checkup', $visitor->id) }}" class="btn btn-sm btn-outline-secondary">
-                    Security Check
-                </a>
+  </table>
+</div>
 
-
-                <form action="{{ route('visitors.destroy', $visitor->id) }}" method="POST" onsubmit="return confirm('Delete this visitor?')">
-                  @csrf @method('DELETE')
-                  <button class="btn btn-danger btn-sm rounded-pill px-3">Delete</button>
-                </form>
-              </div>
-            </td>
-          </tr>
-          @empty
-          <tr>
-            <td colspan="9" class="text-muted">No visitors found.</td>
-          </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
 
     <div class="d-flex justify-content-center mt-4">
       {{ $visitors->links() }}

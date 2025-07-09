@@ -8,51 +8,59 @@ use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
+
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['company', 'department'])->latest()->get();
+        $users = User::with(['company', 'departments'])->latest()->get();
         return view('users.index', compact('users'));
     }
 
     public function create()
     {
         $companies = Company::all();
-        $departments = Department::all();
+        $departments = auth()->user()->role === 'superadmin'
+            ? Department::all()
+            : Department::where('company_id', auth()->user()->company_id)->get();
+
         return view('users.create', compact('companies', 'departments'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'phone' => 'nullable',
-            'role' => 'required',
-            'company_id' => 'nullable|exists:companies,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'password' => 'required|min:6|confirmed',
+            'password' => 'required|string|confirmed|min:6',
+            'company_id' => 'required|exists:companies,id',
+            'department_ids' => 'required|array|min:1',
+            'department_ids.*' => 'exists:departments,id',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
-            'role' => $request->role,
-            'company_id' => $request->company_id,
-            'department_id' => $request->department_id,
             'password' => Hash::make($request->password),
+            'company_id' => $request->company_id,
         ]);
 
-        return redirect()->route('users.index')->with('success', 'User created successfully.');
+         $user->departments()->sync($request->department_ids);
+
+
+        return redirect()->route('users.index')->with('success', 'User created successfully!');
     }
 
     public function edit(User $user)
     {
         $companies = Company::all();
-        $departments = Department::all();
-        return view('users.edit', compact('user', 'companies', 'departments'));
+        $departments = auth()->user()->role === 'superadmin'
+            ? Department::all()
+            : Department::where('company_id', auth()->user()->company_id)->get();
+        $selectedDepartments = $user->departments->pluck('id')->toArray(); // for edit
+
+
+        return view('users.edit', compact('user', 'companies', 'departments', 'selectedDepartments'));
     }
 
     public function update(Request $request, User $user)
@@ -62,11 +70,14 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable',
             'role' => 'required',
-            'company_id' => 'nullable|exists:companies,id',
-            'department_id' => 'nullable|exists:departments,id',
+            'company_id' => 'required|exists:companies,id',
+            'department_ids' => 'required|array|min:1',
+            'department_ids.*' => 'exists:departments,id',
         ]);
 
-        $user->update($request->only(['name', 'email', 'phone', 'role', 'company_id', 'department_id']));
+        $user->update($request->only(['name', 'email', 'phone', 'role', 'company_id']));
+        $user->departments()->sync($request->department_ids);
+
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }

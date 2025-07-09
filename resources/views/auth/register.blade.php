@@ -82,10 +82,10 @@
 </div>
 
 <!-- Info Box Below -->
-<div class="info-box">
+<!-- <div class="info-box">
     <p><i class="bi bi-shield-lock-fill"></i> Your information is safe and encrypted.</p>
     <p class="text-muted small">&copy; {{ date('Y') }} Visitor Management System</p>
-</div>
+</div> -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

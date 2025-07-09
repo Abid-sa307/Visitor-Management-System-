@@ -1,5 +1,5 @@
 <!-- Sidebar -->
-<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar" style="position: fixed; top: 0; bottom: 0; overflow-y: auto;">
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
@@ -94,7 +94,6 @@
         </a>
     </li>
 
-    <!-- Divider -->
     <hr class="sidebar-divider">
 
     <li class="nav-item">
@@ -115,11 +114,5 @@
     </li>
 
     <hr class="sidebar-divider d-none d-md-block">
-
-    <!-- Sidebar Toggle Button -->
-    <div class="text-center d-none d-md-inline">
-        <button class="rounded-circle border-0" id="sidebarToggle"></button>
-    </div>
-
 </ul>
-<!-- End of Sidebar -->
+<!-- End Sidebar -->

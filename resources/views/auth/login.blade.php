@@ -108,13 +108,13 @@
 </div>
 
 <!-- Content Under Login Box -->
-<div class="info-box">
+<!-- <div class="info-box">
     <p><i class="bi bi-shield-lock-fill"></i> Your information is securely protected.</p>
     <p><i class="bi bi-person-plus"></i> Don’t have an account?
         <a href="{{ route('register') }}" class="text-primary text-decoration-none">Register here</a>.
     </p>
     <p class="text-muted small">&copy; {{ date('Y') }} Visitor Management System. All rights reserved.</p>
-</div>
+</div> -->
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

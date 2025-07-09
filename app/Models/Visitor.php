@@ -20,6 +20,9 @@ class Visitor extends Model
         'purpose',
         'person_to_visit',
         'documents',
+        'workman_policy',
+        'workman_policy_photo',
+        'documents' => 'array',
     ];
 
     protected $casts = [

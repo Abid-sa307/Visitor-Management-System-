@@ -24,7 +24,9 @@
                             <th>Phone</th>
                             <th>Company</th>
                             <th>Department</th>
-                            <th>Actions</th>
+                            <th>Visitor Category</th>
+                            <th>Goods in Vehicle</th>
+                            <th>Visit</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -35,6 +37,8 @@
                             <td>{{ $visitor->phone }}</td>
                             <td>{{ $visitor->company->name ?? 'N/A' }}</td>
                             <td>{{ $visitor->department->name ?? 'N/A' }}</td>
+                            <td>{{ $visitor->visitorCategory->name ?? '—' }}</td>
+                            <td>{{ $visitor->goods_in_car ?? '—' }}</td>
                             <td class="d-flex justify-content-center gap-2">
                                 <!-- Approve -->
                                 <form action="{{ route('visitors.update', $visitor->id) }}" method="POST">

@@ -25,7 +25,7 @@
                     <th>Phone</th>
                     <th>Role</th>
                     <th>Company</th>
-                    <th>Department</th>
+                    <th>Departments</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -37,7 +37,13 @@
                         <td>{{ $user->phone ?? '—' }}</td>
                         <td><span class="badge bg-info text-dark">{{ ucfirst($user->role) }}</span></td>
                         <td>{{ $user->company->name ?? '—' }}</td>
-                        <td>{{ $user->department->name ?? '—' }}</td>
+                        <td>
+                            @forelse($user->departments as $dept)
+                                <span class="badge bg-secondary">{{ $dept->name }}</span>
+                            @empty
+                                <span class="text-muted">—</span>
+                            @endforelse
+                        </td>
                         <td>
                             <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-outline-warning me-1">Edit</a>
                             <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline"

@@ -11,10 +11,11 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\VisitorCategoryController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\DashboardController;
+
 use App\Exports\VisitorsExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Visitor;
-
+use App\Models\Department;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -41,6 +42,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Companies
     Route::resource('companies', CompanyController::class);
+    Route::get('/company/{id}/departments', function ($id) {
+        return \App\Models\Department::where('company_id', $id)->pluck('name', 'id');
+    });
+    
+    Route::get('/companies/{id}/departments', function ($id) {
+        return Department::where('company_id', $id)->select('id', 'name')->get();
+    });
+
 
     // Departments
     Route::resource('departments', DepartmentController::class);
@@ -61,6 +70,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
     Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
     Route::get('/visitor-approvals', [VisitorController::class, 'approvals'])->name('visitors.approvals');
+    Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
+    Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
+
+
+
 
     // Security Check-up
     Route::get('/visitors/{id}/checkup', [VisitorController::class, 'checkupForm'])->name('visitors.checkup');
