@@ -7,6 +7,8 @@ use App\Models\Company;
 use App\Models\Department;
 use App\Models\VisitorCategory;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use DB;
 
 class VisitorController extends Controller
 {
@@ -24,38 +26,38 @@ class VisitorController extends Controller
         return view('visitors.create', compact('companies', 'departments', 'categories'));
     }
 
- public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'nullable|email',
-        'phone' => 'required|string|max:15',
-        'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'documents' => 'nullable|array',
-        'documents.*' => 'file|max:5120',
-    ]);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email',
+            'phone' => 'required|string|max:15',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'documents' => 'nullable|array',
+            'documents.*' => 'file|max:5120',
+        ]);
 
-    // Handle photo
-    if ($request->hasFile('photo')) {
-        $validated['photo'] = $request->file('photo')->store('photos', 'public');
-    }
-
-    // Handle documents
-    if ($request->hasFile('documents')) {
-        $paths = [];
-        foreach ($request->file('documents') as $doc) {
-            $paths[] = $doc->store('documents', 'public');
+        // Handle photo
+        if ($request->hasFile('photo')) {
+            $validated['photo'] = $request->file('photo')->store('photos', 'public');
         }
-        $validated['documents'] = $paths;
+
+        // Handle documents
+        if ($request->hasFile('documents')) {
+            $paths = [];
+            foreach ($request->file('documents') as $doc) {
+                $paths[] = $doc->store('documents', 'public');
+            }
+            $validated['documents'] = $paths;
+        }
+
+        // Set default status
+        $validated['status'] = 'Pending';
+
+        Visitor::create($validated);
+
+        return redirect()->route('visitors.index')->with('success', 'Visitor added successfully.');
     }
-
-    // Set default status
-    $validated['status'] = 'Pending';
-
-    Visitor::create($validated);
-
-    return redirect()->route('visitors.index')->with('success', 'Visitor added successfully.');
-}
 
 
     public function edit(Visitor $visitor)
@@ -67,51 +69,51 @@ class VisitorController extends Controller
     }
 
     public function update(Request $request, Visitor $visitor)
-{
-    $validated = $request->validate([
-        'company_id' => 'required|exists:companies,id',
-        'name' => 'required|string|max:255',
-        'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-        'email' => 'nullable|email',
-        'phone' => 'required|string|max:15',
-        'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'department_id' => 'nullable|exists:departments,id',
-        'purpose' => 'nullable|string|max:255',
-        'person_to_visit' => 'nullable|string|max:255',
-        'in_time' => 'nullable|date',
-        'out_time' => 'nullable|date',
-        'status' => 'required|in:Pending,Approved,Rejected',
-        'documents' => 'nullable|array',
-        'documents.*' => 'file|max:5120',
-        'visitor_company' => 'nullable|string|max:255',
-        'visitor_website' => 'nullable|string|max:255',
-        'vehicle_type' => 'nullable|string|max:20',
-        'vehicle_number' => 'nullable|string|max:50',
-        'goods_in_car' => 'nullable|string|max:255',
-        'workman_policy' => 'nullable|in:Yes,No',
-        'workman_policy_photo' => 'nullable|image|max:2048',
-    ]);
+    {
+        $validated = $request->validate([
+            'company_id' => 'required|exists:companies,id',
+            'name' => 'required|string|max:255',
+            'visitor_category_id' => 'nullable|exists:visitor_categories,id',
+            'email' => 'nullable|email',
+            'phone' => 'required|string|max:15',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'department_id' => 'nullable|exists:departments,id',
+            'purpose' => 'nullable|string|max:255',
+            'person_to_visit' => 'nullable|string|max:255',
+            'in_time' => 'nullable|date',
+            'out_time' => 'nullable|date',
+            'status' => 'required|in:Pending,Approved,Rejected',
+            'documents' => 'nullable|array',
+            'documents.*' => 'file|max:5120',
+            'visitor_company' => 'nullable|string|max:255',
+            'visitor_website' => 'nullable|string|max:255',
+            'vehicle_type' => 'nullable|string|max:20',
+            'vehicle_number' => 'nullable|string|max:50',
+            'goods_in_car' => 'nullable|string|max:255',
+            'workman_policy' => 'nullable|in:Yes,No',
+            'workman_policy_photo' => 'nullable|image|max:2048',
+        ]);
 
-    if ($request->hasFile('photo')) {
-        $validated['photo'] = $request->file('photo')->store('photos', 'public');
-    }
-
-    if ($request->hasFile('documents')) {
-        $paths = [];
-        foreach ($request->file('documents') as $doc) {
-            $paths[] = $doc->store('documents', 'public');
+        if ($request->hasFile('photo')) {
+            $validated['photo'] = $request->file('photo')->store('photos', 'public');
         }
-        $validated['documents'] = $paths;
+
+        if ($request->hasFile('documents')) {
+            $paths = [];
+            foreach ($request->file('documents') as $doc) {
+                $paths[] = $doc->store('documents', 'public');
+            }
+            $validated['documents'] = $paths;
+        }
+
+        if ($request->hasFile('workman_policy_photo')) {
+            $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+        }
+
+        $visitor->update($validated);
+
+        return redirect()->route('visitors.index')->with('success', 'Visitor updated successfully.');
     }
-
-    if ($request->hasFile('workman_policy_photo')) {
-        $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-    }
-
-    $visitor->update($validated);
-
-    return redirect()->route('visitors.index')->with('success', 'Visitor updated successfully.');
-}
 
 
 
@@ -126,23 +128,33 @@ class VisitorController extends Controller
     {
         $query = Visitor::query();
 
-        if ($request->has('status') && $request->status !== null) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('company_id') && $request->company_id !== null) {
+        if ($request->filled('company_id')) {
             $query->where('company_id', $request->company_id);
         }
 
-        if ($request->has('from') && $request->has('to')) {
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        if ($request->filled('from') && $request->filled('to')) {
             $query->whereBetween('in_time', [$request->from, $request->to]);
         }
 
         $visitors = $query->latest()->paginate(10);
         $companies = Company::all();
 
-        return view('visitors.history', compact('visitors', 'companies'));
+        // Load only departments for the selected company
+        $departments = $request->filled('company_id')
+            ? Department::where('company_id', $request->company_id)->get()
+            : collect();
+
+        return view('visitors.history', compact('visitors', 'companies', 'departments'));
     }
+
 
     public function visitForm($id)
     {
@@ -218,24 +230,28 @@ class VisitorController extends Controller
 
     public function report()
     {
-        $today = \Carbon\Carbon::today();
-        $month = \Carbon\Carbon::now()->month;
+        $today = Carbon::today();
+        $month = Carbon::now()->month;
 
         $todayVisitors = Visitor::whereDate('created_at', $today)->count();
         $monthVisitors = Visitor::whereMonth('created_at', $month)->count();
 
-        $statusCounts = Visitor::select('status', \DB::raw('count(*) as total'))
+        $statusCounts = Visitor::select('status', DB::raw('count(*) as total'))
             ->groupBy('status')
             ->pluck('total', 'status');
         $visitors = Visitor::latest()->paginate(10);
         return view('visitors.report', compact('visitors'));    
     }
 
-    public function approvals()
+    public function approvals(Request $request)
     {
-        $pendingVisitors = Visitor::where('status', 'Pending')->latest()->paginate(10);
-        return view('visitors.approvals', compact('pendingVisitors'));
-    }
+        $query = Visitor::query();
 
-    
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $visitors = $query->latest()->paginate(10);
+        return view('visitors.approvals', compact('visitors'));
+    }
 }

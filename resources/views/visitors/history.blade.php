@@ -29,6 +29,19 @@
         </div>
 
         <div class="col-md-3">
+            <label class="form-label">Department</label>
+            <select name="department_id" class="form-select">
+                <option value="">All</option>
+                @foreach($departments as $department)
+                    <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
+                        {{ $department->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+
+        <div class="col-md-3">
             <label class="form-label">From Date</label>
             <input type="date" name="from" value="{{ request('from') }}" class="form-control">
         </div>

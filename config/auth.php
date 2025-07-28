@@ -1,5 +1,6 @@
 <?php
 
+
 return [
 
     /*
@@ -111,5 +112,40 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    'guards' => [
+        'web' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+        'company' => [
+            'driver' => 'session',
+            'provider' => 'companies',
+        ],
+
+        'guard' => [
+            'driver' => 'session',
+            'provider' => 'guards',
+        ],
+    ],
+
+    'providers' => [
+        'users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
+
+        'companies' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\CompanyUser::class, 
+        ],
+
+        'guards' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\SecurityGuard::class, 
+        ],
+    ],
+
 
 ];

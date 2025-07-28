@@ -44,6 +44,7 @@
                                 <span class="text-muted">—</span>
                             @endforelse
                         </td>
+
                         <td>
                             <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-outline-warning me-1">Edit</a>
                             <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline"

@@ -42,10 +42,12 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'role' => $request->role,
             'company_id' => $request->company_id,
         ]);
 
-         $user->departments()->sync($request->department_ids);
+        $user->departments()->sync($request->department_ids);
 
 
         return redirect()->route('users.index')->with('success', 'User created successfully!');
@@ -75,8 +77,17 @@ class UserController extends Controller
             'department_ids.*' => 'exists:departments,id',
         ]);
 
-        $user->update($request->only(['name', 'email', 'phone', 'role', 'company_id']));
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'role' => $request->role,
+            'company_id' => $request->company_id,
+        ]);
+
         $user->departments()->sync($request->department_ids);
+
 
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');

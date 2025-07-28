@@ -11,6 +11,10 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\VisitorCategoryController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SecurityCheckController;
+use App\Http\Controllers\Auth\CompanyLoginController;
+use App\Http\Controllers\Auth\GuardLoginController;
+use App\Http\Controllers\Auth\CompanyAuthController;
 
 use App\Exports\VisitorsExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -43,7 +47,7 @@ Route::middleware(['auth'])->group(function () {
     // Companies
     Route::resource('companies', CompanyController::class);
     Route::get('/company/{id}/departments', function ($id) {
-        return \App\Models\Department::where('company_id', $id)->pluck('name', 'id');
+        return Department::where('company_id', $id)->pluck('name', 'id');
     });
     
     Route::get('/companies/{id}/departments', function ($id) {
@@ -75,6 +79,14 @@ Route::middleware(['auth'])->group(function () {
 
 
 
+    Route::prefix('security-checks')->group(function () {
+        Route::get('/', [SecurityCheckController::class, 'index'])->name('security-checks.index');
+        Route::get('/create/{visitorId}', [SecurityCheckController::class, 'create'])->name('security-checks.create');
+        Route::post('/', [SecurityCheckController::class, 'store'])->name('security-checks.store');
+    });
+
+
+
 
     // Security Check-up
     Route::get('/visitors/{id}/checkup', [VisitorController::class, 'checkupForm'])->name('visitors.checkup');
@@ -91,6 +103,20 @@ Route::middleware(['auth'])->group(function () {
         return view('layouts.profile.profile');
     })->name('profile.view');
 });
+
+Route::prefix('company')->group(function () {
+ 
+Route::get('/company/login', [CompanyLoginController::class, 'showLoginForm'])->name('company.login');
+Route::post('/company/login', [CompanyLoginController::class, 'login']);
+    Route::post('/logout', [CompanyAuthController::class, 'logout'])->name('company.logout');
+
+    Route::middleware('auth:company')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('company.dashboard');
+        })->name('company.dashboard');
+    });
+});
+
 
 // Auth scaffolding (login, register etc.)
 require __DIR__.'/auth.php';

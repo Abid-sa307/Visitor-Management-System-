@@ -66,6 +66,10 @@
             <button class="btn btn-sm btn-danger">Delete</button>
           </form>
         </div>
+        <a href="{{ route('security-checks.create', $visitor->id) }}" class="btn btn-sm btn-outline-dark">
+            Security Check
+        </a>
+
       </td>
     </tr>
   @empty

@@ -52,6 +52,13 @@
                 @endif
             @endauth
         </div>
+
+        <!-- resources/views/welcome.blade.php or your landing page -->
+
+    <a href="{{ route('company.login') }}" class="btn btn-outline-primary">
+        Company User Login
+    </a>
+
     </div>
 </nav>
 
