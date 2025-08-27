@@ -10,9 +10,9 @@ class CompanySeeder extends Seeder
     public function run(): void
     {
         Company::updateOrCreate(
-            ['email' => 'contact@abcindustries.com'], // unique key to check
+            ['name' => 'ABCEFGH Industries'],
             [
-                'name' => 'ABCEFGH Industries', 
+                'email' => 'contact@abcindustries.com', // ✅ Add this
                 'address' => '123 Main Street, New York, USA',
                 'contact_number' => '+1 234 567 890',
                 'logo' => null,

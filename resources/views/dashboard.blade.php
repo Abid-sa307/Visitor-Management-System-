@@ -31,8 +31,8 @@
             <div class="card-header bg-primary text-white">
                 <h6 class="m-0 font-weight-bold">Monthly Visitor Report</h6>
             </div>
-            <div class="card-body">
-                <canvas id="visitorChartCanvas" height="120"></canvas>
+            <div class="card-body chart-container">
+                <canvas id="visitorChartCanvas"></canvas>
             </div>
         </div>
     </div>
@@ -43,8 +43,8 @@
             <div class="card-header bg-info text-white">
                 <h6 class="m-0 font-weight-bold">Hourly Visitor Activity (Today)</h6>
             </div>
-            <div class="card-body">
-                <canvas id="hourChartCanvas" height="100"></canvas>
+            <div class="card-body chart-container">
+                <canvas id="hourChartCanvas"></canvas>
             </div>
         </div>
     </div>
@@ -57,8 +57,8 @@
             <div class="card-header bg-warning text-dark">
                 <h6 class="m-0 font-weight-bold">Visitor Trends (Past 7 Days)</h6>
             </div>
-            <div class="card-body">
-                <canvas id="dayChartCanvas" height="100"></canvas>
+            <div class="card-body chart-container">
+                <canvas id="dayChartCanvas"></canvas>
             </div>
         </div>
     </div>
@@ -101,8 +101,8 @@
             <div class="card-header bg-success text-white">
                 <h6 class="m-0 font-weight-bold">Visitors Per Department</h6>
             </div>
-            <div class="card-body">
-                <canvas id="deptChartCanvas" height="120"></canvas>
+            <div class="card-body chart-container-small">
+                <canvas id="deptChartCanvas"></canvas>
             </div>
         </div>
     </div>
@@ -194,14 +194,20 @@
         },
         dept: {
             el: 'deptChartCanvas',
-            type: 'bar',
+            type: 'doughnut',
             data: {!! json_encode($deptCounts) !!},
             labels: {!! json_encode($deptLabels) !!},
-            color: 'rgba(40, 167, 69, 0.6)'
+            colors: [
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(108, 117, 125, 0.8)'
+            ]
         }
     };
 
-    Object.values(charts).forEach(({el, type, labels, data, color, fill}) => {
+    Object.values(charts).forEach(({el, type, labels, data, color, colors, fill}) => {
         new Chart(document.getElementById(el), {
             type,
             data: {
@@ -209,19 +215,39 @@
                 datasets: [{
                     label: el.replace('ChartCanvas', ''),
                     data,
-                    backgroundColor: color,
-                    borderColor: color.replace('0.6', '1'),
+                    backgroundColor: colors ?? [color],
+                    borderColor: colors ?? [color.replace('0.6', '1')],
                     borderWidth: 1,
-                    borderRadius: 6,
+                    borderRadius: type === 'bar' ? 6 : 0,
                     fill: fill ?? false,
                     tension: type === 'line' ? 0.3 : 0
                 }]
             },
             options: {
                 responsive: true,
-                scales: { y: { beginAtZero: true } }
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'bottom' }
+                },
+                scales: type === 'doughnut' ? {} : {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 } // only integers
+                    }
+                }
             }
         });
     });
 </script>
+
+<!-- Custom CSS to control chart sizes -->
+<style>
+    .chart-container {
+        height: 300px; /* normal size */
+    }
+    .chart-container-small {
+        height: 250px; /* smaller for doughnut */
+    }
+</style>
+
 @endsection

@@ -5,7 +5,7 @@
   <div class="card shadow-lg p-4 w-100 mx-auto" style="max-width: 800px;">
     <h4 class="mb-4 text-center text-primary fw-bold">Visitor Action Details</h4>
 
-<form action="{{ route('visitors.visit.submit', $visitor->id) }}" method="POST" enctype="multipart/form-data">
+<form action="{{ route('company.visitors.visit.submit', $visitor->id) }}" method="POST" enctype="multipart/form-data">
       @csrf
 
       <div class="row mb-3">
@@ -40,6 +40,11 @@
       </div>
 
       <div class="mb-3">
+        <label class="form-label fw-semibold">Purpose of Visit</label>
+        <input type="text" name="purpose_of_visit" class="form-control" value="{{ $visitor->purpose_of_visit }}">
+      </div>
+
+      <div class="mb-3">
         <label class="form-label fw-semibold">Visitor's Company Name</label>
         <input type="text" name="visitor_company" class="form-control" value="{{ $visitor->visitor_company }}">
       </div>
@@ -70,16 +75,7 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold">Workman Policy</label>
-        <select name="workman_policy" class="form-select">
-          <option value="">-- Select --</option>
-          <option value="Yes" {{ $visitor->workman_policy == 'Yes' ? 'selected' : '' }}>Yes</option>
-          <option value="No" {{ $visitor->workman_policy == 'No' ? 'selected' : '' }}>No</option>
-        </select>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Upload Workman Policy Photo</label>
+        <label class="form-label fw-semibold">Upload Workman Policy Photo (Optional)</label>
         <input type="file" name="workman_policy_photo" class="form-control">
         @if($visitor->workman_policy_photo)
           <small><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">View current</a></small>

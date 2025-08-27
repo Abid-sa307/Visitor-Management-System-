@@ -19,4 +19,10 @@ class Employee extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new \App\Scopes\MultiTenantScope);
+    // }
+
 }

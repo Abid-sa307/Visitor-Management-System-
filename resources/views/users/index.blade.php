@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary">Users</h2>
-        <a href="{{ route('users.create') }}" class="btn btn-sm btn-primary shadow-sm">
+        <a href="{{ route('company.users.create') }}" class="btn btn-sm btn-primary shadow-sm">
             <i class="bi bi-person-plus-fill me-1"></i> Add User
         </a>
     </div>
@@ -26,6 +26,7 @@
                     <th>Role</th>
                     <th>Company</th>
                     <th>Departments</th>
+                    <th>Page Access Count</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -44,6 +45,9 @@
                                 <span class="text-muted">—</span>
                             @endforelse
                         </td>
+                        <td>{{ $user->master_pages_display }}</td>
+
+
 
                         <td>
                             <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-outline-warning me-1">Edit</a>

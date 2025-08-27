@@ -4,7 +4,7 @@
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">Departments</h1>
-        <a href="{{ route('departments.create') }}" class="btn btn-sm btn-primary shadow-sm">
+        <a href="{{ route('company.departments.create') }}" class="btn btn-sm btn-primary shadow-sm">
             <i class="fas fa-plus-circle me-1"></i> Add Department
         </a>
     </div>

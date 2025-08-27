@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Scopes\MultiTenantScope;
 
 class Visitor extends Model
 {
@@ -22,7 +23,6 @@ class Visitor extends Model
         'documents',
         'workman_policy',
         'workman_policy_photo',
-        'documents' => 'array',
     ];
 
     protected $casts = [
@@ -53,4 +53,16 @@ class Visitor extends Model
     {
         return $this->hasMany(VisitorLog::class);
     }
+
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new MultiTenantScope);
+
+    //     // Auto-assign company_id for company users
+    //     static::creating(function ($model) {
+    //         if (auth()->check() && auth()->user()->role !== 'super_admin') {
+    //             $model->company_id = auth()->user()->company_id;
+    //         }
+    //     });
+    // }
 }

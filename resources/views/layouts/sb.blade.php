@@ -50,6 +50,10 @@
 </style>
 
 </head>
+        @php
+            $pages = json_decode(auth()->user()->master_pages ?? '[]');
+        @endphp
+
 
 <body id="page-top">
     <!-- Page Wrapper -->

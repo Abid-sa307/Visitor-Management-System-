@@ -3,99 +3,125 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Company;
-use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-
 
 class UserController extends Controller
 {
+
+
     public function index()
     {
-        $users = User::with(['company', 'departments'])->latest()->get();
-        return view('users.index', compact('users'));
+        $authUser = auth()->user();
+
+        // If superadmin is logged in -> show all users
+        if ($authUser->role === 'superadmin') {
+            $users = User::with(['company', 'departments'])->get();
+        } 
+        else {
+            // Company users should only see their own company's users
+            $users = User::with(['company', 'departments'])
+                ->where('company_id', $authUser->company_id)
+                ->where('role', '!=', 'superadmin') // exclude superadmin
+                ->get();
+        }
+         $users = User::with(['company', 'departments'])
+            ->visibleTo(auth()->user())   // 👈 scope added here
+            ->get();
+
+        return view('company.users.index', compact('users'));
     }
 
     public function create()
     {
-        $companies = Company::all();
-        $departments = auth()->user()->role === 'superadmin'
-            ? Department::all()
-            : Department::where('company_id', auth()->user()->company_id)->get();
+        $authUser = Auth::user();
 
-        return view('users.create', compact('companies', 'departments'));
+        // Company user can only create for their company
+        if ($authUser->role === 'company') {
+            return view('users.create')->with('company_id', $authUser->company_id);
+        }
+
+        return view('users.create')->with('company_id', null);
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|confirmed|min:6',
-            'company_id' => 'required|exists:companies,id',
-            'department_ids' => 'required|array|min:1',
-            'department_ids.*' => 'exists:departments,id',
+        $authUser = Auth::user();
+
+        $validated = $request->validate([
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email',
+            'password'  => 'required|string|min:6|confirmed',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'role' => $request->role,
-            'company_id' => $request->company_id,
-        ]);
+        $user = new User();
+        $user->name     = $validated['name'];
+        $user->email    = $validated['email'];
+        $user->password = Hash::make($validated['password']);
 
-        $user->departments()->sync($request->department_ids);
+        // Force company_id if logged in as company user
+        if ($authUser->role === 'company') {
+            $user->company_id = $authUser->company_id;
+        } else {
+            $user->company_id = $request->company_id ?? null;
+        }
 
+        $user->save();
 
-        return redirect()->route('users.index')->with('success', 'User created successfully!');
+        return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
     public function edit(User $user)
     {
-        $companies = Company::all();
-        $departments = auth()->user()->role === 'superadmin'
-            ? Department::all()
-            : Department::where('company_id', auth()->user()->company_id)->get();
-        $selectedDepartments = $user->departments->pluck('id')->toArray(); // for edit
+        $authUser = Auth::user();
 
+        // Company user can only edit their own company’s users
+        if ($authUser->role === 'company' && $user->company_id !== $authUser->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
 
-        return view('users.edit', compact('user', 'companies', 'departments', 'selectedDepartments'));
+        return view('users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable',
-            'role' => 'required',
-            'company_id' => 'required|exists:companies,id',
-            'department_ids' => 'required|array|min:1',
-            'department_ids.*' => 'exists:departments,id',
+        $authUser = Auth::user();
+
+        // Prevent editing users outside company
+        if ($authUser->role === 'company' && $user->company_id !== $authUser->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email,' . $user->id,
+            'password'  => 'nullable|string|min:6|confirmed',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'role' => $request->role,
-            'company_id' => $request->company_id,
-        ]);
+        $user->name  = $validated['name'];
+        $user->email = $validated['email'];
 
-        $user->departments()->sync($request->department_ids);
+        if (!empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
+        }
 
-
+        $user->save();
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
 
     public function destroy(User $user)
     {
+        $authUser = Auth::user();
+
+        // Prevent deleting users outside company
+        if ($authUser->role === 'company' && $user->company_id !== $authUser->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
 }

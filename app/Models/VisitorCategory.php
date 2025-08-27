@@ -23,5 +23,10 @@ class VisitorCategory extends Model
     {
         return $this->hasMany(Visitor::class);
     }
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope(new \App\Scopes\MultiTenantScope);
+    // }
+
 
 }

@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/Auth/CompanyLoginController.php
 
 namespace App\Http\Controllers\Auth;
 
@@ -19,15 +18,14 @@ class CompanyLoginController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
-            // Optional: check if user is a 'company'
             if (auth()->user()->role === 'company') {
                 return redirect()->route('company.dashboard');
             } else {
                 Auth::logout();
-                return back()->with('error', 'Access denied. Not a company user.');
+                return back()->with('error', 'Access denied. You are not a company user.');
             }
         }
 
-        return back()->with('error', 'Invalid credentials.');
+        return back()->with('error', 'Invalid email or password.');
     }
 }

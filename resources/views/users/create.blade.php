@@ -20,8 +20,10 @@
 
             <form action="{{ route('users.store') }}" method="POST">
                 @csrf
-                @include('users._form', ['button' => 'Create User'])
+                @php $user = null; @endphp
+                @include('users._form', ['button' => 'Create User', 'user' => $user])
             </form>
+
         </div>
     </div>
 </div>

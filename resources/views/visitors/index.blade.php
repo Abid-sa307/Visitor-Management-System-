@@ -6,7 +6,7 @@
   <div class="bg-white p-4 rounded-4 shadow-lg">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="fw-bold text-primary m-0">All Visitors</h2>
-      <a href="{{ route('visitors.create') }}" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm">+ Add Visitor</a>
+      <a href="{{ route('company.visitors.create') }}" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm">+ Add Visitor</a>
     </div>
 
     @if(session('success'))
@@ -59,9 +59,9 @@
       </td>
       <td>
         <div class="d-flex justify-content-center gap-2">
-          <a href="{{ route('visitors.edit', $visitor->id) }}" class="btn btn-sm btn-warning">Edit</a>
+          <a href="{{ route('company.visitors.edit', $visitor->id) }}" class="btn btn-sm btn-warning">Edit</a>
           <a href="{{ route('visitors.visit.form', $visitor->id) }}" class="btn btn-sm btn-info">Visit</a>
-          <form action="{{ route('visitors.destroy', $visitor->id) }}" method="POST" onsubmit="return confirm('Delete this visitor?')">
+          <form action="{{ route('company.visitors.destroy', $visitor->id) }}" method="POST" onsubmit="return confirm('Delete this visitor?')">
             @csrf @method('DELETE')
             <button class="btn btn-sm btn-danger">Delete</button>
           </form>

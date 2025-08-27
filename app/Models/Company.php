@@ -1,17 +1,16 @@
 <?php
 
 namespace App\Models;
-   
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Scopes\MultiTenantScope;
+use Illuminate\Support\Facades\Auth;
 
 class Company extends Model
 {
-    //
+    use HasFactory;
 
-     use HasFactory;
-     
     protected $fillable = [
         'name',
         'address',
@@ -27,6 +26,18 @@ class Company extends Model
         'notification_settings' => 'array',
     ];
 
+    // protected static function booted()
+    // {
+    //     // Apply tenant filter
+    //     static::addGlobalScope(new MultiTenantScope);
+
+    //     // Auto-assign company_id when creating (for non-super_admins)
+    //     static::creating(function ($model) {
+    //         if (Auth::check() && Auth::user()->role !== 'super_admin') {
+    //             $model->id = Auth::user()->company_id; // A company is its own tenant
+    //         }
+    //     });
+    // }
 
     public function departments()
     {
@@ -47,5 +58,4 @@ class Company extends Model
     {
         return $this->hasMany(Visitor::class);
     }
-
 }

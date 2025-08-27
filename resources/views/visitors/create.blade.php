@@ -7,8 +7,11 @@
       Register New Visitor
     </h3>
 
-    <form action="{{ route('visitors.store') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}" 
+        method="POST" enctype="multipart/form-data">
       @csrf
+
+
 
       <!-- Name -->
       <div class="mb-3">

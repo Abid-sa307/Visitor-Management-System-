@@ -12,16 +12,38 @@ use DB;
 
 class VisitorController extends Controller
 {
+    private function companyScope($query)
+    {
+        if (auth()->user()->role !== 'super_admin') {
+            $query->where('company_id', auth()->user()->company_id);
+        }
+        return $query;
+    }
+
+    private function getCompanies()
+    {
+        return auth()->user()->role === 'super_admin'
+            ? Company::all()
+            : Company::where('id', auth()->user()->company_id)->get();
+    }
+
+    private function getDepartments()
+    {
+        return auth()->user()->role === 'super_admin'
+            ? Department::all()
+            : Department::where('company_id', auth()->user()->company_id)->get();
+    }
+
     public function index()
     {
-        $visitors = Visitor::latest()->paginate(10);
+        $visitors = $this->companyScope(Visitor::latest())->paginate(10);
         return view('visitors.index', compact('visitors'));
     }
 
     public function create()
     {
-        $companies = Company::all();
-        $departments = Department::all();
+        $companies = $this->getCompanies();
+        $departments = $this->getDepartments();
         $categories = VisitorCategory::all();
         return view('visitors.create', compact('companies', 'departments', 'categories'));
     }
@@ -29,20 +51,25 @@ class VisitorController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email',
-            'phone' => 'required|string|max:15',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'documents' => 'nullable|array',
+            'name'   => 'required|string|max:255',
+            'email'  => 'nullable|email',   
+            'phone'  => 'required|string|max:15',
+            'photo'  => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'documents'   => 'nullable|array',
             'documents.*' => 'file|max:5120',
         ]);
 
-        // Handle photo
+        // Assign company for non-superadmin
+        if (auth()->user()->role !== 'superadmin') {
+            $validated['company_id'] = auth()->user()->company_id;
+        }
+
+        // Photo upload
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('photos', 'public');
         }
 
-        // Handle documents
+        // Document upload
         if ($request->hasFile('documents')) {
             $paths = [];
             foreach ($request->file('documents') as $doc) {
@@ -51,48 +78,68 @@ class VisitorController extends Controller
             $validated['documents'] = $paths;
         }
 
-        // Set default status
         $validated['status'] = 'Pending';
-
         Visitor::create($validated);
 
-        return redirect()->route('visitors.index')->with('success', 'Visitor added successfully.');
+        // ✅ Robust redirection
+        $user = auth()->user();
+
+        if ($user->role === 'superadmin') {
+            return redirect()->route('visitors.index')->with('success', 'Visitor registered successfully!');
+        }
+
+        if ($user->role === 'company') {
+            return redirect()->route('company.visitors.index')->with('success', 'Visitor registered successfully!');
+        }
+
+        // fallback
+        return redirect('/')->with('error', 'Unauthorized role.');
     }
+
 
 
     public function edit(Visitor $visitor)
     {
-        $companies = Company::all();
-        $departments = Department::all();
-        $categories = VisitorCategory::all();
+        $this->authorizeVisitor($visitor);
+
+        $companies   = $this->getCompanies();
+        $departments = $this->getDepartments();
+        $categories  = VisitorCategory::all();
+
         return view('visitors.edit', compact('visitor', 'companies', 'departments', 'categories'));
     }
 
     public function update(Request $request, Visitor $visitor)
     {
+        $this->authorizeVisitor($visitor);
+
         $validated = $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'name' => 'required|string|max:255',
+            'company_id'          => 'required|exists:companies,id',
+            'name'                => 'required|string|max:255',
             'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-            'email' => 'nullable|email',
-            'phone' => 'required|string|max:15',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'department_id' => 'nullable|exists:departments,id',
-            'purpose' => 'nullable|string|max:255',
-            'person_to_visit' => 'nullable|string|max:255',
-            'in_time' => 'nullable|date',
-            'out_time' => 'nullable|date',
-            'status' => 'required|in:Pending,Approved,Rejected',
-            'documents' => 'nullable|array',
-            'documents.*' => 'file|max:5120',
-            'visitor_company' => 'nullable|string|max:255',
-            'visitor_website' => 'nullable|string|max:255',
-            'vehicle_type' => 'nullable|string|max:20',
-            'vehicle_number' => 'nullable|string|max:50',
-            'goods_in_car' => 'nullable|string|max:255',
-            'workman_policy' => 'nullable|in:Yes,No',
-            'workman_policy_photo' => 'nullable|image|max:2048',
+            'email'               => 'nullable|email',
+            'phone'               => 'required|string|max:15',
+            'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'department_id'       => 'nullable|exists:departments,id',
+            'purpose'             => 'nullable|string|max:255',
+            'person_to_visit'     => 'nullable|string|max:255',
+            'in_time'             => 'nullable|date',
+            'out_time'            => 'nullable|date',
+            'status'              => 'required|in:Pending,Approved,Rejected',
+            'documents'           => 'nullable|array',
+            'documents.*'         => 'file|max:5120',
+            'visitor_company'     => 'nullable|string|max:255',
+            'visitor_website'     => 'nullable|string|max:255',
+            'vehicle_type'        => 'nullable|string|max:20',
+            'vehicle_number'      => 'nullable|string|max:50',
+            'goods_in_car'        => 'nullable|string|max:255',
+            'workman_policy'      => 'nullable|in:Yes,No',
+            'workman_policy_photo'=> 'nullable|image|max:2048',
         ]);
+
+        if (auth()->user()->role !== 'superadmin') {
+            $validated['company_id'] = auth()->user()->company_id;
+        }
 
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('photos', 'public');
@@ -111,29 +158,64 @@ class VisitorController extends Controller
         }
 
         $visitor->update($validated);
+        
+        $user = auth()->user();
 
-        return redirect()->route('visitors.index')->with('success', 'Visitor updated successfully.');
+        if ($user->role === 'superadmin'){
+            return redirect()->route('visitors.index')->with('success', 'Visitor updated successfully!');
+        }
+
+        if ($user->role === 'company') {
+            return redirect()->route('company.visitors.index')->with('success', 'Visitor updated successfully!');
+        }
+
+        return redirect('/')->with('error', 'Uauthorized role.');
+        // return redirect()->to(panel_route('visitors.index'))
+        //     ->with('success', 'Visitor updated successfully.');
+
+            
+        // $user = auth()->user();
+
+        // if ($user->role === 'superadmin') {
+        //     return redirect()->route('visitors.index')->with('success', 'Visitor registered successfully!');
+        // }
+
+        // if ($user->role === 'company') {
+        //     return redirect()->route('company.visitors.index')->with('success', 'Visitor registered successfully!');
+        // }
+
+        // // fallback
+        // return redirect('/')->with('error', 'Unauthorized role.');
     }
-
-
-
 
     public function destroy(Visitor $visitor)
     {
+        $this->authorizeVisitor($visitor);
         $visitor->delete();
-        return redirect()->route('visitors.index')->with('success', 'Visitor deleted successfully.');
+
+
+        $user = auth()->user();
+
+        if ($user->role === 'superadmin'){
+            return redirect()->route('visitors.index')->with('success', 'Visitor deleted successfully!');
+        }
+
+        if ($user->role === 'company') {
+            return redirect()->route('company.visitors.index')->with('success', 'Visitor deleted successfully!');
+        }
+
+        return redirect('/')->with('error', 'Uauthorized role.');
+        // return redirect()->to(panel_route('visitors.index'))
+        //     ->with('success', 'Visitor deleted successfully.');
     }
 
     public function history(Request $request)
     {
         $query = Visitor::query();
+        $this->companyScope($query);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
-        }
-
-        if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
         }
 
         if ($request->filled('department_id')) {
@@ -145,59 +227,64 @@ class VisitorController extends Controller
         }
 
         $visitors = $query->latest()->paginate(10);
-        $companies = Company::all();
+        $companies = $this->getCompanies();
 
-        // Load only departments for the selected company
         $departments = $request->filled('company_id')
             ? Department::where('company_id', $request->company_id)->get()
-            : collect();
+            : $this->getDepartments();
 
         return view('visitors.history', compact('visitors', 'companies', 'departments'));
     }
 
-
     public function visitForm($id)
     {
         $visitor = Visitor::findOrFail($id);
-        $departments = Department::all();
-        $companies = Company::all();
+        $this->authorizeVisitor($visitor);
+
+        $companies = $this->getCompanies();
+        $departments = $this->getDepartments();
+
         return view('visitors.visit', compact('visitor', 'departments', 'companies'));
     }
 
     public function submitVisit(Request $request, $id)
     {
         $visitor = Visitor::findOrFail($id);
+        $this->authorizeVisitor($visitor);
+
+        if (auth()->user()->role !== 'super_admin') {
+            $request->merge(['company_id' => auth()->user()->company_id]);
+        }
 
         $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'department_id' => 'required|exists:departments,id',
-            'person_to_visit' => 'required|string',
-            'visitor_company' => 'nullable|string',
-            'visitor_website' => 'nullable|url',
-            'vehicle_type' => 'nullable|string',
-            'vehicle_number' => 'nullable|string',
-            'goods_in_car' => 'nullable|string',
-            'workman_policy' => 'nullable|in:Yes,No',
+            'company_id'        => 'required|exists:companies,id',
+            'department_id'     => 'required|exists:departments,id',
+            'person_to_visit'   => 'required|string',
+            'visitor_company'   => 'nullable|string',
+            'visitor_website'   => 'nullable|url',
+            'vehicle_type'      => 'nullable|string',
+            'vehicle_number'    => 'nullable|string',
+            'goods_in_car'      => 'nullable|string',
+            'workman_policy'    => 'nullable|in:Yes,No',
             'workman_policy_photo' => 'nullable|image|max:2048',
-            'status' => 'required|in:Pending,Approved,Rejected',
+            'status'            => 'required|in:Pending,Approved,Rejected',
         ]);
 
         if ($request->hasFile('workman_policy_photo')) {
-            $wpcPhoto = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-            $visitor->workman_policy_photo = $wpcPhoto;
+            $visitor->workman_policy_photo = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
         }
 
         $visitor->update($request->except('workman_policy_photo') + [
             'workman_policy_photo' => $visitor->workman_policy_photo ?? null,
         ]);
 
-        return redirect()->route('visitors.index')->with('success', 'Visitor visit info updated!');
+        return redirect()->to(panel_route('visitors.index'))
+            ->with('success', 'Visit submitted successfully.');
     }
-
 
     public function entryPage()
     {
-        $visitors = Visitor::orderByDesc('created_at')->paginate(10);
+        $visitors = $this->companyScope(Visitor::orderByDesc('created_at'))->paginate(10);
         return view('visitors.entry', compact('visitors'));
     }
 
@@ -208,6 +295,7 @@ class VisitorController extends Controller
         }
 
         $visitor = Visitor::findOrFail($id);
+        $this->authorizeVisitor($visitor);
 
         if (!$visitor->in_time) {
             $visitor->in_time = now();
@@ -220,11 +308,12 @@ class VisitorController extends Controller
         $visitor->save();
 
         return back()->with('success', 'Visitor entry updated.');
-    }    
+    }
 
     public function printPass($id)
     {
         $visitor = Visitor::with('company')->findOrFail($id);
+        $this->authorizeVisitor($visitor);
         return view('visitors.pass', compact('visitor'));
     }
 
@@ -233,25 +322,49 @@ class VisitorController extends Controller
         $today = Carbon::today();
         $month = Carbon::now()->month;
 
-        $todayVisitors = Visitor::whereDate('created_at', $today)->count();
-        $monthVisitors = Visitor::whereMonth('created_at', $month)->count();
+        $todayVisitors = $this->companyScope(
+            Visitor::whereDate('created_at', $today)
+        )->count();
 
-        $statusCounts = Visitor::select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->pluck('total', 'status');
-        $visitors = Visitor::latest()->paginate(10);
-        return view('visitors.report', compact('visitors'));    
+        $monthVisitors = $this->companyScope(
+            Visitor::whereMonth('created_at', $month)
+        )->count();
+
+        $statusCounts = $this->companyScope(
+            Visitor::select('status', DB::raw('count(*) as total'))->groupBy('status')
+        )->pluck('total', 'status');
+
+        $visitors = $this->companyScope(Visitor::latest())->paginate(10);
+
+        return view('visitors.report', compact('visitors', 'todayVisitors', 'monthVisitors', 'statusCounts'));
     }
 
     public function approvals(Request $request)
+{
+    $query = Visitor::with(['company', 'department', 'category']); // eager load relations
+    $this->companyScope($query);
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('department_id')) {
+        $query->where('department_id', $request->department_id);
+    }
+
+    $visitors = $query->latest()->paginate(10);
+
+    // Get departments for the dropdown
+    $departments = \App\Models\Department::where('company_id', auth()->user()->company_id)->get();
+
+    return view('visitors.approvals', compact('visitors', 'departments'));
+}
+
+
+    private function authorizeVisitor($visitor)
     {
-        $query = Visitor::query();
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if (auth()->user()->role !== 'super_admin' && $visitor->company_id != auth()->user()->company_id) {
+            abort(403, 'Unauthorized access.');
         }
-
-        $visitors = $query->latest()->paginate(10);
-        return view('visitors.approvals', compact('visitors'));
     }
 }

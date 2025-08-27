@@ -13,15 +13,35 @@
         @endif
 
         <!-- ✅ Filter Form START -->
-        <form method="GET" class="mb-3">
-            <select name="status" class="form-select w-auto d-inline-block">
-                <option value="">All</option>
-                <option value="Pending" {{ request('status') == 'Pending' ? 'selected' : '' }}>Pending</option>
-                <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
-                <option value="Rejected" {{ request('status') == 'Rejected' ? 'selected' : '' }}>Rejected</option>
-            </select>
-            <button class="btn btn-primary">Filter</button>
-        </form>
+       <form method="GET" class="row g-3 align-items-end mb-3">
+    <div class="col-md-4">
+        <label for="status" class="form-label">Status</label>
+        <select name="status" id="status" class="form-select">
+            <option value="">All</option>
+            <option value="Pending" {{ request('status') == 'Pending' ? 'selected' : '' }}>Pending</option>
+            <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
+            <option value="Rejected" {{ request('status') == 'Rejected' ? 'selected' : '' }}>Rejected</option>
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <label for="department_id" class="form-label">Department</label>
+        <select name="department_id" id="department_id" class="form-select">
+            <option value="">All</option>
+            @foreach($departments as $department)
+                <option value="{{ $department->id }}" 
+                    {{ request('department_id') == $department->id ? 'selected' : '' }}>
+                    {{ $department->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <button class="btn btn-primary w-100">Filter</button>
+    </div>
+</form>
+
         <!-- ✅ Filter Form END -->
 
         @if($visitors->isEmpty())
