@@ -48,18 +48,19 @@ class DashboardController extends Controller
     $chartLabels = $monthly->keys();
     $chartData   = $monthly->values();
 
-    // Hourly (Today)
+    // Hourly Visitors (Today) - Fix timezone & empty data
     $hourly = (clone $visitorQuery)
-        ->whereDate('created_at', today())
-        ->selectRaw('HOUR(created_at) as hour, COUNT(*) as count')
+        ->whereDate('created_at', Carbon::today()) // ensures app timezone
+        ->selectRaw('HOUR(CONVERT_TZ(created_at, "+00:00", "+05:30")) as hour, COUNT(*) as count')
         ->groupBy('hour')
         ->pluck('count', 'hour');
 
+    // Fill 8-18 hours if you want consistent labels
     $hourLabels = [];
-    $hourData   = [];
+    $hourData = [];
     for ($i = 8; $i <= 18; $i++) {
         $hourLabels[] = $i . ':00';
-        $hourData[]   = $hourly[$i] ?? 0;
+        $hourData[] = $hourly[$i] ?? 0;
     }
 
     // Day-wise (Last 7 days)

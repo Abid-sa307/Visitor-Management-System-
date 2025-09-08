@@ -71,7 +71,7 @@
               <td>
                 @php
                   $badgeClass = match($visitor->status) {
-                    'Approved'  => 'success',
+                    'Mark In'  => 'success',
                     'Rejected'  => 'danger',
                     'Completed' => 'success',
                     default     => 'secondary',

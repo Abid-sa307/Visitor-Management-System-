@@ -172,58 +172,79 @@ class VisitorController extends Controller
     }
 
     public function update(Request $request, Visitor $visitor)
-    {
-        $this->authorizeVisitor($visitor);
+{
+    $this->authorizeVisitor($visitor);
 
-        $validated = $request->validate([
-            'company_id'          => 'required|exists:companies,id',
-            'name'                => 'required|string|max:255',
-            'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-            'email'               => 'nullable|email',
-            'phone'               => 'required|string|max:15',
-            'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'department_id'       => 'nullable|exists:departments,id',
-            'purpose'             => 'nullable|string|max:255',
-            'person_to_visit'     => 'nullable|string|max:255',
-            'in_time'             => 'nullable|date',
-            'out_time'            => 'nullable|date',
-            'status'              => 'required|in:Pending,Approved,Rejected,Completed',
-            'documents'           => 'nullable|array',
-            'documents.*'         => 'file|max:5120',
-            'visitor_company'     => 'nullable|string|max:255',
-            'visitor_website'     => 'nullable|string|max:255',
-            'vehicle_type'        => 'nullable|string|max:20',
-            'vehicle_number'      => 'nullable|string|max:50',
-            'goods_in_car'        => 'nullable|string|max:255',
-            'workman_policy'      => 'nullable|in:Yes,No',
-            'workman_policy_photo'=> 'nullable|image|max:2048',
+    // If only status is being updated (Approve/Reject buttons)
+    if ($request->has('status') && count($request->all()) === 1) {
+        $request->validate([
+            'status' => 'required|in:Pending,Approved,Rejected,Completed',
         ]);
 
-        if (!$this->isSuper()) {
-            $validated['company_id'] = auth()->user()->company_id;
+        $visitor->status = $request->status;
+        $visitor->save();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Visitor status updated to {$visitor->status}"
+            ]);
         }
 
-        if ($request->hasFile('photo')) {
-            $validated['photo'] = $request->file('photo')->store('photos', 'public');
-        }
-
-        if ($request->hasFile('documents')) {
-            $paths = [];
-            foreach ($request->file('documents') as $doc) {
-                $paths[] = $doc->store('documents', 'public');
-            }
-            $validated['documents'] = $paths;
-        }
-
-        if ($request->hasFile('workman_policy_photo')) {
-            $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-        }
-
-        $visitor->update($validated);
-
-        return redirect()->route($this->panelRoute('visitors.index'))
-            ->with('success', 'Visitor updated successfully!');
+        return redirect()->back()->with('success', "Visitor status updated to {$visitor->status}");
     }
+
+    // Otherwise, normal full update
+    $validated = $request->validate([
+        'company_id'          => 'required|exists:companies,id',
+        'name'                => 'required|string|max:255',
+        'visitor_category_id' => 'nullable|exists:visitor_categories,id',
+        'email'               => 'nullable|email',
+        'phone'               => 'required|string|max:15',
+        'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'department_id'       => 'nullable|exists:departments,id',
+        'purpose'             => 'nullable|string|max:255',
+        'person_to_visit'     => 'nullable|string|max:255',
+        'in_time'             => 'nullable|date',
+        'out_time'            => 'nullable|date',
+        'status'              => 'required|in:Pending,Approved,Rejected,Completed',
+        'documents'           => 'nullable|array',
+        'documents.*'         => 'file|max:5120',
+        'visitor_company'     => 'nullable|string|max:255',
+        'visitor_website'     => 'nullable|string|max:255',
+        'vehicle_type'        => 'nullable|string|max:20',
+        'vehicle_number'      => 'nullable|string|max:50',
+        'goods_in_car'        => 'nullable|string|max:255',
+        'workman_policy'      => 'nullable|in:Yes,No',
+        'workman_policy_photo'=> 'nullable|image|max:2048',
+    ]);
+
+    if (!$this->isSuper()) {
+        $validated['company_id'] = auth()->user()->company_id;
+    }
+
+    if ($request->hasFile('photo')) {
+        $validated['photo'] = $request->file('photo')->store('photos', 'public');
+    }
+
+    if ($request->hasFile('documents')) {
+        $paths = [];
+        foreach ($request->file('documents') as $doc) {
+            $paths[] = $doc->store('documents', 'public');
+        }
+        $validated['documents'] = $paths;
+    }
+
+    if ($request->hasFile('workman_policy_photo')) {
+        $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+    }
+
+    $visitor->update($validated);
+
+    return redirect()->route($this->panelRoute('visitors.index'))
+        ->with('success', 'Visitor updated successfully!');
+}
+
 
   public function destroy(Visitor $visitor)
 {

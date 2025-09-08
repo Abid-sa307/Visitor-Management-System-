@@ -89,6 +89,13 @@
                 <span>Visitor In & Out</span>
             </a>
         </li>
+        <!-- Visitor approval (Only show for superadmins and company users) -->
+        <li class="nav-item {{ $active($isCompany ? 'company.visitors.approvals' : 'visitors.approvals') }}">
+            <a class="nav-link" href="{{ $isCompany ? route('company.visitors.approvals') : route('visitors.approvals') }}">
+                <i class="bi bi-door-open me-2"></i>
+                <span>Visitor Approvals</span>
+            </a>
+        </li>
 
         <!-- Visitor History (Only show for superadmins and company users) -->
         <li class="nav-item {{ $active($isCompany ? 'company.visitors.history' : 'visitors.history') }}">
