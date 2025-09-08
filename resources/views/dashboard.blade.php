@@ -5,6 +5,28 @@
     <h1 class="h3 text-gray-800">Dashboard</h1>
 </div>
 
+<!-- Company Filter (only visible to Super Admin) -->
+@if(auth()->user()->role === 'superadmin')
+    <div class="mb-4">
+        <form method="GET" action="{{ route('dashboard') }}">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <label for="company_id" class="form-label">Filter by Company</label>
+                    <select name="company_id" id="company_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Companies</option>
+                        @foreach($companies as $company)
+                            <option value="{{ $company->id }}" 
+                                    {{ $company->id == $selectedCompany ? 'selected' : '' }}>
+                                {{ $company->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+@endif
+
 <!-- Summary Cards -->
 <div class="row gx-4 gy-4">
     @foreach ([['Approved', 'success', $approvedCount, 'fa-user-check'], 

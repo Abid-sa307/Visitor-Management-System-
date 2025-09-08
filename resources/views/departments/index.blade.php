@@ -4,7 +4,13 @@
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">Departments</h1>
-        <a href="{{ route('company.departments.create') }}" class="btn btn-sm btn-primary shadow-sm">
+
+        @php
+            $isCompany = auth()->user()->role === 'company';
+        @endphp
+
+
+        <a href="{{ $isCompany ? route('company.departments.create') : route('departments.create') }}" class="btn btn-sm btn-primary shadow-sm">
             <i class="fas fa-plus-circle me-1"></i> Add Department
         </a>
     </div>
@@ -34,11 +40,15 @@
                                 <td>{{ $department->company->name ?? 'N/A' }}</td>
                                 <td>
                                     <div class="d-flex justify-content-center gap-2">
-                                        <a href="{{ route('departments.edit', $department->id) }}" class="btn btn-sm btn-warning">
+                                        {{-- Edit Button --}}
+                                        <a href="{{ $isCompany ? route('company.departments.edit', $department->id) : route('departments.edit', $department->id) }}" class="btn btn-sm btn-warning">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <form action="{{ route('departments.destroy', $department->id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
-                                            @csrf @method('DELETE')
+
+                                        {{-- Delete Form --}}
+                                        <form action="{{ $isCompany ? route('company.departments.destroy', $department->id) : route('departments.destroy', $department->id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                                            @csrf
+                                            @method('DELETE')
                                             <button class="btn btn-sm btn-danger">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>

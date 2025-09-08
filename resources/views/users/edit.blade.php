@@ -21,7 +21,20 @@
             <form action="{{ route('users.update', $user->id) }}" method="POST">
                 @csrf
                 @method('PUT')
-                @include('users._form', ['button' => 'Update User'])
+
+                @php
+                    // Controller should pass $companies; fallback here for safety
+                    if (!isset($companies) && in_array(auth()->user()->role, ['super_admin','superadmin'], true)) {
+                        $companies = \App\Models\Company::select('id','name')->orderBy('name')->get();
+                    }
+                @endphp
+
+                @include('users._form', [
+                    'button'    => 'Update User',
+                    'user'      => $user,
+                    'companies' => $companies ?? collect(),
+                    'mode'      => 'edit',
+                ])
             </form>
         </div>
     </div>

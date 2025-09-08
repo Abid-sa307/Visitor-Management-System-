@@ -20,10 +20,18 @@
 
             <form action="{{ route('users.store') }}" method="POST">
                 @csrf
-                @php $user = null; @endphp
-                @include('users._form', ['button' => 'Create User', 'user' => $user])
-            </form>
+                @php
+                    // Default to a new user if not provided
+                    $user = $user ?? new \App\Models\User();
+                @endphp
 
+                @include('users._form', [
+                    'button'    => 'Create User',
+                    'user'      => $user,
+                    'companies' => $companies,  // Ensure companies are passed here
+                    'mode'      => 'create',
+                ])
+            </form>
         </div>
     </div>
 </div>

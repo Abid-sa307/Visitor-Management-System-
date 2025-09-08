@@ -1,4 +1,4 @@
-{{-- resources/views/company/dashboard.blade.php --}}
+<!-- {{-- resources/views/company/dashboard.blade.php --}}
 @extends('layouts.app') {{-- Uses the main layout that includes the sidebar --}}
 
 @section('content')
@@ -18,4 +18,4 @@
             <strong>Rejected Visitors:</strong> {{ $rejectedVisitors ?? 0 }}
         </div>
     </div>
-@endsection
+@endsection -->

@@ -9,6 +9,22 @@
         </a>
     </div>
 
+    <!-- Date filter -->
+    <form method="GET" class="row g-3 align-items-end mb-3">
+        <div class="col-auto">
+            <label for="from" class="form-label">From</label>
+            <input type="date" name="from" id="from" class="form-control" value="{{ request('from') }}">
+        </div>
+        <div class="col-auto">
+            <label for="to" class="form-label">To</label>
+            <input type="date" name="to" id="to" class="form-control" value="{{ request('to') }}">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{{ url()->current() }}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+
     @if($visitors->count())
         <div class="table-responsive shadow-sm border rounded">
             <table class="table table-bordered table-hover align-middle text-center mb-0">
@@ -33,33 +49,21 @@
                             <td>{{ $visitor->category->name ?? '—' }}</td>
                             <td>{{ $visitor->department->name ?? '—' }}</td>
                             <td>{{ $visitor->person_visited ?? '—' }}</td>
-                            <td>
-                                {{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d') : '—' }}
-                            </td>
-                            <td>
-                                {{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('h:i A') : '—' }}
-                            </td>
-                            <td>
-                                {{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('h:i A') : '—' }}
-                            </td>
+                            <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d') : '—' }}</td>
+                            <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('h:i A') : '—' }}</td>
+                            <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('h:i A') : '—' }}</td>
                             <td>
                                 @if($visitor->in_time && $visitor->out_time)
                                     @php
-                                        $in = \Carbon\Carbon::parse($visitor->in_time);
-                                        $out = \Carbon\Carbon::parse($visitor->out_time);
-                                        $diff = $in->diff($out);
+                                        $diff = \Carbon\Carbon::parse($visitor->in_time)->diff(\Carbon\Carbon::parse($visitor->out_time));
                                     @endphp
                                     {{ $diff->h }}h {{ $diff->i }}m
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td>
-                                {{ $visitor->visits_count ?? 1 }}
-                            </td>
-                            <td>
-                                {{ $visitor->comments ?? '—' }}
-                            </td>
+                            <td>{{ $visitor->visits_count ?? 1 }}</td>
+                            <td>{{ $visitor->comments ?? '—' }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -67,7 +71,7 @@
         </div>
 
         <div class="d-flex justify-content-center mt-4">
-            {{ $visitors->links() }}
+            {{ $visitors->appends(request()->query())->links() }}
         </div>
     @else
         <div class="alert alert-info text-center mt-4">No visitor data available.</div>
