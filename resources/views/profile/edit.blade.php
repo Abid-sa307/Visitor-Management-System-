@@ -18,7 +18,10 @@
                 </div>
             @endif
 
-            <form action="{{ route('company.profile.update') }}" method="POST">
+            <form 
+             action="{{ auth()->user()->hasRole('company') ? route('company.profile.update') : route('superadmin.profile.update') }}" 
+                method="POST"
+            >
                 @csrf
                 @method('PATCH')
 

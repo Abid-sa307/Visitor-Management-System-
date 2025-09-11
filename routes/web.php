@@ -21,7 +21,7 @@ use App\Exports\VisitorsExport;
 
 /*
 |----------------------------------------------------------------------|
-| Public Routes
+| Public Routes (Unauthenticated Routes)
 |----------------------------------------------------------------------|
 */
 Route::get('/', fn() => view('welcome'));
@@ -37,23 +37,22 @@ Route::post('/company/logout', [CompanyAuthController::class, 'logout'])->name('
 
 /*
 |----------------------------------------------------------------------|
-| Shared (auth) routes accessible by both Superadmin and Company users
+| Authenticated Routes (Shared for both Superadmin and Company)
 |----------------------------------------------------------------------|
 */
 Route::middleware(['auth'])->group(function () {
-    // AJAX: Departments for a company (used in user/visitor forms)
+    // AJAX: Get departments for a company (used in user/visitor forms)
     Route::get('/companies/{company}/departments', [DepartmentController::class, 'getByCompany'])
         ->name('companies.departments');
 });
 
 /*
 |----------------------------------------------------------------------|
-| Super Admin Panel Routes
+| Super Admin Panel Routes (Role: superadmin)
 |----------------------------------------------------------------------|
 */
 Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
-
-    // Dashboard
+    // Dashboard Route
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile Routes
@@ -87,7 +86,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
         Route::post('/', [SecurityCheckController::class, 'store'])->name('security-checks.store');
     });
 
-    // Reports
+    // Reports Routes
     Route::prefix('reports')->group(function () {
         Route::get('/visitors', [VisitorController::class, 'report'])->name('visitors.report');
         Route::get('/visitors/inout', [VisitorController::class, 'inOutReport'])->name('visitors.report.inout');
@@ -99,25 +98,26 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
 
 /*
 |----------------------------------------------------------------------|
-| Company Panel Routes
+| Company Panel Routes (Role: company)
 |----------------------------------------------------------------------|
 */
 Route::prefix('company')->middleware(['auth', 'role:company'])->name('company.')->group(function () {
-    // Dashboard Route
+    // Dashboard Route for Company
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit'); // Access profile edit
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update'); // Update profile   
-    
-    // Visitors Routes
+    // Profile Routes for Company users
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Visitors Routes for Company
     Route::resource('visitors', VisitorController::class)->middleware(CheckMasterPageAccess::class . ':visitors');
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
 
-    // History & Entry
+    // History & Entry Routes for Company
     Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
     Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
 
-    // Approvals Routes
+    // Approvals Routes for Company
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
 
     // Reports (Company Panel)
@@ -140,3 +140,4 @@ Route::prefix('company')->middleware(['auth', 'role:company'])->name('company.')
 
 // Breeze/Auth Routes (handled by Laravel)
 require __DIR__ . '/auth.php';
+
