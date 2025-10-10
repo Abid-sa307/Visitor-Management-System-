@@ -10,6 +10,8 @@ use App\Models\SecurityCheck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
+
 
 class VisitorController extends Controller
 {
@@ -110,14 +112,20 @@ class VisitorController extends Controller
         return view('visitors.create', compact('companies', 'departments', 'categories'));
     }
 
-    public function store(Request $request)
-    {
+    
+public function store(Request $request)
+{
+    return DB::transaction(function () use ($request) {
+
+        // ---------------------------
+        // Validation rules
+        // ---------------------------
         $validated = $request->validate([
             'company_id'          => 'nullable|exists:companies,id',
             'name'                => 'required|string|max:255',
             'visitor_category_id' => 'nullable|exists:visitor_categories,id',
             'email'               => 'nullable|email',
-            'phone'               => 'required|string|max:15',
+            'phone'               => 'required|string|max:32',
             'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'department_id'       => 'nullable|exists:departments,id',
             'purpose'             => 'nullable|string|max:255',
@@ -133,10 +141,16 @@ class VisitorController extends Controller
             'workman_policy_photo'=> 'nullable|image|max:2048',
         ]);
 
+        // ---------------------------
+        // Force company for non-superadmin
+        // ---------------------------
         if (!$this->isSuper()) {
             $validated['company_id'] = auth()->user()->company_id;
         }
 
+        // ---------------------------
+        // Handle file uploads
+        // ---------------------------
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('photos', 'public');
         }
@@ -153,12 +167,68 @@ class VisitorController extends Controller
             $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
         }
 
-        $validated['status'] = 'Pending';
+        // ---------------------------
+        // Set status based on company auto-approval
+        // ---------------------------
+        $status = 'Pending';
+        $approvedAt = null;
+
+        if (!empty($validated['company_id'])) {
+            $company = Company::find($validated['company_id']);
+            if ($company && (int)$company->auto_approve_visitors === 1) {
+                $status = 'Approved';
+                $approvedAt = now();
+            }
+        }
+
+        $validated['status'] = $status;
+        if (\Schema::hasColumn('visitors', 'approved_at')) {
+            $validated['approved_at'] = $approvedAt;
+        }
+
+        // ---------------------------
+        // Create the visitor
+        // ---------------------------
         Visitor::create($validated);
 
-        return redirect()->route($this->panelRoute('visitors.index'))
-            ->with('success', 'Visitor registered successfully!');
+        // ---------------------------
+        // Redirect based on user type
+        // ---------------------------
+        if ($this->isSuper()) {
+            return redirect()->route('visitors.index')
+                ->with('success', $status === 'Approved'
+                    ? 'Visitor auto-approved successfully.'
+                    : 'Visitor submitted for approval.');
+        } else {
+            return redirect()->route('company.visitors.index')
+                ->with('success', $status === 'Approved'
+                    ? 'Visitor auto-approved successfully.'
+                    : 'Visitor submitted for approval.');
+        }
+    });
+}
+
+
+
+/**
+ * Tiny helper to avoid errors if your table doesn’t have approved_at.
+ * You can place this at the bottom of the controller or a base controller.
+ */
+// Inside the VisitorController
+// Inside the VisitorController
+private function schema_has_column(string $table, string $column): bool
+{
+    static $cache = [];
+    $key = $table.':'.$column;
+    if (!array_key_exists($key, $cache)) {
+        try {
+            $cache[$key] = \Schema::hasColumn($table, $column);  // Using the Schema facade
+        } catch (\Throwable $e) {
+            $cache[$key] = false;
+        }
     }
+    return $cache[$key];
+}
 
     public function edit(Visitor $visitor)
     {

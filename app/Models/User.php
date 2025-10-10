@@ -5,93 +5,76 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Scopes\MultiTenantScope; // ✅ Add this
-
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-        'role',
-        'company_id',
-        'department_id', // optional
+        'name','email','password','phone','role','company_id',
+        'department_id', // if you keep a single department, optional
         'master_pages',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password','remember_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'master_pages' => 'array', // automatically decode JSON to array
+        'master_pages'      => 'array', // JSON <-> array
     ];
 
-    /**
-     * Apply MultiTenantScope globally so data is filtered
-     */
-   
+    /** Relationships */
+    public function company()     { return $this->belongsTo(Company::class); }
+    public function departments() { return $this->belongsToMany(Department::class); }
+    public function department()  { return $this->belongsTo(Department::class, 'department_id'); } // optional single
 
-    /**
-     * Relationships
-     */
-    public function company()
+    /** Normalize master pages array */
+    public function getMasterPagesListAttribute(): array
     {
-        return $this->belongsTo(Company::class);
-    }
-
-    public function departments()
-    {
-        return $this->belongsToMany(Department::class);
-    }
-
-    /**
-     * Accessors for Master Pages
-     */
-    public function getMasterPagesListAttribute()
-    {
-        $pages = is_array($this->master_pages) ? $this->master_pages : json_decode($this->master_pages, true);
+        $pages = is_array($this->master_pages) ? $this->master_pages : json_decode($this->master_pages ?? '[]', true);
         return is_array($pages) ? $pages : [];
     }
 
-    public function getMasterPagesDisplayAttribute()
+    /**
+     * Human-readable Page Access:
+     * - "All" for super admins
+     * - comma-separated labels for others
+     * - "—" if none
+     */
+    public function getMasterPagesDisplayAttribute(): string
     {
-        $pages = $this->master_pages_list;
-        $count = count($pages);
-
-        return $count > 0
-            ? "{$count} (" . implode(', ', $pages) . ")"
-            : "0";
-    }
-
-    public function scopeVisibleTo($query, $user)
-    {
-        if ($user->role === 'superadmin') {
-            return $query;
+        if (in_array($this->role, ['super_admin','superadmin'], true)) {
+            return 'All';
         }
 
-        return $query->where('company_id', $user->company_id)
-                    ->where('role', '!=', 'superadmin');
+        $keys = $this->master_pages_list;
+        if (empty($keys)) return '—';
+
+        // Map keys/slugs to nice labels (adjust to your app)
+        $labelsMap = [
+            // 'users' => 'Users',
+            // 'companies' => 'Companies',
+            // 'departments' => 'Departments',
+            // 'reports' => 'Reports',
+            // add all your page keys here...
+        ];
+
+        $labels = collect($keys)->map(function ($k) use ($labelsMap) {
+            return $labelsMap[$k] ?? ucfirst(str_replace('_',' ', (string) $k));
+        });
+
+        return $labels->join(', ');
     }
 
-// protected static function booted()
-// {
-//     // Add multi-tenant scope
-//     static::addGlobalScope(new \App\Scopes\MultiTenantScope);
+    /** Visibility helper */
+    public function scopeVisibleTo($query, $user)
+    {
+        if (in_array($user->role, ['superadmin','super_admin'], true)) return $query;
+        return $query->where('company_id', $user->company_id)->where('role', '!=', 'superadmin');
+    }
 
-//     // Auto-assign company_id for non-super-admins
-//     static::creating(function ($model) {
-//         if (auth()->check() && auth()->user()->role !== 'super_admin') {
-//             $model->company_id = auth()->user()->company_id;
-//         }
-//     });
-// }
-
-
+    // IMPORTANT: remove any custom hasRole() you added.
+    // Using the method below will SHADOW Spatie’s version. Delete it if present.
+    // public function hasRole($role) { ... }  // <-- REMOVE THIS
 }

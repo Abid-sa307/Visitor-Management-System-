@@ -7,20 +7,42 @@ use Illuminate\Http\Request;
 
 class CheckMasterPageAccess
 {
-    public function handle(Request $request, Closure $next, $page)
+    public function handle(Request $request, Closure $next, ?string $page = null)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
-        // Handle null case
-        if (!$user || !$user->master_pages) {
-            abort(403, 'Unauthorized.');
+        // Ensure user is logged in
+        if (!$user) {
+            return redirect()->route('login');
         }
 
-        $pages = json_decode($user->master_pages, true); // decode json
+        $role = (string)($user->role ?? '');
 
-        // Block if page is not in allowed list
-        if (!is_array($pages) || !in_array($page, $pages)) {
-            abort(403, 'Access Denied!');
+        // Allow superadmins to access anything
+        if (in_array($role, ['super_admin', 'superadmin'], true)) {
+            return $next($request); // Superadmin can access anything
+        }
+
+        // If no page is provided, proceed normally
+        if (!$page) {
+            $page = $request->route()->defaults['page'] ?? null;
+        }
+
+        if (!$page) return $next($request); // If no specific page, proceed normally
+
+        // Decode master_pages and check for access
+        $pages = $user->master_pages;
+        if (!is_array($pages)) {
+            $pages = is_string($pages) && $pages !== '' ? json_decode($pages, true) : [];
+        }
+
+        // If the user does not have access to this page, redirect to the correct dashboard
+        if (!in_array($page, $pages, true)) {
+            if ($role === 'company') {
+                return redirect('/company/dashboard')->with('error', 'Access denied for this section.');
+            } else {
+                return redirect('/dashboard')->with('error', 'Access denied for this section.');
+            }
         }
 
         return $next($request);

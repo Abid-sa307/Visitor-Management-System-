@@ -583,7 +583,7 @@
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
               <img src="{{ asset('images/team-img/abid-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Abid Saiyed">
               <h4 class="fw-bold">Abid Saiyed</h4>
-              <p class="team-role">Software Developer</p>
+              <p class="team-role">Senior Software Developer</p>
               <p class="team-quote">"Passionate about writing clean, scalable code."</p>
             </div>
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">

@@ -14,8 +14,26 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        // If the user is already logged in, redirect them to their appropriate dashboard.
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            if (method_exists($user, 'hasRole')) {
+                if ($user->hasRole('superadmin')) {
+                    return redirect()->route('dashboard'); // Redirect superadmin to admin dashboard
+                }
+                if ($user->hasRole('company')) {
+                    return redirect()->route('company.dashboard'); // Redirect company users to company dashboard
+                }
+            }
+
+            // Fallback (if role is not set or not found)
+            return redirect()->route('company.dashboard');
+        }
+
+        // Return the login view if the user is not logged in
         return view('auth.login');
     }
 
@@ -25,10 +43,22 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = $request->user();
+
+        // After login, redirect based on role (superadmin/company)
+        if (method_exists($user, 'hasRole')) {
+            if ($user->hasRole('superadmin')) {
+                return redirect()->intended(route('dashboard', absolute: false)); // Admin dashboard
+            }
+            if ($user->hasRole('company')) {
+                return redirect()->intended(route('company.dashboard', absolute: false)); // Company dashboard
+            }
+        }
+
+        // Fallback redirect (in case of unexpected roles)
+        return redirect()->intended(route('company.dashboard', absolute: false));
     }
 
     /**
@@ -39,7 +69,6 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');

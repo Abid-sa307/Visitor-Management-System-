@@ -1,10 +1,13 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use App\Http\Middleware\CheckMasterPageAccess;
+use App\Http\Middleware\RoleMiddleware;
 
 class ProfileController extends Controller
 {
@@ -13,11 +16,6 @@ class ProfileController extends Controller
      */
     public function edit(Request $request)
     {
-        // Only allow company users to access this route
-        if ($request->user()->role !== 'company') {
-            abort(403);
-        }
-
         return view('profile.edit', [
             'user' => $request->user(),
         ]);
@@ -46,8 +44,19 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return Redirect::route('company.profile.edit')->with('status', 'Profile updated successfully');
+        if ($request->user()->hasRole('company')) {
+            return redirect()->route('company.profile.edit')->with('status', 'Profile updated successfully');
+        } else {
+            return redirect()->route('profile.edit')->with('status', 'Profile updated successfully');
+        }
     }
+
+    // public function __construct()
+    // {
+    //     $this->middleware('auth');
+    //     $this->middleware('role:company|superadmin'); // Keep this as it is to restrict middleware access
+    // }
+
 
     /**
      * Delete the user's account.

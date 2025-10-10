@@ -20,23 +20,28 @@ class CompanyController extends Controller
 
     public function store(Request $request)
     {
+        // Keep your existing validations; these are typical examples:
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string',
-            'contact_number' => 'nullable|string|max:15',
-            'logo' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
-            'gst_number' => 'nullable|string|max:20',
-            'website' => 'nullable|url',
-            'email' => 'required|email|unique:companies,email',
+            'name'   => 'required|string|max:255',
+            'email'  => 'nullable|email',
+            'phone'  => 'nullable|string|max:32',
+            // add the rest of your fields here...
+            // do NOT add auto_approve_visitors to $validated; we set it explicitly below
         ]);
 
-        if ($request->hasFile('logo')) {
-            $validated['logo'] = $request->file('logo')->store('logos', 'public');
-        }
+        $company = new Company($validated);
 
-        Company::create($validated);
+        // ✅ Robustly persist the checkbox (true/false)
+        $company->auto_approve_visitors = $request->boolean('auto_approve_visitors');
 
-        return redirect()->route('companies.index')->with('success', 'Company created successfully.');
+        // If you handle file uploads (logos etc.), keep your existing code here
+        // if ($request->hasFile('logo')) { ... }
+
+        $company->save();
+
+        return redirect()
+            ->route('companies.index')
+            ->with('success', 'Company created successfully.');
     }
 
     public function edit(Company $company)
@@ -47,22 +52,26 @@ class CompanyController extends Controller
     public function update(Request $request, Company $company)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string',
-            'contact_number' => 'nullable|string|max:15',
-            'logo' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
-            'gst_number' => 'nullable|string|max:20',
-            'website' => 'nullable|url',
-            'email' => 'required|email|unique:companies,email,' . $company->id,
+            'name'   => 'required|string|max:255',
+            'email'  => 'nullable|email',
+            'phone'  => 'nullable|string|max:32',
+            // add the rest of your fields here...
         ]);
 
-        if ($request->hasFile('logo')) {
-            $validated['logo'] = $request->file('logo')->store('logos', 'public');
-        }
+        // Update normal attributes
+        $company->fill($validated);
 
-        $company->update($validated);
+        // ✅ Robustly persist the checkbox (true/false)
+        $company->auto_approve_visitors = $request->boolean('auto_approve_visitors');
 
-        return redirect()->route('companies.index')->with('success', 'Company updated successfully.');
+        // If you handle file uploads (logos etc.), keep your existing code here
+        // if ($request->hasFile('logo')) { ... }
+
+        $company->save();
+
+        return redirect()
+            ->route('companies.index')
+            ->with('success', 'Company updated successfully.');
     }
 
     public function destroy(Company $company)

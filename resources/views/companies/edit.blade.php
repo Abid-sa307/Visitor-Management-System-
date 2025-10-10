@@ -61,6 +61,13 @@
                     </div>
                 </div>
 
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="auto_approve_visitors" name="auto_approve_visitors" value="1"
+                        {{ old('auto_approve_visitors', $company->auto_approve_visitors ?? 0) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="auto_approve_visitors">Auto Approve Visitors</label>
+                </div>
+
+
                 <div class="mt-4 text-end">
                     <button type="submit" class="btn btn-warning px-4">
                         <i class="fas fa-sync-alt me-1"></i> Update Company

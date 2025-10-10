@@ -64,23 +64,50 @@
 <div class="mb-3">
     <label class="form-label">Assign Page Access</label>
     @php
+        // Available modules (adjust as needed)
         $modules = [
             'dashboard','visitors','visitor_history','visitor_inout','approvals','reports',
             'employees','visitor_categories','departments','users','security_checks','visitor_checkup'
         ];
-        $selectedPages = old('master_pages', json_decode($user->master_pages ?? '[]', true) ?? []);
+
+        // Always produce an array, regardless of whether value is array or legacy JSON string
+        $normalizeToArray = function ($value) {
+            if (is_array($value)) return $value;
+            if (is_string($value) && $value !== '') {
+                $decoded = json_decode($value, true);
+                return is_array($decoded) ? $decoded : [];
+            }
+            return [];
+        };
+
+        // Priority: old() → accessor (if present) → casted column → []
+        $selectedPages = old('master_pages');
+        if (is_null($selectedPages)) {
+            $selectedPages = method_exists($user, 'getMasterPagesListAttribute')
+                ? ($user->master_pages_list ?? [])
+                : $normalizeToArray($user->master_pages ?? []);
+        } else {
+            $selectedPages = (array) $selectedPages;
+        }
     @endphp
 
     @foreach ($modules as $module)
         <div class="form-check">
-            <input type="checkbox" class="form-check-input"
-                   name="master_pages[]"
-                   value="{{ $module }}"
-                   {{ in_array($module, $selectedPages, true) ? 'checked' : '' }}>
-            <label class="form-check-label text-capitalize">{{ str_replace('_', ' ', $module) }}</label>
+            <input
+                type="checkbox"
+                class="form-check-input"
+                id="mp-{{ $module }}"
+                name="master_pages[]"
+                value="{{ $module }}"
+                {{ in_array($module, $selectedPages, true) ? 'checked' : '' }}
+            >
+            <label class="form-check-label text-capitalize" for="mp-{{ $module }}">
+                {{ str_replace('_', ' ', $module) }}
+            </label>
         </div>
     @endforeach
 </div>
+
 
 @if (($mode ?? 'create') === 'create')
     <div class="mb-3">
