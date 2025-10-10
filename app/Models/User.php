@@ -6,11 +6,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Scopes\MultiTenantScope; // ✅ Add this
+use Spatie\Permission\Traits\HasRoles;
 
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'name',
@@ -78,6 +79,11 @@ class User extends Authenticatable
 
         return $query->where('company_id', $user->company_id)
                     ->where('role', '!=', 'superadmin');
+    }
+
+    public function hasRole($role)
+    {
+        return $this->role === $role;
     }
 
 // protected static function booted()

@@ -11,6 +11,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
+
+     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
+
     <style>
         :root {
             --primary: #4e73df;
@@ -35,8 +42,6 @@
             color: #4a4a4a;
             line-height: 1.6;
         }
-        
-        
 
         /* Pricing Header */
         .pricing-header {
@@ -67,6 +72,8 @@
             transition: all 0.3s ease;
             margin-bottom: 2rem;
             background: white;
+            position: relative;
+            overflow: visible;
         }
         
         .pricing-card:hover {
@@ -76,12 +83,11 @@
         
         .pricing-card.popular {
             border: 2px solid var(--envoy-blue);
-            position: relative;
         }
         
         .popular-badge {
             position: absolute;
-            top: -12px;
+            top: -16px;
             left: 50%;
             transform: translateX(-50%);
             background: var(--envoy-blue);
@@ -90,6 +96,7 @@
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
+            white-space: nowrap;
         }
         
         .card-header {
@@ -104,11 +111,6 @@
             font-weight: 800;
             font-size: 2.5rem;
             margin: 1rem 0 0.5rem;
-        }
-        
-        .price-period {
-            color: var(--envoy-gray);
-            font-size: 0.9rem;
         }
         
         .card-body {
@@ -132,6 +134,55 @@
             margin-right: 0.75rem;
             margin-top: 0.25rem;
         }
+
+        /* Enterprise Premium Styling */
+        .pricing-card.enterprise {
+            background: linear-gradient(145deg, #1a1a1a, #2b2b2b);
+            color: #fff;
+            border: none;
+        }
+        .pricing-card.enterprise:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+        }
+        .pricing-card.enterprise .card-header {
+            background: transparent;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+        .pricing-card.enterprise .price {
+            color: #f6c23e;
+        }
+        .pricing-card.enterprise .feature-list i {
+            color: #f6c23e;
+        }
+        .enterprise-badge {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f6c23e;
+            color: #1a1a1a;
+            padding: 0.35rem 1.25rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(246, 194, 62, 0.4);
+        }
+        .btn-premium {
+            background: #f6c23e;
+            border: none;
+            color: #1a1a1a;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        .btn-premium:hover {
+            background: #d4a91f;
+            color: #fff;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(246, 194, 62, 0.5);
+        }
         
         /* FAQ Section */
         .faq-section {
@@ -140,7 +191,6 @@
             margin-top: 4rem;
             border-radius: 20px;
         }
-        
         
         /* Buttons */
         .btn-primary {
@@ -164,24 +214,6 @@
             padding: 0.8rem 2rem;
             font-weight: 500;
             transition: all 0.3s ease;
-        }
-        
-        /* Toggle Switch */
-        .pricing-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 3rem;
-        }
-        
-        .toggle-text {
-            margin: 0 1rem;
-            font-weight: 500;
-        }
-        
-        .form-check-input {
-            width: 3rem;
-            height: 1.5rem;
         }
         
         /* Section Headings */
@@ -217,10 +249,6 @@
         
         <!-- Billing Toggle -->
         <div class="pricing-toggle">
-            {{-- <span class="toggle-text">Monthly Billing</span>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="billingToggle">
-            </div> --}}
             <span class="toggle-text">Annual Billing</span>
             <span class="badge bg-success ms-2">Save 20%</span>
         </div>
@@ -238,48 +266,52 @@
                     <div class="card-header text-center">
                         <h3>Standard</h3>
                         <div class="price">For pricing, discuss with our team</div>
-                        <!-- Removed monthly/yearly prices -->
                     </div>
                     <div class="card-body">
-                        <p>Ideal for growing businesses with more visitors</p>
+                        <p>Ideal for growing businesses with more visitors </p>
+                        <p>All  Current Features Available in Standard Price</p>
                         <ul class="feature-list">
-                            <li><i class="bi bi-check-lg"></i> <span>Up to 100 visitor records per month</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Advanced check-in options</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Customizable forms</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Email and SMS notifications</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Basic custom branding</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Standard support</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Real-time Visitor Check-in</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Gate Pass Printing with Company Branding</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span> Photo Capture for Visitor Identification</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span> Dashboard Analytics & Live Reports</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Daily & Weekly Visitor Summary Reports</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Email Notifications for Visitor Arrivals</span></li>
                         </ul>
                         <a href="/contact" class="btn btn-primary w-100">Contact Us</a>
                     </div>
                 </div>
             </div>
 
+
+          
+
             <!-- Enterprise Plan -->
             <div class="col-lg-4 col-md-6">
-                <div class="pricing-card">
+                <div class="pricing-card enterprise">
+                    <span class="enterprise-badge">PREMIUM</span>
                     <div class="card-header text-center">
                         <h3>Enterprise</h3>
                         <div class="price">For pricing, discuss with our team</div>
                     </div>
                     <div class="card-body">
                         <p>For large organizations with complex visitor management needs</p>
+                        <p>You can customized As per your need we are available for fully customizations</p>
                         <ul class="feature-list">
-                            <li><i class="bi bi-check-lg"></i> <span>Unlimited visitor records</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Advanced analytics and reporting</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Full custom branding</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>API access</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>Multi-location support</span></li>
-                            <li><i class="bi bi-check-lg"></i> <span>24/7 premium support</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Hourly Visitor Analysis</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Safety Compliance Tracking</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>User-Wise Control</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Auto Approval Process</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Get notified instantly via WhatsApp and Email</span></li>
+                            <li><i class="bi bi-check-lg"></i> <span>Face Recognition Technology</span></li>
                         </ul>
-                        <a href="/contact" class="btn btn-outline-primary w-100">Contact Sales</a>
+                        <a href="/contact" class="btn btn-premium w-100">Contact Sales</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
-
 
 <!-- FAQ Section -->
 <section class="faq-section">
@@ -355,27 +387,11 @@
     </div>
 </section>
 
-
-<!-- Footer -->
-    @include('layouts.footer')
+{{-- Footer --}}
+@include('layouts.footer')
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    // Toggle between monthly and yearly pricing
-    document.getElementById('billingToggle').addEventListener('change', function() {
-        const monthlyPrices = document.querySelectorAll('.monthly-price');
-        const yearlyPrices = document.querySelectorAll('.yearly-price');
-        
-        if (this.checked) {
-            monthlyPrices.forEach(el => el.classList.add('d-none'));
-            yearlyPrices.forEach(el => el.classList.remove('d-none'));
-        } else {
-            monthlyPrices.forEach(el => el.classList.remove('d-none'));
-            yearlyPrices.forEach(el => el.classList.add('d-none'));
-        }
-    });
-</script>
 </body>
 </html>

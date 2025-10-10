@@ -91,6 +91,99 @@ mega-menu {
 }
 
 
+
+  /* Offcanvas styling */
+  .offcanvas {
+    background-color: rgba(255, 255, 255, 0.95); /* Light background similar to navbar */
+    color: var(--dark); /* Dark text color to match your site's theme */
+    width: 250px; /* Set width of the off-canvas */
+    border-right: 1px solid rgba(0, 0, 0, 0.1); /* Light border for separation */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Same shadow as navbar */
+  }
+
+  .offcanvas-header {
+    background-color: rgba(255, 255, 255, 0.95); /* Same as offcanvas background */
+    color: var(--dark); /* Dark text for the header */
+    padding: 15px 20px; /* Padding for header */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Border below header */
+  }
+
+  .offcanvas-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .btn-close {
+    color: var(--dark); /* Close button text color */
+    font-size: 20px; /* Close button size */
+    border: none;
+    background: none;
+  }
+
+  /* Navbar links inside the offcanvas */
+  .offcanvas-body {
+    padding: 20px 15px; /* Add padding for content inside */
+  }
+
+  .offcanvas .navbar-nav .nav-item .nav-link {
+    color: var(--dark) !important; /* Same dark text as navbar */
+    font-size: 16px; /* Font size of links */
+    padding: 12px 20px; /* Padding for each link */
+    transition: all 0.3s ease; /* Smooth transition for hover effect */
+  }
+
+  .offcanvas .navbar-nav .nav-item .nav-link:hover {
+    color: var(--primary) !important; /* Color change on hover (match navbar) */
+    background-color: rgba(0, 123, 255, 0.1); /* Slight blue background on hover */
+  }
+
+  .offcanvas .navbar-nav .nav-item .nav-link.active {
+    color: var(--primary) !important; /* Primary color for active link */
+    font-weight: 600; /* Bold for active link */
+  }
+
+  /* Styling for Login & Contact buttons in Offcanvas */
+  .offcanvas .navbar-nav .nav-item .btn-outline-primary {
+    color: var(--primary); /* Primary color text */
+    border: 1px solid var(--primary); /* Border with primary color */
+    padding: 0.4rem 1rem;
+    font-size: 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease; /* Smooth transition for hover effect */
+    margin-top: 10px;
+  }
+
+  /* Hover effect for buttons */
+  .offcanvas .navbar-nav .nav-item .btn-outline-primary:hover {
+    background-color: var(--primary); /* Background changes to primary on hover */
+    color: white; /* White text on hover */
+  }
+
+  /* For dropdown menu items */
+  .dropdown-menu {
+    background-color: #f8f9fa; /* Light background for dropdown */
+    border-radius: 5px; /* Rounded corners for dropdown */
+  }
+
+  .dropdown-item {
+    padding: 8px 20px; /* Padding for dropdown items */
+    color: #333;
+  }
+
+  .dropdown-item:hover {
+    background-color: #007bff; /* Blue background for dropdown hover */
+    color: white; /* White text for dropdown hover */
+  }
+
+  /* Make the offcanvas scrollable if content is long */
+  .offcanvas-body {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+
+
+
 /*////////////////////Footer/////////////////////////*/
  /* Footer */
         footer {

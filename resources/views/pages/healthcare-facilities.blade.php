@@ -10,6 +10,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
         body {font-family: 'Poppins', sans-serif; background:#f8f9fa; color:#333;}
         .hero {
@@ -265,38 +270,144 @@
 
 
 
-<!-- FAQ -->
+<!-- FAQ Section -->
 <section id="faq" class="py-5 bg-light">
-    <div class="container">
-        <div class="section-title text-center mb-5">
-            <h2>Frequently Asked Questions</h2>
-        </div>
-        <div class="accordion" id="faqAccordion">
-            @foreach ([
-                
-                ['q'=>'Can visitors pre-register online?',
-                 'a'=>'Absolutely. Visitors can pre-register and receive a QR code for quick entry.'],
-                ['q'=>'Does it integrate with hospital security systems?',
-                 'a'=>'Yes, it supports integration with access control and CCTV systems.'],
-                ['q'=>'Is temperature screening supported?',
-                 'a'=>'You can enable temperature checks with connected thermal devices.'],
-            ] as $i=>$faq)
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="heading{{ $i }}">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $i }}" aria-expanded="false" aria-controls="collapse{{ $i }}">
-                        {{ $faq['q'] }}
-                    </button>
-                </h2>
-                <div id="collapse{{ $i }}" class="accordion-collapse collapse" aria-labelledby="heading{{ $i }}" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body">
-                        {{ $faq['a'] }}
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
+  <div class="container">
+    <div class="section-title text-center mb-5">
+      <h2>Frequently Asked Questions</h2>
+      <p>Find answers to common questions about our Industrial Visitor Management System</p>
     </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <!-- Analytics Dashboard -->
+        <div class="faq-item border-bottom py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>Does the system provide analytics and reports?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
+              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real-time.
+            </p>
+          </div>
+        </div>
+
+        <!-- Hourly Visitor Analysis -->
+        <div class="faq-item border-bottom py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>Can we track visitors on an hourly basis?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics 
+              segmented by the hour, helping optimize staffing and enhance security monitoring.
+            </p>
+          </div>
+        </div>
+
+        <!-- Safety Compliance -->
+        <div class="faq-item border-bottom py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>How does the system ensure visitor safety compliance?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              Visitors must complete safety inductions and acknowledge compliance rules before entry. 
+              The system tracks and records all safety acknowledgments for audit purposes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Face Recognition -->
+        <div class="faq-item border-bottom py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>Does the system support face recognition for entry?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
+              for visitors, reducing manual verification needs.
+            </p>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="faq-item border-bottom py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>Will we get notified when visitors arrive?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access 
+              or checks in at the facility.
+            </p>
+          </div>
+        </div>
+
+        <!-- Visitor Pass -->
+        <div class="faq-item border-bottom py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>Can we generate visitor passes directly from the system?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              Yes, the system allows you to instantly generate and print visitor passes, 
+              including QR code-enabled dynamic passes for quick access.
+            </p>
+          </div>
+        </div>
+
+        <!-- Pre-Approval -->
+        <div class="faq-item border-bottom py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>Is there a visitor pre-approval process?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              Visitors can be pre-approved by hosts through the system, enabling faster entry 
+              and minimizing wait times at the gate.
+            </p>
+          </div>
+        </div>
+
+        <!-- Visitor Entry Options -->
+        <div class="faq-item py-3">
+          <div class="faq-question d-flex justify-content-between align-items-center">
+            <span>What methods are available for visitor check-in and check-out?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer mt-2 d-none">
+            <p>
+              The system supports multiple entry options including manual entry by security staff, 
+              face recognition, and QR code scanning for seamless visitor management.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </section>
+
+<!-- FAQ Script -->
+<script>
+  document.querySelectorAll(".faq-question").forEach(q => {
+    q.addEventListener("click", () => {
+      const answer = q.nextElementSibling;
+      answer.classList.toggle("d-none");
+      q.querySelector("i").classList.toggle("bi-chevron-down");
+      q.querySelector("i").classList.toggle("bi-chevron-up");
+    });
+  });
+</script>
 
 <!-- CTA Section -->
 <section class="cta-section py-5 text-center text-white" style="background: linear-gradient(135deg, #4f8ef7, #2c6cd3);">
