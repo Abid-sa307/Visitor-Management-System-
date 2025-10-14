@@ -1,37 +1,49 @@
-name: Deploy Laravel to Hostripples
+name: 🚀 Deploy Laravel to Hostripples via FTP
 
 on:
   push:
     branches:
-      - main  # deploys when you push to main
+      - main  # or 'master' if that's your main branch
 
 jobs:
   ftp-deploy:
     runs-on: ubuntu-latest
+    name: 🎯 Deploy to Hostripples
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: 🛠️ Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install PHP (optional, for Artisan commands)
-        uses: shivammathur/setup-php@v2
+      - name: ⚙️ Setup Node (for Laravel Mix/Vite if needed)
+        uses: actions/setup-node@v4
         with:
-          php-version: '8.1'  # match your Laravel PHP version
+          node-version: '20'
 
-      - name: Run Laravel Artisan Commands
+      - name: 🧩 Install Composer dependencies
+        uses: php-actions/composer@v6
+        with:
+          php_version: '8.2'
+
+      - name: 🧹 Build assets (optional)
         run: |
-          composer install --no-dev --optimize-autoloader
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
+          npm install
+          npm run build || echo "Skipping build"
 
-      - name: Upload to Hostripples via FTP
+      - name: 🚀 Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ftp.visitormanagementsoftware.com
-          username: visitorm@visitormanagementsoftware.com
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /public_html/
           local-dir: ./
-          git-ftp-args: --insecure
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/**
+            **/vendor/**
+            **/storage/**
+            **/tests/**
+            **/bootstrap/cache/**
+            **/.env
+            **/artisan-run.php
