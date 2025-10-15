@@ -10,7 +10,6 @@
     <link href="{{ asset('sb-admin/css/sb-admin-2.min.css') }}" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
-    
     @stack('styles')
 
     <style>
@@ -23,6 +22,7 @@
         height: 100vh;
         overflow-y: auto;
         z-index: 1030;
+        width: 250px; /* keep in sync with content margin-left */
     }
 
     /* Shift content wrapper to the right */
@@ -41,26 +41,53 @@
             position: relative;
             height: auto;
             margin-bottom: 1rem;
+            width: 100%;
         }
 
         #content-wrapper {
             margin-left: 0;
         }
     }
-</style>
-
+    </style>
 </head>
-        @php
-            $pages = json_decode(auth()->user()->master_pages ?? '[]');
-        @endphp
-
 
 <body id="page-top">
+@php
+    /**
+     * Normalize & gate page access for the current user
+     * (No json_decode on arrays; supports legacy JSON strings too)
+     */
+    $authUser = auth()->user();
+
+    // Super admins see everything
+    $isSuper = $authUser && in_array($authUser->role, ['super_admin','superadmin'], true);
+
+    // Normalize master_pages to an array (works for casted arrays and legacy JSON strings)
+    $normalizeToArray = function ($value) {
+        if (is_array($value)) return $value;
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
+    };
+
+    // Prefer model accessor if present; else normalize raw column
+    $masterPages = $authUser
+        ? (method_exists($authUser, 'getMasterPagesListAttribute')
+            ? ($authUser->master_pages_list ?? [])
+            : $normalizeToArray($authUser->master_pages ?? []))
+        : [];
+
+    // Tiny helper for sidebar/topbar/anywhere:
+    $can = fn (string $key) => $isSuper || in_array($key, $masterPages, true);
+@endphp
+
     <!-- Page Wrapper -->
     <div id="wrapper">
 
         <!-- Sidebar -->
-        @include('partials.sidebar')
+        @include('partials.sidebar', ['can' => $can, 'isSuper' => $isSuper, 'masterPages' => $masterPages])
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
@@ -75,6 +102,15 @@
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
+
+                    {{-- Flash error from access middleware (or other redirects) --}}
+                    @if(session('error'))
+                      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                          {{ session('error') }}
+                          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    @endif
+
                     @yield('content')
                 </div>
                 <!-- End Page Content -->
@@ -106,9 +142,6 @@
     <script src="{{ asset('sb-admin/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
     <script src="{{ asset('sb-admin/js/sb-admin-2.min.js') }}"></script>
-    
-    
-
 
     @stack('scripts')
 </body>

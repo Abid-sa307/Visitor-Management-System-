@@ -3,7 +3,7 @@
 @section('content')
 <div class="container py-5">
 
-  @php
+  @php  
       // Are we inside /company/* ?
       $isCompany = request()->is('company/*');
 

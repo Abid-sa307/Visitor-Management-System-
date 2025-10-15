@@ -10,7 +10,7 @@
     <div class="mb-4">
         <form method="GET" action="{{ route('dashboard') }}">
             <div class="row align-items-center">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label for="company_id" class="form-label">Filter by Company</label>
                     <select name="company_id" id="company_id" class="form-select" onchange="this.form.submit()">
                         <option value="">All Companies</option>
@@ -22,30 +22,101 @@
                         @endforeach
                     </select>
                 </div>
+
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Filter by Date</label>
+                    <input type="date" name="date" id="date" class="form-control" value="{{ $selectedDate }}" onchange="this.form.submit()">
+                </div>
             </div>
         </form>
     </div>
 @endif
 
 <!-- Summary Cards -->
+<!-- Summary Cards -->
 <div class="row gx-4 gy-4">
-    @foreach ([['Approved', 'success', $approvedCount, 'fa-user-check'], 
-               ['Pending', 'warning', $pendingCount, 'fa-user-clock'], 
-               ['Rejected', 'danger', $rejectedCount, 'fa-user-times']] as [$label, $color, $count, $icon])
     <div class="col-xl-4 col-md-6">
-        <div class="card border-left-{{ $color }} shadow h-100 py-2">
+        <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="text-xs font-weight-bold text-{{ $color }} text-uppercase mb-1">{{ $label }} Visitors</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $count }}</div>
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Approved Visitors</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $approvedCount }}</div>
                 </div>
-                <i class="fas {{ $icon }} fa-2x text-{{ $color }}"></i>
+                <i class="fas fa-user-check fa-2x text-success"></i>
             </div>
         </div>
     </div>
-    @endforeach
+
+    @unless($autoApprove)
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Visitors</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pendingCount }}</div>
+                </div>
+                <i class="fas fa-user-clock fa-2x text-warning"></i>
+            </div>
+        </div>
+    </div>
+    @endunless
+
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Rejected Visitors</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $rejectedCount }}</div>
+                </div>
+                <i class="fas fa-user-times fa-2x text-danger"></i>
+            </div>
+        </div>
+    </div>
 </div>
 
+
+<!-- Visitor List -->
+<div class="row gx-4 gy-4 mt-4">
+    <div class="col-lg-12">
+        <div class="card shadow h-100">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Visitors List</h6>
+            </div>
+            <div class="card-body">
+                @if($visitorsByDate->isEmpty())
+                    <p>No visitors found for the selected date.</p>
+                @else
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Purpose</th>
+                                <th>Status</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+@foreach($visitorsByDate as $visitor)
+    @if($autoApprove && $visitor->status === 'Pending')
+        @continue
+    @endif
+    <tr>
+        <td>{{ $visitor->name }}</td>
+        <td>{{ $visitor->purpose ?? 'N/A' }}</td>
+        <td>{{ $visitor->status }}</td>
+        <td>{{ $visitor->created_at->format('d M, Y') }}</td>
+    </tr>
+@endforeach
+</tbody>
+
+                    </table>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly & Hourly Visitor Charts -->
 <div class="row gx-4 gy-4 mt-4">
     <!-- Monthly Chart -->
     <div class="col-lg-6">
@@ -72,6 +143,7 @@
     </div>
 </div>
 
+<!-- Day-wise & Department-wise Visitor Charts -->
 <div class="row gx-4 gy-4 mt-2">
     <!-- Day-wise Chart -->
     <div class="col-lg-6">
@@ -85,39 +157,7 @@
         </div>
     </div>
 
-    <!-- Recent Visitors -->
-    <div class="col-lg-6">
-        <div class="card shadow h-100">
-            <div class="card-header bg-dark text-white">
-                <h6 class="m-0 font-weight-bold">Recent Visitors</h6>
-            </div>
-            <div class="card-body">
-                @if($latestVisitors->isNotEmpty())
-                    <ul class="list-group list-group-flush">
-                        @foreach($latestVisitors as $visitor)
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>{{ $visitor->name }}</strong><br>
-                                    <small class="text-muted">{{ $visitor->purpose ?? '—' }}</small>
-                                </div>
-                                <span class="badge bg-{{ 
-                                    $visitor->status == 'Approved' ? 'success' : 
-                                    ($visitor->status == 'Rejected' ? 'danger' : 'secondary') }}">
-                                    {{ $visitor->status }}
-                                </span>
-                            </li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p class="text-muted">No recent visitors.</p>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row gx-4 gy-4 mt-2">
-    <!-- Department Chart -->
+    <!-- Department-wise Chart -->
     <div class="col-lg-6">
         <div class="card shadow h-100">
             <div class="card-header bg-success text-white">
@@ -125,64 +165,6 @@
             </div>
             <div class="card-body chart-container-small">
                 <canvas id="deptChartCanvas"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter & Table -->
-    <div class="col-lg-6">
-        <div class="card shadow h-100">
-            <div class="card-header bg-secondary text-white">
-                <h6 class="m-0 font-weight-bold">Visitors by Selected Date</h6>
-            </div>
-            <div class="card-body">
-                <form method="GET" action="{{ route('dashboard') }}" class="row g-3 align-items-end mb-4">
-                    <div class="col-md-8">
-                        <label for="date" class="form-label">Select Date</label>
-                        <input type="date" name="date" id="date" class="form-control" value="{{ request('date') ?? now()->toDateString() }}">
-                    </div>
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-dark w-100">Filter</button>
-                    </div>
-                </form>
-
-                @if(request('date'))
-                    <h6 class="mb-3">Results for: <strong>{{ \Carbon\Carbon::parse(request('date'))->format('d M, Y') }}</strong></h6>
-                    @if($visitorsByDate->count())
-                        <div class="table-responsive">
-                            <table class="table table-bordered text-center table-sm">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Purpose</th>
-                                        <th>Status</th>
-                                        <th>In Time</th>
-                                        <th>Out Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($visitorsByDate as $visitor)
-                                        <tr>
-                                            <td>{{ $visitor->name }}</td>
-                                            <td>{{ $visitor->purpose ?? '—' }}</td>
-                                            <td>
-                                                <span class="badge bg-{{ 
-                                                    $visitor->status == 'Approved' ? 'success' : 
-                                                    ($visitor->status == 'Rejected' ? 'danger' : 'secondary') }}">
-                                                    {{ $visitor->status }}
-                                                </span>
-                                            </td>
-                                            <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('h:i A') : '—' }}</td>
-                                            <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('h:i A') : '—' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="alert alert-warning">No visitors found for selected date.</div>
-                    @endif
-                @endif
             </div>
         </div>
     </div>
@@ -254,7 +236,7 @@
                 scales: type === 'doughnut' ? {} : {
                     y: { 
                         beginAtZero: true,
-                        ticks: { stepSize: 1 } // only integers
+                        ticks: { stepSize: 1 }
                     }
                 }
             }

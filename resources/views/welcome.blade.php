@@ -446,7 +446,7 @@
     <!-- Hero -->
     <section class="hero text-center">
         <div class="container hero-content">
-            <h1 class="display-4 fw-bold animate-fadeIn">Welcome to Your Smart Visitor Management System</h1>
+            <h1 class="display-4 fw-bold animate-fadeIn">Welcome to N&T Software Smart Visitor Management System</h1>
             <p class="lead animate-fadeIn delay-1">Seamlessly manage, monitor, and protect your premises — one visitor
                 at a time.</p>
             <a href="#features" class="btn btn-light btn-lg mt-3 px-5 animate-fadeIn delay-2">Discover Features</a>

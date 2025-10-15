@@ -61,15 +61,19 @@
             --gradient: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
         }
         
-        body {
-            background: var(--gradient);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+       body {
+    background: 
+        linear-gradient(rgba(67, 141, 238, 0.084), rgba(67, 97, 238, 0.4)), 
+        url("/image.png") no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
         
         .login-container {
             max-width: 420px;
@@ -90,11 +94,15 @@
         }
         
         .card-header {
-            background: var(--gradient);
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-        }
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.6), rgba(58, 12, 163, 0.6)); /* transparent gradient */
+    border: 2px solid rgba(255, 255, 255, 0.3); /* soft white border */
+    backdrop-filter: blur(6px); /* glass effect */
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+    border-radius: 12px;
+}
+
         
         .card-body {
             padding: 30px;
@@ -135,40 +143,44 @@
             border-radius: 0 8px 8px 0;
         }
         
-        .btn-login {
-            background: var(--gradient);
-            border: none;
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
-        }
-        
-        .btn-login:active {
-            transform: translateY(0);
-        }
-        
-        .btn-login::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.5);
-            opacity: 0;
-            border-radius: 100%;
-            transform: scale(1, 1) translate(-50%);
-            transform-origin: 50% 50%;
-        }
+.btn-login {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.5), rgba(58, 12, 163, 0.5)); /* transparent gradient */
+    border: 2px solid rgba(255, 255, 255, 0.4); /* soft white border */
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(8px); /* frosted glass look */
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(67, 97, 238, 0.5);
+    border-color: rgba(255, 255, 255, 0.7);
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.7), rgba(58, 12, 163, 0.7)); /* stronger on hover */
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.btn-login::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
         
         .btn-login:focus:not(:active)::after {
             animation: ripple 1s ease-out;

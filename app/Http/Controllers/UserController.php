@@ -30,46 +30,91 @@ class UserController extends Controller
         return false;
     }
 
-   public function index(Request $request)
-{
-    $authUser  = auth()->user();
-    $isCompany = $request->is('company/*');
+    public function index(Request $request)
+    {
+        $authUser  = auth()->user();
+        $isCompany = $request->is('company/*');
 
-    // ✅ Build relations array dynamically
-    $relations = ['company'];
-    if (method_exists(User::class, 'departments')) $relations[] = 'departments';
-    if (method_exists(User::class, 'department'))  $relations[] = 'department';
+        $users = User::with([
+                'company:id,name',
+                'departments:id,name',
+                'department:id,name',   // if you keep department_id
+            ])
+            ->when(!in_array($authUser->role, ['super_admin','superadmin'], true), function ($q) use ($authUser) {
+                $q->where('company_id', $authUser->company_id);
+            })
+            ->latest()
+            ->paginate(15);
 
-    $query = User::with($relations);
+        $view = $isCompany ? 'company.users.index' : 'users.index';
+        if (!view()->exists($view)) $view = 'users.index';
 
-    if ($authUser->role === 'super_admin' || $authUser->role === 'superadmin') {
-        // show all
-    } else {
-        $query->where('company_id', $authUser->company_id);
+        return view($view, compact('users'));
     }
-
-    $users = $query->paginate(15);
-
-    $view = $isCompany ? 'company.users.index' : 'users.index';
-    if (!view()->exists($view)) $view = 'users.index';
-
-    return view($view, compact('users'));
-}
-
 
     public function create()
     {
-        $auth = Auth::user();
+        $auth    = Auth::user();
         $isSuper = in_array($auth->role, ['super_admin','superadmin'], true);
 
         $companies = $isSuper
             ? Company::select('id','name')->orderBy('name')->get()
-            : collect(); // empty collection for company users
+            : collect();
 
-        // For the form partial: create mode has no $user yet
         $user = new User();
 
         return view('users.create', compact('companies','user'));
+    }
+
+    public function store(Request $request)
+    {
+        $authUser = auth()->user();
+
+        $rules = [
+            'name'        => ['required','string','max:255'],
+            'email'       => ['required','email','unique:users,email'],
+            'password'    => ['required','string','min:6','confirmed'],
+            'phone'       => ['nullable','string','max:30'],
+            'master_pages'=> ['array'],
+            'master_pages.*'=> ['string'],
+            // accept either departments[] or department_ids[]
+            'departments'     => ['array'],
+            'departments.*'   => ['exists:departments,id'],
+            'department_ids'  => ['array'],
+            'department_ids.*'=> ['exists:departments,id'],
+        ];
+
+        if (in_array($authUser->role, ['super_admin','superadmin'], true)) {
+            $rules['company_id'] = ['required','exists:companies,id'];
+        }
+
+        $data = $request->validate($rules);
+
+        $user = new User();
+        $user->name     = $data['name'];
+        $user->email    = $data['email'];
+        $user->password = Hash::make($data['password']);
+        $user->phone    = $data['phone'] ?? null;
+        $user->role     = $request->role; // e.g. superadmin/company/employee
+
+        // company assignment
+        if (in_array($authUser->role, ['company','company_user'], true)) {
+            $user->company_id = $authUser->company_id;
+        } else {
+            $user->company_id = $data['company_id'] ?? null;
+        }
+
+        // page access (array cast on model)
+        $user->master_pages = $data['master_pages'] ?? [];
+        $user->save();
+
+        // departments pivot (support both field names)
+        $deptIds = $request->input('department_ids', $request->input('departments', []));
+        if (!empty($deptIds)) {
+            $user->departments()->sync($deptIds);
+        }
+
+        return redirect()->route('users.index')->with('success','User created successfully.');
     }
 
     public function edit(User $user)
@@ -88,75 +133,78 @@ class UserController extends Controller
         return view('users.edit', compact('user','companies'));
     }
 
-    public function store(Request $request)
-{
-    $authUser = Auth::user();
-
-    $validated = $request->validate([
-        'name'      => 'required|string|max:255',
-        'email'     => 'required|email|unique:users,email',
-        'password'  => 'required|string|min:6|confirmed',
-        'company_id' => 'required|exists:companies,id'  // Ensure company_id is validated
-    ]);
-
-    $user = new User();
-    $user->name     = $validated['name'];
-    $user->email    = $validated['email'];
-    $user->password = Hash::make($validated['password']);
-    
-    // If the user is a company user, assign their company_id.
-    if ($authUser->role === 'company') {
-        $user->company_id = $authUser->company_id;
-    } else {
-        // Ensure the selected company ID is assigned
-        $user->company_id = $validated['company_id'];
-    }
-
-    $user->role = $request->role; // Assign the role as per the form
-
-    $user->save();
-
-    return redirect()->route('users.index')->with('success', 'User created successfully.');
-}
-
-
     public function update(Request $request, User $user)
     {
-        $auth = Auth::user();
+        $auth = auth()->user();
         $isSuper = in_array($auth->role, ['super_admin','superadmin'], true);
 
         if (!$isSuper && $user->company_id !== $auth->company_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email,'.$user->id,
-            'password' => 'nullable|string|min:6|confirmed',
-            // if you allow superadmin to move users across companies, uncomment:
-            // 'company_id' => $isSuper ? 'required|exists:companies,id' : 'nullable',
+        $data = $request->validate([
+            'name'        => ['required','string','max:255'],
+            'email'       => ['required','email','unique:users,email,'.$user->id],
+            'password'    => ['nullable','string','min:6','confirmed'],
+            'phone'       => ['nullable','string','max:30'],
+            'master_pages'=> ['array'],
+            'master_pages.*'=> ['string'],
+            'departments'     => ['array'],
+            'departments.*'   => ['exists:departments,id'],
+            'department_ids'  => ['array'],
+            'department_ids.*'=> ['exists:departments,id'],
+            // 'company_id' => $isSuper ? ['required','exists:companies,id'] : ['nullable'],
         ]);
 
-        $user->name  = $validated['name'];
-        $user->email = $validated['email'];
-        if (!empty($validated['password'])) {
-            $user->password = Hash::make($validated['password']);
+        $user->fill([
+            'name'  => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+        ]);
+
+        if (!empty($data['password'])) {
+            $user->password = Hash::make($data['password']);
         }
-        // if moving companies is allowed:
-        // if ($isSuper) $user->company_id = $validated['company_id'];
+
+        if (array_key_exists('master_pages', $data)) {
+            $user->master_pages = $data['master_pages'] ?? [];
+        }
+
+        // if ($isSuper && array_key_exists('company_id', $data)) {
+        //     $user->company_id = $data['company_id'];
+        // }
 
         $user->save();
+
+        // departments pivot
+        if ($request->has('department_ids') || $request->has('departments')) {
+            $deptIds = $request->input('department_ids', $request->input('departments', []));
+            $user->departments()->sync($deptIds ?: []);
+        }
 
         return redirect()->route('users.index')->with('success','User updated successfully.');
     }
 
     public function destroy(User $user)
     {
-        $authUser = Auth::user();
+        $auth = Auth::user();
 
-        if ($this->roleIs($authUser, 'company_user', 'company') && $user->company_id !== $authUser->company_id) {
-            abort(403, 'Unauthorized action.');
+        // Only super admins can delete (adjust if you want company admins to delete within their company)
+        if (!in_array($auth->role, ['super_admin','superadmin'], true)) {
+            abort(403, 'Unauthorized');
         }
+
+        // Prevent deleting super admins (optional safety)
+        if (in_array($user->role, ['super_admin','superadmin'], true)) {
+            return redirect()->route('users.index')->with('error', 'Cannot delete a super admin user.');
+        }
+
+        // detach pivots first (keeps pivot tables clean)
+        if (method_exists($user, 'departments')) {
+            $user->departments()->detach();
+        }
+        // If you ever add a pages pivot, detach here as well
+        // if (method_exists($user, 'pages')) { $user->pages()->detach(); }
 
         $user->delete();
 

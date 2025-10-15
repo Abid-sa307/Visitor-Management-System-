@@ -14,11 +14,13 @@ use App\Http\Controllers\{
     Auth\CompanyLoginController,
     Auth\CompanyAuthController,
     ApprovalController,
-    SettingsController
+    SettingsController,
+    BlogController,
 };
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\VisitorsExport;
-use App\Http\Controllers\BlogController;
+use App\Http\Middleware\CheckMasterPageAccess;
+
 
 
 /*
@@ -26,6 +28,7 @@ use App\Http\Controllers\BlogController;
 | Public Routes (Unauthenticated Routes)
 |----------------------------------------------------------------------|
 */
+
 Route::get('/', fn() => view('welcome'));
 Route::get('/about', fn() => view('about'))->name('about');
 Route::get('/partner', fn() => view('partner'))->name('partner');
@@ -72,12 +75,41 @@ Route::get('/service-agreement', function () {
 
 
 
+/*
+|--------------------------------------------------------------------------
+| Public Routes (Unauthenticated Routes)
+|--------------------------------------------------------------------------
+*/
+Route::get('/', fn () => view('welcome'));
+Route::get('/about', fn () => view('about'))->name('about');
+Route::get('/partner', fn () => view('partner'))->name('partner');
+Route::get('/pricing', fn () => view('pricing'))->name('pricing');
+Route::get('/contact', fn () => view('contact'))->name('contact');
+
+Route::get('/industrial-and-cold-storage', fn () => view('pages.industrial-and-cold-storage'))
+    ->name('industrial-and-cold-storage');
+Route::get('/school-and-colleges', fn () => view('pages.school-and-colleges'))
+    ->name('school-and-colleges');
+Route::get('/industrial-manufacturing-unit', fn () => view('pages.industrial-manufacturing-unit'))
+    ->name('industrial-manufacturing-unit');
+Route::get('/resident-societies', fn () => view('pages.resident-societies'))
+    ->name('resident-societies');
+Route::get('/resident-buildings', fn () => view('pages.resident-buildings'))
+    ->name('resident-buildings');
+Route::get('/office-workplace-management', fn () => view('pages.office-workplace-management'))
+    ->name('office-workplace-management');
+Route::get('/healthcare-facilities', fn () => view('pages.healthcare-facilities'))
+    ->name('healthcare-facilities');
+Route::get('/malls-and-events', fn () => view('pages.malls-and-events'))
+    ->name('malls-and-events');
+
+Route::get('/privacy-policy', fn () => view('pages.privacy-policy'))->name('privacy-policy');
+Route::get('/terms-of-use', fn () => view('pages.terms-of-use'))->name('terms-of-use');
+Route::get('/refund-and-cancellation', fn () => view('pages.refund-and-cancellation'))->name('refund-and-cancellation');
+Route::get('/service-agreement', fn () => view('pages.service-agreement'))->name('service-agreement');
 
 Route::get('/blog', [BlogController::class, 'index']);
 Route::get('/blog/{slug}', [BlogController::class, 'show']);
-
-
-
 
 
 /*
@@ -195,7 +227,4 @@ Route::prefix('company')->middleware(['auth', 'role:company'])->name('company.')
 // Breeze/Auth Routes (handled by Laravel)
 require __DIR__ . '/auth.php';
 
-// <<<<<<< HEAD
 
-// =======
-// >>>>>>> 7d3fad982337f12f1d409ea49c535f1f1e7511b7
