@@ -21,6 +21,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\VisitorsExport;
 use App\Http\Middleware\CheckMasterPageAccess;
 
+Route::get('/test-db', function() {
+    dd(config('database.connections.mysql.username'));
+});
 
 
 /*
