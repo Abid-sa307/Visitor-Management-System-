@@ -17,8 +17,12 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, intl, bcmath, pdo, mysql, tokenizer, ctype, json, xml
+          extensions: mbstring, intl, bcmath, pdo_mysql, tokenizer, ctype, json, xml, fileinfo
+          tools: composer
           coverage: none
+
+      - name: 🧠 Increase PHP memory limit
+        run: echo "memory_limit=-1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
 
       - name: 📦 Install dependencies
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
