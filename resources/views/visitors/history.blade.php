@@ -18,7 +18,7 @@
 
         <div class="col-md-3">
             <label class="form-label">Company</label>
-            <select name="company_id" class="form-select">
+            <select name="company_id" id="companySelect" class="form-select">
                 <option value="">All</option>
                 @foreach($companies as $company)
                     <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
@@ -30,7 +30,7 @@
 
         <div class="col-md-3">
             <label class="form-label">Department</label>
-            <select name="department_id" class="form-select">
+            <select name="department_id" id="departmentSelect" class="form-select">
                 <option value="">All</option>
                 @foreach($departments as $department)
                     <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
@@ -41,14 +41,8 @@
         </div>
 
 
-        <div class="col-md-3">
-            <label class="form-label">From Date</label>
-            <input type="date" name="from" value="{{ request('from') }}" class="form-control">
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">To Date</label>
-            <input type="date" name="to" value="{{ request('to') }}" class="form-control">
+        <div class="col-md-6">
+            @include('components.date_range')
         </div>
 
         <div class="col-12 text-end">
@@ -63,6 +57,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Company</th>
+                    <th>Department</th>
                     <th>Phone</th>
                     <th>Status</th>
                     <th>In Time</th>
@@ -74,6 +69,7 @@
                     <tr>
                         <td class="fw-semibold">{{ $visitor->name }}</td>
                         <td>{{ $visitor->company->name ?? '—' }}</td>
+                        <td>{{ $visitor->department->name ?? '—' }}</td>
                         <td>{{ $visitor->phone }}</td>
                         <td>
                             <span class="badge bg-{{ 
@@ -100,3 +96,41 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const companySel = document.getElementById('companySelect');
+  const deptSel    = document.getElementById('departmentSelect');
+  const preDept    = @json(request('department_id'));
+
+  async function loadDepartments(companyId){
+    // Reset
+    deptSel.innerHTML = '<option value="">All</option>';
+    if (!companyId) return; // keep All
+    try {
+      const res = await fetch(`/companies/${companyId}/departments`);
+      const list = await res.json();
+      (list || []).forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.name;
+        if (String(preDept) === String(d.id)) opt.selected = true;
+        deptSel.appendChild(opt);
+      });
+    } catch(e) {}
+  }
+
+  if (companySel) {
+    companySel.addEventListener('change', () => {
+      // Clear selected department when company changes
+      deptSel.value = '';
+      loadDepartments(companySel.value);
+    });
+    if (companySel.value) {
+      loadDepartments(companySel.value);
+    }
+  }
+});
+</script>
+@endpush

@@ -74,6 +74,49 @@
           <input type="text" name="purpose" class="form-control" value="{{ old('purpose', $visitor->purpose) }}">
         </div>
 
+        <!-- Visitor Company & Website -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Visitor's Company Name</label>
+          <input type="text" name="visitor_company" class="form-control" value="{{ old('visitor_company', $visitor->visitor_company) }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Visitor Company Website (optional)</label>
+          <input type="url" name="visitor_website" class="form-control" value="{{ old('visitor_website', $visitor->visitor_website) }}">
+        </div>
+
+        <!-- Vehicle Type & Number -->
+        <div class="row mb-3">
+          <div class="col">
+            <label class="form-label fw-semibold">Vehicle Type</label>
+            <select name="vehicle_type" class="form-select">
+              <option value="">-- Select --</option>
+              <option value="2-wheeler" {{ $visitor->vehicle_type == '2-wheeler' ? 'selected' : '' }}>2-Wheeler</option>
+              <option value="3-wheeler" {{ $visitor->vehicle_type == '3-wheeler' ? 'selected' : '' }}>3-Wheeler</option>
+              <option value="4-wheeler" {{ $visitor->vehicle_type == '4-wheeler' ? 'selected' : '' }}>4-Wheeler</option>
+              <option value="6-wheeler" {{ $visitor->vehicle_type == '6-wheeler' ? 'selected' : '' }}>6-Wheeler</option>
+            </select>
+          </div>
+          <div class="col">
+            <label class="form-label fw-semibold">Vehicle Number</label>
+            <input type="text" name="vehicle_number" class="form-control" value="{{ old('vehicle_number', $visitor->vehicle_number) }}">
+          </div>
+        </div>
+
+        <!-- Goods in Vehicle -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Goods in Vehicle</label>
+          <input type="text" name="goods_in_car" class="form-control" value="{{ old('goods_in_car', $visitor->goods_in_car) }}">
+        </div>
+
+        <!-- Workman Policy -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Upload Workman Policy Photo (Optional)</label>
+          <input type="file" name="workman_policy_photo" class="form-control">
+          @if($visitor->workman_policy_photo)
+            <small class="d-block mt-1"><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">View current</a></small>
+          @endif
+        </div>
+
         <!-- Photo -->
         <div class="mb-3">
           <label class="form-label fw-semibold">Photo</label>

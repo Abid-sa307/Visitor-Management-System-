@@ -16,13 +16,8 @@
                 @endforeach
             </select>
         </div>
-        <div class="col-auto">
-            <label for="from" class="form-label">From</label>
-            <input type="date" name="from" class="form-control" value="{{ request('from') }}">
-        </div>
-        <div class="col-auto">
-            <label for="to" class="form-label">To</label>
-            <input type="date" name="to" class="form-control" value="{{ request('to') }}">
+        <div class="col-md-6">
+            @include('components.date_range')
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">Filter</button>

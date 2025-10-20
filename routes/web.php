@@ -130,6 +130,13 @@ Route::middleware(['auth'])->group(function () {
     // AJAX: Get departments for a company (used in user/visitor forms)
     Route::get('/companies/{company}/departments', [DepartmentController::class, 'getByCompany'])
         ->name('companies.departments');
+
+    // AJAX: Get branches for a company (used in user form)
+    Route::get('/companies/{company}/branches', [CompanyController::class, 'getBranches'])
+        ->name('companies.branches');
+
+    // AJAX: Lookup visitor by phone (superadmin/web panel)
+    Route::get('/visitors/lookup', [VisitorController::class, 'lookupByPhone'])->name('visitors.lookup');
 });
 
 /*
@@ -178,6 +185,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
         Route::get('/visitors/inout', [VisitorController::class, 'inOutReport'])->name('visitors.report.inout');
         Route::get('/visitors/approvals', [VisitorController::class, 'approvalReport'])->name('visitors.report.approval');
         Route::get('/visitors/security', [VisitorController::class, 'securityReport'])->name('visitors.report.security');
+        Route::get('/visitors/hourly', [VisitorController::class, 'hourlyReport'])->name('visitors.report.hourly');
         Route::get('/visitors/export', fn() => Excel::download(new VisitorsExport, 'visitors_report.xlsx'))->name('visitors.report.export');
     });
 });
@@ -187,7 +195,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
 | Company Panel Routes (Role: company)
 |----------------------------------------------------------------------|
 */
-Route::prefix('company')->middleware(['auth', 'role:company'])->name('company.')->group(function () {
+Route::prefix('company')->middleware(['auth:company', 'role:company'])->name('company.')->group(function () {
     // Dashboard Route for Company
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -202,6 +210,11 @@ Route::prefix('company')->middleware(['auth', 'role:company'])->name('company.')
     // History & Entry Routes for Company
     Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
     Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
+    Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
+    Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+
+    // AJAX: Lookup visitor by phone (company panel)
+    Route::get('/visitors/lookup', [VisitorController::class, 'lookupByPhone'])->name('visitors.lookup');
 
     // Approvals Routes for Company
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
@@ -212,6 +225,7 @@ Route::prefix('company')->middleware(['auth', 'role:company'])->name('company.')
         Route::get('/visitors/inout', [VisitorController::class, 'inOutReport'])->name('visitors.report.inout');
         Route::get('/visitors/approvals', [VisitorController::class, 'approvalReport'])->name('visitors.report.approval');
         Route::get('/visitors/security', [VisitorController::class, 'securityReport'])->name('visitors.report.security');
+        Route::get('/visitors/hourly', [VisitorController::class, 'hourlyReport'])->name('visitors.report.hourly');
         Route::get('/visitors/export', fn() => Excel::download(new VisitorsExport, 'visitors_report.xlsx'))->name('visitors.report.export');
     });
 

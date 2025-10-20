@@ -409,10 +409,10 @@
       
       <!-- Founder & MD -->
       <div class="col-lg-6">
-        <h2 class="fw-bold mb-4">Our Founder & MD</h2>
+        <h2 class="fw-bold mb-4">Founder & Chairman</h2>
         <p class="lead">
           <strong>Talemahmad Tunvar</strong>, the visionary Founder and 
-          Managing Director of <strong>N&T Group Of Company</strong>, 
+          Chairman of <strong>N&T Group Of Company</strong>, 
           laid the foundation of the company with a mission to 
           transform India into a truly paperless nation.
         </p>
@@ -431,7 +431,7 @@
         </p>
       </div>
       <div class="col-lg-6 text-center">
-        <img src="/images/founder-img.png" 
+        <img src="/images/founder-img.jpeg" 
              alt="Talemahmad Tunvar - Founder & MD" 
              class="img-fluid rounded-circle shadow" 
              style="max-width: 280px;">
@@ -441,9 +441,9 @@
     <div class="row align-items-center">
       <!-- Director -->
       <div class="col-lg-6 order-lg-2">
-        <h2 class="fw-bold mb-4">Our Director & Project Manager</h2>
+        <h2 class="fw-bold mb-4">Project Manager</h2>
         <p class="lead">
-          <strong>Shahnavaz saiyed</strong>, Director & Project Manager at 
+          <strong>Shahnavaz saiyed</strong>, Project Manager at 
           <strong>N&T Software Pvt Ltd</strong>, plays a pivotal 
           role in ensuring operational excellence and innovation 
           across all our solutions.
@@ -590,13 +590,13 @@
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
               <img src="{{ asset('images/team-img/shahnavaz-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Shahnavaz Saiyed">
               <h4 class="fw-bold">Shahnavaz Saiyed</h4>
-              <p class="team-role">Director & Project Manager</p>
+              <p class="team-role">Project Manager</p>
               <p class="team-quote">"Leading projects with vision, precision, and teamwork."</p>
             </div>
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
               <img src="{{ asset('images/team-img/abid-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Abid Saiyed">
               <h4 class="fw-bold">Abid Saiyed</h4>
-              <p class="team-role">Senior Software Developer</p>
+              <p class="team-role">Software Engineer</p>
               <p class="team-quote">"Passionate about writing clean, scalable code."</p>
             </div>
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
@@ -661,13 +661,13 @@
           $team = [
             [
               'name' => 'Shahnavaz Saiyed',
-              'role' => 'Director & Project Manager',
+              'role' => 'Project Manager',
               'photo' => asset('images/team-img/shahnavaz-saiyed.png'),
               'quote' => 'Leading projects with vision, precision, and teamwork.'
             ],
             [
               'name' => 'Abid Saiyed',
-              'role' => 'Senior Software Developer',
+              'role' => 'Software Engineer',
               'photo' => asset('images/team-img/abid-saiyed.png'),
               'quote' => 'Passionate about writing clean, scalable code.'
             ],

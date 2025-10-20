@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Department;
+use App\Models\CompanyUser;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -12,7 +13,7 @@ class DefaultSeeder extends Seeder
 {
     public function run(): void
     {
-        Company::updateOrCreate(
+        $company = Company::updateOrCreate(
             ['name' => 'ABC Industries'],
             [
                 'address' => 'Ahmedabad, Gujarat, India', // ✅ REQUIRED
@@ -25,6 +26,17 @@ class DefaultSeeder extends Seeder
                     'sms' => false,
                     'whatsapp' => false
                 ]),
+            ]
+        );
+
+        // Ensure a default company user exists for login testing
+        CompanyUser::updateOrCreate(
+            ['email' => 'company@example.com'],
+            [
+                'name' => 'Company Admin',
+                'password' => 'Password123!', // auto-hashed by casts in CompanyUser
+                'company_id' => $company->id,
+                'role' => 'company',
             ]
         );
     }

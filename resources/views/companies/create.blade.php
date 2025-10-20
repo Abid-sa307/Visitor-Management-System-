@@ -60,9 +60,33 @@
                     </div>
                 </div>
 
+                <hr class="my-4">
+                <h5 class="fw-bold mb-3">Branches</h5>
+                <div class="mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addBranchBtn">Add Branch</button>
+                </div>
+                <div id="branchesRepeater" class="mb-3">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width: 22%">Name</th>
+                                    <th style="width: 18%">Phone</th>
+                                    <th style="width: 22%">Email</th>
+                                    <th>Address</th>
+                                    <th style="width: 60px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="branchesBody">
+                                <!-- Rows appended here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="auto_approve_visitors" name="auto_approve_visitors" value="1"
-                        {{ old('auto_approve_visitors', $company->auto_approve_visitors ?? 0) ? 'checked' : '' }}>
+                        {{ old('auto_approve_visitors') ? 'checked' : '' }}>
                     <label class="form-check-label" for="auto_approve_visitors">Auto Approve Visitors</label>
                 </div>
 
@@ -76,4 +100,23 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const body = document.getElementById('branchesBody');
+  const addBtn = document.getElementById('addBranchBtn');
+  const makeRow = () => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input name="branches[name][]" class="form-control form-control-sm" placeholder="Branch name"></td>
+      <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
+      <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
+      <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
+      <td class="text-end"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button></td>`;
+    return tr;
+  };
+  if (addBtn) addBtn.addEventListener('click', ()=> body.appendChild(makeRow()));
+});
+</script>
+@endpush
 @endsection

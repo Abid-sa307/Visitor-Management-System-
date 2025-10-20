@@ -18,10 +18,8 @@
                 </div>
             @endif
 
-            <form 
-             action="{{ auth()->user()->hasRole('company') ? route('company.profile.update') : route('superadmin.profile.update') }}" 
-                method="POST"
-            >
+            @php $isCompany = Auth::guard('company')->check(); @endphp
+            <form action="{{ $isCompany ? route('company.profile.update') : route('profile.update') }}" method="POST">
                 @csrf
                 @method('PATCH')
 
