@@ -10,6 +10,12 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
+  <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
+
   <!-- Custom Styles -->
   <style>
     :root {
@@ -357,55 +363,132 @@
     </div>
   </section>
 
-  <!-- FAQ Section -->
-  <section id="faq" class="py-5 bg-light">
-    <div class="container">
-      <div class="section-title">
-        <h2>Frequently Asked Questions</h2>
-        <p>Answers to the most common queries about our Industrial Visitor Management System.</p>
-      </div>
+   <!-- FAQ Section -->
+<section id="faq" class="py-5 bg-light">
+  <div class="container">
+    <div class="section-title text-center mb-5">
+      <h2>Frequently Asked Questions</h2>
+      <p>Find answers to common questions about our Industrial Visitor Management System</p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
 
-      <div class="faq-item">
-        <div class="faq-question">
-          <span>Can this system integrate with our existing CCTV or access control?</span>
-          <i class="bi bi-chevron-down"></i>
+        <!-- Analytics Dashboard -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system provide analytics and reports?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
+              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real-time.
+            </p>
+          </div>
         </div>
-        <div class="faq-answer">
-          <p>Yes. Our platform offers seamless integration with most modern CCTV setups, biometric scanners, and access control systems via standard APIs.</p>
-        </div>
-      </div>
 
-      <div class="faq-item">
-        <div class="faq-question">
-          <span>Is the system suitable for multi-site or multi-plant operations?</span>
-          <i class="bi bi-chevron-down"></i>
+        <!-- Hourly Visitor Analysis -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we track visitors on an hourly basis?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics 
+              segmented by the hour, helping optimize staffing and enhance security monitoring.
+            </p>
+          </div>
         </div>
-        <div class="faq-answer">
-          <p>Absolutely. You can manage multiple facilities from a single admin dashboard and generate consolidated compliance reports.</p>
-        </div>
-      </div>
 
-      <div class="faq-item">
-        <div class="faq-question">
-          <span>What hardware is required for face recognition check-in?</span>
-          <i class="bi bi-chevron-down"></i>
+        <!-- Safety Compliance -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does the system ensure visitor safety compliance?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors must complete safety inductions and acknowledge compliance rules before entry. 
+              The system tracks and records all safety acknowledgments for audit purposes.
+            </p>
+          </div>
         </div>
-        <div class="faq-answer">
-          <p>Any standard HD webcam or IP camera compatible with Windows or Linux can be used. No proprietary hardware is necessary.</p>
-        </div>
-      </div>
 
-      <div class="faq-item">
-        <div class="faq-question">
-          <span>How secure is visitor data?</span>
-          <i class="bi bi-chevron-down"></i>
+        <!-- Face Recognition -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system support face recognition for entry?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
+              for visitors, reducing manual verification needs.
+            </p>
+          </div>
         </div>
-        <div class="faq-answer">
-          <p>All data is encrypted in transit (TLS 1.2+) and at rest (AES-256). We comply with GDPR and relevant local data-protection regulations.</p>
+
+        <!-- Notifications -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Will we get notified when visitors arrive?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access 
+              or checks in at the facility.
+            </p>
+          </div>
         </div>
+
+        <!-- Visitor Pass -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we generate visitor passes directly from the system?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the system allows you to instantly generate and print visitor passes, 
+              including QR code-enabled dynamic passes for quick access.
+            </p>
+          </div>
+        </div>
+
+        <!-- Pre-Approval -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is there a visitor pre-approval process?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors can be pre-approved by hosts through the system, enabling faster entry 
+              and minimizing wait times at the gate.
+            </p>
+          </div>
+        </div>
+
+        <!-- Visitor Entry Options -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What methods are available for visitor check-in and check-out?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The system supports multiple entry options including manual entry by security staff, 
+              face recognition, and QR code scanning for seamless visitor management.
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
   <!-- CTA / Request a Quote Section -->
 <section class="cta-section py-5" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff; border-radius: 20px; margin: 60px 0;">

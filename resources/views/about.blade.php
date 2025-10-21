@@ -10,6 +10,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <!-- Swiper CSS -->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+/>
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
         :root {
             --primary: #4e73df;
@@ -322,6 +333,8 @@
                 width: 40px;
                 height: 40px;
             }
+            
+            
         }
     </style>
 </head>
@@ -396,10 +409,10 @@
       
       <!-- Founder & MD -->
       <div class="col-lg-6">
-        <h2 class="fw-bold mb-4">Our Founder & MD</h2>
+        <h2 class="fw-bold mb-4">Founder & Chairman</h2>
         <p class="lead">
           <strong>Talemahmad Tunvar</strong>, the visionary Founder and 
-          Managing Director of <strong>N&T Group Of Company</strong>, 
+          Chairman of <strong>N&T Group Of Company</strong>, 
           laid the foundation of the company with a mission to 
           transform India into a truly paperless nation.
         </p>
@@ -418,7 +431,7 @@
         </p>
       </div>
       <div class="col-lg-6 text-center">
-        <img src="/images/founder-img.png" 
+        <img src="/images/founder-img.jpeg" 
              alt="Talemahmad Tunvar - Founder & MD" 
              class="img-fluid rounded-circle shadow" 
              style="max-width: 280px;">
@@ -428,9 +441,9 @@
     <div class="row align-items-center">
       <!-- Director -->
       <div class="col-lg-6 order-lg-2">
-        <h2 class="fw-bold mb-4">Our Director & Project Manager</h2>
+        <h2 class="fw-bold mb-4">Project Manager</h2>
         <p class="lead">
-          <strong>Shahnavaz saiyed</strong>, Director & Project Manager at 
+          <strong>Shahnavaz saiyed</strong>, Project Manager at 
           <strong>N&T Software Pvt Ltd</strong>, plays a pivotal 
           role in ensuring operational excellence and innovation 
           across all our solutions.
@@ -561,7 +574,7 @@
     </div>
 </section>
 
-<!-- Team Section -->
+{{-- <!-- Team Section -->
 <section class="team-section py-5">
   <div class="container">
     <h2 class="text-center fw-bold mb-3">Our Amazing Team</h2>
@@ -577,13 +590,13 @@
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
               <img src="{{ asset('images/team-img/shahnavaz-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Shahnavaz Saiyed">
               <h4 class="fw-bold">Shahnavaz Saiyed</h4>
-              <p class="team-role">Director & Project Manager</p>
+              <p class="team-role">Project Manager</p>
               <p class="team-quote">"Leading projects with vision, precision, and teamwork."</p>
             </div>
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
               <img src="{{ asset('images/team-img/abid-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Abid Saiyed">
               <h4 class="fw-bold">Abid Saiyed</h4>
-              <p class="team-role">Senior Software Developer</p>
+              <p class="team-role">Software Engineer</p>
               <p class="team-quote">"Passionate about writing clean, scalable code."</p>
             </div>
             <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
@@ -630,7 +643,155 @@
       </button>
     </div>
   </div>
+</section> --}}
+
+
+<!-- TEAM SECTION -->
+<section id="team" class="py-5 bg-white">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+      <h2 class="fw-bold mb-0">The Team</h2>
+    </div>
+
+    <!-- Swiper -->
+    <div class="swiper myTeamSwiper">
+      <div class="swiper-wrapper">
+
+        @php
+          $team = [
+            [
+              'name' => 'Shahnavaz Saiyed',
+              'role' => 'Project Manager',
+              'photo' => asset('images/team-img/shahnavaz-saiyed.png'),
+              'quote' => 'Leading projects with vision, precision, and teamwork.'
+            ],
+            [
+              'name' => 'Abid Saiyed',
+              'role' => 'Software Engineer',
+              'photo' => asset('images/team-img/.png'),
+              'quote' => 'Passionate about writing clean, scalable code.'
+            ],
+            [
+              'name' => 'Adnan Syed',
+              'role' => 'Support & Sales Head',
+              'photo' => asset('images/team-img/adnan-saiyed.png'),
+              'quote' => 'Ensuring clients get the right solutions.'
+            ],
+            [
+              'name' => 'Lucky Maddhesiya',
+              'role' => 'Junior Software Developer',
+              'photo' => asset('images/team-img/lucky-maddhesiya.png'),
+              'quote' => 'Focused on learning, building, and contributing.'
+            ],
+            [
+              'name' => 'Jaimin Prajapati',
+              'role' => 'Software Testing',
+              'photo' => asset('images/team-img/jaimin-prajapati.png'),
+              'quote' => 'Delivering bug-free quality products.'
+            ],
+            [
+              'name' => 'Pravin Patel',
+              'role' => 'DevOps Engineer',
+              'photo' => asset('images/team-img/praveen-patel.png'),
+              'quote' => 'Bridging development & operations.'
+            ],
+          ];
+        @endphp
+
+        @foreach($team as $member)
+        <div class="swiper-slide">
+          <div class="team-card text-center border rounded-4 bg-white p-4 shadow-sm position-relative h-100 d-flex flex-column justify-content-between">
+            
+            <!-- Top gradient bar -->
+            <div class="top-bar position-absolute top-0 start-0 w-100 rounded-top-4" 
+                 style="height: 5px; background: linear-gradient(to right, #2563eb, #10b981);">
+            </div>
+
+            <!-- ✅ Removed blue glow background -->
+            <div class="position-relative mt-3 mb-3">
+              <img 
+                src="{{ $member['photo'] }}" 
+                alt="{{ $member['name'] }}" 
+                class="rounded-circle shadow-sm border border-2 border-white position-relative" 
+                width="100" 
+                height="100">
+            </div>
+
+            <h5 class="fw-semibold mt-2 mb-1">{{ $member['name'] }}</h5>
+            <span class="badge bg-light text-dark small mb-3">{{ $member['role'] }}</span>
+
+            <hr class="mx-auto" 
+                style="width: 60px; background: linear-gradient(to right, #2563eb, #10b981); height: 2px; border: none;">
+
+            <blockquote class="fst-italic text-muted px-2 small position-relative">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#93c5fd" 
+                   class="bi bi-quote position-absolute" viewBox="0 0 16 16" style="left:0; top:-5px;">
+                <path d="M6.354 1.146a.5.5 0 0 0-.708 0L.793 6H3.5A2.5 2.5 0 0 1 6 8.5v5a.5.5 0 0 0 1 0v-5A3.5 3.5 0 0 0 3.5 5H.793l4.853-4.854zM15.354 1.146a.5.5 0 0 0-.708 0L9.793 6H12.5A2.5 2.5 0 0 1 15 8.5v5a.5.5 0 0 0 1 0v-5A3.5 3.5 0 0 0 12.5 5h-2.707l4.853-4.854z"/>
+              </svg>
+              {{ $member['quote'] }}
+            </blockquote>
+          </div>
+        </div>
+        @endforeach
+
+      </div>
+
+      <!-- Swiper Controls -->
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-pagination mt-3"></div>
+    </div>
+  </div>
 </section>
+
+<!-- Swiper Initialization -->
+@push('scripts')
+<script>
+  const swiper = new Swiper('.myTeamSwiper', {
+    slidesPerView: 1,
+    spaceBetween: 20,
+    loop: true,
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+    breakpoints: {
+      640: { slidesPerView: 2 },
+      992: { slidesPerView: 3 },
+      1200: { slidesPerView: 4 },
+    },
+  });
+</script>
+@endpush
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    new Swiper('.myTeamSwiper', {
+      slidesPerView: 1,
+      spaceBetween: 20,
+      loop: true,
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+      pagination: {
+        el: '.swiper-pagination',
+        clickable: true,
+      },
+      breakpoints: {
+        640: { slidesPerView: 2 },
+        1024: { slidesPerView: 3 },
+        1280: { slidesPerView: 4 },
+      },
+    });
+  });
+</script>
+
 
 <!-- CTA Section -->
 <section class="cta-section text-center">
@@ -647,4 +808,7 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+<!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
 </html>

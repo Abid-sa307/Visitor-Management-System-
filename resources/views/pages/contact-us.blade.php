@@ -4,28 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <title>Contact Us</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <!-- EmailJS -->
     <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
     <script>
         (function () {
-            emailjs.init("yRaUCKPqAW0XIaIx_"); // yahan apna public key daalein
+            emailjs.init("yRaUCKPqAW0XIaIx_"); // Public Key
         })();
     </script>
+
     <style>
         :root {
-            --primary-color: #4e73df;
-            --secondary-color: #6f42c1;
-            --accent-color: #36b9cc;
+            --primary: #4e73df;
+            --secondary: #6f42c1;
+            --accent: #36b9cc;
             --light-bg: #f8f9fc;
         }
-
-     
 
         body {
             font-family: 'Poppins', sans-serif;
@@ -33,14 +38,17 @@
             color: #333;
         }
 
+        /* Hero Section */
         .contact-hero {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
             padding: 60px 0;
-            margin-bottom: 40px;
+            text-align: center;
             border-radius: 0 0 20px 20px;
+            margin-bottom: 40px;
         }
 
+        /* Contact Card */
         .contact-card {
             background: white;
             border-radius: 15px;
@@ -49,8 +57,9 @@
             margin-bottom: 40px;
         }
 
+        /* Contact Info */
         .contact-info {
-            background: linear-gradient(to bottom right, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary));
             color: white;
             padding: 40px;
             height: 100%;
@@ -72,30 +81,54 @@
             margin-bottom: 30px;
         }
 
-        .form-control,
-        .form-control:focus {
+        /* Form */
+        .floating-label {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .floating-input {
+            font-size: 16px;
+            padding: 20px 0;
+            display: block;
+            width: 100%;
             border: none;
             border-bottom: 2px solid #e0e0e0;
-            border-radius: 0;
-            padding-left: 0;
             background: transparent;
+            transition: 0.3s;
         }
 
-        .form-control:focus {
-            border-bottom-color: var(--primary-color);
-            box-shadow: none;
+        .floating-input:focus {
+            outline: none;
+            border-bottom: 2px solid var(--primary);
         }
 
-        .form-floating>label {
-            padding-left: 0;
+        .floating-label label {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            color: #999;
+            font-weight: normal;
+            pointer-events: none;
+            transition: 0.3s ease all;
         }
 
+        .floating-input:focus~label,
+        .floating-input:not(:placeholder-shown)~label {
+            top: -15px;
+            font-size: 12px;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* Send Button */
         .btn-send {
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(to right, var(--primary), var(--secondary));
             border: none;
             padding: 12px 30px;
             border-radius: 30px;
             font-weight: 600;
+            color: white;
             transition: all 0.3s;
         }
 
@@ -104,6 +137,7 @@
             box-shadow: 0 5px 15px rgba(78, 115, 223, 0.4);
         }
 
+        /* Social Links */
         .social-links a {
             display: inline-block;
             width: 40px;
@@ -122,55 +156,12 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        /* Map */
         .map-container {
             border-radius: 10px;
             overflow: hidden;
             height: 250px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .floating-label {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .floating-input {
-            font-size: 16px;
-            padding: 20px 0;
-            display: block;
-            width: 100%;
-            border: none;
-            border-bottom: 2px solid #e0e0e0;
-            background: transparent;
-            transition: 0.3s;
-        }
-
-        .floating-input:focus {
-            outline: none;
-            border-bottom: 2px solid var(--primary-color);
-        }
-
-        .floating-label {
-            position: relative;
-            margin-bottom: 30px;
-        }
-
-        .floating-label label {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            color: #999;
-            font-weight: normal;
-            pointer-events: none;
-            transition: 0.3s ease all;
-        }
-
-        .floating-input:focus~label,
-        .floating-input:not(:placeholder-shown)~label {
-            top: -15px;
-            font-size: 12px;
-            color: var(--primary-color);
-            font-weight: 500;
         }
 
         @media (max-width: 768px) {
@@ -182,111 +173,98 @@
 </head>
 
 <body class="d-flex flex-column min-vh-100">
+    
 
-
-<!-- Hero Section -->
-    <section class="contact-hero text-center">
-        <div class="container">
+    <!-- Hero Section -->
+    <section class="contact-hero">
+        <div class="container contact-hero-content">
             <h1 class="display-4 fw-bold">Get In Touch</h1>
             <p class="lead">We'd love to hear from you. Let's start a conversation.</p>
         </div>
     </section>
 
+    <!-- Contact Card -->
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="contact-card">
                     <div class="row g-0">
+                        <!-- Contact Info -->
                         <div class="col-md-5">
                             <div class="contact-info">
-                                <h2 class="mb-4">Contact Information</h2>
-                                <p class="mb-4">Fill out the form or contact us through these channels:</p>
+                                <h2>Contact Information</h2>
+                                <p>Fill out the form or contact us through these channels:</p>
 
                                 <div class="contact-method">
-                                    <div class="contact-icon">
-                                        <i class="bi bi-telephone"></i>
-                                    </div>
+                                    <div class="contact-icon"><i class="bi bi-telephone"></i></div>
                                     <h5>Phone</h5>
-                                    <p> +91 8487080659</p>
+                                    <p>+91 8487080659</p>
                                 </div>
-
                                 <div class="contact-method">
-                                    <div class="contact-icon">
-                                        <i class="bi bi-envelope"></i>
-                                    </div>
+                                    <div class="contact-icon"><i class="bi bi-envelope"></i></div>
                                     <h5>Email</h5>
-                                    <p>Shahnavaz.s@nntsoftware.in</p>
+                                    <p>sales@nntsoftware.com</p>
                                 </div>
-
                                 <div class="contact-method">
-                                    <div class="contact-icon">
-                                        <i class="bi bi-geo-alt"></i>
-                                    </div>
+                                    <div class="contact-icon"><i class="bi bi-geo-alt"></i></div>
                                     <h5>Address</h5>
-                                    <p>3rd Floor, Diamond Complex, SH 41,Industrial Area, Chhapi, North
-                                        Gujarat<br>India. 385210</p>
+                                    <p>3rd Floor, Diamond Complex, SH 41, Industrial Area, Chhapi, North Gujarat<br>India. 385210</p>
                                 </div>
 
-                                <div class="social-links mt-5">
-                                    <a class="btn btn-outline-light btn-sm me-2"
-                                        href="https://www.facebook.com/profile.php?id=61580067346992" target="_blank"
-                                        rel="noopener noreferrer">
-                                        <i class="bi bi-facebook"></i>
-                                    </a>
-
-                                    <a class="btn btn-outline-light btn-sm me-2" href="#"><i
-                                            class="bi bi-twitter"></i></a>
-                                    <a class="btn btn-outline-light btn-sm me-2"
-                                        href="https://www.linkedin.com/company/visitor-management-software-n-t-software/"
-                                        target="_blank">
-                                        <i class="bi bi-linkedin"></i>
-                                    </a>
-
-                                    <a class="btn btn-outline-light btn-sm"
-                                        href="https://www.instagram.com/visitor_managment_software" target="_blank">
-                                        <i class="bi bi-instagram"></i>
-                                    </a>
+                                <div class="social-links mt-4">
+                                    <a href="https://www.facebook.com/profile.php?id=61580067346992" target="_blank"><i class="bi bi-facebook"></i></a>
+                                    <a href="#"><i class="bi bi-twitter"></i></a>
+                                    <a href="https://www.linkedin.com/company/visitor-management-software-n-t-software/" target="_blank"><i class="bi bi-linkedin"></i></a>
+                                    <a href="https://www.instagram.com/visitor_managment_software" target="_blank"><i class="bi bi-instagram"></i></a>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Contact Form -->
                         <div class="col-md-7">
                             <div class="p-5">
                                 <h3 class="mb-4">Send us a Message</h3>
                                 <form id="contact-form">
                                     <div class="floating-label">
-                                        <input type="text" class="floating-input" name="from_name" id="name"
-                                            placeholder=" " required>
-                                        <label for="name">Your Name</label>
+                                        <input type="text" class="floating-input" name="full_name" placeholder=" " required>
+                                        <label>Your Name</label>
                                     </div>
-
                                     <div class="floating-label">
-                                        <input type="email" class="floating-input" name="from_email" id="email"
-                                            placeholder=" " required>
-                                        <label for="email">Your Email</label>
+                                        <input type="email" class="floating-input" name="email" placeholder=" " required>
+                                        <label>Your Email</label>
                                     </div>
-
                                     <div class="floating-label">
-                                        <input type="text" class="floating-input" id="subject" placeholder=" " required>
-                                        <label for="subject">Subject</label>
+                                        <input type="tel" class="floating-input" name="mobile_number" placeholder=" " required>
+                                        <label>Phone Number</label>
                                     </div>
-
                                     <div class="floating-label">
-                                        <textarea class="floating-input" name="message" id="message"
-                                            style="height: 120px" placeholder=" " required></textarea>
-                                        <label for="message">Your Message</label>
+                                        <input type="text" class="floating-input" name="city" placeholder=" " required>
+                                        <label>City</label>
+                                    </div>
+                                    <div class="floating-label">
+                                        <input type="text" class="floating-input" name="country" placeholder=" " required>
+                                        <label>Country</label>
+                                    </div>
+                                    <div class="floating-label">
+                                        <textarea class="floating-input" name="description" style="height:120px" placeholder=" " required></textarea>
+                                        <label>Your Message</label>
                                     </div>
 
-                                    <button type="submit" class="btn btn-send mt-3">
+                                    <input type="hidden" name="source" value="{{ url()->current() }}">
+
+                                    <button type="submit" class="btn-send w-100 mt-3">
                                         <i class="bi bi-send me-2"></i> Send Message
                                     </button>
                                 </form>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Map -->
         <div class="row justify-content-center mb-5">
             <div class="col-lg-10">
                 <h3 class="text-center mb-4">Find Us Here</h3>
@@ -299,6 +277,11 @@
         </div>
     </div>
 
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- EmailJS Script -->
     <script>
         const form = document.getElementById('contact-form');
 
@@ -307,54 +290,25 @@
 
             emailjs.sendForm('service_jzbgjnv', 'template_bj0hh6y', this)
                 .then(() => {
-                    // Success notification
                     const successAlert = `
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <strong>Success!</strong> Your message has been sent successfully.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-
-                    // Insert alert before the form
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <strong>Success!</strong> Your message has been sent successfully.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>`;
                     form.insertAdjacentHTML('beforebegin', successAlert);
-
-                    // Reset form
                     form.reset();
-
-                    // Remove alert after 5 seconds
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert');
-                        if (alert) {
-                            alert.remove();
-                        }
-                    }, 5000);
+                    setTimeout(() => document.querySelector('.alert')?.remove(), 5000);
                 }, (error) => {
-                    console.error('FAILED...', error);
-
-                    // Error notification
                     const errorAlert = `
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <strong>Error!</strong> Failed to send message. Please try again.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error!</strong> Failed to send message. Please try again.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>`;
                     form.insertAdjacentHTML('beforebegin', errorAlert);
-
-                    // Remove alert after 5 seconds
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert');
-                        if (alert) {
-                            alert.remove();
-                        }
-                    }, 5000);
+                    setTimeout(() => document.querySelector('.alert')?.remove(), 5000);
                 });
         });
     </script>
-
-    
-
-    
 </body>
 
 </html>

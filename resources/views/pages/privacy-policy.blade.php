@@ -9,6 +9,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <!-- Global Font -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -176,11 +182,11 @@
     <div class="container flex-grow-1 my-4">
         <div class="privacy-policy">
             <h1>Privacy Policy</h1>
-            <p class="last-updated">Last updated: October 26, 2023</p>
+            <p class="last-updated">Last updated: September 30, 2025</p>
 
             <div class="policy-section">
                 <h2>1. Introduction</h2>
-                <p>Welcome to VMS (Vehicle Management System). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our vehicle management services.</p>
+                <p>Welcome to VMS (Visitor Management System). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our vehicle management services.</p>
                 <p>Please read this privacy policy carefully. If you do not agree with the terms, please do not access the application.</p>
             </div>
 
@@ -246,8 +252,9 @@
                 <h2>9. Contact Us</h2>
                 <p>If you have questions, please contact us at:</p>
                 <p class="contact-info">
-                    Email: <a href="mailto:privacy@vmspro.com">privacy@vmspro.com</a><br>
-                    Address: 123 Business Park, Suite 400, Tech City, TC 10101
+                    Email: <a href="mailto:privacy@vmspro.com">sales@nntsoftware.com</a><br>
+                    Address: 3rd Floor, Diamond Complex, SH 41,Industrial Area, Chhapi, North
+                             Gujarat India. 385210
                 </p>
             </div>
         </div>

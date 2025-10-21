@@ -10,6 +10,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
         :root {
             --primary: #4e73df;
@@ -159,7 +165,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="terms-card">
-                    <p class="last-updated">Last updated: October 26, 2023</p>
+                    <p class="last-updated">Last updated: September 30, 2025</p>
                     
                     <h2>Agreement to Terms</h2>
                     <p>By accessing or using the Smart Visitor Management System (VMS) provided by N&T Software Pvt Ltd ("we," "us," or "our"), you agree to be bound by these Terms of Use. If you disagree with any part of these terms, you may not access our services.</p>
@@ -248,8 +254,9 @@
                     <p>If you have any questions about these Terms of Use, please contact us at:</p>
                     <p>
                         <strong>N&T Software Pvt Ltd</strong><br>
-                        Email: legal@vmspro.com<br>
-                        Address: 123 Business Park, Suite 400, Tech City, TC 10101
+                        Email: sales@nntsoftware.com<br>
+                        Address: 3rd Floor, Diamond Complex, SH 41,Industrial Area, Chhapi, North
+                                        Gujarat India. 385210
                     </p>
                 </div>
             </div>

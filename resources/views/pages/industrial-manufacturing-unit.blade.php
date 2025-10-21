@@ -7,6 +7,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
         :root {
             --industrial-primary: #2c3e50;
@@ -988,55 +994,132 @@
     
 
     <!-- FAQ Section -->
-    <section id="faq" class="py-5 bg-light">
-        <div class="container">
-            <div class="section-title">
-                <h2>Frequently Asked Questions</h2>
-                <p>Find answers to common questions about our industrial visitor management system</p>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>How does the system handle safety compliance for visitors?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>Our system includes customizable safety induction modules that visitors must complete before receiving access badges. It tracks completion, expiration dates for safety certifications, and can integrate with your existing safety training systems.</p>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>Can the system integrate with our existing access control and security systems?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>Yes, IndVMS offers integration capabilities with popular access control systems, CCTV, and other security infrastructure through our API. This allows for seamless data exchange and centralized security management.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>How long does implementation typically take for an industrial facility?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>Most facilities are operational within 3-6 weeks. The timeline depends on the size of your facility, integration requirements with existing systems, and customization needs. Our implementation team works closely with your security and IT departments throughout the process.</p>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>What training and support do you provide for our security staff?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>We provide comprehensive training for security personnel and administrators, along with detailed documentation. Our support team is available via phone, email, and chat during business hours, with 24/7 emergency support available for critical issues.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<section id="faq" class="py-5 bg-light">
+  <div class="container">
+    <div class="section-title text-center mb-5">
+      <h2>Frequently Asked Questions</h2>
+      <p>Find answers to common questions about our Industrial Visitor Management System</p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <!-- Analytics Dashboard -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system provide analytics and reports?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
+              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real-time.
+            </p>
+          </div>
         </div>
-    </section>
+
+        <!-- Hourly Visitor Analysis -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we track visitors on an hourly basis?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics 
+              segmented by the hour, helping optimize staffing and enhance security monitoring.
+            </p>
+          </div>
+        </div>
+
+        <!-- Safety Compliance -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does the system ensure visitor safety compliance?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors must complete safety inductions and acknowledge compliance rules before entry. 
+              The system tracks and records all safety acknowledgments for audit purposes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Face Recognition -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system support face recognition for entry?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
+              for visitors, reducing manual verification needs.
+            </p>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Will we get notified when visitors arrive?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access 
+              or checks in at the facility.
+            </p>
+          </div>
+        </div>
+
+        <!-- Visitor Pass -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we generate visitor passes directly from the system?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the system allows you to instantly generate and print visitor passes, 
+              including QR code-enabled dynamic passes for quick access.
+            </p>
+          </div>
+        </div>
+
+        <!-- Pre-Approval -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is there a visitor pre-approval process?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors can be pre-approved by hosts through the system, enabling faster entry 
+              and minimizing wait times at the gate.
+            </p>
+          </div>
+        </div>
+
+        <!-- Visitor Entry Options -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What methods are available for visitor check-in and check-out?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The system supports multiple entry options including manual entry by security staff, 
+              face recognition, and QR code scanning for seamless visitor management.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
 
     <!-- CTA Section -->
     <section class="cta-section">

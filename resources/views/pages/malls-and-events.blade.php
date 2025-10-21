@@ -7,6 +7,12 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
   <style>
     /* --- Custom CSS from your original --- */
     :root {
@@ -761,11 +767,11 @@
 
  
 <!-- FAQ Section -->
-<section class="faq-section py-5">
+<section id="faq" class="faq-section py-5 bg-light">
   <div class="container">
     <div class="section-title mb-5 text-center">
       <h2>Frequently Asked Questions</h2>
-      <p>Have questions? We're here to help.</p>
+      <p>Find answers to common questions about our Industrial Visitor Management System</p>
     </div>
 
     <div class="accordion" id="faqAccordion">
@@ -775,12 +781,13 @@
         <h2 class="accordion-header" id="headingOne">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
             data-bs-target="#faq1" aria-expanded="false" aria-controls="faq1">
-            How secure is the visitor data?
+            Does the system provide analytics and reports?
           </button>
         </h2>
         <div id="faq1" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
           <div class="accordion-body">
-            Our system employs top-tier encryption and access controls to ensure your visitor data remains confidential and secure at all times.
+            Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
+            to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real-time.
           </div>
         </div>
       </div>
@@ -790,12 +797,13 @@
         <h2 class="accordion-header" id="headingTwo">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
             data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
-            Can I customize access rules for different events?
+            Can we track visitors on an hourly basis?
           </button>
         </h2>
         <div id="faq2" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
           <div class="accordion-body">
-            Absolutely! Our platform allows you to create tailored access rules for various events, zones, or time slots easily.
+            Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics 
+            segmented by the hour, helping optimize staffing and enhance security monitoring.
           </div>
         </div>
       </div>
@@ -805,12 +813,13 @@
         <h2 class="accordion-header" id="headingThree">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
             data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
-            Is mobile check-in available?
+            How does the system ensure visitor safety compliance?
           </button>
         </h2>
         <div id="faq3" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
           <div class="accordion-body">
-            Yes, visitors can check in using their mobile devices via QR codes or our dedicated app, streamlining the entry process.
+            Visitors must complete safety inductions and acknowledge compliance rules before entry. 
+            The system tracks and records all safety acknowledgments for audit purposes.
           </div>
         </div>
       </div>
@@ -820,12 +829,77 @@
         <h2 class="accordion-header" id="headingFour">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
             data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">
-            What integrations are supported?
+            Does the system support face recognition for entry?
           </button>
         </h2>
         <div id="faq4" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
           <div class="accordion-body">
-            Our system supports integration with POS systems, membership platforms, and other third-party tools to enhance functionality.
+            Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
+            for visitors, reducing manual verification needs.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 5 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFive">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#faq5" aria-expanded="false" aria-controls="faq5">
+            Will we get notified when visitors arrive?
+          </button>
+        </h2>
+        <div id="faq5" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access 
+            or checks in at the facility.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 6 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSix">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#faq6" aria-expanded="false" aria-controls="faq6">
+            Can we generate visitor passes directly from the system?
+          </button>
+        </h2>
+        <div id="faq6" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Yes, the system allows you to instantly generate and print visitor passes, 
+            including QR code-enabled dynamic passes for quick access.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 7 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSeven">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#faq7" aria-expanded="false" aria-controls="faq7">
+            Is there a visitor pre-approval process?
+          </button>
+        </h2>
+        <div id="faq7" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Visitors can be pre-approved by hosts through the system, enabling faster entry 
+            and minimizing wait times at the gate.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 8 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingEight">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#faq8" aria-expanded="false" aria-controls="faq8">
+            What methods are available for visitor check-in and check-out?
+          </button>
+        </h2>
+        <div id="faq8" class="accordion-collapse collapse" aria-labelledby="headingEight" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            The system supports multiple entry options including manual entry by security staff, 
+            face recognition, and QR code scanning for seamless visitor management.
           </div>
         </div>
       </div>

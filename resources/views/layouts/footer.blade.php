@@ -1,4 +1,10 @@
+@include('whatsapp')
+{{-- @include('expand-menu') --}}
+
+
+
 <!-- Footer -->
+
 <footer class="mt-auto">
     <link rel="stylesheet" href="sb-admin/css/global.css">
 
@@ -23,7 +29,10 @@
    <i class="bi bi-facebook"></i>
 </a>
 
-                            <a class="btn btn-outline-light btn-sm me-2" href="#"><i class="bi bi-twitter"></i></a>
+                           <a class="btn btn-outline-light btn-sm me-2" href="https://x.com/home?lang=en-in" target="_blank">
+  <i class="bi bi-twitter"></i>
+</a>
+
                             <a class="btn btn-outline-light btn-sm me-2" href="https://www.linkedin.com/company/visitor-management-software-n-t-software/" target="_blank">
     <i class="bi bi-linkedin"></i>
 </a>
@@ -42,7 +51,7 @@
                     <ul class="list-unstyled">
                         <li class="mb-2"><a href="{{ url('/about') }}" class="text-decoration-none text-light">About Us</a></li>
                         
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-light">Our Clients</a></li>
+                        
                         <li class="mb-2"><a href="/blog" class="text-decoration-none text-light">Blog</a></li>
                     </ul>
                 </div>
@@ -52,9 +61,9 @@
                     <h5 class="text-uppercase fw-bold mb-4">Services</h5>
                     <ul class="list-unstyled">
                         <ul class="list-unstyled">
-  <li class="mb-2">
+  {{-- <li class="mb-2">
     <strong class="text-light">Solutions</strong>
-  </li>
+  </li> --}}
   
 </ul>
 
@@ -71,7 +80,7 @@
                     <ul class="list-unstyled">
 <li class="mb-2">
   <a href="mailto:Shahnavaz.s@nntsoftware.in" style="color: inherit; text-decoration: none;">
-    <i class="bi bi-envelope me-2"></i> Shahnavaz.s@nntsoftware.in
+    <i class="bi bi-envelope me-2"></i> sales@nntsoftware.com
   </a>
 </li>
 

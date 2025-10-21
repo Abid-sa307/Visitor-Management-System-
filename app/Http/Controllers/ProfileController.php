@@ -26,29 +26,28 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        // Validate profile update
+        $isCompany = Auth::guard('company')->check();
+        $user = $isCompany ? Auth::guard('company')->user() : $request->user();
+
+        // Validate profile update using the correct users table
+        $table = $isCompany ? 'company_users' : 'users';
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $request->user()->id,
+            'email' => 'required|email|unique:' . $table . ',email,' . ($user->id ?? 'NULL') . ',id',
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
-        $user = $request->user();
         $user->name = $request->name;
         $user->email = $request->email;
 
-        // If the password is set, update it
-        if ($request->password) {
+        if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
 
         $user->save();
 
-        if ($request->user()->hasRole('company')) {
-            return redirect()->route('company.profile.edit')->with('status', 'Profile updated successfully');
-        } else {
-            return redirect()->route('profile.edit')->with('status', 'Profile updated successfully');
-        }
+        return redirect()->route($isCompany ? 'company.profile.edit' : 'profile.edit')
+            ->with('status', 'Profile updated successfully');
     }
 
     // public function __construct()
@@ -63,7 +62,8 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request)
     {
-        $user = $request->user();
+        $isCompany = Auth::guard('company')->check();
+        $user = $isCompany ? Auth::guard('company')->user() : $request->user();
 
         // Validate password for deletion
         $request->validate([
@@ -74,7 +74,7 @@ class ProfileController extends Controller
         $user->delete();
 
         // Logout and invalidate session
-        Auth::logout();
+        $isCompany ? Auth::guard('company')->logout() : Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

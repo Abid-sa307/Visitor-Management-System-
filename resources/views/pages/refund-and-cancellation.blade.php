@@ -10,6 +10,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
         :root {
             --primary: #4e73df;
@@ -175,7 +181,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="terms-card">
-                    <p class="last-updated">Last updated: October 26, 2023</p>
+                    <p class="last-updated">Last updated: September 30, 2025</p>
                     
                     <h2>Refund & Cancellation Policy</h2>
                     <p>At N&T Software Pvt Ltd, we strive to ensure complete satisfaction with our Smart Visitor Management System (VMS). This Refund and Cancellation Policy outlines the terms and conditions regarding refunds, cancellations, and subscription management for our services.</p>
@@ -183,31 +189,31 @@
                     <h3 class="section-title">1. Subscription Plans and Billing</h3>
                     <p>Our VMS operates on a subscription basis with the following billing cycles:</p>
                     <ul class="terms-list">
-                        <li><strong>Monthly Plans:</strong> Billed every 30 days from the subscription start date</li>
+                        
                         <li><strong>Annual Plans:</strong> Billed once per year with potential discounts for long-term commitment</li>
                         <li><strong>Enterprise Plans:</strong> Custom billing cycles based on negotiated terms</li>
                     </ul>
                     <p>All subscription fees are exclusive of applicable taxes, which will be added to your invoice as required by law.</p>
                     
-                    <h3 class="section-title">2. Free Trial Period</h3>
+                    {{-- <h3 class="section-title">2. Free Trial Period</h3>
                     <p>We offer a 14-day free trial for new customers:</p>
                     <ul class="terms-list">
                         <li>No credit card required to start the trial</li>
                         <li>Full access to all features during the trial period</li>
                         <li>Automatic conversion to a paid subscription after 14 days unless cancelled</li>
                         <li>Email notifications sent 3 days before trial expiration</li>
-                    </ul>
+                    </ul> --}}
                     
-                    <div class="highlight-box">
+                    {{-- <div class="highlight-box">
                         <h4><i class="bi bi-info-circle-fill me-2"></i>Trial Conversion</h4>
                         <p class="mb-0">If you do not wish to continue after the trial period, simply cancel your account before the trial ends to avoid any charges.</p>
-                    </div>
+                    </div> --}}
                     
                     <h3 class="section-title">3. Cancellation Policy</h3>
                     <p>You may cancel your subscription at any time:</p>
                     <ul class="terms-list">
                         <li><strong>Self-Service Cancellation:</strong> Cancel directly from your account dashboard</li>
-                        <li><strong>Email Request:</strong> Send cancellation requests to support@vmspro.com</li>
+                        <li><strong>Email Request:</strong> Send cancellation requests to sales@nntsoftware.com</li>
                         <li><strong>Effective Immediately:</strong> Cancellations take effect immediately upon confirmation</li>
                         <li><strong>Data Retention:</strong> Your data will be retained for 30 days after cancellation for potential reactivation</li>
                     </ul>
@@ -220,22 +226,16 @@
                     <h3 class="section-title">4. Refund Policy</h3>
                     <p>Our refund policy is designed to be fair to both our customers and our business:</p>
                     
-                    <h4>4.1 Monthly Subscriptions</h4>
+                    {{-- <h4>4.1 Monthly Subscriptions</h4>
                     <ul class="terms-list">
                         <li>Refunds are not typically provided for monthly subscriptions</li>
                         <li>If you cancel mid-month, you will retain access until the end of your billing cycle</li>
                         <li>No prorated refunds for unused portions of the month</li>
-                    </ul>
+                    </ul> --}}
                     
-                    <h4>4.2 Annual Subscriptions</h4>
-                    <ul class="terms-list">
-                        <li>30-day money-back guarantee for annual plans</li>
-                        <li>Full refund if requested within 30 days of initial purchase or renewal</li>
-                        <li>Prorated refunds may be considered after 30 days on a case-by-case basis</li>
-                        <li>Refund requests must be submitted in writing to billing@vmspro.com</li>
-                    </ul>
                     
-                    <h4>4.3 Non-Refundable Circumstances</h4>
+                    
+                    <h4>4.1 Non-Refundable Circumstances</h4>
                     <p>Refunds will not be provided in the following situations:</p>
                     <ul class="terms-list">
                         <li>Service suspension due to violation of Terms of Service</li>
@@ -284,13 +284,14 @@
                     <p>For questions about refunds, cancellations, or billing, please contact us:</p>
                     <p>
                         <strong>Billing Department</strong><br>
-                        Email: billing@vmspro.com<br>
-                        Phone: +1 (555) 123-4567 (Mon-Fri, 9 AM - 5 PM EST)<br><br>
+                        Email: sales@nntsoftware.com<br>
+                        Phone:+91 8487080659 (Mon-Fri, 9 AM - 5 PM EST)<br><br>
                         
                         <strong>Customer Support</strong><br>
-                        Email: support@vmspro.com<br>
-                        Phone: +1 (555) 987-6543<br>
-                        Address: 123 Business Park, Suite 400, Tech City, TC 10101
+                        Email: sales@nntsoftware.com<br>
+                        Phone:+91 8487080659<br>
+                        Address:3rd Floor, Diamond Complex, SH 41,Industrial Area, Chhapi, North
+                             Gujarat India. 385210
                     </p>
                     
                     <h3 class="section-title">9. Policy Updates</h3>

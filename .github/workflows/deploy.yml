@@ -1,49 +1,60 @@
-name: 🚀 Deploy Laravel to Hostripples via FTP
+name: 🎯 Deploy to Hostripples
 
 on:
   push:
     branches:
-      - main  # or 'master' if that's your main branch
+      - main
 
 jobs:
-  ftp-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    name: 🎯 Deploy to Hostripples
 
     steps:
-      - name: 🛠️ Checkout repository
+      - name: 🧾 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node (for Laravel Mix/Vite if needed)
-        uses: actions/setup-node@v4
+      - name: 🧰 Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          node-version: '20'
+          php-version: '8.2'
+          extensions: mbstring, intl, bcmath, pdo_mysql, tokenizer, ctype, json, xml, fileinfo
+          tools: composer
+          coverage: none
 
-      - name: 🧩 Install Composer dependencies
-        uses: php-actions/composer@v6
+      - name: 🧠 Increase PHP memory limit
+        run: echo "memory_limit=-1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+
+      - name: 📦 Install dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      # ✅ Deploy Laravel app (except public folder)
+      - name: 🚀 Deploy app to /vms/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          php_version: '8.2'
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /vms/
+          local-dir: ./
+          exclude: |
+            public/**
+            node_modules/**
+            vendor/**
+            .git*
+            .github*
+            storage/logs/*
+            storage/framework/cache/*
 
-      - name: 🧹 Build assets (optional)
-        run: |
-          npm install
-          npm run build || echo "Skipping build"
-
-      - name: 🚀 Deploy via FTP
+      # ✅ Deploy public folder separately to public_html
+      - name: 🌐 Deploy public to /public_html/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /public_html/
-          local-dir: ./
+          local-dir: ./public/
           exclude: |
-            **/.git*
-            **/.github*
-            **/node_modules/**
-            **/vendor/**
-            **/storage/**
-            **/tests/**
-            **/bootstrap/cache/**
-            **/.env
-            **/artisan-run.php
+            .git*
+            .github*
+

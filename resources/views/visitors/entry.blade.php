@@ -10,12 +10,19 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
     <div class="table-responsive shadow-sm border rounded-3">
         <table class="table table-hover table-striped align-middle text-center mb-0">
             <thead class="table-primary">
                 <tr>
                     <th>Name</th>
+                    <th>Department</th>
                     <th>Purpose</th>
                     <th>In Time</th>
                     <th>Out Time</th>
@@ -27,6 +34,7 @@
                 @forelse($visitors as $visitor)
                     <tr>
                         <td class="fw-semibold">{{ $visitor->name }}</td>
+                        <td>{{ $visitor->department->name ?? '—' }}</td>
                         <td>{{ $visitor->purpose ?? '—' }}</td>
                         <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>
                         <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('d M, h:i A') : '—' }}</td>
@@ -38,9 +46,13 @@
                             </span>
                         </td>
                         <td>
+                            @php
+                                $isCompany = request()->is('company/*');
+                                $toggleRoute = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
+                            @endphp
                             @if(auth()->user()->role !== 'guard')
                                 @if(!$visitor->out_time)
-                                    <form action="{{ route('visitors.entry.toggle', $visitor->id) }}" method="POST">
+                                    <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
                                             {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
@@ -56,7 +68,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-muted">No visitors found.</td>
+                        <td colspan="7" class="text-muted">No visitors found.</td>
                     </tr>
                 @endforelse
             </tbody>

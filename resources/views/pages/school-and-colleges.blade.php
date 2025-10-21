@@ -7,6 +7,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
         :root {
             --primary-color: #4e73df;
@@ -371,46 +377,7 @@
             margin-bottom: 0;
         }
 
-        .testimonial-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            padding: 40px 30px;
-            margin: 15px;
-            position: relative;
-            transition: all 0.3s;
-        }
-
-        .testimonial-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-        }
-
-        .testimonial-card:before {
-            content: '"';
-            font-size: 100px;
-            color: rgba(46, 139, 87, 0.1);
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            line-height: 1;
-            font-family: Georgia, serif;
-        }
-
-        .testimonial-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .testimonial-text {
-            font-style: italic;
-            margin-bottom: 25px;
-            color: #555;
-            line-height: 1.8;
-        }
-
-        
-
+       
         .author-info h5 {
             margin-bottom: 5px;
             color: var(--education-dark);
@@ -891,56 +858,132 @@
 
     
     
-    <!-- FAQ Section -->
-    <section id="faq" class="py-5 bg-light">
-        <div class="container">
-            <div class="section-title">
-                <h2>Frequently Asked Questions</h2>
-                <p>Find answers to common questions about our visitor management system for education</p>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>How does the system handle student data privacy?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>Our system is fully compliant with FERPA and other student privacy regulations. Student data is encrypted and access is strictly controlled. Visitor data is stored separately from student records, and we offer customizable data retention policies to meet your institution's requirements.</p>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>Can the system integrate with our existing student information system?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>Yes, EduVMS offers integration capabilities with popular SIS platforms including PowerSchool, Infinite Campus, and others. This allows for automated student and staff directory synchronization, ensuring your visitor system always has up-to-date information.</p>
-                        </div>
-                    </div>
-                   
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>How long does implementation typically take?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>Most institutions are up and running within 2-4 weeks. The timeline depends on the size of your campus, integration requirements, and customization needs. Our implementation team guides you through every step, from hardware setup to staff training.</p>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question">
-                            <span>What training and support do you provide?</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p>We provide comprehensive training for administrators and front desk staff, along with detailed documentation. Our support team is available via phone, email, and chat during school hours, with emergency support available for critical issues.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+     <!-- FAQ Section -->
+<section id="faq" class="py-5 bg-light">
+  <div class="container">
+    <div class="section-title text-center mb-5">
+      <h2>Frequently Asked Questions</h2>
+      <p>Find answers to common questions about our Industrial Visitor Management System</p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <!-- Analytics Dashboard -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system provide analytics and reports?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
+              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real-time.
+            </p>
+          </div>
         </div>
-    </section>
+
+        <!-- Hourly Visitor Analysis -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we track visitors on an hourly basis?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics 
+              segmented by the hour, helping optimize staffing and enhance security monitoring.
+            </p>
+          </div>
+        </div>
+
+        <!-- Safety Compliance -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does the system ensure visitor safety compliance?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors must complete safety inductions and acknowledge compliance rules before entry. 
+              The system tracks and records all safety acknowledgments for audit purposes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Face Recognition -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system support face recognition for entry?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
+              for visitors, reducing manual verification needs.
+            </p>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Will we get notified when visitors arrive?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access 
+              or checks in at the facility.
+            </p>
+          </div>
+        </div>
+
+        <!-- Visitor Pass -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we generate visitor passes directly from the system?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the system allows you to instantly generate and print visitor passes, 
+              including QR code-enabled dynamic passes for quick access.
+            </p>
+          </div>
+        </div>
+
+        <!-- Pre-Approval -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is there a visitor pre-approval process?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors can be pre-approved by hosts through the system, enabling faster entry 
+              and minimizing wait times at the gate.
+            </p>
+          </div>
+        </div>
+
+        <!-- Visitor Entry Options -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What methods are available for visitor check-in and check-out?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The system supports multiple entry options including manual entry by security staff, 
+              face recognition, and QR code scanning for seamless visitor management.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
 
     <!-- CTA Section -->
     <section class="cta-section">

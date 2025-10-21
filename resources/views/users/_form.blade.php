@@ -53,6 +53,19 @@
     <input type="hidden" name="company_id" value="{{ auth()->user()->company_id }}">
 @endif
 
+{{-- Branch (depends on selected company) --}}
+<div class="mb-3">
+    <label class="form-label fw-semibold">Branch</label>
+    <select name="branch_id" id="branchSelect" class="form-select">
+        <option value="">-- All / None --</option>
+    </select>
+    @error('branch_id') <div class="text-danger small">{{ $message }}</div> @enderror
+    <div id="branchHelp" class="form-text">If the company has multiple branches, select one to assign this user.</div>
+    <div id="branchLoading" class="small text-muted" style="display:none;">Loading branches...</div>
+    <div id="branchEmpty" class="small text-muted" style="display:none;">No branches found for the selected company.</div>
+    <input type="hidden" id="oldBranchId" value="{{ old('branch_id', $user->branch_id ?? '') }}">
+</div>
+
 {{-- Departments (AJAX) --}}
 <div class="mb-3">
     <label class="form-label fw-semibold">Departments</label>
@@ -144,6 +157,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const companySelect   = document.getElementById('companySelect');   // only exists for superadmin
     const departmentBox   = document.getElementById('departmentCheckboxes');
     const preselected     = @json($preselectedDeptIds);
+    const branchSelect    = document.getElementById('branchSelect');
+    const branchLoading   = document.getElementById('branchLoading');
+    const branchEmpty     = document.getElementById('branchEmpty');
+    const oldBranchId     = document.getElementById('oldBranchId')?.value || '';
 
     function renderDepartments(list) {
         if (!Array.isArray(list) || list.length === 0) {
@@ -172,14 +189,50 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(() => departmentBox.innerHTML = '<p class="text-danger">Error loading departments.</p>');
     }
 
+    function renderBranches(list) {
+        branchSelect.innerHTML = '<option value="">-- All / None --</option>';
+        if (!Array.isArray(list) || list.length === 0) {
+            branchEmpty.style.display = 'block';
+            return;
+        }
+        branchEmpty.style.display = 'none';
+        list.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.textContent = b.name;
+            if (String(oldBranchId) === String(b.id)) opt.selected = true;
+            branchSelect.appendChild(opt);
+        });
+    }
+
+    function fetchBranches(companyId) {
+        if (!companyId) { branchSelect.innerHTML = '<option value="">-- All / None --</option>'; return; }
+        branchLoading.style.display = 'block';
+        branchEmpty.style.display = 'none';
+        fetch(`/companies/${companyId}/branches`)
+            .then(res => res.json())
+            .then(data => { renderBranches(data); })
+            .catch(() => { branchEmpty.style.display = 'block'; })
+            .finally(() => { branchLoading.style.display = 'none'; });
+    }
+
     // Only bind listeners if the element exists (superadmin case)
     if (companySelect) {
-        companySelect.addEventListener('change', () => fetchDepartments(companySelect.value));
-        if (companySelect.value) fetchDepartments(companySelect.value);
+        companySelect.addEventListener('change', () => {
+            fetchDepartments(companySelect.value);
+            fetchBranches(companySelect.value);
+        });
+        if (companySelect.value) {
+            fetchDepartments(companySelect.value);
+            fetchBranches(companySelect.value);
+        }
     } else {
         // For company users: use their own company id from hidden input
         const hiddenCompany = document.querySelector('input[name="company_id"]');
-        if (hiddenCompany) fetchDepartments(hiddenCompany.value);
+        if (hiddenCompany) {
+            fetchDepartments(hiddenCompany.value);
+            fetchBranches(hiddenCompany.value);
+        }
     }
 });
 </script>

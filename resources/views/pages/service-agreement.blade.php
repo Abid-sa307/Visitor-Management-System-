@@ -10,6 +10,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
+<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
         :root {
             --primary: #4e73df;
@@ -192,7 +198,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="terms-card">
-                    <p class="last-updated">Last updated: October 26, 2023</p>
+                    <p class="last-updated">Last updated: September 30, 2025</p>
                     
                     <h2>Service Agreement</h2>
                     <p>This Service Agreement ("Agreement") is entered into between N&T Software Pvt Ltd ("Service Provider," "we," "us," or "our") and the customer ("Customer," "you," or "your") who subscribes to our Smart Visitor Management System (VMS) services.</p>
@@ -224,7 +230,7 @@
                     
                     <div class="highlight-box">
                         <h4><i class="bi bi-headset me-2"></i>Support Channels</h4>
-                        <p class="mb-0">Customers may contact our support team via email at support@vmspro.com or through the in-app support system. Response times vary based on subscription tier and issue severity.</p>
+                        <p class="mb-0">Customers may contact our support team via email at support visitormanagmentsystemsoftware@gmail.com or through the in-app support system. Response times vary based on subscription tier and issue severity.</p>
                     </div>
                     
                     <h3 class="section-title">3. Customer Responsibilities</h3>
@@ -289,35 +295,12 @@
                     <h3 class="section-title">13. Miscellaneous</h3>
                     <p>This Agreement constitutes the entire agreement between the parties and supersedes all prior agreements. Neither party may assign this Agreement without the other's consent, except in connection with a merger or acquisition. Notices under this Agreement must be in writing.</p>
                     
-                    <div class="signature-section">
-                        <h3 class="section-title">Acceptance of Terms</h3>
-                        <p>By using our Service, you acknowledge that you have read, understood, and agree to be bound by the terms of this Service Agreement.</p>
-                        
-                        <div class="row signature-block">
-                            <div class="col-md-6">
-                                <h5>For N&T Software Pvt Ltd</h5>
-                                <p>_________________________</p>
-                                <div class="signature-line"></div>
-                                <p>Name: ___________________</p>
-                                <p>Title: __________________</p>
-                                <p>Date: ___________________</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h5>For Customer</h5>
-                                <p>_________________________</p>
-                                <div class="signature-line"></div>
-                                <p>Name: ___________________</p>
-                                <p>Title: __________________</p>
-                                <p>Date: ___________________</p>
-                            </div>
-                        </div>
-                    </div>
                     
                     <h3 class="section-title">14. Contact Information</h3>
                     <p>For questions about this Service Agreement, please contact us:</p>
                     <p>
                         <strong>N&T Software Pvt Ltd</strong><br>
-                        Email: Shahnavaz.s@nntsoftware.in<br>
+                        Email: sales@nntsoftware.com<br>
                         Phone: +91 8487080659<br>
                         Address: 3rd Floor, Diamond Complex, SH 41,Industrial Area, Chhapi, North
                                         GujaratIndia. 385210

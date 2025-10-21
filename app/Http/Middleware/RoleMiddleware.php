@@ -10,7 +10,20 @@ class RoleMiddleware
 {
         public function handle($request, Closure $next, ...$roles)
         {
-            if (!Auth::check() || !in_array(Auth::user()->role, $roles)) {
+            // Try default guard first
+            $user = Auth::user();
+
+            // Fallback to company guard
+            if (!$user && Auth::guard('company')->check()) {
+                $user = Auth::guard('company')->user();
+            }
+
+            // Fallback to security guard (if used)
+            if (!$user && Auth::guard('guard')->check()) {
+                $user = Auth::guard('guard')->user();
+            }
+
+            if (!$user || !in_array($user->role, $roles)) {
                 abort(403, 'Unauthorized');
             }
 

@@ -270,4 +270,5 @@ function checkPlatform(&$warnings, $quiet, $disableTls, $install)
     }
 
     if (!empty($errors)) {
-        // C
+        // Composer will not run if there are errors
+                                                        
