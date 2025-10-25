@@ -709,7 +709,7 @@
                                     <p class="mb-3">We had a very big problem in visitor tracking at our office. With
                                         the Advanced Visitor Management System, our issue was solved. We appreciate what
                                         they built.</p>
-                                    <h5 class="fw-bold">B. A. Chavada</h5>
+                                    <h5 class="fw-bold"> B. A. Chavada</h5>
                                     <small class="text-muted">Human Resource</small>
                                 </div>
                             </div>
