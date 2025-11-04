@@ -1,8 +1,25 @@
 @extends('layouts.sb')
 
 @section('content')
+@php
+    $isCompanyPanel = request()->is('company/*');
+    $exportRoute = $isCompanyPanel && Route::has('company.visitors.report.security.export')
+        ? 'company.visitors.report.security.export'
+        : 'visitors.report.security.export';
+@endphp
+
 <div class="container py-4">
-    <h2 class="fw-bold text-primary mb-4">Security Checkpoints Report</h2>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h2 class="fw-bold text-primary m-0">Security Checkpoints Report</h2>
+        <form method="GET" action="{{ route($exportRoute) }}" class="d-flex gap-2">
+            <input type="hidden" name="status" value="{{ request('status') }}">
+            <input type="hidden" name="from" value="{{ request('from') }}">
+            <input type="hidden" name="to" value="{{ request('to') }}">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
+            </button>
+        </form>
+    </div>
 
     <!-- Date filter -->
     <form method="GET" class="row g-3 align-items-end mb-3">
@@ -25,8 +42,8 @@
                         <th>Verification Method</th>
                         <th>Status</th>
                         <th>Reason (if Denied)</th>
-                        <th>Security Staff</th>
-                        <th>Verification Time</th>
+                        <th>Security Officer</th>
+                        <th>Recorded At</th>
                         <th>Photo Clicked</th>
                     </tr>
                 </thead>
@@ -38,8 +55,8 @@
                             <td>{{ $check->verification_method }}</td>
                             <td>{!! $check->status === 'Verified' ? '✅ Verified' : '❌ Denied' !!}</td>
                             <td>{{ $check->reason ?? '—' }}</td>
-                            <td>{{ $check->staff->name ?? '—' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($check->verification_time)->format('Y-m-d h:i A') }}</td>
+                            <td>{{ $check->security_officer_name ?? '—' }}</td>
+                            <td>{{ $check->created_at ? \Carbon\Carbon::parse($check->created_at)->format('Y-m-d h:i A') : '—' }}</td>
                             <td>{{ $check->photo_clicked ? 'Yes' : 'No' }}</td>
                         </tr>
                     @endforeach

@@ -70,7 +70,7 @@
     @endif
 
     <!-- Login Form -->
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('superadmin.login.store') }}">
         @csrf
 
         <!-- Email -->
@@ -83,9 +83,15 @@
         </div>
 
         <!-- Password -->
-        <div class="mb-3">
+        <div class="mb-4">
             <label for="password" class="form-label">Password</label>
-            <input id="password" type="password" class="form-control" name="password" required>
+            <x-password-input 
+                id="password" 
+                name="password" 
+                required 
+                autocomplete="current-password"
+                class="w-full"
+            />
             @error('password')
                 <div class="text-danger small mt-1">{{ $message }}</div>
             @enderror
@@ -115,6 +121,9 @@
     </p>
     <p class="text-muted small">&copy; {{ date('Y') }} Visitor Management System. All rights reserved.</p>
 </div> -->
+
+<!-- Alpine.js -->
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

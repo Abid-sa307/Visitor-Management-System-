@@ -65,6 +65,12 @@
             'route' => $isCompany ? 'company.visitors.history' : 'visitors.history',
             'page'  => 'visitor_history',
         ],
+        [
+            'title' => 'Security Checks',
+            'icon'  => 'bi-shield-check',
+            'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
+            'page'  => 'security_checks',
+        ],
         // Companies (superadmin only; never visible to company users)
         [
             'title' => 'Companies',
@@ -162,9 +168,7 @@
     @endif
 
     <hr class="sidebar-divider d-none d-md-block">
-    <div class="text-center d-none d-md-inline my-3">
-        <button class="rounded-circle border-0" id="sidebarToggle" title="Toggle sidebar"></button>
-    </div>
+    
 </ul>
 
 <style>
@@ -176,5 +180,20 @@
 #accordionSidebar #collapseReports .collapse-inner .collapse-item:focus {
   background-color: rgba(255, 255, 255, 0.12);
   color: #fff !important;
+}
+
+/* Hide the SB Admin footer */
+.sidebar .text-center {
+  display: none !important;
+}
+
+/* More specific selector if needed */
+#accordionSidebar > .text-center:last-child {
+  display: none !important;
+}
+
+/* Target the specific text if needed */
+#accordionSidebar > div:contains('SB Admin v7.0.7') {
+  display: none !important;
 }
 </style>

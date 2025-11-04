@@ -1,12 +1,23 @@
 @extends('layouts.sb')
 
 @section('content')
+@php
+    $isCompanyPanel = request()->is('company/*');
+    $reportExportRoute = $isCompanyPanel && Route::has('company.visitors.report.export')
+        ? 'company.visitors.report.export'
+        : 'visitors.report.export';
+@endphp
+
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h2 class="fw-bold text-primary m-0">Visitor Report</h2>
-        <a href="{{ route('company.visitors.report.export') }}" class="btn btn-success">
-            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel
-        </a>
+        <form method="GET" action="{{ route($reportExportRoute) }}">
+            <input type="hidden" name="from" value="{{ request('from') }}">
+            <input type="hidden" name="to" value="{{ request('to') }}">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel
+            </button>
+        </form>
     </div>
 
     <!-- Date filter -->

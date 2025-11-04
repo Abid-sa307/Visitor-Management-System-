@@ -18,6 +18,7 @@ class CompanyUser extends Authenticatable
         'password',
         'company_id',
         'role',
+        'master_pages',
     ];
 
     protected $hidden = [
@@ -27,6 +28,7 @@ class CompanyUser extends Authenticatable
 
     protected $casts = [
         'password' => 'hashed',
+        'master_pages' => 'array',
     ];
 
     public function company()

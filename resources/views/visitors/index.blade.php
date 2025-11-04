@@ -116,15 +116,7 @@
                     </form>
                   @endif
 
-                  {{-- Security Check --}}
-                  @if($securityCreateRoute)
-                    <a href="{{ route($securityCreateRoute, $visitor->id) }}" class="btn btn-sm btn-outline-dark">
-                      Security Check
-                    </a>
-                  @endif
-
-                </div>
-              </td>
+                  {{-- Toggle Entry (IN/OUT) --}}
             </tr>
           @empty
             <tr><td colspan="10" class="text-muted">No visitors found.</td></tr>

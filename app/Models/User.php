@@ -12,9 +12,14 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
-        'name','email','password','phone','role','company_id','branch_id',
+        'name', 'email', 'password', 'phone', 'role', 'company_id', 'branch_id',
         'department_id', // if you keep a single department, optional
-        'master_pages',
+        'master_pages', 'otp', 'otp_expires_at', 'otp_verified_at', 'is_super_admin'
+    ];
+    
+    protected $dates = [
+        'otp_expires_at',
+        'otp_verified_at',
     ];
 
     protected $hidden = ['password','remember_token'];
@@ -29,6 +34,14 @@ class User extends Authenticatable
     public function branch()      { return $this->belongsTo(Branch::class); }
     public function departments() { return $this->belongsToMany(Department::class); }
     public function department()  { return $this->belongsTo(Department::class, 'department_id'); } // optional single
+
+    /**
+     * Check if OTP verification is required for this user
+     */
+    public function requiresOtpVerification(): bool
+    {
+        return $this->is_super_admin && $this->role === 'admin';
+    }
 
     /** Normalize master pages array */
     public function getMasterPagesListAttribute(): array

@@ -25,9 +25,11 @@ class DashboardController extends Controller
     $selectedBranch  = $request->branch_id ?? null;
     $from = $request->input('from');
     $to   = $request->input('to');
+    
+    // If no dates provided, default to last 30 days
     if (!$from && !$to) {
-        $from = today()->toDateString();
-        $to   = $from;
+        $to = today()->toDateString();
+        $from = today()->subDays(30)->toDateString();
     } elseif ($from && !$to) {
         $to = $from;
     } elseif ($to && !$from) {
@@ -36,22 +38,29 @@ class DashboardController extends Controller
 
     // ------------------------ Base visitor query (range) ------------------------
     $visitorQuery = Visitor::query()
-        ->whereRaw("DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) BETWEEN ? AND ?", [$from, $to]);
+        ->whereDate('created_at', '>=', $from)
+        ->whereDate('created_at', '<=', $to)
+        ->with(['company', 'department', 'branch']);
 
+    // Apply role-based filters
     if (($user->role ?? null) === 'company') {
         $visitorQuery->where('company_id', $user->company_id);
+        
         if (!empty($user->branch_id)) {
             $visitorQuery->where('branch_id', $user->branch_id);
         } elseif ($selectedBranch) {
             $visitorQuery->where('branch_id', $selectedBranch);
         }
+        
         if ($user->company?->auto_approve_visitors) {
             $visitorQuery->where('status', 'Approved');
         }
-    } elseif (($user->role ?? null) === 'superadmin' && $selectedCompany) {
-        $visitorQuery->where('company_id', $selectedCompany);
-        if ($selectedBranch) {
-            $visitorQuery->where('branch_id', $selectedBranch);
+    } elseif (($user->role ?? null) === 'superadmin') {
+        if ($selectedCompany) {
+            $visitorQuery->where('company_id', $selectedCompany);
+            if ($selectedBranch) {
+                $visitorQuery->where('branch_id', $selectedBranch);
+            }
         }
     }
 
@@ -62,15 +71,37 @@ class DashboardController extends Controller
 
     // ------------------------ Latest visitors (within range) ------------------------
     $latestVisitors = (clone $visitorQuery)->latest()->take(6)->get();
+    
+    // Get paginated visitors for the visitors list
+    $visitors = (clone $visitorQuery)
+        ->with(['company', 'department'])
+        ->latest()
+        ->paginate(10);
 
     // ------------------------ Monthly chart (current year, not limited to range) ------------------------
     $monthlyBase = Visitor::query()
-        ->when(($user->role ?? null) === 'company', fn($q) => $q->where('company_id', $user->company_id))
-        ->when(($user->role ?? null) === 'company' && !empty($user->branch_id), fn($q) => $q->where('branch_id', $user->branch_id))
-        ->when(($user->role ?? null) === 'superadmin' && $selectedCompany, fn($q) => $q->where('company_id', $selectedCompany))
-        ->when(($user->role ?? null) === 'superadmin' && $selectedBranch, fn($q) => $q->where('branch_id', $selectedBranch))
-        ->when(($user->role ?? null) === 'company' && $user->company?->auto_approve_visitors, fn($q) => $q->where('status', 'Approved'))
         ->whereYear('created_at', now()->year);
+        
+    if (($user->role ?? null) === 'company') {
+        $monthlyBase->where('company_id', $user->company_id);
+        
+        if (!empty($user->branch_id)) {
+            $monthlyBase->where('branch_id', $user->branch_id);
+        } elseif ($selectedBranch) {
+            $monthlyBase->where('branch_id', $selectedBranch);
+        }
+        
+        if ($user->company?->auto_approve_visitors) {
+            $monthlyBase->where('status', 'Approved');
+        }
+    } elseif (($user->role ?? null) === 'superadmin') {
+        if ($selectedCompany) {
+            $monthlyBase->where('company_id', $selectedCompany);
+            if ($selectedBranch) {
+                $monthlyBase->where('branch_id', $selectedBranch);
+            }
+        }
+    }
 
     $monthly = $monthlyBase
         ->selectRaw("DATE_FORMAT(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30'), '%b') as month, COUNT(*) as count")
@@ -85,11 +116,23 @@ class DashboardController extends Controller
     // ------------------------ Hourly chart ------------------------
     $singleDay = ($from === $to);
     $hourBase = Visitor::query()
-        ->when(($user->role ?? null) === 'company', fn($q) => $q->where('company_id', $user->company_id))
-        ->when(($user->role ?? null) === 'company' && !empty($user->branch_id), fn($q) => $q->where('branch_id', $user->branch_id))
-        ->when(($user->role ?? null) === 'superadmin' && $selectedCompany, fn($q) => $q->where('company_id', $selectedCompany))
-        ->when(($user->role ?? null) === 'superadmin' && $selectedBranch, fn($q) => $q->where('branch_id', $selectedBranch))
-        ->when(($user->role ?? null) === 'company' && $user->company?->auto_approve_visitors, fn($q) => $q->where('status', 'Approved'));
+        ->when(($user->role ?? null) === 'company', function($q) use ($user) {
+            $q->where('company_id', $user->company_id);
+            if (!empty($user->branch_id)) {
+                $q->where('branch_id', $user->branch_id);
+            }
+            if ($user->company?->auto_approve_visitors) {
+                $q->where('status', 'Approved');
+            }
+        })
+        ->when(($user->role ?? null) === 'superadmin', function($q) use ($selectedCompany, $selectedBranch) {
+            if ($selectedCompany) {
+                $q->where('company_id', $selectedCompany);
+                if ($selectedBranch) {
+                    $q->where('branch_id', $selectedBranch);
+                }
+            }
+        });
 
     if ($singleDay) {
         $hourBase->whereRaw("DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) = ?", [$from]);
@@ -101,23 +144,36 @@ class DashboardController extends Controller
     $hourly = $hourBase
         ->selectRaw("HOUR(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) as hour, COUNT(*) as count")
         ->groupBy('hour')
+        ->orderBy('hour')
         ->get()
-        ->pluck('count', 'hour');
+        ->keyBy('hour');
 
     $hourLabels = [];
     $hourData   = [];
     for ($i = 0; $i <= 23; $i++) {
         $hourLabels[] = sprintf('%02d:00', $i);
-        $hourData[]   = $hourly[$i] ?? 0;
+        $hourData[]   = isset($hourly[$i]) ? (int)$hourly[$i]->count : 0;
     }
 
     // ------------------------ Day-wise chart (range) ------------------------
     $dayWise = Visitor::query()
-        ->when(($user->role ?? null) === 'company', fn($q) => $q->where('company_id', $user->company_id))
-        ->when(($user->role ?? null) === 'company' && !empty($user->branch_id), fn($q) => $q->where('branch_id', $user->branch_id))
-        ->when(($user->role ?? null) === 'superadmin' && $selectedCompany, fn($q) => $q->where('company_id', $selectedCompany))
-        ->when(($user->role ?? null) === 'superadmin' && $selectedBranch, fn($q) => $q->where('branch_id', $selectedBranch))
-        ->when(($user->role ?? null) === 'company' && $user->company?->auto_approve_visitors, fn($q) => $q->where('status', 'Approved'))
+        ->when(($user->role ?? null) === 'company', function($q) use ($user) {
+            $q->where('company_id', $user->company_id);
+            if (!empty($user->branch_id)) {
+                $q->where('branch_id', $user->branch_id);
+            }
+            if ($user->company?->auto_approve_visitors) {
+                $q->where('status', 'Approved');
+            }
+        })
+        ->when(($user->role ?? null) === 'superadmin', function($q) use ($selectedCompany, $selectedBranch) {
+            if ($selectedCompany) {
+                $q->where('company_id', $selectedCompany);
+                if ($selectedBranch) {
+                    $q->where('branch_id', $selectedBranch);
+                }
+            }
+        })
         ->whereRaw("DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) BETWEEN ? AND ?", [$from, $to])
         ->selectRaw("DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) as date, COUNT(*) as count")
         ->groupBy('date')
@@ -153,45 +209,46 @@ class DashboardController extends Controller
         if ($user->company?->auto_approve_visitors) {
             $deptQuery->where('visitors.status', 'Approved');
         }
-    } elseif ($selectedCompany) {
-        $deptQuery->where('visitors.company_id', $selectedCompany);
-        if ($selectedBranch) {
-            $deptQuery->where('visitors.branch_id', $selectedBranch);
+    } elseif (($user->role ?? null) === 'superadmin') {
+        if ($selectedCompany) {
+            $deptQuery->where('visitors.company_id', $selectedCompany);
+            if ($selectedBranch) {
+                $deptQuery->where('visitors.branch_id', $selectedBranch);
+            }
         }
     }
 
-    $deptData   = collect($deptQuery->get());
+    // Get department data
+    $deptData = $deptQuery->get();
     $deptLabels = $deptData->pluck('department');
     $deptCounts = $deptData->pluck('total');
     $totalDeptVisitors = $deptCounts->sum();
 
-    // ------------------------ Visitors in range ------------------------
-    $visitorsByDate = (clone $visitorQuery)->get();
-
     // ------------------------ All companies for superadmin filter ------------------------
     $companies = Company::all();
 
-    return view('dashboard', compact(
-        'approvedCount',
-        'pendingCount',
-        'rejectedCount',
-        'latestVisitors',
-        'chartLabels',
-        'chartData',
-        'hourLabels',
-        'hourData',
-        'dayWiseLabels',
-        'dayWiseData',
-        'deptLabels',
-        'deptCounts',
-        'totalDeptVisitors',
-        'visitorsByDate',
-        'companies',
-        'selectedCompany',
-        'autoApprove',
-        'from',
-        'to',
-    ));
+    return view('dashboard', [
+        'autoApprove'       => $autoApprove,
+        'approvedCount'     => $approvedCount,
+        'pendingCount'      => $pendingCount,
+        'rejectedCount'     => $rejectedCount,
+        'latestVisitors'    => $latestVisitors,
+        'visitors'          => $visitors,
+        'chartLabels'       => $chartLabels,
+        'chartData'         => $chartData,
+        'hourLabels'        => $hourLabels,
+        'hourData'          => $hourData,
+        'dayWiseLabels'     => $dayWiseLabels,
+        'dayWiseData'       => $dayWiseData,
+        'deptLabels'        => $deptLabels,
+        'deptCounts'        => $deptCounts,
+        'totalDeptVisitors' => $totalDeptVisitors,
+        'companies'         => Company::orderBy('name')->get(),
+        'selectedCompany'   => $selectedCompany,
+        'selectedBranch'    => $selectedBranch,
+        'from'              => $from,
+        'to'                => $to,
+    ]);
 }
 
 }

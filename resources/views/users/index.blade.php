@@ -58,9 +58,7 @@
         <table class="table table-striped table-hover align-middle mb-0">
             <thead class="table-light text-uppercase text-center">
                 <tr>
-                    <th class="text-start">Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
+                    <th class="text-start">User</th>
                     <th>Role</th>
                     <th>Company</th>
                     <th>Departments</th>
@@ -68,7 +66,7 @@
                     <th style="width:160px;">Actions</th>
                 </tr>
             </thead>
-            <tbody class="text-center">
+             <tbody class="text-center">
                 @forelse($users as $user)
                     @php
                         $roleKey = strtolower((string)$user->role);
@@ -82,9 +80,13 @@
                                     ->filter();
                     @endphp
                     <tr>
-                        <td class="text-start fw-semibold">{{ $user->name }}</td>
-                        <td>{{ $user->email }}</td>
-                        <td>{{ $user->phone ?? '—' }}</td>
+                        <td class="text-start">
+                            <div class="fw-semibold">{{ $user->name }}</div>
+                            <div class="text-muted small mt-1">
+                                <span class="me-3"><i class="bi bi-envelope me-1"></i>{{ $user->email ?? '—' }}</span>
+                                <span><i class="bi bi-telephone me-1"></i>{{ $user->phone ?? '—' }}</span>
+                            </div>
+                        </td>
                         <td>
                             <span class="badge bg-{{ $badge }}">
                                 {{ str_replace('_',' ', ucfirst($user->role ?? 'user')) }}
@@ -112,7 +114,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="text-muted py-4">No users found.</td></tr>
+                    <tr><td colspan="6" class="text-muted py-4">No users found.</td></tr>
                 @endforelse
             </tbody>
         </table>

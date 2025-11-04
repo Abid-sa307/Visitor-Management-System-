@@ -36,7 +36,7 @@
 </div>
 
 @if($isSuper)
-    <div class="mb-3">
+    <div class="mb-3 company-field">
         <label class="form-label fw-semibold">Company</label>
         <select name="company_id" id="companySelect" class="form-select" required>
             <option value="">-- Select Company --</option>
@@ -74,7 +74,8 @@
 </div>
 
 {{-- Master Pages --}}
-<div class="mb-3">
+@if(!isset($user) || (isset($user) && $user->role !== 'superadmin'))
+<div class="mb-3 master-pages-field">
     <label class="form-label">Assign Page Access</label>
     @php
         // Available modules (adjust as needed)
@@ -120,6 +121,7 @@
         </div>
     @endforeach
 </div>
+@endif
 
 
 @if (($mode ?? 'create') === 'create')
@@ -153,6 +155,37 @@
 
 @push('scripts')
 <script>
+// Function to toggle fields based on selected role
+function toggleFieldsByRole(role) {
+    const isSuperAdmin = role === 'superadmin';
+    
+    // Toggle company field
+    const companyField = document.querySelector('.company-field');
+    if (companyField) {
+        companyField.style.display = isSuperAdmin ? 'none' : 'block';
+        // Hide company error message if exists
+        const companyError = companyField.nextElementSibling;
+        if (companyError && companyError.classList.contains('text-danger')) {
+            companyError.style.display = isSuperAdmin ? 'none' : 'block';
+        }
+    }
+    
+    // Toggle branch field
+    const branchField = document.getElementById('branchSelect')?.closest('.mb-3');
+    if (branchField) branchField.style.display = isSuperAdmin ? 'none' : 'block';
+    
+    // Toggle departments field
+    const departmentField = document.getElementById('departmentCheckboxes')?.closest('.mb-3');
+    if (departmentField) departmentField.style.display = isSuperAdmin ? 'none' : 'block';
+    
+    // Toggle master pages field
+    const masterPagesField = document.querySelector('.master-pages-field');
+    if (masterPagesField) masterPagesField.style.display = isSuperAdmin ? 'none' : 'block';
+        if (departmentField) departmentField.style.display = 'block';
+        if (masterPagesField) masterPagesField.style.display = 'block';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const companySelect   = document.getElementById('companySelect');   // only exists for superadmin
     const departmentBox   = document.getElementById('departmentCheckboxes');
@@ -161,6 +194,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const branchLoading   = document.getElementById('branchLoading');
     const branchEmpty     = document.getElementById('branchEmpty');
     const oldBranchId     = document.getElementById('oldBranchId')?.value || '';
+    const roleSelect      = document.getElementById('role');
+    
+    // Initial toggle based on selected role
+    if (roleSelect) {
+        // Run immediately
+        toggleFieldsByRole(roleSelect.value);
+        
+        // Add event listener for role change
+        roleSelect.addEventListener('change', function() {
+            toggleFieldsByRole(this.value);
+        });
+        
+        // Also run after a short delay to ensure all elements are loaded
+        setTimeout(() => toggleFieldsByRole(roleSelect.value), 100);
+    }
 
     function renderDepartments(list) {
         if (!Array.isArray(list) || list.length === 0) {

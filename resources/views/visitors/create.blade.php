@@ -7,14 +7,28 @@
       Register New Visitor
     </h3>
 
+    @if ($errors->any())
+      <div class="alert alert-danger">
+        <strong>Please fix the errors below.</strong>
+        <ul class="mb-0 mt-2 small">
+          @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+          @endforeach
+        </ul>
+      </div>
+    @endif
+
     <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}" 
-        method="POST" enctype="multipart/form-data">
+        method="POST" enctype="multipart/form-data" novalidate>
       @csrf
 
       <!-- Phone (first) -->
       <div class="mb-2">
         <label class="form-label fw-semibold">Phone Number</label>
-        <input type="text" name="phone" id="phoneInput" class="form-control" required value="{{ old('phone') }}" placeholder="Enter mobile number">
+        <input type="text" name="phone" id="phoneInput" class="form-control @error('phone') is-invalid @enderror" required value="{{ old('phone') }}" placeholder="Enter mobile number">
+        @error('phone')
+          <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
       </div>
       <div id="autofillHint" class="alert alert-info py-2 px-3 d-none">
         A previous visitor with this number was found.
@@ -24,13 +38,19 @@
       <!-- Name -->
       <div class="mb-3">
         <label class="form-label fw-semibold">Full Name</label>
-        <input type="text" name="name" id="nameInput" class="form-control" required value="{{ old('name') }}">
+        <input type="text" name="name" id="nameInput" class="form-control @error('name') is-invalid @enderror" required value="{{ old('name') }}">
+        @error('name')
+          <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
       </div>
 
       <!-- Email (Optional) -->
       <div class="mb-3">
         <label class="form-label fw-semibold">Email (optional)</label>
-        <input type="email" name="email" id="emailInput" class="form-control" value="{{ old('email') }}">
+        <input type="email" name="email" id="emailInput" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}">
+        @error('email')
+          <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
       </div>
 
       <!-- Photo -->
@@ -52,14 +72,20 @@
           <input type="hidden" name="photo_base64" id="photoBase64">
 
           <div class="text-center small text-muted">OR</div>
-          <input type="file" name="photo" class="form-control" accept="image/*">
+          <input type="file" name="photo" class="form-control @error('photo') is-invalid @enderror" accept="image/*">
+          @error('photo')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
         </div>
       </div>
 
       <!-- Documents -->
       <div class="mb-3">
         <label class="form-label fw-semibold">Documents (optional)</label>
-        <input type="file" name="documents[]" class="form-control" multiple>
+        <input type="file" name="documents[]" class="form-control @error('documents.*') is-invalid @enderror" multiple>
+        @error('documents.*')
+          <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
       </div>
 
       <!-- Submit -->

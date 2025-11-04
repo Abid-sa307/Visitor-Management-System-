@@ -15,11 +15,17 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Notifications\VisitorCreated;
+use App\Exports\ArrayExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 class VisitorController extends Controller
 {
+    private const NAME_REGEX = '/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u';
+    private const PHONE_REGEX = '/^\+?[0-9]{7,15}$/';
+
     /* --------------------------- Helpers --------------------------- */
 
     private function isSuper(): bool
@@ -37,13 +43,17 @@ class VisitorController extends Controller
     // Scope queries to company for non-super admins
     private function companyScope($query)
     {
+        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        
+        // If not superadmin, filter by company and branch
         if (!$this->isSuper()) {
-            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
             $query->where('company_id', $u->company_id);
             if (!empty($u->branch_id)) {
                 $query->where('branch_id', $u->branch_id);
             }
         }
+        
+        // For superadmin, don't apply any filters - show all data
         return $query;
     }
 
@@ -139,12 +149,17 @@ public function store(Request $request)
         // ---------------------------
         // Validation rules
         // ---------------------------
+        $messages = [
+            'name.regex'  => 'Name may only contain letters, spaces, apostrophes, periods, and hyphens.',
+            'phone.regex' => 'Phone must be digits only and can include an optional leading + (7-15 digits).',
+        ];
+
         $validated = $request->validate([
             'company_id'          => 'nullable|exists:companies,id',
-            'name'                => 'required|string|max:255',
+            'name'                => 'required|string|max:255|regex:'.self::NAME_REGEX,
             'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-            'email'               => 'nullable|email',
-            'phone'               => 'required|string|max:32',
+            'email'               => 'nullable|email:rfc,dns',
+            'phone'               => 'required|regex:'.self::PHONE_REGEX,
             'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'department_id'       => 'nullable|exists:departments,id',
             'purpose'             => 'nullable|string|max:255',
@@ -158,7 +173,12 @@ public function store(Request $request)
             'goods_in_car'        => 'nullable|string|max:255',
             'workman_policy'      => 'nullable|in:Yes,No',
             'workman_policy_photo'=> 'nullable|image|max:2048',
-        ]);
+        ], $messages);
+
+        $validated['name'] = Str::squish($validated['name']);
+        if (!empty($validated['email'])) {
+            $validated['email'] = strtolower($validated['email']);
+        }
 
         // ---------------------------
         // Force company for non-superadmin
@@ -319,24 +339,159 @@ private function schema_has_column(string $table, string $column): bool
     }
 
     public function update(Request $request, Visitor $visitor)
-{
-    $this->authorizeVisitor($visitor);
+    {
+        $this->authorizeVisitor($visitor);
 
-    // If only status is being updated (Approve/Reject buttons)
-    $nonBusiness = ['_token','_method'];
-    $payloadCount = count($request->except($nonBusiness));
-    $isAjax = $request->ajax() || $request->wantsJson();
-    if ($request->has('status') && ($payloadCount === 1 || $isAjax)) {
-        $wasApproved = $visitor->status === 'Approved';
-        $request->validate([
-            'status' => 'required|in:Pending,Approved,Rejected,Completed',
-        ]);
+        if ($request->input('action') === 'undo') {
+            if (!$visitor->status_changed_at || !in_array($visitor->status, ['Approved', 'Rejected'], true)) {
+                $message = 'Undo unavailable for this visitor.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+                return redirect()->back()->with('error', $message);
+            }
 
-        $visitor->status = $request->input('status');
+            if ($visitor->status_changed_at->lt(now()->subMinutes(30))) {
+                $message = 'Undo window expired (30 minutes).';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+                return redirect()->back()->with('error', $message);
+            }
+
+            $currentStatus = $visitor->status;
+            $visitor->status = 'Pending';
+            $visitor->last_status = $currentStatus;
+            $visitor->status_changed_at = now();
+            $visitor->save();
+
+            $message = 'Visitor status reverted to Pending';
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'status'  => $visitor->status,
+                    'message' => $message,
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        }
+
+        // If only status is being updated (Approve/Reject buttons)
+        $nonBusiness = ['_token','_method'];
+        $payloadCount = count($request->except($nonBusiness));
+        $isAjax = $request->ajax() || $request->wantsJson();
+        if ($request->has('status') && ($payloadCount === 1 || $isAjax)) {
+            $request->validate([
+                'status' => 'required|in:Pending,Approved,Rejected,Completed',
+            ]);
+
+            $previousStatus = $visitor->status;
+            $visitor->last_status = $previousStatus;
+            $visitor->status_changed_at = now();
+            $visitor->status = $request->input('status');
+            $visitor->save();
+
+            // If transitioned to Approved, send mail to visitor
+            if ($previousStatus !== 'Approved' && $visitor->status === 'Approved' && !empty($visitor->email)) {
+                try {
+                    \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
+                } catch (\Throwable $e) {
+                    // swallow error
+                }
+            }
+
+            if ($isAjax) {
+                return response()->json([
+                    'success' => true,
+                    'status'  => $visitor->status,
+                    'message' => "Visitor status updated to {$visitor->status}",
+                ]);
+            }
+
+            return redirect()->back()->with('success', "Visitor status updated to {$visitor->status}");
+        }
+
+        // Otherwise, normal full update
+        $messages = [
+            'name.regex'  => 'Name may only contain letters, spaces, apostrophes, periods, and hyphens.',
+            'phone.regex' => 'Phone must be digits only and can include an optional leading + (7-15 digits).',
+        ];
+
+        $validated = $request->validate([
+            'company_id'          => 'required|exists:companies,id',
+            'name'                => 'required|string|max:255|regex:'.self::NAME_REGEX,
+            'visitor_category_id' => 'nullable|exists:visitor_categories,id',
+            'email'               => 'nullable|email:rfc,dns',
+            'phone'               => 'required|regex:'.self::PHONE_REGEX,
+            'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'department_id'       => 'nullable|exists:departments,id',
+            'purpose'             => 'nullable|string|max:255',
+            'person_to_visit'     => 'nullable|string|max:255',
+            'in_time'             => 'nullable|date',
+            'out_time'            => 'nullable|date',
+            'status'              => 'required|in:Pending,Approved,Rejected,Completed',
+            'documents'           => 'nullable|array',
+            'documents.*'         => 'file|max:5120',
+            'visitor_company'     => 'nullable|string|max:255',
+            'visitor_website'     => 'nullable|string|max:255',
+            'vehicle_type'        => 'nullable|string|max:20',
+            'vehicle_number'      => 'nullable|string|max:50',
+            'goods_in_car'        => 'nullable|string|max:255',
+            'workman_policy'      => 'nullable|in:Yes,No',
+            'workman_policy_photo'=> 'nullable|image|max:2048',
+        ], $messages);
+
+        $validated['name'] = Str::squish($validated['name']);
+        if (!empty($validated['email'])) {
+            $validated['email'] = strtolower($validated['email']);
+        }
+
+        if (!$this->isSuper()) {
+            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+            $validated['company_id'] = $u->company_id;
+            if (!empty($u->branch_id)) {
+                $validated['branch_id'] = $u->branch_id;
+            }
+        }
+
+        // Photo: prefer base64 camera capture over file upload
+        if ($request->filled('photo_base64')) {
+            $dataUrl = $request->input('photo_base64');
+            if (preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $dataUrl, $m)) {
+                $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
+                $data = substr($dataUrl, strpos($dataUrl, ',') + 1);
+                $data = base64_decode($data);
+                $filename = 'photos/'.uniqid('visitor_', true).'.'.$ext;
+                Storage::disk('public')->put($filename, $data);
+                $validated['photo'] = $filename;
+            }
+        } elseif ($request->hasFile('photo')) {
+            $validated['photo'] = $request->file('photo')->store('photos', 'public');
+        }
+
+        if ($request->hasFile('documents')) {
+            $paths = [];
+            foreach ($request->file('documents') as $doc) {
+                $paths[] = $doc->store('documents', 'public');
+            }
+            $validated['documents'] = $paths;
+        }
+
+        if ($request->hasFile('workman_policy_photo')) {
+            $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+        }
+
+        $previousStatus = $visitor->status;
+        $visitor->fill($validated);
+        if (array_key_exists('status', $validated) && $validated['status'] !== $previousStatus) {
+            $visitor->last_status = $previousStatus;
+            $visitor->status_changed_at = now();
+        }
         $visitor->save();
 
-        // If transitioned to Approved, send mail to visitor
-        if (!$wasApproved && $visitor->status === 'Approved' && !empty($visitor->email)) {
+        if ($previousStatus !== 'Approved' && ($visitor->status === 'Approved') && !empty($visitor->email)) {
             try {
                 \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
             } catch (\Throwable $e) {
@@ -344,101 +499,9 @@ private function schema_has_column(string $table, string $column): bool
             }
         }
 
-        if ($isAjax) {
-            return response()->json([
-                'success' => true,
-                'status'  => $visitor->status,
-                'message' => "Visitor status updated to {$visitor->status}",
-            ]);
-        }
-
-        return redirect()->back()->with('success', "Visitor status updated to {$visitor->status}");
+        return redirect()->route($this->panelRoute('visitors.index'))
+            ->with('success', 'Visitor updated successfully!');
     }
-
-    // Otherwise, normal full update
-    $validated = $request->validate([
-        'company_id'          => 'required|exists:companies,id',
-        'name'                => 'required|string|max:255',
-        'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-        'email'               => 'nullable|email',
-        'phone'               => 'required|string|max:15',
-        'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'department_id'       => 'nullable|exists:departments,id',
-        'purpose'             => 'nullable|string|max:255',
-        'person_to_visit'     => 'nullable|string|max:255',
-        'in_time'             => 'nullable|date',
-        'out_time'            => 'nullable|date',
-        'status'              => 'required|in:Pending,Approved,Rejected,Completed',
-        'documents'           => 'nullable|array',
-        'documents.*'         => 'file|max:5120',
-        'visitor_company'     => 'nullable|string|max:255',
-        'visitor_website'     => 'nullable|string|max:255',
-        'vehicle_type'        => 'nullable|string|max:20',
-        'vehicle_number'      => 'nullable|string|max:50',
-        'goods_in_car'        => 'nullable|string|max:255',
-        'workman_policy'      => 'nullable|in:Yes,No',
-        'workman_policy_photo'=> 'nullable|image|max:2048',
-    ]);
-
-    if (!$this->isSuper()) {
-        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-        $validated['company_id'] = $u->company_id;
-        if (!empty($u->branch_id)) {
-            $validated['branch_id'] = $u->branch_id;
-        }
-    }
-
-    // Photo: prefer base64 camera capture over file upload
-    if ($request->filled('photo_base64')) {
-        $dataUrl = $request->input('photo_base64');
-        if (preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $dataUrl, $m)) {
-            $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
-            $data = substr($dataUrl, strpos($dataUrl, ',') + 1);
-            $data = base64_decode($data);
-            $filename = 'photos/'.uniqid('visitor_', true).'.'.$ext;
-            Storage::disk('public')->put($filename, $data);
-            $validated['photo'] = $filename;
-        }
-    } elseif ($request->hasFile('photo')) {
-        $validated['photo'] = $request->file('photo')->store('photos', 'public');
-    }
-
-    if ($request->hasFile('documents')) {
-        $paths = [];
-        foreach ($request->file('documents') as $doc) {
-            $paths[] = $doc->store('documents', 'public');
-        }
-        $validated['documents'] = $paths;
-    }
-
-    if ($request->hasFile('workman_policy_photo')) {
-        $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-    }
-
-    $wasApproved = $visitor->status === 'Approved';
-    $visitor->update($validated);
-    if (!$wasApproved && ($visitor->status === 'Approved') && !empty($visitor->email)) {
-        try {
-            \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
-        } catch (\Throwable $e) {
-            // swallow error
-        }
-    }
-
-    return redirect()->route($this->panelRoute('visitors.index'))
-        ->with('success', 'Visitor updated successfully!');
-}
-
-
-  public function destroy(Visitor $visitor)
-{
-    $this->authorizeVisitor($visitor);
-    $visitor->delete();
-
-    // Redirect back to the list in the same panel
-    $backTo = request()->is('company/*') ? 'company.visitors.index' : 'visitors.index';
-    return redirect()->route($backTo)->with('success', 'Visitor deleted successfully!');
-}
 
     /* --------------------------- Other flows --------------------------- */
 
@@ -541,6 +604,8 @@ private function schema_has_column(string $table, string $column): bool
         $visitor = Visitor::findOrFail($id);
         $this->authorizeVisitor($visitor);
 
+        $originalStatus = $visitor->status;
+
         if (!$visitor->in_time) {
             // Only allow Mark In if already Approved OR company has auto-approve enabled
             $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
@@ -555,6 +620,11 @@ private function schema_has_column(string $table, string $column): bool
         } elseif (!$visitor->out_time) {
             $visitor->out_time = now();
             $visitor->status = 'Completed';
+        }
+
+        if ($visitor->status !== $originalStatus) {
+            $visitor->last_status = $originalStatus;
+            $visitor->status_changed_at = now();
         }
 
         $visitor->save();
@@ -676,10 +746,10 @@ private function schema_has_column(string $table, string $column): bool
         return view('visitors.approval_status', compact('visitors', 'departments'));
     }
 
-    // Security Checkpoints Report (filter by verification_time; company via related visitor)
+    // Security Checkpoints Report (filter by creation timestamp; acts as verification time)
     public function securityReport(Request $request)
     {
-        $query = SecurityCheck::with(['visitor', 'staff'])->latest('verification_time');
+        $query = SecurityCheck::with(['visitor'])->latest('created_at');
 
         if (!$this->isSuper()) {
             $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
@@ -692,7 +762,7 @@ private function schema_has_column(string $table, string $column): bool
             $query->where('status', $request->status);
         }
 
-        $this->applyDateRange($query, 'verification_time', $request);
+        $this->applyDateRange($query, 'created_at', $request);
 
         $checks = $query->paginate(10)->appends($request->query());
 
@@ -771,6 +841,259 @@ private function schema_has_column(string $table, string $column): bool
             'selectedCompany' => $selectedCompany,
             'selectedBranch'  => $selectedBranch,
         ]);
+    }
+
+    public function reportExport(Request $request)
+    {
+        $query = $this->companyScope(
+            Visitor::with(['category', 'department'])
+        )->latest('in_time');
+
+        $this->applyDateRange($query, 'in_time', $request);
+
+        $visitors = $query->get();
+
+        $headings = [
+            'Visitor Name',
+            'Visitor Category',
+            'Department Visited',
+            'Person Visited',
+            'Purpose of Visit',
+            'Vehicle (Type / No.)',
+            'Goods in Vehicle',
+            'Documents',
+            'Workman Policy',
+            'Date',
+            'Entry Time',
+            'Exit Time',
+            'Duration',
+            'Visit Frequency',
+            'Comments',
+        ];
+
+        $rows = $visitors->map(function ($visitor) {
+            $vehicleType = trim((string) ($visitor->vehicle_type ?? ''));
+            $vehicleNumber = trim((string) ($visitor->vehicle_number ?? ''));
+            $vehicleCombined = $vehicleType || $vehicleNumber
+                ? trim($vehicleType . ($vehicleType && $vehicleNumber ? ' / ' : '') . $vehicleNumber)
+                : '—';
+
+            $documents = collect($visitor->documents ?? [])->map(function ($doc) {
+                return basename((string) $doc);
+            })->filter()->implode(', ');
+            $documents = $documents !== '' ? $documents : '—';
+
+            $workmanPolicy = $visitor->workman_policy ?? '—';
+            if (!empty($visitor->workman_policy_photo)) {
+                $workmanPolicy .= ' (Photo Available)';
+            }
+
+            $date = $visitor->in_time ? Carbon::parse($visitor->in_time)->format('Y-m-d') : '—';
+            $inTime = $visitor->in_time ? Carbon::parse($visitor->in_time)->format('h:i A') : '—';
+            $outTime = $visitor->out_time ? Carbon::parse($visitor->out_time)->format('h:i A') : '—';
+
+            $duration = '—';
+            if ($visitor->in_time && $visitor->out_time) {
+                $diff = Carbon::parse($visitor->in_time)->diff(Carbon::parse($visitor->out_time));
+                $duration = sprintf('%dh %dm', $diff->h, $diff->i);
+            }
+
+            return [
+                $visitor->name,
+                optional($visitor->category)->name ?? '—',
+                optional($visitor->department)->name ?? '—',
+                $visitor->person_to_visit ?? '—',
+                $visitor->purpose ?? '—',
+                $vehicleCombined,
+                $visitor->goods_in_car ?? '—',
+                $documents,
+                $workmanPolicy,
+                $date,
+                $inTime,
+                $outTime,
+                $duration,
+                $visitor->visits_count ?? 1,
+                $visitor->comments ?? '—',
+            ];
+        })->toArray();
+
+        return Excel::download(
+            new ArrayExport($headings, $rows),
+            'visitor-report-' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
+
+    public function inOutReportExport(Request $request)
+    {
+        $query = $this->companyScope(Visitor::query());
+
+        if ($request->filled('from') || $request->filled('to')) {
+            $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
+            $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
+
+            $query->where(function ($q) use ($from, $to) {
+                $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
+                  ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
+            })->orWhere(function ($q) use ($from, $to) {
+                $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
+                  ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
+            });
+        }
+
+        $visitors = $query->latest('in_time')->get();
+
+        $headings = ['Visitor Name', 'Entry Time', 'Exit Time', 'Verification Method'];
+
+        $rows = $visitors->map(function ($visitor) {
+            $inTime = $visitor->in_time ? Carbon::parse($visitor->in_time)->format('Y-m-d h:i A') : '—';
+            $outTime = $visitor->out_time ? Carbon::parse($visitor->out_time)->format('Y-m-d h:i A') : '—';
+
+            return [
+                $visitor->name,
+                $inTime,
+                $outTime,
+                $visitor->verification_method ?? '—',
+            ];
+        })->toArray();
+
+        return Excel::download(
+            new ArrayExport($headings, $rows),
+            'visitor-inout-' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
+
+    public function approvalReportExport(Request $request)
+    {
+        $query = $this->companyScope(Visitor::with(['department']))->latest('updated_at');
+
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        $this->applyDateRange($query, 'updated_at', $request);
+
+        $visitors = $query->get();
+
+        $headings = ['Visitor Name', 'Department', 'Approved By', 'Rejected By', 'Reject Reason'];
+
+        $rows = $visitors->map(function ($visitor) {
+            return [
+                $visitor->name,
+                optional($visitor->department)->name ?? '—',
+                $visitor->approved_by ?? '—',
+                $visitor->rejected_by ?? '—',
+                $visitor->reject_reason ?? '—',
+            ];
+        })->toArray();
+
+        return Excel::download(
+            new ArrayExport($headings, $rows),
+            'visitor-approvals-' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
+
+    public function securityReportExport(Request $request)
+    {
+        $query = SecurityCheck::with(['visitor', 'staff'])->latest('created_at');
+
+        if (!$this->isSuper()) {
+            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+            $query->whereHas('visitor', function ($v) use ($u) {
+                $v->where('company_id', $u->company_id);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $this->applyDateRange($query, 'created_at', $request);
+
+        $checks = $query->get();
+
+        $headings = [
+            'Visitor Name',
+            'Checkpoint',
+            'Verification Method',
+            'Status',
+            'Reason',
+            'Security Staff',
+            'Verification Time',
+            'Photo Clicked',
+        ];
+
+        $rows = $checks->map(function ($check) {
+            return [
+                optional($check->visitor)->name ?? '—',
+                $check->checkpoint,
+                $check->verification_method,
+                $check->status,
+                $check->reason ?? '—',
+                $check->security_officer_name ?? '—',
+                $check->created_at ? Carbon::parse($check->created_at)->format('Y-m-d h:i A') : '—',
+                $check->photo_clicked ? 'Yes' : 'No',
+            ];
+        })->toArray();
+
+        return Excel::download(
+            new ArrayExport($headings, $rows),
+            'security-checkpoints-' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
+
+    public function hourlyReportExport(Request $request)
+    {
+        $from = $request->input('from');
+        $to   = $request->input('to');
+        $start = $from ? Carbon::parse($from)->startOfDay() : Carbon::today()->startOfDay();
+        $end   = $to   ? Carbon::parse($to)->endOfDay()   : Carbon::today()->endOfDay();
+
+        $selectedCompany = $request->input('company_id');
+        $selectedBranch  = $request->input('branch_id');
+
+        $inQ = Visitor::query();
+
+        if ($this->isSuper()) {
+            if ($selectedCompany) {
+                $inQ->where('company_id', $selectedCompany);
+            }
+            if ($selectedBranch) {
+                $inQ->where('branch_id', $selectedBranch);
+            }
+        } else {
+            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+            $inQ->where('company_id', $u->company_id);
+            if (!empty($u->branch_id)) {
+                $inQ->where('branch_id', $u->branch_id);
+            } elseif ($selectedBranch) {
+                $inQ->where('branch_id', $selectedBranch);
+            }
+        }
+
+        $inAgg = $inQ->whereBetween('in_time', [$start, $end])
+            ->select(DB::raw("DATE_FORMAT(in_time, '%Y-%m-%d %H:00:00') as hour_slot"), DB::raw('COUNT(*) as total'))
+            ->groupBy('hour_slot')
+            ->pluck('total', 'hour_slot');
+
+        $rows = [];
+        $cursor = $start->copy()->startOfHour();
+        $endHour = $end->copy()->startOfHour();
+        while ($cursor <= $endHour) {
+            $key = $cursor->format('Y-m-d H:00:00');
+            $rows[] = [
+                $cursor->format('Y-m-d'),
+                $cursor->format('h A'),
+                (int) ($inAgg[$key] ?? 0),
+            ];
+            $cursor->addHour();
+        }
+
+        $headings = ['Date', 'Hour', 'Total Visitors'];
+
+        return Excel::download(
+            new ArrayExport($headings, $rows),
+            'visitor-hourly-' . now()->format('Ymd_His') . '.xlsx'
+        );
     }
     // Approvals listing (non-report)
     public function approvals(Request $request)

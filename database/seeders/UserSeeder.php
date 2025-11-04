@@ -29,7 +29,7 @@ public function run(): void
     );
 
     User::firstOrCreate(
-        ['email' => 'test@example.com'],
+        ['email' => 'abidsaiyednntsoftware@gmail.com'],
         [
             'name' => 'Test User',
             'password' => bcrypt('password'),

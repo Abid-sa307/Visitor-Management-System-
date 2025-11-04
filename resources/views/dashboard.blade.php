@@ -92,8 +92,8 @@
                 <h6 class="m-0 font-weight-bold text-primary">Visitors List</h6>
             </div>
             <div class="card-body">
-                @if($visitorsByDate->isEmpty())
-                    <p>No visitors found for the selected date.</p>
+                @if($visitors->isEmpty())
+                    <p>No visitors found for the selected date range.</p>
                 @else
                     <table class="table table-striped">
                         <thead>
@@ -105,20 +105,34 @@
                             </tr>
                         </thead>
                         <tbody>
-@foreach($visitorsByDate as $visitor)
-    @if($autoApprove && $visitor->status === 'Pending')
-        @continue
-    @endif
-    <tr>
-        <td>{{ $visitor->name }}</td>
-        <td>{{ $visitor->purpose ?? 'N/A' }}</td>
-        <td>{{ $visitor->status }}</td>
-        <td>{{ $visitor->created_at->format('d M, Y') }}</td>
-    </tr>
-@endforeach
-</tbody>
-
+                            @forelse($visitors as $visitor)
+                                @if($autoApprove && $visitor->status === 'Pending')
+                                    @continue
+                                @endif
+                                <tr>
+                                    <td>{{ $visitor->name }}</td>
+                                    <td>{{ $visitor->purpose ?? 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ $visitor->status === 'Approved' ? 'success' : ($visitor->status === 'Pending' ? 'warning' : 'danger') }}">
+                                            {{ $visitor->status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $visitor->created_at->format('d M, Y h:i A') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center">No visitors found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
                     </table>
+                    
+                    <!-- Pagination -->
+                    @if($visitors->hasPages())
+                        <div class="d-flex justify-content-end mt-3">
+                            {{ $visitors->withQueryString()->links() }}
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>

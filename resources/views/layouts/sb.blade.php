@@ -143,6 +143,22 @@
     <script src="{{ asset('sb-admin/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
     <script src="{{ asset('sb-admin/js/sb-admin-2.min.js') }}"></script>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const invalidInputs = document.querySelectorAll('form .is-invalid');
+        if (invalidInputs.length > 0) {
+            const first = invalidInputs[0];
+            if (first.scrollIntoView) {
+                first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            const parent = first.closest('.form-group, .mb-3');
+            if (parent) {
+                parent.classList.add('was-validated');
+            }
+        }
+    });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

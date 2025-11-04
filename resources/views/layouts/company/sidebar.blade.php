@@ -1,9 +1,15 @@
-@include('layouts.sidebar_common')
-
-
-
 @php
-    $pages = json_decode(auth()->user()->master_pages ?? '[]');
+    $companyUser = \Illuminate\Support\Facades\Auth::guard('company')->user();
+    $normalizeToArray = function ($value) {
+        if (is_array($value)) return $value;
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
+    };
+
+    $pages = $normalizeToArray($companyUser?->master_pages ?? []);
 
     $menuItems = [
         ['key' => 'dashboard', 'route' => 'company.dashboard', 'label' => 'Dashboard', 'icon' => 'fas fa-fw fa-home'],
@@ -34,7 +40,7 @@
   
 
     @foreach ($menuItems as $item)
-        @if(in_array($item['key'], $pages))
+        @if(in_array($item['key'], $pages, true) && \Illuminate\Support\Facades\Route::has($item['route']))
             <li class="nav-item">
                 <a class="nav-link" href="{{ route($item['route']) }}">
                     <i class="{{ $item['icon'] }}"></i>

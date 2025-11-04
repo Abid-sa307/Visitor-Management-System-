@@ -49,5 +49,6 @@ class Kernel extends HttpKernel
         'company'              => \App\Http\Middleware\CompanyMiddleware::class, // if you use it
         'check.access'         => \App\Http\Middleware\CheckMasterPageAccess::class,     // lowercase alias
         'CheckMasterPageAccess'=> \App\Http\Middleware\CheckMasterPageAccess::class,     // EXACT alias used in routes
+        'otp-verify' => \App\Http\Middleware\VerifyOtp::class,
     ];
 }

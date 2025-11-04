@@ -3,21 +3,53 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 use App\Models\SecurityCheck;
 use App\Models\Visitor;
+use App\Models\Department;
+use Illuminate\Support\Str;
 
 class SecurityCheckController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $checks = SecurityCheck::with('visitor')->latest()->paginate(10);
-        return view('security_checks.index', compact('checks'));
+        $isCompany = Auth::guard('company')->check();
+        $authUser = $isCompany ? Auth::guard('company')->user() : Auth::user();
+        $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
+
+        $visitorQuery = Visitor::query()->with(['company', 'department'])->latest('created_at');
+
+        if ($isCompany && $authUser) {
+            $visitorQuery->where('company_id', $authUser->company_id);
+        }
+
+        if ($request->filled('department_id')) {
+            $visitorQuery->where('department_id', $request->input('department_id'));
+        }
+
+        $visitors = $visitorQuery->paginate(10)->appends($request->query());
+
+        $departmentsQuery = Department::query()->orderBy('name');
+        if ($isCompany && $authUser) {
+            $departmentsQuery->where('company_id', $authUser->company_id);
+        }
+        $departments = $departmentsQuery->get();
+
+        return view('security_checks.index', [
+            'visitors' => $visitors,
+            'departments' => $departments,
+            'selectedDepartment' => $request->input('department_id'),
+            'isSuper' => $isSuper,
+            'isCompany' => $isCompany,
+        ]);
     }
 
     public function create($visitorId)
     {
-        $visitor = Visitor::findOrFail($visitorId);
-        return view('visitors.security', compact('visitor')); // ✅ Blade path updated
+        $visitor = Visitor::with('company')->findOrFail($visitorId);
+        return view('visitors.security', compact('visitor'));
     }
 
     public function store(Request $request)
@@ -27,15 +59,135 @@ class SecurityCheckController extends Controller
             'questions' => 'required|array',
             'responses' => 'required|array',
             'security_officer_name' => 'required|string|max:255',
+            'officer_badge' => 'nullable|string|max:100',
+            'captured_photo' => 'required|string',
+            'signature' => 'required|string',
+            'photo_responses' => 'nullable|array',
         ]);
 
-        SecurityCheck::create([
-            'visitor_id' => $request->visitor_id,
-            'questions' => json_encode($request->questions),
-            'responses' => json_encode($request->responses),
-            'security_officer_name' => $request->security_officer_name,
-        ]);
+        try {
+            // Process and save the visitor photo
+            $visitorPhotoPath = $this->saveBase64Image($request->captured_photo, 'visitor_photos');
+            
+            // Process and save the signature
+            $signaturePath = $this->saveBase64Image($request->signature, 'signatures');
+            
+            // Process photo responses if any
+            $photoResponses = [];
+            if ($request->has('photo_responses')) {
+                foreach ($request->photo_responses as $index => $photoData) {
+                    if ($photoData) {
+                        $photoPath = $this->saveBase64Image($photoData, 'question_photos');
+                        $photoResponses[$index] = $photoPath;
+                    }
+                }
+            }
 
-        return redirect()->route('security-checks.index')->with('success', 'Security Check saved.');
+            // Create the security check record
+            $securityCheck = SecurityCheck::create([
+                'visitor_id' => $request->visitor_id,
+                'questions' => $request->questions,
+                'responses' => $request->responses,
+                'security_officer_name' => $request->security_officer_name,
+                'officer_badge' => $request->officer_badge,
+                'visitor_photo' => $visitorPhotoPath,
+                'signature' => $signaturePath,
+                'photo_responses' => !empty($photoResponses) ? $photoResponses : null,
+            ]);
+
+            // Update visitor's photo if it's a new one
+            $visitor = Visitor::find($request->visitor_id);
+            if ($visitor && !$visitor->photo) {
+                $visitor->photo = $visitorPhotoPath;
+                $visitor->save();
+            }
+
+            return redirect()->route('security-checks.show', $securityCheck->id)
+                ->with('success', 'Security check completed successfully.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error saving security check: ' . $e->getMessage());
+        }
+    }
+    
+    public function show($id)
+    {
+        $securityCheck = SecurityCheck::with('visitor')->findOrFail($id);
+        return view('security_checks.show', compact('securityCheck'));
+    }
+    
+    /**
+     * Save a base64 encoded image to storage
+     */
+    /**
+     * Display the printable version of the security check
+     */
+    public function print($id)
+    {
+        $securityCheck = SecurityCheck::with('visitor')->findOrFail($id);
+        
+        // Check if the current user is authorized to view this security check
+        $user = Auth::user();
+        $isCompany = Auth::guard('company')->check();
+        
+        if ($isCompany) {
+            // For company users, verify they can only see their own visitors
+            $companyId = $user->company_id;
+            if ($securityCheck->visitor->company_id !== $companyId) {
+                abort(403, 'Unauthorized action.');
+            }
+        } elseif ($user && !$user->hasRole('superadmin') && !$user->hasRole('admin')) {
+            // For regular users, check if they have permission
+            abort_if(!$user->can('view security checks'), 403);
+        }
+        
+        return view('security_checks.print', compact('securityCheck'));
+    }
+    
+    /**
+     * Save a base64 encoded image to storage
+     */
+    private function saveBase64Image($base64Data, $directory)
+    {
+        // Extract the image data from the base64 string
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+            $data = substr($base64Data, strpos($base64Data, ',') + 1);
+            $type = strtolower($type[1]);
+            
+            if (!in_array($type, ['jpg', 'jpeg', 'png', 'gif'])) {
+                throw new \Exception('Invalid image type');
+            }
+            
+            $data = base64_decode($data);
+            
+            if ($data === false) {
+                throw new \Exception('Base64 decode failed');
+            }
+        } else {
+            throw new \Exception('Invalid image data');
+        }
+        
+        // Generate a unique filename
+        $filename = Str::random(20) . '.' . $type;
+        $path = $directory . '/' . $filename;
+        
+        // Create the directory if it doesn't exist
+        if (!Storage::disk('public')->exists($directory)) {
+            Storage::disk('public')->makeDirectory($directory);
+        }
+        
+        // Save the file to storage
+        Storage::disk('public')->put($path, $data);
+        
+        // For signatures, we might want to make them transparent
+        if ($directory === 'signatures') {
+            $img = Image::make(storage_path('app/public/' . $path));
+            $img->opacity(100);
+            $img->save(storage_path('app/public/' . $path));
+        }
+        
+        return $path;
     }
 }

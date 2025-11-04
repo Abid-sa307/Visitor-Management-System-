@@ -1,8 +1,25 @@
 @extends('layouts.sb')
 
 @section('content')
+@php
+    $isCompanyPanel = request()->is('company/*');
+    $exportRoute = $isCompanyPanel && Route::has('company.visitors.report.approval.export')
+        ? 'company.visitors.report.approval.export'
+        : 'visitors.report.approval.export';
+@endphp
+
 <div class="container py-4">
-    <h2 class="fw-bold text-primary mb-4">Approval Status Report (Department-wise)</h2>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h2 class="fw-bold text-primary m-0">Approval Status Report (Department-wise)</h2>
+        <form method="GET" action="{{ route($exportRoute) }}" class="d-flex gap-2">
+            <input type="hidden" name="department_id" value="{{ request('department_id') }}">
+            <input type="hidden" name="from" value="{{ request('from') }}">
+            <input type="hidden" name="to" value="{{ request('to') }}">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
+            </button>
+        </form>
+    </div>
 
     <form method="GET" class="row g-3 align-items-end mb-3">
         <div class="col-auto">

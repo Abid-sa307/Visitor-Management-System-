@@ -8,6 +8,7 @@ use App\Models\CompanyUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -72,10 +73,10 @@ class UserController extends Controller
         $authUser = auth()->user();
 
         $rules = [
-            'name'        => ['required','string','max:255'],
-            'email'       => ['required','email','unique:users,email'],
-            'password'    => ['required','string','min:6','confirmed'],
-            'phone'       => ['nullable','string','max:30'],
+            'name'        => ['required','string','max:255','regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u'],
+            'email'       => ['required','email:rfc,dns','unique:users,email'],
+            'password'    => ['required','string','min:8','confirmed'],
+            'phone'       => ['nullable','regex:/^\+?[0-9]{7,15}$/'],
             'master_pages'=> ['array'],
             'master_pages.*'=> ['string'],
             // accept either departments[] or department_ids[]
@@ -90,11 +91,16 @@ class UserController extends Controller
             $rules['company_id'] = ['required','exists:companies,id'];
         }
 
-        $data = $request->validate($rules);
+        $messages = [
+            'name.regex'   => 'Name may only contain letters, spaces, apostrophes, periods, and hyphens.',
+            'phone.regex'  => 'Phone must be digits only and can include an optional leading + (7-15 digits).',
+        ];
+
+        $data = $request->validate($rules, $messages);
 
         $user = new User();
-        $user->name     = $data['name'];
-        $user->email    = $data['email'];
+        $user->name     = Str::squish($data['name']);
+        $user->email    = strtolower($data['email']);
         $user->password = Hash::make($data['password']);
         $user->phone    = $data['phone'] ?? null;
         $user->role     = $request->role; // e.g. superadmin/company/employee
@@ -121,6 +127,7 @@ class UserController extends Controller
                 'password' => $data['password'],
                 'company_id' => $user->company_id,
                 'role' => 'company',
+                'master_pages' => $user->master_pages ?? [],
             ];
             // mirror branch_id if the column exists in company_users
             try {
@@ -169,11 +176,11 @@ class UserController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $data = $request->validate([
-            'name'        => ['required','string','max:255'],
-            'email'       => ['required','email','unique:users,email,'.$user->id],
-            'password'    => ['nullable','string','min:6','confirmed'],
-            'phone'       => ['nullable','string','max:30'],
+        $rules = [
+            'name'        => ['required','string','max:255','regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u'],
+            'email'       => ['required','email:rfc,dns','unique:users,email,'.$user->id],
+            'password'    => ['nullable','string','min:8','confirmed'],
+            'phone'       => ['nullable','regex:/^\+?[0-9]{7,15}$/'],
             'master_pages'=> ['array'],
             'master_pages.*'=> ['string'],
             'departments'     => ['array'],
@@ -182,11 +189,18 @@ class UserController extends Controller
             'department_ids.*'=> ['exists:departments,id'],
             'branch_id'       => ['nullable','exists:branches,id'],
             // 'company_id' => $isSuper ? ['required','exists:companies,id'] : ['nullable'],
-        ]);
+        ];
+
+        $messages = [
+            'name.regex'  => 'Name may only contain letters, spaces, apostrophes, periods, and hyphens.',
+            'phone.regex' => 'Phone must be digits only and can include an optional leading + (7-15 digits).',
+        ];
+
+        $data = $request->validate($rules, $messages);
 
         $user->fill([
-            'name'  => $data['name'],
-            'email' => $data['email'],
+            'name'  => Str::squish($data['name']),
+            'email' => strtolower($data['email']),
             'phone' => $data['phone'] ?? null,
         ]);
 
@@ -221,6 +235,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'company_id' => $user->company_id,
                 'role' => 'company',
+                'master_pages' => $user->master_pages ?? [],
             ];
             try {
                 if (\Schema::hasColumn('company_users','branch_id')) {

@@ -668,7 +668,7 @@
             [
               'name' => 'Abid Saiyed',
               'role' => 'Software Engineer',
-              'photo' => asset('images/team-img/.png'),
+              'photo' => asset('images/team-img/abid-saiyed.jpg'),
               'quote' => 'Passionate about writing clean, scalable code.'
             ],
             [

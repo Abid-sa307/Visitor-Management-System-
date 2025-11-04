@@ -37,10 +37,16 @@ class LoginRequest extends FormRequest
      *
      * @throws \Illuminate\Validation\ValidationException
      */
+    /**
+     * Attempt to authenticate the request's credentials.
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
 
+        // First, attempt to authenticate the user
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
@@ -49,7 +55,25 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Clear the rate limiter since authentication was successful
         RateLimiter::clear($this->throttleKey());
+        
+        // Get the authenticated user
+        $user = Auth::user();
+        
+        // If the user is a super admin, we'll handle the OTP verification in the controller
+        if (($user->hasRole('superadmin') || $user->is_super_admin) && !$this->isOtpVerificationRequest()) {
+            // We'll let the controller handle the OTP verification
+            return;
+        }
+    }
+    
+    /**
+     * Check if this is an OTP verification request
+     */
+    protected function isOtpVerificationRequest(): bool
+    {
+        return $this->routeIs('otp.verify.post');
     }
 
     /**

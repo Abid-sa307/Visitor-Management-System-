@@ -11,6 +11,7 @@ use App\Http\Controllers\{
     EmployeeController,
     DashboardController,
     SecurityCheckController,
+    ReportController,
     Auth\CompanyLoginController,
     Auth\CompanyAuthController,
     ApprovalController,
@@ -18,7 +19,8 @@ use App\Http\Controllers\{
     BlogController,
 };
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\VisitorsExport;
+use App\Mail\OtpVerificationMail;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Middleware\CheckMasterPageAccess;
 
 Route::get('/test-db', function() {
@@ -124,6 +126,26 @@ Route::get('/company/login', [CompanyLoginController::class, 'showLoginForm'])->
 Route::post('/company/login', [CompanyLoginController::class, 'login'])->name('company.login.custom');
 Route::post('/company/logout', [CompanyAuthController::class, 'logout'])->name('company.logout');
 
+// Test Email Route
+Route::get('/test-email', function() {
+    try {
+        Mail::to('test@example.com')->send(new OtpVerificationMail('123456'));
+        return 'Test email sent successfully. Check your Mailtrap inbox at https://mailtrap.io/inboxes';
+    } catch (\Exception $e) {
+        return 'Error sending email: ' . $e->getMessage();
+    }
+})->name('test.email');
+
+// OTP Verification Routes
+Route::middleware('web')->group(function () {
+    Route::get('/otp/verify', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'show'])
+        ->name('otp.verify');
+    Route::post('/otp/verify', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'verify'])
+        ->name('otp.verify.post');
+    Route::post('/otp/resend', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'resend'])
+        ->name('otp.resend');
+});
+
 /*
 |----------------------------------------------------------------------|
 | Authenticated Routes (Shared for both Superadmin and Company)
@@ -147,9 +169,15 @@ Route::middleware(['auth'])->group(function () {
 | Super Admin Panel Routes (Role: superadmin)
 |----------------------------------------------------------------------|
 */
-Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
+Route::middleware(['auth', 'verified', \App\Http\Middleware\VerifyOtp::class, 'role:superadmin'])->group(function () {
     // Dashboard Route
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Security Check Reports
+    Route::prefix('reports')->group(function() {
+        Route::get('/security-checks', [ReportController::class, 'securityChecks'])->name('reports.security-checks');
+        Route::get('/security-checks/export', [ReportController::class, 'exportSecurityChecks'])->name('reports.security-checks.export');
+    });
 
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -180,16 +208,22 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
         Route::get('/', [SecurityCheckController::class, 'index'])->name('security-checks.index');
         Route::get('/create/{visitorId}', [SecurityCheckController::class, 'create'])->name('security-checks.create');
         Route::post('/', [SecurityCheckController::class, 'store'])->name('security-checks.store');
+        Route::get('/{securityCheck}', [SecurityCheckController::class, 'show'])->name('security-checks.show');
+        Route::get('/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('security-checks.print');
     });
 
     // Reports Routes
     Route::prefix('reports')->group(function () {
         Route::get('/visitors', [VisitorController::class, 'report'])->name('visitors.report');
+        Route::get('/visitors/export', [VisitorController::class, 'reportExport'])->name('visitors.report.export');
         Route::get('/visitors/inout', [VisitorController::class, 'inOutReport'])->name('visitors.report.inout');
+        Route::get('/visitors/inout/export', [VisitorController::class, 'inOutReportExport'])->name('visitors.report.inout.export');
         Route::get('/visitors/approvals', [VisitorController::class, 'approvalReport'])->name('visitors.report.approval');
+        Route::get('/visitors/approvals/export', [VisitorController::class, 'approvalReportExport'])->name('visitors.report.approval.export');
         Route::get('/visitors/security', [VisitorController::class, 'securityReport'])->name('visitors.report.security');
+        Route::get('/visitors/security/export', [VisitorController::class, 'securityReportExport'])->name('visitors.report.security.export');
         Route::get('/visitors/hourly', [VisitorController::class, 'hourlyReport'])->name('visitors.report.hourly');
-        Route::get('/visitors/export', fn() => Excel::download(new VisitorsExport, 'visitors_report.xlsx'))->name('visitors.report.export');
+        Route::get('/visitors/hourly/export', [VisitorController::class, 'hourlyReportExport'])->name('visitors.report.hourly.export');
     });
 });
 
@@ -208,6 +242,7 @@ Route::prefix('company')->middleware(['auth:company', 'role:company'])->name('co
 
     // Visitors Routes for Company
     Route::resource('visitors', VisitorController::class)->middleware(CheckMasterPageAccess::class . ':visitors');
+    Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
 
     // History & Entry Routes for Company
@@ -225,11 +260,15 @@ Route::prefix('company')->middleware(['auth:company', 'role:company'])->name('co
     // Reports (Company Panel)
     Route::prefix('reports')->group(function () {
         Route::get('/visitors', [VisitorController::class, 'report'])->name('visitors.report');
+        Route::get('/visitors/export', [VisitorController::class, 'reportExport'])->name('visitors.report.export');
         Route::get('/visitors/inout', [VisitorController::class, 'inOutReport'])->name('visitors.report.inout');
+        Route::get('/visitors/inout/export', [VisitorController::class, 'inOutReportExport'])->name('visitors.report.inout.export');
         Route::get('/visitors/approvals', [VisitorController::class, 'approvalReport'])->name('visitors.report.approval');
+        Route::get('/visitors/approvals/export', [VisitorController::class, 'approvalReportExport'])->name('visitors.report.approval.export');
         Route::get('/visitors/security', [VisitorController::class, 'securityReport'])->name('visitors.report.security');
+        Route::get('/visitors/security/export', [VisitorController::class, 'securityReportExport'])->name('visitors.report.security.export');
         Route::get('/visitors/hourly', [VisitorController::class, 'hourlyReport'])->name('visitors.report.hourly');
-        Route::get('/visitors/export', fn() => Excel::download(new VisitorsExport, 'visitors_report.xlsx'))->name('visitors.report.export');
+        Route::get('/visitors/hourly/export', [VisitorController::class, 'hourlyReportExport'])->name('visitors.report.hourly.export');
     });
 
     // Employees & Departments Routes
@@ -238,7 +277,8 @@ Route::prefix('company')->middleware(['auth:company', 'role:company'])->name('co
     Route::resource('users', UserController::class);
 
     // Security Check Routes for Company
-    Route::resource('security-checks', SecurityCheckController::class)->only(['index', 'create', 'store']);
+    Route::resource('security-checks', SecurityCheckController::class)->only(['index', 'create', 'store', 'show']);
+    Route::get('security-checks/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('company.security-checks.print');
 });
 
 // Breeze/Auth Routes (handled by Laravel)

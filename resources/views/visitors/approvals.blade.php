@@ -74,24 +74,44 @@
                             <td>
                                 @php
                                   $st = $visitor->status;
-                                  $cls = $st === 'Approved' ? 'success' : ($st === 'Rejected' ? 'danger' : 'warning');
+                                  $cls = $st === 'Approved' ? 'success' : ($st === 'Rejected' ? 'danger' : ($st === 'Completed' ? 'secondary' : 'warning'));
+                                  $updateRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
                                 @endphp
-                                <span class="badge bg-{{ $cls }} js-status-badge" data-id="{{ $visitor->id }}">{{ $visitor->status }}</span>
+                                <div class="d-flex flex-column align-items-center">
+                                  <span class="badge bg-{{ $cls }} js-status-badge px-2 fw-normal" data-id="{{ $visitor->id }}" style="min-width: 80px; font-size: 0.85em; padding: 0.2rem 0.5rem;">{{ $visitor->status }}</span>
+                                  @if($visitor->can_undo_status)
+                                    @php
+                                      $minutesElapsed = $visitor->status_changed_at ? $visitor->status_changed_at->diffInMinutes(now()) : 0;
+                                      $minutesLeft = max(0, 30 - $minutesElapsed);
+                                    @endphp
+                                    <form action="{{ route($updateRoute, $visitor->id) }}" method="POST" class="d-flex flex-column align-items-center gap-1">
+                                      @csrf
+                                      @method('PUT')
+                                      <input type="hidden" name="action" value="undo">
+                                      <button type="submit" class="btn btn-outline-secondary btn-sm">Undo</button>
+                                      <small class="text-muted">{{ $minutesLeft }} min left</small>
+                                    </form>
+                                  @endif
+                                </div>
                             </td>
                             <td class="d-flex justify-content-center gap-2">
-                                @php
-                                    $updateRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
-                                @endphp
-                                <form action="{{ route($updateRoute, $visitor->id) }}" method="POST" class="js-approval-form">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="Approved">
-                                    <button type="submit" class="btn btn-success btn-sm js-approve">Approve</button>
-                                    <button type="button" class="btn btn-danger btn-sm js-reject"
-                                        onclick="this.form.status.value='Rejected'; this.form.submit();">
-                                        Reject
-                                    </button>
-                                </form>
+                                @if($visitor->status === 'Completed')
+                                  <span class="badge bg-secondary">Visit Completed</span>
+                                @else
+                                  @php
+                                      $actionRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
+                                  @endphp
+                                  <form action="{{ route($actionRoute, $visitor->id) }}" method="POST" class="js-approval-form">
+                                      @csrf
+                                      @method('PUT')
+                                      <input type="hidden" name="status" value="Approved">
+                                      <button type="submit" class="btn btn-success btn-sm js-approve">Approve</button>
+                                      <button type="button" class="btn btn-danger btn-sm js-reject"
+                                          onclick="this.form.status.value='Rejected'; this.form.submit();">
+                                          Reject
+                                      </button>
+                                  </form>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
@@ -155,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.appendChild(note);
         // Disable buttons after action is completed
         btns.forEach(b=>{ b.disabled = true; b.textContent = payload?.status || 'Updated'; });
+        setTimeout(()=>window.location.reload(), 400);
       } catch (err) {
         const note = document.createElement('div');
         note.className = 'small text-danger mt-1';

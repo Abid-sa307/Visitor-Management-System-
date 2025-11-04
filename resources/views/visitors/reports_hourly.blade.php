@@ -1,8 +1,26 @@
 @extends('layouts.sb')
 
 @section('content')
+@php
+  $isCompanyPanel = request()->is('company/*');
+  $exportRoute = $isCompanyPanel && Route::has('company.visitors.report.hourly.export')
+      ? 'company.visitors.report.hourly.export'
+      : 'visitors.report.hourly.export';
+@endphp
+
 <div class="container py-4">
-  <h3 class="fw-bold text-primary mb-3">Hourly Visitors Report</h3>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h3 class="fw-bold text-primary m-0">Hourly Visitors Report</h3>
+    <form method="GET" action="{{ route($exportRoute) }}" class="d-flex gap-2">
+      <input type="hidden" name="company_id" value="{{ request('company_id') }}">
+      <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
+      <input type="hidden" name="from" value="{{ request('from', $from) }}">
+      <input type="hidden" name="to" value="{{ request('to', $to) }}">
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
+      </button>
+    </form>
+  </div>
 
   <form method="GET" class="row g-3 mb-3 align-items-end border p-3 rounded bg-light">
     @if((auth()->user()->role ?? null) === 'superadmin')
@@ -37,26 +55,46 @@
     </div>
   </form>
 
-  <div class="table-responsive shadow-sm border rounded">
-    <table class="table table-striped align-middle text-center mb-0">
-      <thead class="table-primary">
-        <tr>
-          <th>Hour</th>
-          <th>Count</th>
-        </tr>
-      </thead>
-      <tbody>
-        @forelse($series as $row)
+  @if(!empty($series))
+    @php
+      $groupedSeries = collect($series)->groupBy(fn($row) => \Carbon\Carbon::parse($row['hour'])->format('Y-m-d'));
+    @endphp
+    <div class="table-responsive shadow-sm border rounded">
+      <table class="table table-striped align-middle text-center mb-0">
+        <thead class="table-primary">
           <tr>
-            <td>{{ \Carbon\Carbon::parse($row['hour'])->format('d M Y, h A') }}</td>
-            <td><span class="badge bg-primary">{{ $row['count'] }}</span></td>
+            <th rowspan="2" class="align-middle text-start">Metric</th>
+            @foreach($groupedSeries as $dateKey => $group)
+              <th colspan="{{ $group->count() }}" class="text-center">
+                {{ \Carbon\Carbon::parse($dateKey)->format('d M Y') }}
+              </th>
+            @endforeach
           </tr>
-        @empty
-          <tr><td colspan="2" class="text-muted">No data for selected filters.</td></tr>
-        @endforelse
-      </tbody>
-    </table>
-  </div>
+          <tr>
+            @foreach($groupedSeries as $group)
+              @foreach($group as $row)
+                <th>{{ \Carbon\Carbon::parse($row['hour'])->format('h A') }}</th>
+              @endforeach
+            @endforeach
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th class="text-start">Total Visitors</th>
+            @foreach($groupedSeries as $group)
+              @foreach($group as $row)
+                <td><span class="badge bg-primary">{{ $row['count'] }}</span></td>
+              @endforeach
+            @endforeach
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  @else
+    <div class="alert alert-light border text-center text-muted">
+      No data for selected filters.
+    </div>
+  @endif
 </div>
 @endsection
 
