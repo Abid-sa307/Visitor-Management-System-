@@ -3,8 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Become Our Partner | Smart Visitor Management System</title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Become Our Partner | Resell Smart Visitor Management System Worldwide</title>
+
+    <meta name="description"
+        content="Partner with us to resell and implement our Smart Visitor Management System for offices, factories, hospitals, schools, hotels, malls, residential societies, industrial units, cold storage, temples, kabrastan and more. Earn recurring revenue with white-label/co-branded options, multi-location deployments, full sales & technical support, training and marketing collateral. Join our global partner network today.">
+
+    <meta name="keywords"
+        content="visitor management partner program, VMS reseller program, visitor management system channel partner, software reseller visitor management, implementation partner visitor system, white label visitor management software, co-branded visitor management solution, recurring revenue partner program, system integrator visitor management, security integrator VMS partner, IT company partner program, facility management software partner, global partner network visitor management, SaaS reseller program, technology partnership visitor system, multi location visitor management deployments">
 
     <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -405,7 +412,9 @@
         <div class="container partner-hero-content">
             <div class="row justify-content-center">
                 <div class="col-lg-8 text-center">
-                    <h1 class="display-4 fw-bold mb-4">Partner With Us</h1>
+                    <h1 class="display-4 fw-bold mb-4">Become Our Partner &amp; Resell Smart Visitor Management
+                        Worldwide</h1>
+
                     <p class="lead">Join our network of partners and grow your business with our cutting-edge Visitor
                         Management System. Together, we can transform how organizations manage their visitors.</p>
                     <a href="/contact" class="btn btn-light btn-lg mt-3 px-5">Apply Now</a>
@@ -692,7 +701,7 @@
                                         bringing local expertise and insights to drive digital transformation
                                         across the region. He collaborates with N&T Software to deliver tailored
                                         technology solutions including websites, mobile apps, ERP/CRM,
-                                        cloud hosting, Power BI analytics, and on-demand tech teams.
+                                        cloud hosting, Power BI analytics and on-demand tech teams.
                                     </p>
                                 </div>
                             </div>
@@ -717,8 +726,6 @@
         </div>
     </section>
 
-
-
     <!-- FAQ Section -->
     <section class="faq-section">
         <div class="container">
@@ -737,7 +744,7 @@
                                 <div class="accordion-body">
                                     We look for partners with experience in security solutions, software sales, or IT
                                     services. Specific requirements vary by partnership type, but generally include
-                                    business registration, technical capabilities, and customer references.
+                                    business registration, technical capabilities and customer references.
                                 </div>
                             </div>
                         </div>
@@ -751,7 +758,7 @@
                             <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#partnerFAQ">
                                 <div class="accordion-body">
                                     We provide comprehensive support including sales training, technical training,
-                                    marketing materials, lead generation support, and dedicated account management. Our
+                                    marketing materials, lead generation support and dedicated account management. Our
                                     partners also get access to our partner portal with resources and tools.
                                 </div>
                             </div>
@@ -791,7 +798,6 @@
             </div>
         </div>
     </section>
-
 
     <!-- Global Offices Section -->
     <section class="partner-locations">

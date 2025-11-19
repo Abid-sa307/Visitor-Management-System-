@@ -59,6 +59,9 @@ Route::get('/healthcare-facilities', function () {
 Route::get('/malls-and-events', function () {
     return view('pages.malls-and-events');
 })->name(name: 'malls-and-events');
+Route::get('/temple-and-dargah', function () {
+    return view('pages.temple-and-dargah');
+})->name(name: 'temple-and-dargah');
 Route::get('/privacy-policy', function () {
     return view('pages.privacy-policy');
 })->name('privacy-policy');

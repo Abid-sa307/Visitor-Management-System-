@@ -303,7 +303,7 @@
                         Email: sales@nntsoftware.com<br>
                         Phone: +91 8487080659<br>
                         Address: 3rd Floor, Diamond Complex, SH 41,Industrial Area, Chhapi, North
-                                        GujaratIndia. 385210
+                                        Gujarat India. 385210
                     </p>
                 </div>
             </div>

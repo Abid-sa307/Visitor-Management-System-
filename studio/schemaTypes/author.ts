@@ -1,3 +1,4 @@
+// /schemas/author.ts
 import {defineField, defineType} from 'sanity'
 
 export default defineType({
@@ -9,42 +10,31 @@ export default defineType({
       name: 'name',
       title: 'Name',
       type: 'string',
+      validation: (Rule) => Rule.required().error('Name is required'),
     }),
     defineField({
-      name: 'slug',
-      title: 'Slug',
-      type: 'slug',
-      options: {
-        source: 'name',
-        maxLength: 96,
-      },
+      name: 'description',
+      title: 'Description',
+      type: 'text',
+      validation: (Rule) => Rule.required().error('Description is required'),
+    }),
+    defineField({
+      name: 'link',
+      title: 'Link',
+      type: 'url',
     }),
     defineField({
       name: 'image',
       title: 'Image',
       type: 'image',
-      options: {
-        hotspot: true,
-      },
-    }),
-    defineField({
-      name: 'bio',
-      title: 'Bio',
-      type: 'array',
-      of: [
-        {
-          title: 'Block',
-          type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
-          lists: [],
-        },
-      ],
+      options: {hotspot: true},
     }),
   ],
   preview: {
     select: {
       title: 'name',
       media: 'image',
+      subtitle: 'link',
     },
   },
 })

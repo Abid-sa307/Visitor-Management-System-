@@ -1,61 +1,104 @@
 <!-- Navbar -->
 <link rel="stylesheet" href="sb-admin/css/global.css">
- 
 
-<nav class="navbar navbar-expand-lg navbar-light sticky-top">
+@php
+  $solutionsActive = request()->is('industrial-manufacturing-unit')
+    || request()->is('industrial-and-cold-storage')
+    || request()->is('school-and-colleges')
+    || request()->is('resident-societies')
+    || request()->is('resident-buildings')
+    || request()->is('office-workplace-management')
+    || request()->is('healthcare-facilities')
+    || request()->is('malls-and-events');
+@endphp
+
+<nav id="mainHeader" class="navbar navbar-expand-lg navbar-light sticky-top bg-white" style="z-index:1050;">
   <div class="container">
+    <!-- Logo -->
     <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
       <img src="images/vmslogo.png" alt="VMS Logo" style="height:50px; width:auto; object-fit:contain;" />
     </a>
 
-    <!-- Toggle button for mobile view -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-expanded="false" aria-label="Toggle navigation">
+    <!-- Mobile hamburger (custom, no offcanvas attributes) -->
+    <button class="navbar-toggler" type="button" id="mobileNavToggle" aria-controls="mobileNavDrawer"
+      aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <!-- Nav links for desktop view -->
+    <!-- DESKTOP NAV -->
     <div class="collapse navbar-collapse" id="mainNavbar">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <!-- Home -->
         <li class="nav-item">
           <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">Home</a>
         </li>
+
+        <!-- About -->
         <li class="nav-item">
           <a class="nav-link {{ request()->is('about') ? 'active' : '' }}" href="{{ route('about') }}">About Us</a>
         </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="solutionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Solutions <i class="bi bi-caret-down-fill ms-1"></i>
-          </a>
-          <div class="dropdown-menu p-4 border-0 shadow-lg mega-menu" aria-labelledby="solutionsDropdown">
+
+        <!-- DESKTOP: Solutions -> click to open/close -->
+        <li class="nav-item position-relative d-none d-lg-block" id="solutionsDesktopItem">
+          <button type="button"
+            class="nav-link d-flex align-items-center bg-transparent border-0 px-0 {{ $solutionsActive ? 'active text-primary' : '' }}"
+            id="solutionsDesktopToggle" aria-expanded="false">
+            Solutions
+            <i class="bi bi-caret-down-fill ms-1 small"></i>
+          </button>
+
+          <div class="dropdown-menu p-4 border-0 shadow-lg mega-menu" id="solutionsDesktopMenu">
             <div class="row">
               <div class="col-md-6">
                 <h6 class="dropdown-header text-uppercase">Industries</h6>
-                <a class="dropdown-item" href="{{ route('industrial-manufacturing-unit') }}">Industrial Manufacturing Unit</a>
-                <a class="dropdown-item" href="{{ route('industrial-and-cold-storage') }}">Industrial & Cold Storage</a>
+                <a class="dropdown-item" href="{{ route('industrial-manufacturing-unit') }}">Industrial Manufacturing
+                  Unit</a>
+                <a class="dropdown-item" href="{{ route('industrial-and-cold-storage') }}">Warehouse & Cold Storage</a>
                 <a class="dropdown-item" href="{{ route('school-and-colleges') }}">School, Colleges & Universities</a>
                 <a class="dropdown-item" href="{{ route('resident-societies') }}">Residents' Societies</a>
                 <a class="dropdown-item" href="{{ route('resident-buildings') }}">Residents' Buildings</a>
-                <a class="dropdown-item" href="{{ route('office-workplace-management') }}">Offices Workplace Management</a>
+                <a class="dropdown-item" href="{{ route('office-workplace-management') }}">Offices Workplace
+                  Management</a>
                 <a class="dropdown-item" href="{{ route('healthcare-facilities') }}">Healthcare Facilities</a>
                 <a class="dropdown-item" href="{{ route('malls-and-events') }}">Malls & Event</a>
+                <a class="dropdown-item" href="{{ route('temple-and-dargah') }}">Temple & Dargah</a>
+
               </div>
             </div>
           </div>
         </li>
+
+        <!-- Become Our Partner -->
         <li class="nav-item">
-          <a class="nav-link {{ request()->is('partner') ? 'active' : '' }}" href="{{ route('partner') }}">Become Our Partner</a>
+          <a class="nav-link {{ request()->is('partner') ? 'active' : '' }}" href="{{ route('partner') }}">Become Our
+            Partner</a>
         </li>
+
+        <!-- Pricing -->
+        <li class="nav-item">
+          <a class="nav-link {{ request()->is('pricing') ? 'active' : '' }}" href="{{ route('pricing') }}">Pricing</a>
+        </li>
+
+        {{-- Old pricing dropdown (commented) --}}
+        {{--
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="pricingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="pricingDropdown" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
             Pricing <i class="bi bi-caret-down-fill ms-1"></i>
           </a>
           <ul class="dropdown-menu" aria-labelledby="pricingDropdown">
             <li><a class="dropdown-item" href="/pricing">Plans and pricing</a></li>
           </ul>
         </li>
+        --}}
+
+        <!-- Contact -->
         <li class="nav-item">
-          <a class="nav-link {{ request()->is('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact Us</a>
+          <a class="nav-link {{ request()->is('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact
+            Us</a>
         </li>
+
+        <!-- Login -->
         <li class="nav-item ms-2">
           <a href="{{ route('company.login') }}" class="btn btn-outline-primary btn-sm">
             <i class="bi bi-lock-fill me-1"></i> Login
@@ -66,57 +109,319 @@
   </div>
 </nav>
 
-<!-- Offcanvas Menu for mobile view -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
-    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-  </div>
-  <div class="offcanvas-body">
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">Home</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{ request()->is('about') ? 'active' : '' }}" href="{{ route('about') }}">About Us</a>
-      </li>
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="solutionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          Solutions <i class="bi bi-caret-down-fill ms-1"></i>
-        </a>
-        <ul class="dropdown-menu" aria-labelledby="solutionsDropdown">
-          <li><a class="dropdown-item" href="{{ route('industrial-manufacturing-unit') }}">Industrial Manufacturing Unit</a></li>
-          <li><a class="dropdown-item" href="{{ route('industrial-and-cold-storage') }}">Industrial & Cold Storage</a></li>
-          <li><a class="dropdown-item" href="{{ route('school-and-colleges') }}">School, Colleges & Universities</a></li>
-          <li><a class="dropdown-item" href="{{ route('resident-societies') }}">Residents' Societies</a></li>
-          <li><a class="dropdown-item" href="{{ route('resident-buildings') }}">Residents' Buildings</a></li>
-          <li><a class="dropdown-item" href="{{ route('office-workplace-management') }}">Offices Workplace Management</a></li>
-          <li><a class="dropdown-item" href="{{ route('healthcare-facilities') }}">Healthcare Facilities</a></li>
-          <li><a class="dropdown-item" href="{{ route('malls-and-events') }}">Malls & Event</a></li>
-        </ul>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{ request()->is('partner') ? 'active' : '' }}" href="{{ route('partner') }}">Become Our Partner</a>
-      </li>
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="pricingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          Pricing <i class="bi bi-caret-down-fill ms-1"></i>
-        </a>
-        <ul class="dropdown-menu" aria-labelledby="pricingDropdown">
-          <li><a class="dropdown-item" href="/pricing">Plans and pricing</a></li>
-        </ul>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{ request()->is('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact Us</a>
-      </li>
-      <li class="nav-item ms-2">
-        <a href="{{ route('company.login') }}" class="btn btn-outline-primary btn-sm">
-          <i class="bi bi-lock-fill me-1"></i> Login
-        </a>
-      </li>
-    </ul>
+<!-- 🚀 MOBILE OVERLAY + LEFT DRAWER -->
+<div id="mobileNavOverlay" class="d-lg-none position-fixed start-0 end-0"
+  style="top:0; bottom:0; opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:1040;">
+  <!-- Backdrop -->
+  <div class="mobile-backdrop position-absolute top-0 bottom-0 start-0 end-0 bg-dark bg-opacity-50"></div>
+
+  <!-- Drawer -->
+  <div id="mobileNavDrawer" class="position-fixed bg-white border-end shadow h-100 d-flex flex-column"
+    style="width:80%; max-width:320px; transform:translateX(-100%); transition:transform .3s ease-out; left:0; top:0;">
+    <nav class="p-3 overflow-auto">
+      <ul class="navbar-nav">
+
+        <!-- Home -->
+        <li class="nav-item">
+          <a class="nav-link {{ request()->is('/') ? 'active text-primary' : '' }}" href="{{ url('/') }}">
+            Home
+          </a>
+        </li>
+
+        <!-- About -->
+        <li class="nav-item">
+          <a class="nav-link {{ request()->is('about') ? 'active text-primary' : '' }}" href="{{ route('about') }}">
+            About Us
+          </a>
+        </li>
+
+
+        <!-- MOBILE: Solutions accordion (custom JS, no Bootstrap collapse) -->
+        <li class="nav-item mt-1">
+          <button
+            class="btn w-100 text-start d-flex justify-content-between align-items-center mobile-accordion-toggle nav-link"
+            type="button" id="mobileSolutionsToggle" aria-expanded="{{ $solutionsActive ? 'true' : 'false' }}">
+            <span>Solutions</span>
+            <i class="bi bi-chevron-down small"></i>
+          </button>
+
+          <div class="ps-3 pt-1 {{ $solutionsActive ? 'show' : '' }}" id="mobileSolutions">
+            <a class="mobile-solutions-link {{ request()->is('industrial-manufacturing-unit') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('industrial-manufacturing-unit') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Industrial Manufacturing Unit
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('industrial-and-cold-storage') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('industrial-and-cold-storage') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Warehouse & Cold Storage
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('school-and-colleges') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('school-and-colleges') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              School, Colleges & Universities
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('resident-societies') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('resident-societies') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Residents' Societies
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('resident-buildings') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('resident-buildings') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Residents' Buildings
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('office-workplace-management') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('office-workplace-management') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Offices Workplace Management
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('healthcare-facilities') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('healthcare-facilities') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Healthcare Facilities
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('malls-and-events') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('malls-and-events') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Malls & Event
+            </a>
+
+            <a class="mobile-solutions-link {{ request()->is('temple-and-dargah') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('temple-and-dargah') }}"
+              style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
+              Temple & Dargah
+            </a>
+          </div>
+        </li>
+
+        <!-- Become Our Partner -->
+        <li class="nav-item mt-2">
+          <a class="nav-link {{ request()->is('partner') ? 'active text-primary' : '' }}" href="{{ route('partner') }}">
+            Become Our Partner
+          </a>
+        </li>
+
+        <!-- Pricing -->
+        <li class="nav-item">
+          <a class="nav-link {{ request()->is('pricing') ? 'active text-primary' : '' }}" href="{{ route('pricing') }}">
+            Pricing
+          </a>
+        </li>
+
+        <!-- Contact -->
+        <li class="nav-item">
+          <a class="nav-link {{ request()->is('contact') ? 'active text-primary' : '' }}" href="{{ route('contact') }}">
+            Contact Us
+          </a>
+        </li>
+
+        <!-- Login -->
+        <li class="nav-item mt-3">
+          <a href="{{ route('company.login') }}" class="btn btn-primary w-100">
+            <i class="bi bi-lock-fill me-1"></i> Login
+          </a>
+        </li>
+
+      </ul>
+    </nav>
   </div>
 </div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+  /* Mobile accordion arrow + active color */
+  .mobile-accordion-toggle .bi-chevron-down {
+    transition: transform .2s ease;
+  }
+
+  .mobile-accordion-toggle[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+  }
+
+  .mobile-accordion-toggle[aria-expanded="true"] {
+    color: #0d6efd;
+    /* blue when open */
+  }
+
+  /* Desktop Solutions caret rotation */
+  #solutionsDesktopToggle .bi-caret-down-fill {
+    transition: transform .2s ease;
+  }
+
+  #solutionsDesktopToggle[aria-expanded="true"] .bi-caret-down-fill {
+    transform: rotate(180deg);
+  }
+
+  /* Desktop Solutions menu visibility (JS controls .show) */
+  #solutionsDesktopMenu {
+    display: none;
+  }
+
+  #solutionsDesktopMenu.show {
+    display: block;
+  }
+
+  /* Mobile Solutions links: normal dark, hover blue, active blue+bold */
+  .mobile-solutions-link {
+    color: #1f2933;
+    text-decoration: none;
+  }
+
+  .mobile-solutions-link:hover {
+    color: #0d6efd;
+    text-decoration: underline;
+  }
+
+  .mobile-solutions-link.text-primary {
+    font-weight: 500;
+  }
+
+  /* Mobile Solutions container show/hide (custom, no bootstrap collapse) */
+  #mobileSolutions {
+    display: none;
+  }
+
+  #mobileSolutions.show {
+    display: block;
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const header = document.getElementById("mainHeader");
+    const overlay = document.getElementById("mobileNavOverlay");
+    const drawer = document.getElementById("mobileNavDrawer");
+    const toggle = document.getElementById("mobileNavToggle");
+    const backdrop = overlay ? overlay.querySelector(".mobile-backdrop") : null;
+
+    // Header height => drawer starts below navbar (React headerH logic)
+    function updateHeaderHeight() {
+      const h = header ? header.offsetHeight || 64 : 64;
+      if (overlay) overlay.style.top = h + "px";
+      if (drawer) drawer.style.top = h + "px";
+    }
+
+    updateHeaderHeight();
+    window.addEventListener("resize", updateHeaderHeight);
+
+    // MOBILE: open/close drawer
+    let isOpen = false;
+
+    function setOpen(open) {
+      isOpen = open;
+
+      if (overlay && drawer) {
+        if (isOpen) {
+          overlay.style.opacity = "1";
+          overlay.style.pointerEvents = "auto";
+          drawer.style.transform = "translateX(0)";
+          document.body.style.overflow = "hidden";
+          if (toggle) toggle.setAttribute("aria-expanded", "true");
+        } else {
+          overlay.style.opacity = "0";
+          overlay.style.pointerEvents = "none";
+          drawer.style.transform = "translateX(-100%)";
+          document.body.style.overflow = "";
+          if (toggle) toggle.setAttribute("aria-expanded", "false");
+        }
+      }
+    }
+
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        setOpen(!isOpen);
+      });
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener("click", function () {
+        setOpen(false);
+      });
+    }
+
+    // Click any link in drawer -> close
+    document.querySelectorAll("#mobileNavDrawer a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        setOpen(false);
+      });
+    });
+
+    // MOBILE: Solutions accordion (custom JS)
+    const mobileSolToggle = document.getElementById("mobileSolutionsToggle");
+    const mobileSolMenu = document.getElementById("mobileSolutions");
+
+    if (mobileSolToggle && mobileSolMenu) {
+      let solOpen = mobileSolToggle.getAttribute("aria-expanded") === "true"
+        || mobileSolMenu.classList.contains("show");
+
+      function setMobSolOpen(open) {
+        solOpen = open;
+        if (solOpen) {
+          mobileSolMenu.classList.add("show");
+          mobileSolToggle.setAttribute("aria-expanded", "true");
+        } else {
+          mobileSolMenu.classList.remove("show");
+          mobileSolToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+
+      // ensure initial state matches
+      setMobSolOpen(solOpen);
+
+      mobileSolToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setMobSolOpen(!solOpen);
+      });
+    }
+
+    // DESKTOP: Solutions click-to-toggle
+    const desktopToggle = document.getElementById("solutionsDesktopToggle");
+    const desktopMenu = document.getElementById("solutionsDesktopMenu");
+    let desktopOpen = false;
+
+    function setDesktopOpen(open) {
+      desktopOpen = open;
+      if (desktopMenu && desktopToggle) {
+        if (desktopOpen) {
+          desktopMenu.classList.add("show");
+          desktopToggle.setAttribute("aria-expanded", "true");
+        } else {
+          desktopMenu.classList.remove("show");
+          desktopToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+    }
+
+    if (desktopToggle && desktopMenu) {
+      desktopToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setDesktopOpen(!desktopOpen);
+      });
+
+      // Click outside closes Solutions
+      document.addEventListener("click", function (e) {
+        if (!desktopOpen) return;
+        if (!desktopMenu.contains(e.target) && !desktopToggle.contains(e.target)) {
+          setDesktopOpen(false);
+        }
+      });
+
+      // On resize to mobile, close dropdown
+      window.addEventListener("resize", function () {
+        if (window.innerWidth < 992) {
+          setDesktopOpen(false);
+        }
+      });
+    }
+  });
+</script>

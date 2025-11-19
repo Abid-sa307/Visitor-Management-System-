@@ -16,46 +16,196 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fc; color: #333; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fc;
+            color: #333;
+        }
 
-        /* Blog Hero Section */
-        .blog-hero {
-            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-            color: white;
-            padding: 100px 0 60px;
+        /* ===== Header like React BlogDetail ===== */
+        .blog-header-wrap {
+            background: #fff;
+            padding-top: calc(80px + 24px); /* adjust if navbar is fixed */
+            padding-bottom: 32px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+        }
+        .blog-header-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        .blog-label {
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            font-weight: 700;
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 6px;
             text-align: center;
         }
-        .blog-hero h1 { font-weight: 700; }
-
-        /* Blog Post Content */
-        .blog-post {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(78,115,223,0.1);
-            padding: 30px;
-            margin-top: -50px;
+        .blog-title-main {
+            font-weight: 800;
+            font-size: 2.3rem;
+            line-height: 1.2;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #111827;
         }
-        .blog-post-img { width: 100%; border-radius: 10px; margin-bottom: 20px; }
-        .blog-post-meta span { margin-right: 15px; color: #6c757d; }
-        .blog-post-content { margin-top: 20px; line-height: 1.8; }
+        .blog-date {
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+        }
 
-        /* Navbar Styling */
-        .navbar { padding: 1rem 0; box-shadow: 0 2px 10px rgba(0,0,0,.1); background: rgba(255,255,255,.95) !important; backdrop-filter: blur(10px); }
-        .navbar-brand { font-weight: 700; font-size: 1.8rem; }
-        .navbar .nav-link { font-weight: 500; position: relative; margin: 0 .6rem; color: #333 !important; transition: color .25s ease; }
-        .navbar .nav-link:hover, .navbar .nav-link.active { color: #4e73df !important; font-weight: 600; }
-        .navbar .nav-link::after { content: ''; position: absolute; left: 0; bottom: -3px; height: 2px; width: 0; background: linear-gradient(to right,#4e73df,#224abe); transition: width .25s ease; }
-        .navbar .nav-link:hover::after, .navbar .nav-link.active::after { width: 100%; }
-        .navbar .btn-outline-primary { padding: .3rem .8rem; font-size: .9rem; border-radius: 20px; margin-left: 1rem; }
+        /* ===== Post container ===== */
+        .blog-main-section {
+            background: #fff;
+            padding-bottom: 56px;
+        }
+        .blog-main-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        .blog-cover-img {
+            width: 100%;
+            height: 460px;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 16px;
+            display: block;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+            margin-bottom: 24px;
+        }
+        .blog-intro {
+            line-height: 1.7;
+            color: #4b5563;
+        }
+        .blog-body p {
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
 
-        /* Mega Menu */
-        .mega-menu { width: 300px; }
-        .mega-menu .dropdown-item { display: block; width: 100%; padding: 0.4rem 1rem; color: #000; text-decoration: none; }
-        .mega-menu .dropdown-item:hover { background-color: #f8f9fa; color: #007bff; }
-        .mega-menu .dropdown-header { font-size: 0.75rem; font-weight: 600; color: #6c757d; letter-spacing: 0.05em; padding: 0.4rem 1rem; }
+        .blog-body h2 {
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            font-size: 1.6rem;
+        }
+        .blog-body h3 {
+            margin-top: 1.8rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        .blog-body blockquote {
+            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            border-left: 4px solid #1e3a8a;
+            background: #f8fafc;
+            font-style: italic;
+        }
+        .blog-body ul,
+        .blog-body ol {
+            padding-left: 1.4rem;
+            margin-bottom: 1rem;
+        }
+        .blog-body li {
+            line-height: 1.8;
+        }
 
-        /* Footer Styling */
+        /* ===== Engitech-style Author Card ===== */
+        .author-wrap{display:grid;grid-template-columns:228px 1fr;gap:24px;align-items:center;margin-top:32px;}
+        .author-photo-stack{position:relative;width:228px;height:218px;}
+        .author-photo-stack::before,.author-photo-stack::after{content:"";position:absolute;width:100%;height:100%;border-radius:4px;z-index:0;}
+        .author-photo-stack::before{left:-14px;top:-14px;background:#cfe1ff;}
+        .author-photo-stack::after{left:14px;top:14px;background:#e7f0ff;}
+        .author-photo{position:relative;z-index:1;width:228px;height:218px;object-fit:cover;border-radius:4px;box-shadow:0 10px 24px rgba(0,0,0,.08);}
+        .author-title{color:#0f2e5f;font-weight:800;margin:0 0 8px;font-size:30px;}
+        .author-desc{color:#475569;line-height:1.8;max-width:60ch;margin:0;}
+        .li-badge{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-top:12px;background:#0a66c2;color:#fff;border-radius:6px;transition:transform .12s,box-shadow .12s;text-decoration:none;}
+        .li-badge:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(10,102,194,.35);}
+        .li-icon{width:20px;height:20px;}
+        @media (max-width:640px){
+            .author-wrap{grid-template-columns:1fr;}
+            .author-photo-stack{margin:0 auto;}
+            .author-title{font-size:24px;}
+        }
+
+        /* ===== Related posts (React-style) ===== */
+        .related-head{
+            font-weight:800;
+            font-size:2rem;
+            margin-top:40px;
+            margin-bottom:16px;
+        }
+        .related-row{
+            display:grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap:24px;
+        }
+        @media (max-width: 992px){
+            .related-row{
+                display:flex;
+                gap:16px;
+                overflow-x:auto;
+                padding-bottom:6px;
+                scroll-snap-type:x mandatory;
+            }
+            .related-card{
+                flex:0 0 85%;
+                scroll-snap-align:start;
+            }
+        }
+        .related-card{
+            background:#fff;
+            border-radius:24px;
+            overflow:hidden;
+            border:1px solid rgba(0,0,0,0.06);
+            box-shadow:0 6px 16px rgba(0,0,0,0.08);
+            color:inherit;
+            transition:transform .2s ease, box-shadow .2s ease;
+            display:flex;
+            flex-direction:column;
+            min-height:100%;
+            text-decoration:none;
+        }
+        .related-card:hover{
+            transform:translateY(-4px);
+            box-shadow:0 12px 26px rgba(0,0,0,0.12);
+        }
+        .related-card__imageWrap{
+            height:220px;
+            overflow:hidden;
+            border-top-left-radius:24px;
+            border-top-right-radius:24px;
+        }
+        .related-card__image{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            object-position:center;
+            display:block;
+        }
+        .related-card__placeholder{
+            width:100%;
+            height:100%;
+            background:#f3f4f6;
+        }
+        .related-card__body{
+            padding:18px;
+        }
+        .related-card__title{
+            margin:0;
+            font-size:22px;
+            line-height:1.35;
+            font-weight:700;
+            display:-webkit-box;
+            -webkit-line-clamp:2;
+            -webkit-box-orient:vertical;
+            overflow:hidden;
+        }
+
         footer { background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
         footer a { text-decoration: none; }
     </style>
@@ -112,37 +262,186 @@
         </div>
     </nav>
 
-    <!-- Blog Hero -->
-    <section class="blog-hero">
-        <div class="container">
-            <h1>{{ $post['title'] ?? 'Blog Post' }}</h1>
+    {{-- Header --}}
+    <section class="blog-header-wrap">
+        <div class="blog-header-inner">
+            <p class="blog-label">Blogs</p>
+            <h1 class="blog-title-main">{{ $post['title'] ?? 'Blog Post' }}</h1>
+            <div class="blog-date">
+                @if(!empty($post['publishedAt']))
+                    {{ \Carbon\Carbon::parse($post['publishedAt'])->format('d-F-Y') }}
+                @endif
+            </div>
         </div>
     </section>
 
-    <!-- Blog Content -->
-    <section class="blog-content py-5 flex-grow-1">
-        <div class="container">
-            <div class="blog-post">
-                @if(!empty($post['imageUrl']))
-                    <img src="{{ $post['imageUrl'] }}" alt="{{ $post['title'] }}" class="blog-post-img">
+    {{-- Content --}}
+    <section class="blog-main-section flex-grow-1">
+        <div class="blog-main-inner">
+            {{-- Cover image --}}
+            @if(!empty($post['imageUrl']))
+                <img src="{{ $post['imageUrl'] }}"
+                     alt="{{ $post['title'] }}"
+                     class="blog-cover-img">
+            @endif
+
+            {{-- Intro / description --}}
+            @php
+                $intro = $post['description'] ?? $post['excerpt'] ?? null;
+            @endphp
+            @if($intro)
+                <p class="lead text-secondary blog-intro">
+                    {{ $intro }}
+                </p>
+            @endif
+
+            {{-- Body: simple Portable Text renderer --}}
+            <div class="blog-body mt-3">
+                @if(!empty($post['body']) && is_array($post['body']))
+                    @php
+                        $blocks    = $post['body'];
+                        $listType  = null; // 'bullet' or 'number'
+                        $listItems = [];
+                        $html      = '';
+
+                        $flushList = function () use (&$listType, &$listItems, &$html) {
+                            if (!$listType || empty($listItems)) return;
+                            $tag = $listType === 'number' ? 'ol' : 'ul';
+                            $html .= '<'.$tag.'>';
+                            foreach ($listItems as $item) {
+                                $html .= '<li>'.e($item).'</li>';
+                            }
+                            $html .= '</'.$tag.'>';
+                            $listType  = null;
+                            $listItems = [];
+                        };
+
+                        $textFromChildren = function ($children) {
+                            return collect($children ?? [])->pluck('text')->join(' ');
+                        };
+
+                        foreach ($blocks as $block) {
+                            if (($block['_type'] ?? null) === 'block') {
+                                $txt = $textFromChildren($block['children'] ?? []);
+
+                                // list handling
+                                if (!empty($block['listItem'])) {
+                                    $current = $block['listItem'] === 'number' ? 'number' : 'bullet';
+                                    if ($listType && $listType !== $current) {
+                                        $flushList();
+                                    }
+                                    $listType    = $current;
+                                    $listItems[] = $txt;
+                                    continue;
+                                } else {
+                                    $flushList();
+                                }
+
+                                $style = $block['style'] ?? 'normal';
+
+                                if ($style === 'h2') {
+                                    $html .= '<h2>'.e($txt).'</h2>';
+                                } elseif ($style === 'h3') {
+                                    $html .= '<h3>'.e($txt).'</h3>';
+                                } elseif ($style === 'blockquote') {
+                                    $html .= '<blockquote>'.e($txt).'</blockquote>';
+                                } else {
+                                    $html .= '<p>'.e($txt).'</p>';
+                                }
+                            }
+                        }
+
+                        $flushList();
+                    @endphp
+
+                    {!! $html !!}
+                @else
+                    <p>Blog content will appear here.</p>
                 @endif
-                <div class="blog-post-meta mb-3">
-                    <span><i class="bi bi-person"></i> {{ $post['author']['name'] ?? 'Admin' }}</span>
-                    @if(!empty($post['publishedAt']))
-                        <span><i class="bi bi-calendar"></i> {{ \Carbon\Carbon::parse($post['publishedAt'])->format('M d, Y') }}</span>
-                    @endif
-                </div>
-                <div class="blog-post-content">
-                    @if(!empty($post['body']))
-                        @foreach($post['body'] as $block)
-                            @if($block['_type'] === 'block')
-                                <p>{{ collect($block['children'])->pluck('text')->join(' ') }}</p>
-                            @endif
+            </div>
+
+            {{-- Author Card --}}
+            @if(!empty($post['author']))
+                @php $author = $post['author']; @endphp
+                <section class="author-wrap">
+                    <div class="author-photo-stack">
+                        @if(!empty($author['imageUrl']))
+                            <img src="{{ $author['imageUrl'] }}"
+                                 alt="{{ $author['name'] ?? 'Author' }}"
+                                 class="author-photo">
+                        @else
+                            <div class="author-photo" style="background:#eee;"></div>
+                        @endif
+                    </div>
+
+                    <div class="author-text">
+                        <h1 class="author-title">{{ $author['name'] ?? 'Author' }}</h1>
+                        @if(!empty($author['description']))
+                            <p class="author-desc">{{ $author['description'] }}</p>
+                        @endif
+
+                        @if(!empty($author['link']))
+                            <a href="{{ $author['link'] }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="li-badge"
+                               aria-label="LinkedIn"
+                               title="LinkedIn">
+                                <svg viewBox="0 0 448 512" class="li-icon" aria-hidden="true">
+                                    <path
+                                        fill="currentColor"
+                                        d="M100.3 448H7.4V148.9h92.9V448zM53.8 108.1C24.1 108.1 0 83.7 0 54.3
+                                           0 24.7 24.1.3 53.8.3c29.7 0 53.8 24.4 53.8 54
+                                           0 29.4-24.1 53.8-53.8 53.8zM447.9 448h-92.5V302.4
+                                           c0-34.7-.7-79.3-48.3-79.3-48.3 0-55.7 37.7-55.7 76.7V448H158.9
+                                           V148.9h88.8v40.8h1.3c12.4-23.6 42.6-48.4 87.7-48.4
+                                           93.8 0 111.1 61.8 111.1 142.1V448z"/>
+                                </svg>
+                            </a>
+                        @endif
+                    </div>
+                </section>
+            @endif
+
+            {{-- Related Post (max 3, like React) --}}
+            @if(!empty($related) && is_array($related) && count($related))
+                <section class="mt-5">
+                    <h3 class="related-head">Related Post</h3>
+
+                    <div class="related-row">
+                        @foreach($related as $r)
+                            @php
+                                $rSlug = $r['slug'] ?? ($r['slug']['current'] ?? '');
+                                $rUrl  = url('/blog/' . $rSlug);
+                            @endphp
+
+                            <a href="{{ $rUrl }}" class="related-card text-decoration-none">
+                                <div class="related-card__imageWrap">
+                                    @if(!empty($r['imageUrl']))
+                                        <img
+                                            src="{{ $r['imageUrl'] }}"
+                                            alt="{{ $r['title'] }}"
+                                            class="related-card__image"
+                                            loading="lazy"
+                                        >
+                                    @else
+                                        <div class="related-card__placeholder"></div>
+                                    @endif
+                                </div>
+                                <div class="related-card__body">
+                                    <h4 class="related-card__title">{{ $r['title'] }}</h4>
+                                </div>
+                            </a>
                         @endforeach
-                    @else
-                        <p>No content available.</p>
-                    @endif
-                </div>
+                    </div>
+                </section>
+            @endif
+
+            {{-- Back to blogs --}}
+            <div class="mt-4">
+                <a href="{{ url('/blog') }}" class="btn btn-outline-primary">
+                    ← Back to Blogs
+                </a>
             </div>
         </div>
     </section>
@@ -154,7 +453,9 @@
                 <div class="row">
                     <!-- Company Information -->
                     <div class="col-lg-4 col-md-6 mb-4">
-                        <a class="navbar-brand d-flex align-items-center" href="/"><img src="{{ asset('images/vmslogo.png') }}" alt="N&N TVMS Logo" style="height:60px; width:auto; object-fit:contain;"></a>
+                        <a class="navbar-brand d-flex align-items-center" href="/">
+                            <img src="{{ asset('images/vmslogo.png') }}" alt="N&N TVMS Logo" style="height:60px; width:auto; object-fit:contain;">
+                        </a>
                         <p>Smart Visitor Management System for modern organizations. Secure, efficient, and reliable.</p>
                         <div class="mt-3">
                             <h6 class="text-uppercase fw-bold mb-2">Connect with us</h6>
@@ -190,7 +491,12 @@
                             <li class="mb-2"><a href="mailto:sales@nntsoftware.com" class="text-light"><i class="bi bi-envelope me-2"></i>sales@nntsoftware.com</a></li>
                             <li class="mb-2"><a href="tel:+918487080659" class="text-light"><i class="bi bi-telephone me-2"></i> +91 8487080659</a></li>
                             <li class="mb-2"><a href="https://wa.me/918487080659" target="_blank" class="text-light"><i class="bi bi-whatsapp me-2 text-success"></i>Enter Your VMS Inquiry on WhatsApp</a></li>
-                            <li class="mb-4"><i class="bi bi-geo-alt me-2"></i> 3rd Floor, Diamond Complex, SH 41,<br><span style="margin-left: 24px;">Industrial Area, Chhapi, North Gujarat,</span><br><span style="margin-left: 24px;">India. 385210</span></li>
+                            <li class="mb-4">
+                                <i class="bi bi-geo-alt me-2"></i>
+                                3rd Floor, Diamond Complex, SH 41,<br>
+                                <span style="margin-left: 24px;">Industrial Area, Chhapi, North Gujarat,</span><br>
+                                <span style="margin-left: 24px;">India. 385210</span>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -198,7 +504,9 @@
                 <!-- Bottom Footer -->
                 <div class="row align-items-center">
                     <div class="col-md-6 text-center text-md-start">
-                        <a href="https://www.nntsoftware.com/" class="text-white text-decoration-none d-block" target="_blank">&copy; Copyright 2025 N & T Software Private Limited. All rights reserved.</a>
+                        <a href="https://www.nntsoftware.com/" class="text-white text-decoration-none d-block" target="_blank">
+                            &copy; Copyright 2025 N & T Software Private Limited. All rights reserved.
+                        </a>
                     </div>
                     <div class="col-md-6 text-center text-md-end">
                         <p class="mb-0 text-light">

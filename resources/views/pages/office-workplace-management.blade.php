@@ -1,20 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VMS for Office & Workplace | Smart Visitor Management</title>
+  <title>Visitor Management System for Offices &amp; Workplaces</title>
+
+  <meta name="description"
+    content="Smart Visitor Management System for offices, corporate workplaces and co-working spaces—whether you run a single office or multiple branches worldwide. Digitize front desk check-ins, visitor, vendor and contractor entry, meeting guest registration and employee guests with QR/OTP passes, self check-in kiosks, face-recognition access, instant WhatsApp/email notifications and digital visitor logs. Centralize security, improve reception experience and eliminate paper registers from every location—book a free demo today.">
+
+  <meta name="keywords"
+    content="office visitor management system, workplace visitor management software, corporate office visitor tracking, front desk visitor system, reception management software, single office visitor system, multi location office visitor management, branch office visitor tracking, co-working space visitor management, business center visitor check-in, QR code visitor pass office, OTP visitor entry workplace, face recognition access office, digital visitor register for offices, meeting guest registration system, contractor and vendor check-in software, visitor notifications WhatsApp email, paperless office reception, office security and access control">
+
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
 
   <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
-<link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
-<link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
-{{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
-<link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
+  <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
+  <link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
+  {{--
+  <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+  <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
   <!-- Custom Styles -->
   <style>
@@ -35,8 +45,8 @@
 
     /* Hero */
     .office-hero {
-      background: linear-gradient(135deg, rgba(30,60,114,0.85), rgba(42,82,152,0.85)),
-                  url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
+      background: linear-gradient(135deg, rgba(30, 60, 114, 0.85), rgba(42, 82, 152, 0.85)),
+        url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
       background-size: cover;
       background-position: center;
       padding: 150px 0 100px;
@@ -44,66 +54,133 @@
       text-align: center;
       border-radius: 0 0 40px 40px;
     }
-    .office-hero h1 { font-size: 3.2rem; font-weight: 800; margin-bottom: 20px; }
-    .office-hero p  { font-size: 1.2rem; max-width: 750px; margin: 0 auto 30px; }
+
+    .office-hero h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+
+    .office-hero p {
+      font-size: 1.2rem;
+      max-width: 750px;
+      margin: 0 auto 30px;
+    }
+
     .btn-office {
       background: linear-gradient(to right, var(--office-primary), var(--office-secondary));
-      color: #fff; border: none; padding: 14px 34px; border-radius: 50px;
-      font-weight: 600; transition: all 0.3s;
-    }
-    .btn-office:hover { transform: translateY(-5px); }
-
-    /* Section Titles */
-    .section-title { text-align: center; margin-bottom: 60px; }
-    .section-title h2 {
-      font-weight: 800; color: var(--office-dark); font-size: 2.5rem;
-      position: relative; display: inline-block;
-    }
-    .section-title h2::after {
-      content: ''; position: absolute; width: 80px; height: 5px;
-      background: linear-gradient(to right, var(--office-primary), var(--office-accent));
-      bottom: -10px; left: 50%; transform: translateX(-50%); border-radius: 4px;
-    }
-    .section-title p { color: #666; max-width: 650px; margin: 15px auto 0; }
-
-    /* Feature / Benefit Cards */
-    .feature-card, .benefit-item {
-      background: #fff; border-radius: 20px; padding: 40px 30px;
-      height: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      transition: all 0.4s; text-align: center;
-      border-top: 5px solid var(--office-accent);
-    }
-    .feature-card:hover, .benefit-item:hover {
-      transform: translateY(-12px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    }
-    .feature-icon, .benefit-icon {
-      width: 80px; height: 80px; background: rgba(30,60,114,0.1);
-      border-radius: 20px; display: flex; align-items: center; justify-content: center;
-      font-size: 36px; color: var(--office-primary); margin: 0 auto 25px;
+      color: #fff;
+      border: none;
+      padding: 14px 34px;
+      border-radius: 50px;
+      font-weight: 600;
       transition: all 0.3s;
     }
+
+    .btn-office:hover {
+      transform: translateY(-5px);
+    }
+
+    /* Section Titles */
+    .section-title {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-title h2 {
+      font-weight: 800;
+      color: var(--office-dark);
+      font-size: 2.5rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .section-title h2::after {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 5px;
+      background: linear-gradient(to right, var(--office-primary), var(--office-accent));
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 4px;
+    }
+
+    .section-title p {
+      color: #666;
+      max-width: 650px;
+      margin: 15px auto 0;
+    }
+
+    /* Feature / Benefit Cards */
+    .feature-card,
+    .benefit-item {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 30px;
+      height: 100%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      transition: all 0.4s;
+      text-align: center;
+      border-top: 5px solid var(--office-accent);
+    }
+
+    .feature-card:hover,
+    .benefit-item:hover {
+      transform: translateY(-12px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .feature-icon,
+    .benefit-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(30, 60, 114, 0.1);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: var(--office-primary);
+      margin: 0 auto 25px;
+      transition: all 0.3s;
+    }
+
     .feature-card:hover .feature-icon,
     .benefit-item:hover .benefit-icon {
       background: var(--office-primary);
       color: #fff;
     }
-    .benefit-content h4 { font-weight: 700; margin-bottom: 10px; color: var(--office-dark); }
-    .benefit-content p  { color: #666; }
+
+    .benefit-content h4 {
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--office-dark);
+    }
+
+    .benefit-content p {
+      color: #666;
+    }
 
     /* FAQ Section */
-    #faq { position: relative; }
+    #faq {
+      position: relative;
+    }
+
     .faq-item {
       background: #fff;
       border-radius: 15px;
       padding: 20px 25px;
       margin-bottom: 15px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
       transition: all 0.3s;
     }
+
     .faq-item.active {
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     }
+
     .faq-question {
       display: flex;
       justify-content: space-between;
@@ -113,8 +190,15 @@
       color: var(--office-primary);
       font-size: 1.1rem;
     }
-    .faq-question i { transition: transform 0.3s; }
-    .faq-item.active .faq-question i { transform: rotate(180deg); }
+
+    .faq-question i {
+      transition: transform 0.3s;
+    }
+
+    .faq-item.active .faq-question i {
+      transform: rotate(180deg);
+    }
+
     .faq-answer {
       max-height: 0;
       overflow: hidden;
@@ -122,17 +206,21 @@
       color: #555;
       padding-left: 2px;
     }
+
     .faq-item.active .faq-answer {
       max-height: 400px;
       margin-top: 15px;
     }
 
     /* Responsive */
-    @media (max-width:768px){
-      .office-hero h1 {font-size: 2.4rem;}
+    @media (max-width:768px) {
+      .office-hero h1 {
+        font-size: 2.4rem;
+      }
     }
   </style>
 </head>
+
 <body class="office-page">
   <!-- Header -->
   @include('layouts.header')
@@ -140,8 +228,9 @@
   <!-- Hero -->
   <section class="office-hero">
     <div class="container">
-      <h1>Smart Visitor Management for Office & Workplace</h1>
-      <p>Deliver a seamless check-in experience, ensure workplace safety, and maintain professional security with our cutting-edge VMS tailored for offices and corporate campuses.</p>
+      <h1>Smart Visitor Management System for Offices</h1>
+      <p>Deliver a seamless check-in experience, ensure workplace safety and maintain professional security with our
+        cutting-edge VMS tailored for offices and corporate campuses.</p>
       <a href="/contact" class="btn btn-office btn-lg">Request a Demo</a>
     </div>
   </section>
@@ -153,170 +242,171 @@
         <h2>Office-Friendly Features</h2>
         <p>Everything you need to greet guests professionally and keep your workplace secure.</p>
       </div>
-    
 
-    <div class="row g-4">
-      <!-- Analytics Dashboard -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
-          <h4>Analytics Dashboard</h4>
-          <p>
-            Real-time, interactive dashboards for monitoring visitor activity and
-            trends.
-          </p>
+
+      <div class="row g-4">
+        <!-- Analytics Dashboard -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
+            <h4>Analytics Dashboard</h4>
+            <p>
+              Real-time, interactive dashboards for monitoring visitor activity and
+              trends.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Hourly Visitor Analysis -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
-          <h4>Hourly Visitor Analysis</h4>
-          <p>
-            Detailed inflow/outflow reports by the hour to optimize staffing and
-            strengthen security.
-          </p>
+        <!-- Hourly Visitor Analysis -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
+            <h4>Hourly Visitor Analysis</h4>
+            <p>
+              Detailed inflow/outflow reports by the hour to optimize staffing and
+              strengthen security.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Advanced Reporting -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-file-earmark-text"></i></div>
-          <h4>Advanced Reporting</h4>
-          <p>
-            Full audit trails and compliance-ready reports for regulatory
-            requirements.
-          </p>
+        <!-- Advanced Reporting -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-file-earmark-text"></i></div>
+            <h4>Advanced Reporting</h4>
+            <p>
+              Full audit trails and compliance-ready reports for regulatory
+              requirements.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Safety Compliance Tracking -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-          <h4>Safety Compliance Tracking</h4>
-          <p>
-            Ensure every visitor completes safety inductions and agrees to
-            facility rules before entry.
-          </p>
+        <!-- Safety Compliance Tracking -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+            <h4>Safety Compliance Tracking</h4>
+            <p>
+              Ensure every visitor completes safety inductions and agrees to
+              facility rules before entry.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- User-Wise Control -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-person-gear"></i></div>
-          <h4>User-Wise Control</h4>
-          <p>
-            Role-based access gives each department the right level of control
-            and visibility.
-          </p>
+        <!-- User-Wise Control -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-person-gear"></i></div>
+            <h4>User-Wise Control</h4>
+            <p>
+              Role-based access gives each department the right level of control
+              and visibility.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Auto Approval Process -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
-          <h4>Auto Approval Process</h4>
-          <p>
-            Department-wise visitor approvals with optional auto-approval rules.
-          </p>
+        <!-- Auto Approval Process -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+            <h4>Auto Approval Process</h4>
+            <p>
+              Department-wise visitor approvals with optional auto-approval rules.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Visitor In-Out Tracking -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-people"></i></div>
-          <h4>Visitor In-Out Tracking</h4>
-          <p>
-            Track every visitor’s entry and exit in real time with precise
-            time-stamped logs.
-          </p>
+        <!-- Visitor In-Out Tracking -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-people"></i></div>
+            <h4>Visitor In-Out Tracking</h4>
+            <p>
+              Track every visitor’s entry and exit in real time with precise
+              time-stamped logs.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Instant Notifications -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-bell"></i></div>
-          <h4>Instant Notifications</h4>
-          <p>
-            WhatsApp and email alerts the moment a visitor arrives or requests
-            access.
-          </p>
+        <!-- Instant Notifications -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-bell"></i></div>
+            <h4>Instant Notifications</h4>
+            <p>
+              WhatsApp and email alerts the moment a visitor arrives or requests
+              access.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Face Recognition -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-camera"></i></div>
-          <h4>Face Recognition Technology</h4>
-          <p>
-            Secure, touchless entry using advanced AI-powered facial recognition.
-          </p>
+        <!-- Face Recognition -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-camera"></i></div>
+            <h4>Face Recognition Technology</h4>
+            <p>
+              Secure, touchless entry using advanced AI-powered facial recognition.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Print Visitor Pass -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-printer"></i></div>
-          <h4>Print Visitor Pass</h4>
-          <p>
-            Instantly generate and print visitor passes, including QR-code
-            enabled dynamic passes.
-          </p>
+        <!-- Print Visitor Pass -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-printer"></i></div>
+            <h4>Print Visitor Pass</h4>
+            <p>
+              Instantly generate and print visitor passes, including QR-code
+              enabled dynamic passes.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Pre-Approval -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-check-circle"></i></div>
-          <h4>Pre-Approval</h4>
-          <p>
-            Hosts can pre-approve visitors to speed up entry and reduce wait
-            times.
-          </p>
+        <!-- Pre-Approval -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-check-circle"></i></div>
+            <h4>Pre-Approval</h4>
+            <p>
+              Hosts can pre-approve visitors to speed up entry and reduce wait
+              times.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Visitor In-Out Entry Methods -->
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-people"></i></div>
-          <h4>Visitor In-Out Entry</h4>
-          <p>Flexible check-in/check-out options:</p>
-          <ul class="list-unstyled mt-3">
-            <li class="mb-2">
-              <i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry
-            </li>
-            <li class="mb-2">
-              <i class="bi bi-person-bounding-box text-success me-2"></i> Face
-              Recognition
-            </li>
-            <li class="mb-2">
-              <i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access
-            </li>
-          </ul>
+        <!-- Visitor In-Out Entry Methods -->
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="bi bi-people"></i></div>
+            <h4>Visitor In-Out Entry</h4>
+            <p>Flexible check-in/check-out options:</p>
+            <ul class="list-unstyled mt-3">
+              <li class="mb-2">
+                <i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-person-bounding-box text-success me-2"></i> Face
+                Recognition
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
 
   <!-- Benefits Section -->
   <section id="benefits" class="py-5">
     <div class="container">
       <div class="section-title">
-        <h2>Key Benefits for Industrial Facilities</h2>
-        <p>Our visitor management system delivers measurable advantages for plant managers, security teams, and compliance officers.</p>
+        <h2>Key Benefits for Office Facilities</h2>
+        <p>Our visitor management system delivers measurable advantages for plant managers, security teams and
+          compliance officers.</p>
       </div>
 
       <div class="row g-4">
@@ -325,7 +415,8 @@
             <div class="benefit-icon"><i class="bi bi-shield-lock"></i></div>
             <div class="benefit-content">
               <h4>Enhanced Security & Compliance</h4>
-              <p>Maintain strict control of visitor access and automatically generate audit-ready compliance reports.</p>
+              <p>Maintain strict control of visitor access and automatically generate audit-ready compliance reports.
+              </p>
             </div>
           </div>
         </div>
@@ -335,7 +426,8 @@
             <div class="benefit-icon"><i class="bi bi-clock-history"></i></div>
             <div class="benefit-content">
               <h4>Reduced Check-in Time</h4>
-              <p>QR codes, face recognition, and pre-approvals cut entry time by more than 60% for employees, contractors, and guests.</p>
+              <p>QR codes, face recognition and pre-approvals cut entry time by more than 60% for employees, contractors
+                and guests.</p>
             </div>
           </div>
         </div>
@@ -345,7 +437,8 @@
             <div class="benefit-icon"><i class="bi bi-cash-coin"></i></div>
             <div class="benefit-content">
               <h4>Lower Operational Costs</h4>
-              <p>Automate manual registers, reduce paper usage, and optimize staffing with accurate visitor analytics.</p>
+              <p>Automate manual registers, reduce paper usage and optimize staffing with accurate visitor analytics.
+              </p>
             </div>
           </div>
         </div>
@@ -355,7 +448,8 @@
             <div class="benefit-icon"><i class="bi bi-bar-chart-line"></i></div>
             <div class="benefit-content">
               <h4>Data-Driven Decisions</h4>
-              <p>Gain insights into visitor patterns, peak hours, and contractor activity for smarter resource planning.</p>
+              <p>Gain insights into visitor patterns, peak hours and contractor activity for smarter resource planning.
+              </p>
             </div>
           </div>
         </div>
@@ -363,148 +457,212 @@
     </div>
   </section>
 
-   <!-- FAQ Section -->
-<section id="faq" class="py-5 bg-light">
-  <div class="container">
-    <div class="section-title text-center mb-5">
-      <h2>Frequently Asked Questions</h2>
-      <p>Find answers to common questions about our Industrial Visitor Management System</p>
+  <section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
+           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+
+    {{-- Radial glow background --}}
+    <div style="position:absolute;inset:0;opacity:0.35;
+        background:radial-gradient(60% 60% at 50% 0%,#ffffff 0%,transparent 60%);">
     </div>
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
 
-        <!-- Analytics Dashboard -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Does the system provide analytics and reports?</span>
-            <i class="bi bi-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>
-              Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
-              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real-time.
-            </p>
-          </div>
+    <div class="container" style="position:relative;z-index:1;">
+      <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-4" style="
+                position:relative;
+                z-index:1;
+                border-radius:32px;
+                background:linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+                border:1px solid rgba(255,255,255,0.25);
+                backdrop-filter:blur(20px);
+                -webkit-backdrop-filter:blur(20px);
+                box-shadow:0 24px 60px rgba(15,23,42,0.55);
+                padding:36px 40px;
+             ">
+
+        {{-- LEFT: Title + small text --}}
+        <div class="flex-grow-1 text-start">
+          <h2 class="mb-2" style="font-weight:800;font-size:1.9rem;line-height:1.25;margin-bottom:0.75rem;">
+            Need a custom Visitor Management System & mobile app for your office facility?
+          </h2>
+
+          <p style="margin-bottom:0;opacity:0.9;font-size:0.98rem;">
+            Let’s talk about your requirements.
+          </p>
         </div>
 
-        <!-- Hourly Visitor Analysis -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Can we track visitors on an hourly basis?</span>
-            <i class="bi bi-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>
-              Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics 
-              segmented by the hour, helping optimize staffing and enhance security monitoring.
-            </p>
-          </div>
+        {{-- RIGHT: Button --}}
+        <div class="mt-3 mt-md-0 text-md-end">
+          <a href="{{ url('/contact') }}" aria-label="Go to contact page" style="
+                        display:inline-flex;
+                        align-items:center;
+                        justify-content:center;
+                        border-radius:999px;
+                        background:#ffffff;
+                        color:#4338ca;
+                        font-weight:800;
+                        letter-spacing:0.04em;
+                        padding:0.9rem 2.3rem;
+                        border:1px solid rgba(15,23,42,0.06);
+                        box-shadow:0 16px 40px rgba(15,23,42,0.35);
+                        text-decoration:none;
+                        white-space:nowrap;
+                   ">
+            Contact Us
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+              style="margin-left:0.5rem;">
+              <path d="M5 12h14"></path>
+              <path d="M12 5l7 7-7 7"></path>
+            </svg>
+          </a>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- Safety Compliance -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>How does the system ensure visitor safety compliance?</span>
-            <i class="bi bi-chevron-down"></i>
-          </div>
-          <div class="faq-answer">
-            <p>
-              Visitors must complete safety inductions and acknowledge compliance rules before entry. 
-              The system tracks and records all safety acknowledgments for audit purposes.
-            </p>
-          </div>
-        </div>
+  <!-- FAQ Section -->
+  <section id="faq" class="py-5 bg-light">
+    <div class="container">
+      <div class="section-title text-center mb-5">
+        <h2>Frequently Asked Questions</h2>
+        <p>Find answers to common questions about our Industrial Visitor Management System</p>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
 
-        <!-- Face Recognition -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Does the system support face recognition for entry?</span>
-            <i class="bi bi-chevron-down"></i>
+          <!-- Analytics Dashboard -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Does the system provide analytics and reports?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                Yes, the system includes an interactive analytics dashboard and advanced reporting tools
+                to monitor visitor trends, inflow/outflow analysis and compliance requirements in real-time.
+              </p>
+            </div>
           </div>
-          <div class="faq-answer">
-            <p>
-              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
-              for visitors, reducing manual verification needs.
-            </p>
-          </div>
-        </div>
 
-        <!-- Notifications -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Will we get notified when visitors arrive?</span>
-            <i class="bi bi-chevron-down"></i>
+          <!-- Hourly Visitor Analysis -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Can we track visitors on an hourly basis?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics
+                segmented by the hour, helping optimize staffing and enhance security monitoring.
+              </p>
+            </div>
           </div>
-          <div class="faq-answer">
-            <p>
-              Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access 
-              or checks in at the facility.
-            </p>
-          </div>
-        </div>
 
-        <!-- Visitor Pass -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Can we generate visitor passes directly from the system?</span>
-            <i class="bi bi-chevron-down"></i>
+          <!-- Safety Compliance -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>How does the system ensure visitor safety compliance?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                Visitors must complete safety inductions and acknowledge compliance rules before entry.
+                The system tracks and records all safety acknowledgments for audit purposes.
+              </p>
+            </div>
           </div>
-          <div class="faq-answer">
-            <p>
-              Yes, the system allows you to instantly generate and print visitor passes, 
-              including QR code-enabled dynamic passes for quick access.
-            </p>
-          </div>
-        </div>
 
-        <!-- Pre-Approval -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>Is there a visitor pre-approval process?</span>
-            <i class="bi bi-chevron-down"></i>
+          <!-- Face Recognition -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Does the system support face recognition for entry?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                Yes, AI-powered face recognition ensures secure, touchless and fast entry authentication
+                for visitors, reducing manual verification needs.
+              </p>
+            </div>
           </div>
-          <div class="faq-answer">
-            <p>
-              Visitors can be pre-approved by hosts through the system, enabling faster entry 
-              and minimizing wait times at the gate.
-            </p>
-          </div>
-        </div>
 
-        <!-- Visitor Entry Options -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span>What methods are available for visitor check-in and check-out?</span>
-            <i class="bi bi-chevron-down"></i>
+          <!-- Notifications -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Will we get notified when visitors arrive?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access
+                or checks in at the facility.
+              </p>
+            </div>
           </div>
-          <div class="faq-answer">
-            <p>
-              The system supports multiple entry options including manual entry by security staff, 
-              face recognition, and QR code scanning for seamless visitor management.
-            </p>
+
+          <!-- Visitor Pass -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Can we generate visitor passes directly from the system?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                Yes, the system allows you to instantly generate and print visitor passes,
+                including QR code-enabled dynamic passes for quick access.
+              </p>
+            </div>
           </div>
+
+          <!-- Pre-Approval -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>Is there a visitor pre-approval process?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                Visitors can be pre-approved by hosts through the system, enabling faster entry
+                and minimizing wait times at the gate.
+              </p>
+            </div>
+          </div>
+
+          <!-- Visitor Entry Options -->
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>What methods are available for visitor check-in and check-out?</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+              <p>
+                The system supports multiple entry options including manual entry by security staff,
+                face recognition and QR code scanning for seamless visitor management.
+              </p>
+            </div>
+          </div>
+
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA / Request a Quote Section -->
+  <section class="cta-section py-5"
+    style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff; border-radius: 20px; margin: 60px 0;">
+    <div class="container text-center">
+      <div class="cta-content">
+        <h2 class="fw-bold mb-3">Ready to Streamline Your Office Visitor Management?</h2>
+        <p class="mb-4" style="max-width: 700px; margin: 0 auto;">
+          Join leading corporate offices and workplaces that trust our VMS to simplify check-ins, enhance security and
+          provide a seamless visitor experience. Request a demo or quote today.
+        </p>
+        <a href="/contact" class="btn btn-light btn-lg me-3 mb-2">
+          <i class="bi bi-envelope-paper me-2"></i>Request a Demo
+        </a>
 
       </div>
     </div>
-  </div>
-</section>
-
-  <!-- CTA / Request a Quote Section -->
-<section class="cta-section py-5" style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff; border-radius: 20px; margin: 60px 0;">
-    <div class="container text-center">
-        <div class="cta-content">
-            <h2 class="fw-bold mb-3">Ready to Streamline Your Office Visitor Management?</h2>
-            <p class="mb-4" style="max-width: 700px; margin: 0 auto;">
-                Join leading corporate offices and workplaces that trust our VMS to simplify check-ins, enhance security, and provide a seamless visitor experience. Request a demo or quote today.
-            </p>
-            <a href="/contact" class="btn btn-light btn-lg me-3 mb-2">
-                <i class="bi bi-envelope-paper me-2"></i>Request a Demo
-            </a>
-            
-        </div>
-    </div>
-</section>
+  </section>
 
 
   <!-- Footer -->
@@ -521,4 +679,5 @@
     });
   </script>
 </body>
+
 </html>
