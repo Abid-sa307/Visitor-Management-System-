@@ -58,4 +58,9 @@ class Company extends Model
     {
         return $this->hasMany(Visitor::class);
     }
+
+    public function branches()
+    {
+        return $this->hasMany(Branch::class);
+    }
 }

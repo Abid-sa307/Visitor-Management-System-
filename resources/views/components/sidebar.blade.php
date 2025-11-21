@@ -1,7 +1,8 @@
 @php
     // ---------- Context ----------
-    $authUser = auth()->user();
-    $isCompany = request()->is('company/*');
+    $isCompanyGuard = \Illuminate\Support\Facades\Auth::guard('company')->check();
+    $authUser = $isCompanyGuard ? \Illuminate\Support\Facades\Auth::guard('company')->user() : auth()->user();
+    $isCompany = $isCompanyGuard;
 
     // Superadmins see everything
     $isSuper = $authUser && in_array($authUser->role, ['super_admin','superadmin'], true);
@@ -19,7 +20,7 @@
         ? ($authUser->master_pages_list ?? $normalizeToArray($authUser->master_pages ?? []))
         : [];
 
-    // Gate by page key (matches your CheckMasterPageAccess middleware keys)
+    // Gate by page key: superadmins see all; company users must be permitted via master_pages
     $canPage = fn (string $key) => $isSuper || in_array($key, $masterPages, true);
 
     // UI helpers
@@ -64,11 +65,13 @@
             'route' => $isCompany ? 'company.visitors.history' : 'visitors.history',
             'page'  => 'visitor_history',
         ],
+        // Companies (superadmin only; never visible to company users)
         [
             'title' => 'Companies',
             'icon'  => 'bi-buildings',
             'route' => 'companies.index',
-            'page'  => 'departments',
+            'page'  => 'companies',
+            'super_only' => true,
         ],
         [
             'title' => 'Departments',
@@ -89,6 +92,7 @@
         ['title' => 'In/Out Reports',    'route' => $isCompany ? 'company.visitors.report.inout'    : 'visitors.report.inout',     'page' => 'reports'],
         ['title' => 'Approvals Reports', 'route' => $isCompany ? 'company.visitors.report.approval' : 'visitors.report.approval',  'page' => 'reports'],
         ['title' => 'Security Reports',  'route' => $isCompany ? 'company.visitors.report.security' : 'visitors.report.security',  'page' => 'reports'],
+        ['title' => 'Hourly Reports',    'route' => $isCompany ? 'company.visitors.report.hourly'   : 'visitors.report.hourly',    'page' => 'reports'],
     ];
     $reportActive = collect($reportItems)->contains(fn($i) => request()->routeIs($i['route']));
 
@@ -107,7 +111,8 @@
 
     <!-- Main items (gated by master_pages) -->
     @foreach($menuItems as $item)
-        @if(Route::has($item['route']) && $canPage($item['page']))
+        @php $superOnly = $item['super_only'] ?? false; @endphp
+        @if(($superOnly ? $isSuper : true) && Route::has($item['route']) && $canPage($item['page']))
             <li class="nav-item {{ $active($item['route']) }}">
                 <a class="nav-link" href="{{ route($item['route']) }}">
                     <i class="bi {{ $item['icon'] }} me-2"></i>
@@ -135,7 +140,7 @@
                 <div class="collapse-inner px-2">
                     @foreach($reportItems as $report)
                         @if(Route::has($report['route'])) {{-- child links share "reports" key --}}
-                            <a class="collapse-item {{ $active($report['route']) }}"
+                            <a class="collapse-item {{ $active($report['route']) }} text-white"
                                href="{{ route($report['route']) }}">
                                {{ $report['title'] }}
                             </a>
@@ -146,8 +151,8 @@
         </li>
     @endif
 
-    <!-- Users (superadmin bypass; or gate via page 'users' if you prefer) -->
-    @if(Route::has($usersRoute) && ($isSuper /* || $canPage('users') */))
+    <!-- Users (visible only if user has 'users' permission; superadmin always) -->
+    @if(Route::has($usersRoute) && ($isSuper || $canPage('users')))
         <li class="nav-item {{ $active($usersRoute) }}">
             <a class="nav-link" href="{{ route($usersRoute) }}">
                 <i class="bi bi-person-bounding-box me-2"></i>
@@ -155,4 +160,21 @@
             </a>
         </li>
     @endif
+
+    <hr class="sidebar-divider d-none d-md-block">
+    <div class="text-center d-none d-md-inline my-3">
+        <button class="rounded-circle border-0" id="sidebarToggle" title="Toggle sidebar"></button>
+    </div>
 </ul>
+
+<style>
+/* Reports dropdown styling: keep white text and add dark translucent hover */
+#accordionSidebar #collapseReports .collapse-inner .collapse-item {
+  color: #fff !important;
+}
+#accordionSidebar #collapseReports .collapse-inner .collapse-item:hover,
+#accordionSidebar #collapseReports .collapse-inner .collapse-item:focus {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff !important;
+}
+</style>

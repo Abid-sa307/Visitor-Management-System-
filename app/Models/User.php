@@ -12,7 +12,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
-        'name','email','password','phone','role','company_id',
+        'name','email','password','phone','role','company_id','branch_id',
         'department_id', // if you keep a single department, optional
         'master_pages',
     ];
@@ -26,6 +26,7 @@ class User extends Authenticatable
 
     /** Relationships */
     public function company()     { return $this->belongsTo(Company::class); }
+    public function branch()      { return $this->belongsTo(Branch::class); }
     public function departments() { return $this->belongsToMany(Department::class); }
     public function department()  { return $this->belongsTo(Department::class, 'department_id'); } // optional single
 

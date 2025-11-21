@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Company;
+use App\Models\CompanyUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -82,6 +83,7 @@ class UserController extends Controller
             'departments.*'   => ['exists:departments,id'],
             'department_ids'  => ['array'],
             'department_ids.*'=> ['exists:departments,id'],
+            'branch_id'       => ['nullable','exists:branches,id'],
         ];
 
         if (in_array($authUser->role, ['super_admin','superadmin'], true)) {
@@ -104,9 +106,34 @@ class UserController extends Controller
             $user->company_id = $data['company_id'] ?? null;
         }
 
+        // branch (optional)
+        $user->branch_id = $request->input('branch_id');
+
         // page access (array cast on model)
         $user->master_pages = $data['master_pages'] ?? [];
         $user->save();
+
+        // Sync to company_users for company guard login
+        if (in_array(($request->role ?? ''), ['company','company_user'], true)) {
+            $payload = [
+                'name' => $user->name,
+                // Assign plain password; CompanyUser casts will hash automatically
+                'password' => $data['password'],
+                'company_id' => $user->company_id,
+                'role' => 'company',
+            ];
+            // mirror branch_id if the column exists in company_users
+            try {
+                if (\Schema::hasColumn('company_users','branch_id')) {
+                    $payload['branch_id'] = $user->branch_id;
+                }
+            } catch (\Throwable $e) {}
+
+            CompanyUser::updateOrCreate(
+                ['email' => $user->email],
+                $payload
+            );
+        }
 
         // departments pivot (support both field names)
         $deptIds = $request->input('department_ids', $request->input('departments', []));
@@ -153,6 +180,7 @@ class UserController extends Controller
             'departments.*'   => ['exists:departments,id'],
             'department_ids'  => ['array'],
             'department_ids.*'=> ['exists:departments,id'],
+            'branch_id'       => ['nullable','exists:branches,id'],
             // 'company_id' => $isSuper ? ['required','exists:companies,id'] : ['nullable'],
         ]);
 
@@ -170,6 +198,11 @@ class UserController extends Controller
             $user->master_pages = $data['master_pages'] ?? [];
         }
 
+        // update branch if provided
+        if ($request->has('branch_id')) {
+            $user->branch_id = $request->input('branch_id') ?: null;
+        }
+
         // if ($isSuper && array_key_exists('company_id', $data)) {
         //     $user->company_id = $data['company_id'];
         // }
@@ -180,6 +213,24 @@ class UserController extends Controller
         if ($request->has('department_ids') || $request->has('departments')) {
             $deptIds = $request->input('department_ids', $request->input('departments', []));
             $user->departments()->sync($deptIds ?: []);
+        }
+
+        // mirror to company_users if role is company/company_user
+        if (in_array(($user->role ?? ''), ['company','company_user'], true)) {
+            $payload = [
+                'name' => $user->name,
+                'company_id' => $user->company_id,
+                'role' => 'company',
+            ];
+            try {
+                if (\Schema::hasColumn('company_users','branch_id')) {
+                    $payload['branch_id'] = $user->branch_id;
+                }
+            } catch (\Throwable $e) {}
+            CompanyUser::updateOrCreate(
+                ['email' => $user->email],
+                $payload
+            );
         }
 
         return redirect()->route('users.index')->with('success','User updated successfully.');

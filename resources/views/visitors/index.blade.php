@@ -19,6 +19,10 @@
       // Security check create (exists in both namespaces)
       $securityCreateRoute = $isCompany ? (Route::has('company.security-checks.create') ? 'company.security-checks.create' : null)
                                         : (Route::has('security-checks.create') ? 'security-checks.create' : null);
+
+      // Print Pass route
+      $passRoute = $isCompany && Route::has('company.visitors.pass') ? 'company.visitors.pass'
+                  : (Route::has('visitors.pass') ? 'visitors.pass' : null);
   @endphp
 
   <div class="bg-white p-4 rounded-4 shadow-lg">
@@ -46,9 +50,10 @@
             <th>Phone</th>
             <th>Company</th>
             <th>Department</th>
+            <th>Purpose</th>
             <th>To Visit</th>
             <th>Vehicle #</th>
-            <th>Status</th>
+            <th>In/Out Status</th>
             <th style="min-width: 220px;">Actions</th>
           </tr>
         </thead>
@@ -66,18 +71,15 @@
               <td>{{ $visitor->phone }}</td>
               <td>{{ $visitor->company->name ?? '—' }}</td>
               <td>{{ $visitor->department->name ?? '—' }}</td>
+              <td>{{ $visitor->purpose ?? '—' }}</td>
               <td>{{ $visitor->person_to_visit ?? '—' }}</td>
               <td>{{ $visitor->vehicle_number ?? '—' }}</td>
               <td>
                 @php
-                  $badgeClass = match($visitor->status) {
-                    'Mark In'  => 'success',
-                    'Rejected'  => 'danger',
-                    'Completed' => 'success',
-                    default     => 'secondary',
-                  };
+                  $inOut = $visitor->in_time && !$visitor->out_time ? 'In' : ($visitor->out_time ? 'Out' : '—');
+                  $badgeClass = $inOut === 'In' ? 'success' : ($inOut === 'Out' ? 'dark' : 'secondary');
                 @endphp
-                <span class="badge bg-{{ $badgeClass }}">{{ $visitor->status }}</span>
+                <span class="badge bg-{{ $badgeClass }}">{{ $inOut }}</span>
               </td>
               <td>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -90,6 +92,19 @@
                   {{-- Visit --}}
                   @if($visitRoute)
                     <a href="{{ route($visitRoute, $visitor->id) }}" class="btn btn-sm btn-info">Visit</a>
+                  @endif
+
+                  {{-- Pass (only when Approved) --}}
+                  @if($passRoute)
+                    @if($visitor->status === 'Approved')
+                      <a href="{{ route($passRoute, $visitor->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        Pass
+                      </a>
+                    @else
+                      <button type="button" class="btn btn-sm btn-outline-secondary" title="Available after approval" disabled>
+                        Pass
+                      </button>
+                    @endif
                   @endif
 
                   {{-- Delete (POST + method spoofing) --}}
@@ -112,7 +127,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="9" class="text-muted">No visitors found.</td></tr>
+            <tr><td colspan="10" class="text-muted">No visitors found.</td></tr>
           @endforelse
         </tbody>
       </table>

@@ -11,13 +11,8 @@
 
     <!-- Date filter -->
     <form method="GET" class="row g-3 align-items-end mb-3">
-        <div class="col-auto">
-            <label for="from" class="form-label">From</label>
-            <input type="date" name="from" id="from" class="form-control" value="{{ request('from') }}">
-        </div>
-        <div class="col-auto">
-            <label for="to" class="form-label">To</label>
-            <input type="date" name="to" id="to" class="form-control" value="{{ request('to') }}">
+        <div class="col-md-6">
+            @include('components.date_range')
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">Filter</button>
@@ -34,6 +29,11 @@
                         <th>Visitor Category</th>
                         <th>Department Visited</th>
                         <th>Person Visited</th>
+                        <th>Purpose of Visit</th>
+                        <th>Vehicle (Type / No.)</th>
+                        <th>Goods in Vehicle</th>
+                        <th>Documents</th>
+                        <th>Workman Policy</th>
                         <th>Date</th>
                         <th>Entry Time</th>
                         <th>Exit Time</th>
@@ -48,7 +48,31 @@
                             <td class="fw-semibold">{{ $visitor->name }}</td>
                             <td>{{ $visitor->category->name ?? '—' }}</td>
                             <td>{{ $visitor->department->name ?? '—' }}</td>
-                            <td>{{ $visitor->person_visited ?? '—' }}</td>
+                            <td>{{ $visitor->person_to_visit ?? '—' }}</td>
+                            <td>{{ $visitor->purpose ?? '—' }}</td>
+                            <td>
+                                @php $vt = trim((string)$visitor->vehicle_type); $vn = trim((string)$visitor->vehicle_number); @endphp
+                                {{ $vt || $vn ? trim(($vt ?: '') . ($vt && $vn ? ' / ' : '') . ($vn ?: '')) : '—' }}
+                            </td>
+                            <td>{{ $visitor->goods_in_car ?? '—' }}</td>
+                            <td class="text-start">
+                                @php $docs = $visitor->documents; @endphp
+                                @if(is_array($docs) && count($docs))
+                                    <ul class="mb-0 small">
+                                        @foreach($docs as $i => $doc)
+                                            <li><a href="{{ asset('storage/' . $doc) }}" target="_blank">Document {{ $i+1 }}</a></li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td>
+                                {{ $visitor->workman_policy ?? '—' }}
+                                @if(!empty($visitor->workman_policy_photo))
+                                    <div><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank" class="small">View Photo</a></div>
+                                @endif
+                            </td>
                             <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d') : '—' }}</td>
                             <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('h:i A') : '—' }}</td>
                             <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('h:i A') : '—' }}</td>

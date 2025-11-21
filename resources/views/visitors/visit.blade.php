@@ -54,7 +54,7 @@
             {{-- Purpose of Visit --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Purpose of Visit</label>
-                <input type="text" name="purpose_of_visit" class="form-control" value="{{ old('purpose_of_visit', $visitor->purpose_of_visit) }}">
+                <input type="text" name="purpose" class="form-control" value="{{ old('purpose', $visitor->purpose) }}">
             </div>
 
             {{-- Visitor Company --}}
@@ -76,7 +76,9 @@
                     <select name="vehicle_type" class="form-select">
                         <option value="">-- Select --</option>
                         <option value="2-wheeler" {{ $visitor->vehicle_type == '2-wheeler' ? 'selected' : '' }}>2-Wheeler</option>
+                        <option value="3-wheeler" {{ $visitor->vehicle_type == '3-wheeler' ? 'selected' : '' }}>3-Wheeler</option>
                         <option value="4-wheeler" {{ $visitor->vehicle_type == '4-wheeler' ? 'selected' : '' }}>4-Wheeler</option>
+                        <option value="6-wheeler" {{ $visitor->vehicle_type == '6-wheeler' ? 'selected' : '' }}>6-Wheeler</option>
                     </select>
                 </div>
                 <div class="col">

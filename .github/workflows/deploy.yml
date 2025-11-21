@@ -1,0 +1,59 @@
+name: 🎯 Deploy to Hostripples
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧾 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, bcmath, pdo_mysql, tokenizer, ctype, json, xml, fileinfo
+          tools: composer
+          coverage: none
+
+      - name: 🧠 Increase PHP memory limit
+        run: echo "memory_limit=-1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+
+      - name: 📦 Install dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      # ✅ Deploy Laravel app (except public folder)
+      - name: 🚀 Deploy app to /vms/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /vms/
+          local-dir: ./
+          exclude: |
+            public/**
+            node_modules/**
+            vendor/**
+            .git*
+            .github*
+            storage/logs/*
+            storage/framework/cache/*
+
+      # ✅ Deploy public folder separately to public_html
+      - name: 🌐 Deploy public to /public_html/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /public_html/
+          local-dir: ./public/
+          exclude: |
+            .git*
+            .github*

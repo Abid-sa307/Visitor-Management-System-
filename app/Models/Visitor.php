@@ -12,6 +12,7 @@ class Visitor extends Model
 
     protected $fillable = [
         'company_id',
+        'branch_id',
         'name',
         'visitor_category_id',
         'email',
@@ -23,6 +24,9 @@ class Visitor extends Model
         'documents',
         'workman_policy',
         'workman_policy_photo',
+        'status',
+        'in_time',
+        'out_time',
     ];
 
     protected $casts = [

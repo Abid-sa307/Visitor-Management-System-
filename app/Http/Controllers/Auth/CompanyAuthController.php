@@ -35,6 +35,6 @@ class CompanyAuthController extends Controller
         Auth::guard('company')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect('/company/login');
+        return redirect('/');
     }
 }

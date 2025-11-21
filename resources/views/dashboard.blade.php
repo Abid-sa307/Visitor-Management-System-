@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 text-gray-800">Dashboard</h1>
+    <h1 class="h3 text-gray-800"  style="margin-top: 20px;">Dashboard</h1>
 </div>
 
 <!-- Company Filter (only visible to Super Admin) -->
@@ -23,9 +23,18 @@
                     </select>
                 </div>
 
+                <div class="col-md-6">
+                    <label class="form-label">Filter by Date Range</label>
+                    @include('components.date_range')
+                </div>
                 <div class="col-md-4">
-                    <label for="date" class="form-label">Filter by Date</label>
-                    <input type="date" name="date" id="date" class="form-control" value="{{ $selectedDate }}" onchange="this.form.submit()">
+                    <label for="branch_id" class="form-label">Filter by Branch</label>
+                    <select name="branch_id" id="branch_id" class="form-select">
+                        <option value="">All Branches</option>
+                    </select>
+                </div>
+                <div class="col-auto mt-2">
+                    <button type="submit" class="btn btn-primary mt-4">Apply</button>
                 </div>
             </div>
         </form>
@@ -59,7 +68,6 @@
             </div>
         </div>
     </div>
-    @endunless
 
     <div class="col-xl-4 col-md-6">
         <div class="card border-left-danger shadow h-100 py-2">
@@ -72,6 +80,7 @@
             </div>
         </div>
     </div>
+    @endunless
 </div>
 
 
@@ -253,5 +262,38 @@
         height: 250px; /* smaller for doughnut */
     }
 </style>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const companySel = document.getElementById('company_id');
+  const branchSel  = document.getElementById('branch_id');
+  const preBranch  = @json(request('branch_id'));
+
+  function loadBranches(companyId){
+    if (!branchSel) return;
+    branchSel.innerHTML = '<option value="">All Branches</option>';
+    if (!companyId) return;
+    fetch(`/companies/${companyId}/branches`)
+      .then(r=>r.json())
+      .then(list => {
+        list.forEach(b => {
+          const opt = document.createElement('option');
+          opt.value = b.id;
+          opt.textContent = b.name;
+          if (String(preBranch) === String(b.id)) opt.selected = true;
+          branchSel.appendChild(opt);
+        });
+      })
+      .catch(()=>{});
+  }
+
+  if (companySel) {
+    companySel.addEventListener('change', () => loadBranches(companySel.value));
+    if (companySel.value) loadBranches(companySel.value);
+  }
+});
+</script>
+@endpush
 
 @endsection

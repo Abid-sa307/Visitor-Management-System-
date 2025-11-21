@@ -28,6 +28,8 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Contact</th>
+                            <th>Branches</th>
+                            <th>Auto Approve</th>
                             <th>Website</th>
                             <th style="width: 160px;">Actions</th>
                         </tr>
@@ -38,6 +40,20 @@
                             <td class="fw-semibold">{{ $company->name }}</td>
                             <td>{{ $company->email }}</td>
                             <td>{{ $company->contact_number ?? '—' }}</td>
+                            <td class="text-start">
+                                @if ($company->branches && $company->branches->count())
+                                    <span class="badge bg-secondary">{{ $company->branches->count() }}</span>
+                                    <div class="small text-wrap mt-1">
+                                        {{ $company->branches->pluck('name')->join(', ') }}
+                                    </div>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @php $auto = (int)($company->auto_approve_visitors ?? 0); @endphp
+                                <span class="badge bg-{{ $auto ? 'success' : 'secondary' }}">{{ $auto ? 'Yes' : 'No' }}</span>
+                            </td>
                             <td>
                                 @if ($company->website)
                                     <a href="{{ $company->website }}" target="_blank">{{ $company->website }}</a>
@@ -59,7 +75,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-muted py-4">No companies found.</td>
+                            <td colspan="7" class="text-muted py-4">No companies found.</td>
                         </tr>
                         @endforelse
                     </tbody>

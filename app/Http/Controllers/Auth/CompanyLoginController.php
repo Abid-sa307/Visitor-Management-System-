@@ -18,14 +18,14 @@ class CompanyLoginController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            // Optional: check if user is a 'company'
-            if (auth()->user()->role === 'company') {
+        if (Auth::guard('company')->attempt($credentials)) {
+            $request->session()->regenerate();
+            $user = Auth::guard('company')->user();
+            if (($user->role ?? null) === 'company') {
                 return redirect()->route('company.dashboard');
-            } else {
-                Auth::logout();
-                return back()->with('error', 'Access denied. Not a company user.');
             }
+            Auth::guard('company')->logout();
+            return back()->with('error', 'Access denied. Not a company user.');
         }
 
         return back()->with('error', 'Invalid credentials.');

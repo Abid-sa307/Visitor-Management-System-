@@ -57,6 +57,7 @@
                             <th>Department</th>
                             <th>Visitor Category</th>
                             <th>Goods in Vehicle</th>
+                            <th>Status</th>
                             <th>Visit</th>
                         </tr>
                     </thead>
@@ -70,13 +71,23 @@
                             <td>{{ $visitor->department->name ?? 'N/A' }}</td>
                             <td>{{ $visitor->visitorCategory->name ?? '—' }}</td>
                             <td>{{ $visitor->goods_in_car ?? '—' }}</td>
+                            <td>
+                                @php
+                                  $st = $visitor->status;
+                                  $cls = $st === 'Approved' ? 'success' : ($st === 'Rejected' ? 'danger' : 'warning');
+                                @endphp
+                                <span class="badge bg-{{ $cls }} js-status-badge" data-id="{{ $visitor->id }}">{{ $visitor->status }}</span>
+                            </td>
                             <td class="d-flex justify-content-center gap-2">
-                                <form action="{{ route('visitors.update', $visitor->id) }}" method="POST">
+                                @php
+                                    $updateRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
+                                @endphp
+                                <form action="{{ route($updateRoute, $visitor->id) }}" method="POST" class="js-approval-form">
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="status" value="Approved">
-                                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                                    <button type="button" class="btn btn-danger btn-sm"
+                                    <button type="submit" class="btn btn-success btn-sm js-approve">Approve</button>
+                                    <button type="button" class="btn btn-danger btn-sm js-reject"
                                         onclick="this.form.status.value='Rejected'; this.form.submit();">
                                         Reject
                                     </button>
@@ -99,29 +110,60 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Optional: AJAX version to instantly update status without page reload
-    document.querySelectorAll('form[action*="visitors"]').forEach(form => {
-        form.addEventListener('submit', function(e){
-            e.preventDefault();
-            const url = this.action;
-            const formData = new FormData(this);
+  // AJAX approvals with better UX
+  document.querySelectorAll('form.js-approval-form').forEach(form => {
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      const url = this.action;
+      const formData = new FormData(this);
 
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'X-HTTP-Method-Override': 'PUT'
-                },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(res => {
-                alert(res.message || 'Visitor status updated successfully');
-                location.reload(); // reload to reflect changes
-            })
-            .catch(err => console.error(err));
+      const approveBtn = this.querySelector('.js-approve');
+      const rejectBtn  = this.querySelector('.js-reject');
+      const btns = [approveBtn, rejectBtn].filter(Boolean);
+      btns.forEach(b=>{ b.disabled = true; b.dataset.oldText = b.textContent; b.textContent = 'Processing...'; });
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-HTTP-Method-Override': 'PUT',
+            'Accept': 'application/json'
+          },
+          body: formData
         });
+        let payload = null;
+        const text = await res.text();
+        try { payload = JSON.parse(text); } catch(_) { /* non-JSON */ }
+
+        if (!res.ok) throw new Error(payload?.message || 'Request failed');
+
+        const msg = payload?.message || 'Visitor status updated successfully';
+        // Update status badge in-place
+        const row = form.closest('tr');
+        const badge = row?.querySelector('.js-status-badge');
+        if (badge && payload?.status) {
+          badge.textContent = payload.status;
+          badge.classList.remove('bg-success','bg-danger','bg-warning','bg-secondary');
+          const cls = payload.status === 'Approved' ? 'bg-success' : (payload.status === 'Rejected' ? 'bg-danger' : 'bg-warning');
+          badge.classList.add(cls);
+        }
+        // Inline success note
+        const note = document.createElement('div');
+        note.className = 'small text-success mt-1';
+        note.textContent = msg;
+        form.appendChild(note);
+        // Disable buttons after action is completed
+        btns.forEach(b=>{ b.disabled = true; b.textContent = payload?.status || 'Updated'; });
+      } catch (err) {
+        const note = document.createElement('div');
+        note.className = 'small text-danger mt-1';
+        note.textContent = err?.message || 'Something went wrong';
+        form.appendChild(note);
+        btns.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.oldText || b.textContent; });
+      }
     });
+  });
 });
 </script>
 @endpush
