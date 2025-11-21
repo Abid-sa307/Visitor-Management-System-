@@ -1,4 +1,12 @@
+AddType application/octet-stream .bin
+AddType application/json .json
+
 <IfModule mod_rewrite.c>
+    <IfModule mod_headers.c>
+        Header set Access-Control-Allow-Origin "*"
+        Header set Access-Control-Allow-Methods "GET, OPTIONS"
+    </IfModule>
+    
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
@@ -12,6 +20,10 @@
     # Handle X-XSRF-Token Header
     RewriteCond %{HTTP:x-xsrf-token} .
     RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Allow access to /models directory directly
+    RewriteCond %{REQUEST_URI} ^/models/ [NC]
+    RewriteRule ^ - [L]
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d

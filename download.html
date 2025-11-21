@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Face Detection Models</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .step { margin-bottom: 20px; }
+        .download-btn { 
+            background: #47bd4b; 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            margin: 5px; 
+            border-radius: 4px; 
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .download-btn:hover { background: #45a049; }
+        .note { 
+            background: #fff3cd; 
+            padding: 10px; 
+            border-left: 4px solid #ffc107;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Download Face Detection Models</h1>
+        
+        <div class="step">
+            <h3>Step 1: Create the models directory</h3>
+            <p>Create a new folder called <code>models</code> in your <code>public</code> directory:</p>
+            <code>public/models/</code>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Download these files</h3>
+            <p>Right-click each link and select "Save link as..." to download the files to your <code>public/models/</code> folder:</p>
+            
+            <div>
+                <a href="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/tiny_face_detector_model-weights_manifest.json" 
+                   class="download-btn" 
+                   download="tiny_face_detector_model-weights_manifest.json">
+                    Download tiny_face_detector_model-weights_manifest.json
+                </a><br><br>
+                
+                <a href="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/tiny_face_detector_model-shard1" 
+                   class="download-btn" 
+                   download="tiny_face_detector_model-shard1">
+                    Download tiny_face_detector_model-shard1
+                </a><br><br>
+                
+                <a href="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/face_landmark_68_model-weights_manifest.json" 
+                   class="download-btn" 
+                   download="face_landmark_68_model-weights_manifest.json">
+                    Download face_landmark_68_model-weights_manifest.json
+                </a><br><br>
+                
+                <a href="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/face_landmark_68_model-shard1" 
+                   class="download-btn" 
+                   download="face_landmark_68_model-shard1">
+                    Download face_landmark_68_model-shard1
+                </a>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Verify the files</h3>
+            <p>After downloading, make sure you have these 4 files in your <code>public/models/</code> folder:</p>
+            <ul>
+                <li>tiny_face_detector_model-weights_manifest.json</li>
+                <li>tiny_face_detector_model-shard1</li>
+                <li>face_landmark_68_model-weights_manifest.json</li>
+                <li>face_landmark_68_model-shard1</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Test the face detection</h3>
+            <p>After downloading all files, refresh your visitor entry page and try the face detection again.</p>
+            <div class="note">
+                <strong>Note:</strong> 
+                <ul>
+                    <li>Make sure your web server is running</li>
+                    <li>Access the site through <code>http://localhost/Visitor-Management-System/</code></li>
+                    <li>Check the browser console (F12) for any errors</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

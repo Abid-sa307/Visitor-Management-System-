@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use App\Notifications\VisitorCreated;
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,6 +26,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class VisitorController extends Controller
 {
+    
     private const NAME_REGEX = '/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u';
     private const PHONE_REGEX = '/^\+?[0-9]{7,15}$/';
 
@@ -145,22 +149,24 @@ class VisitorController extends Controller
 public function store(Request $request)
 {
     return DB::transaction(function () use ($request) {
-
         // ---------------------------
         // Validation rules
         // ---------------------------
         $messages = [
             'name.regex'  => 'Name may only contain letters, spaces, apostrophes, periods, and hyphens.',
             'phone.regex' => 'Phone must be digits only and can include an optional leading + (7-15 digits).',
+            'face_encoding.json' => 'Invalid face data format. Please try capturing your face again.',
         ];
 
         $validated = $request->validate([
             'company_id'          => 'nullable|exists:companies,id',
-            'name'                => 'required|string|max:255|regex:'.self::NAME_REGEX,
+            'name'                => 'required|string|max:255|regex:' . self::NAME_REGEX,
             'visitor_category_id' => 'nullable|exists:visitor_categories,id',
             'email'               => 'nullable|email:rfc,dns',
-            'phone'               => 'required|regex:'.self::PHONE_REGEX,
+            'phone'               => 'required|regex:' . self::PHONE_REGEX,
             'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'face_image'          => 'nullable|string', // base64 webcam photo
+            'face_encoding'       => 'nullable|json',   // Face descriptor array
             'department_id'       => 'nullable|exists:departments,id',
             'purpose'             => 'nullable|string|max:255',
             'person_to_visit'     => 'nullable|string|max:255',
@@ -192,22 +198,108 @@ public function store(Request $request)
         }
 
         // ---------------------------
-        // Handle photo: prefer base64 camera capture over file upload
+        // Handle photo / face image
         // ---------------------------
-        if ($request->filled('photo_base64')) {
-            $dataUrl = $request->input('photo_base64');
+        $faceData = null;
+        
+        // Log all request data for debugging
+        \Log::info('Request data:', [
+            'all' => $request->all(),
+            'has_face_encoding' => $request->has('face_encoding'),
+            'has_face_image' => $request->has('face_image'),
+            'files' => $request->allFiles()
+        ]);
+
+        // Process face encoding if provided
+        $faceData = null;
+        if ($request->has('face_encoding') && !empty($request->face_encoding)) {
+            \Log::info('Raw face_encoding from request:', [
+                'face_encoding' => $request->face_encoding,
+                'type' => gettype($request->face_encoding),
+                'length' => is_string($request->face_encoding) ? strlen($request->face_encoding) : 'N/A'
+            ]);
+            
+            // Try to decode the JSON
+            $faceData = json_decode($request->face_encoding, true);
+            $jsonError = json_last_error();
+            
+            if ($jsonError !== JSON_ERROR_NONE) {
+                $errorMsg = 'JSON decode error: ' . json_last_error_msg() . ' (code: ' . $jsonError . ')';
+                \Log::error($errorMsg, [
+                    'input' => substr($request->face_encoding, 0, 100) . (strlen($request->face_encoding) > 100 ? '...' : '')
+                ]);
+                
+                throw ValidationException::withMessages([
+                    'face_encoding' => ['Invalid face data format. Please try capturing your face again.']
+                ]);
+            }
+            
+            \Log::info('Decoded face_encoding:', [
+                'is_array' => is_array($faceData),
+                'count' => is_array($faceData) ? count($faceData) : 'N/A',
+                'sample' => is_array($faceData) ? array_slice($faceData, 0, 5) : 'N/A'
+            ]);
+            
+            // Add to validated data to be saved - store as JSON string
+            $validated['face_encoding'] = json_encode($faceData);
+            \Log::info('Face encoding added to validated data', [
+                'first_5_values' => array_slice($faceData, 0, 5),
+                'validated_keys' => array_keys($validated),
+                'stored_value' => $validated['face_encoding']
+            ]);
+        } else {
+            \Log::warning('No face_encoding found in request', [
+                'request_keys' => array_keys($request->all()),
+                'request_has_face_encoding' => $request->has('face_encoding'),
+                'face_encoding_empty' => $request->has('face_encoding') ? 'empty' : 'not present'
+            ]);
+        }
+
+        // Handle face image (base64)
+        if ($request->filled('face_image')) {
+            $dataUrl = $request->input('face_image');
             if (preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $dataUrl, $m)) {
                 $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
                 $data = substr($dataUrl, strpos($dataUrl, ',') + 1);
-                $data = base64_decode($data);
-                $filename = 'photos/'.uniqid('visitor_', true).'.'.$ext;
-                Storage::disk('public')->put($filename, $data);
-                $validated['photo'] = $filename;
+                $imageData = base64_decode($data);
+                
+                if ($imageData === false) {
+                    throw new \Exception('Invalid base64 image data');
+                }
+                
+                // Generate a unique filename with timestamp
+                $filename = 'visitor_faces/visitor_face_' . time() . '_' . uniqid() . '.' . $ext;
+                
+                // Ensure the directory exists
+                Storage::disk('public')->makeDirectory('visitor_faces');
+                
+                // Save the file to storage
+                Storage::disk('public')->put($filename, $imageData);
+                
+                // Store the path in the database (not the base64 data)
+                $validated['face_image'] = $filename;  // Store the path, not the base64 data
+                
+                // Also set as the main photo if no other photo was uploaded
+                if (empty($validated['photo'])) {
+                    $validated['photo'] = $filename;
+                }
+                
+                // If we have face encoding, it's already JSON encoded and added to $validated
+                // No need to set it again as it would overwrite the JSON with an array
+                
+                \Log::info('Face image saved successfully', [
+                    'filename' => $filename,
+                    'path' => $filename,
+                    'size' => strlen($imageData) . ' bytes'
+                ]);
             }
-        } elseif ($request->hasFile('photo')) {
+        }
+        // Handle regular photo upload
+        elseif ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('photos', 'public');
         }
 
+        // Handle documents upload
         if ($request->hasFile('documents')) {
             $paths = [];
             foreach ($request->file('documents') as $doc) {
@@ -216,19 +308,19 @@ public function store(Request $request)
             $validated['documents'] = $paths;
         }
 
+        // Workman policy photo
         if ($request->hasFile('workman_policy_photo')) {
-            $validated['workman_policy_photo'] = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+            $validated['workman_policy_photo'] = $request->file('workman_policy_photo')
+                ->store('wpc_photos', 'public');
         }
 
-        // ---------------------------
-        // Set status based on company auto-approval
-        // ---------------------------
+        // Auto-approval logic
         $status = 'Pending';
         $approvedAt = null;
 
         if (!empty($validated['company_id'])) {
             $company = Company::find($validated['company_id']);
-            if ($company && (int)$company->auto_approve_visitors === 1) {
+            if ($company && (int) $company->auto_approve_visitors === 1) {
                 $status = 'Approved';
                 $approvedAt = now();
             }
@@ -239,35 +331,38 @@ public function store(Request $request)
             $validated['approved_at'] = $approvedAt;
         }
 
-        // ---------------------------
-        // Create the visitor
-        // ---------------------------
+        // Create visitor
         $visitor = Visitor::create($validated);
 
-        // Send email notification to visitor if email provided
+        // Attach documents if any
+        if (isset($validated['documents'])) {
+            foreach ($validated['documents'] as $documentPath) {
+                $visitor->documents()->create([
+                    'file_path' => $documentPath,
+                    'file_name' => basename($documentPath)
+                ]);
+            }
+        }
+
+        // Email notifications
         try {
             if (!empty($visitor->email)) {
                 \Mail::to($visitor->email)->send(new \App\Mail\VisitorCreatedMail($visitor));
-                // If auto-approved on creation, also send approved mail
                 if ($visitor->status === 'Approved') {
                     \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
                 }
             }
         } catch (\Throwable $e) {
-            // Avoid breaking flow if mail fails; consider logging
-            // \Log::warning('VisitorCreated mail failed: '.$e->getMessage());
+            \Log::warning('VisitorCreated mail failed: '.$e->getMessage());
         }
 
-        // ---------------------------
-        // Notify company users (database notifications)
-        // ---------------------------
+        // Notify company users
         try {
             if (!empty($visitor->company_id)) {
                 $recipients = User::query()
                     ->where('company_id', $visitor->company_id)
                     ->when(!empty($visitor->branch_id), function ($q) use ($visitor) {
                         $q->where(function ($qq) use ($visitor) {
-                            // notify users assigned to this branch, or with no branch assignment (company-wide)
                             $qq->whereNull('branch_id')->orWhere('branch_id', $visitor->branch_id);
                         });
                     })
@@ -277,26 +372,19 @@ public function store(Request $request)
                 }
             }
         } catch (\Throwable $e) {
-            // Swallow notification errors so visitor creation isn't blocked
-            // Consider logging if needed: \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
+            \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
         }
 
-        // ---------------------------
         // Redirect based on user type
-        // ---------------------------
-        if ($this->isSuper()) {
-            return redirect()->route('visitors.index')
-                ->with('success', $status === 'Approved'
-                    ? 'Visitor auto-approved successfully.'
-                    : 'Visitor submitted for approval.');
-        } else {
-            return redirect()->route('company.visitors.index')
-                ->with('success', $status === 'Approved'
-                    ? 'Visitor auto-approved successfully.'
-                    : 'Visitor submitted for approval.');
-        }
+        $route = $this->isSuper() ? 'visitors.index' : 'company.visitors.index';
+        $message = $status === 'Approved' 
+            ? 'Visitor registered and auto-approved successfully.' 
+            : 'Visitor registered successfully. Pending approval.';
+
+        return redirect()->route($route)->with('success', $message);
     });
 }
+
 
 
 
@@ -546,9 +634,29 @@ private function schema_has_column(string $table, string $column): bool
         $visitor = Visitor::findOrFail($id);
         $this->authorizeVisitor($visitor);
 
-        $companies   = $this->getCompanies();
+        $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $isSuper = $this->isSuper();
+        
+        // Get companies - all for super admin, only user's company for others
+        $companies = $isSuper ? $this->getCompanies() : collect([$user->company]);
+        
         $departments = $this->getDepartments();
-        return view('visitors.visit', compact('visitor', 'departments', 'companies'));
+        
+        // Get branches - all for super admin, only user's company branches for others
+        $branchesQuery = Branch::query();
+        if (!$isSuper && $user->company_id) {
+            $branchesQuery->where('company_id', $user->company_id);
+        }
+        $branches = $branchesQuery->orderBy('name')->get();
+        
+        return view('visitors.visit', [
+            'visitor' => $visitor,
+            'departments' => $departments,
+            'companies' => $companies,
+            'branches' => $branches,
+            'isSuper' => $isSuper,
+            'user' => $user
+        ]);
     }
 
     public function submitVisit(Request $request, $id)
@@ -564,6 +672,7 @@ private function schema_has_column(string $table, string $column): bool
         $request->validate([
             'company_id'          => 'required|exists:companies,id',
             'department_id'       => 'required|exists:departments,id',
+            'branch_id'           => 'nullable|exists:branches,id',
             'person_to_visit'     => 'required|string',
             'purpose'             => 'nullable|string',
             'visitor_company'     => 'nullable|string',
@@ -594,6 +703,12 @@ private function schema_has_column(string $table, string $column): bool
         return view('visitors.entry', compact('visitors'));
     }
 
+    /**
+     * Toggle visitor check-in/out status
+     *
+     * @param int $id Visitor ID
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function toggleEntry($id)
     {
         // If you later add guard role, leave this check; otherwise remove.
@@ -604,32 +719,101 @@ private function schema_has_column(string $table, string $column): bool
         $visitor = Visitor::findOrFail($id);
         $this->authorizeVisitor($visitor);
 
+        // Check if this is a face verification request
+        $isFaceVerification = request()->has('face_verification') && request()->input('face_verification') === '1';
+        $skipFaceVerification = request()->has('skip_face_verification') && request()->input('skip_face_verification') === '1';
+        $faceVerified = request()->input('face_verified') === '1';
+
+        // If face verification is required but not completed
+        if ($visitor->face_encoding && !$skipFaceVerification && !$faceVerified) {
+            return redirect()->route('visitors.entry.page')
+                ->with('warning', 'Face verification is required for this visitor. Please use the "Check In/Out with Face" button.');
+        }
+
         $originalStatus = $visitor->status;
+        $isCheckingIn = !$visitor->in_time;
+        
+        try {
+            DB::beginTransaction();
 
-        if (!$visitor->in_time) {
-            // Only allow Mark In if already Approved OR company has auto-approve enabled
-            $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
-            if (!$companyAuto && $visitor->status !== 'Approved') {
-                return back()->with('error', 'Visitor must be approved before marking IN.');
+            if ($isCheckingIn) {
+                // Only allow Check In if already Approved OR company has auto-approve enabled
+                $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
+                if (!$companyAuto && $visitor->status !== 'Approved') {
+                    return back()->with('error', 'Visitor must be approved before checking in.');
+                }
+                
+                $visitor->in_time = now();
+                $visitor->status = $visitor->status === 'Pending' && $companyAuto ? 'Approved' : $visitor->status;
+                
+                // Log the check-in
+                activity()
+                    ->performedOn($visitor)
+                    ->withProperties([
+                        'face_verified' => $faceVerified,
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent()
+                    ])
+                    ->log('checked in' . ($faceVerified ? ' with face verification' : ''));
+                
+                $message = 'Visitor checked in successfully' . ($faceVerified ? ' with face verification' : '') . '.';
+            } else {
+                // Check if already checked out
+                if ($visitor->out_time) {
+                    return back()->with('error', 'Visitor has already been checked out.');
+                }
+                
+                $visitor->out_time = now();
+                $visitor->status = 'Completed';
+                
+                // Log the check-out
+                activity()
+                    ->performedOn($visitor)
+                    ->withProperties([
+                        'face_verified' => $faceVerified,
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent()
+                    ])
+                    ->log('checked out' . ($faceVerified ? ' with face verification' : ''));
+                
+                $message = 'Visitor checked out successfully' . ($faceVerified ? ' with face verification' : '') . '.';
             }
-            $visitor->in_time = now();
-            // Keep status as-is; do not auto-upgrade here unless needed
-            if ($visitor->status === 'Pending' && $companyAuto) {
-                $visitor->status = 'Approved';
+
+            // Update status history if status changed
+            if ($visitor->isDirty('status')) {
+                $visitor->last_status = $originalStatus;
+                $visitor->status_changed_at = now();
+                
+                // Log status change
+                activity()
+                    ->performedOn($visitor)
+                    ->withProperties([
+                        'old_status' => $originalStatus,
+                        'new_status' => $visitor->status
+                    ])
+                    ->log('status changed');
             }
-        } elseif (!$visitor->out_time) {
-            $visitor->out_time = now();
-            $visitor->status = 'Completed';
+            
+            // Save the changes
+            $visitor->save();
+            
+            // Commit the transaction
+            DB::commit();
+            
+            return back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            // Rollback the transaction on error
+            DB::rollBack();
+            
+            // Log the error
+            \Log::error('Error toggling visitor entry: ' . $e->getMessage(), [
+                'visitor_id' => $id,
+                'exception' => $e
+            ]);
+            
+            return back()->with('error', 'An error occurred while updating the visitor. Please try again.');
         }
-
-        if ($visitor->status !== $originalStatus) {
-            $visitor->last_status = $originalStatus;
-            $visitor->status_changed_at = now();
-        }
-
-        $visitor->save();
-
-        return back()->with('success', 'Visitor entry updated.');
     }
 
     public function printPass($id)
@@ -1120,5 +1304,33 @@ private function schema_has_column(string $table, string $column): bool
         )->orderBy('name')->get();
 
         return view('visitors.approvals', compact('visitors', 'departments'));
+    }
+
+    /**
+     * Remove the specified visitor from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        try {
+            // Find the visitor
+            $visitor = Visitor::findOrFail($id);
+            
+            // Check if user has permission to delete this visitor
+            if (!$this->isSuper() && $visitor->company_id !== auth()->user()->company_id) {
+                return back()->with('error', 'You are not authorized to delete this visitor.');
+            }
+            
+            // Delete the visitor
+            $visitor->delete();
+            
+            return redirect()->route('visitors.index')
+                ->with('success', 'Visitor deleted successfully');
+                
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error deleting visitor: ' . $e->getMessage());
+        }
     }
 }

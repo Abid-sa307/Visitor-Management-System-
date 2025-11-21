@@ -11,6 +11,57 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /**
+     * Display the company dashboard.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function companyDashboard(Request $request)
+    {
+        $user = Auth::guard('company')->user();
+        
+        // Get visitor statistics
+        $totalVisitors = Visitor::where('company_id', $user->company_id)->count();
+        $todayVisitors = Visitor::where('company_id', $user->company_id)
+            ->whereDate('created_at', today())
+            ->count();
+            
+        $pendingApprovals = Visitor::where('company_id', $user->company_id)
+            ->where('status', 'Pending')
+            ->count();
+            
+        $recentVisitors = Visitor::with(['department', 'branch'])
+            ->where('company_id', $user->company_id)
+            ->latest()
+            ->take(5)
+            ->get();
+            
+        // Get visitor counts for the last 7 days for the chart
+        $visitorData = Visitor::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->where('company_id', $user->company_id)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+            
+        $chartLabels = $visitorData->pluck('date')->map(function($date) {
+            return \Carbon\Carbon::parse($date)->format('M d');
+        });
+        $chartData = $visitorData->pluck('count');
+
+        return view('company.dashboard', [
+            'totalVisitors' => $totalVisitors,
+            'todayVisitors' => $todayVisitors,
+            'pendingApprovals' => $pendingApprovals,
+            'recentVisitors' => $recentVisitors,
+            'chartLabels' => $chartLabels,
+            'chartData' => $chartData,
+        ]);
+    }
+    
     public function index(Request $request)
 {
     // Prefer company guard when authenticated under company panel

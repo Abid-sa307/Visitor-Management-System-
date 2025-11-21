@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\{
     ProfileController,
     VisitorController,
@@ -17,28 +18,43 @@ use App\Http\Controllers\{
     ApprovalController,
     SettingsController,
     BlogController,
+    QRManagementController,
+    FaceRecognitionController,
+    Auth\OtpVerificationController
 };
 use Maatwebsite\Excel\Facades\Excel;
 use App\Mail\OtpVerificationMail;
-use Illuminate\Support\Facades\Mail;
 use App\Http\Middleware\CheckMasterPageAccess;
 
+// Test routes
 Route::get('/test-db', function() {
     dd(config('database.connections.mysql.username'));
 });
 
+// Test email route
+Route::get('/test-email', function () {
+    try {
+        Mail::raw('This is a test email from your application', function($message) {
+            $message->to('nntvms@gmail.com')
+                    ->subject('Test Email from Visitor Management System');
+        });
+        return 'Test email sent successfully to nntvms@gmail.com';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
 
 /*
 |----------------------------------------------------------------------|
 | Public Routes (Unauthenticated Routes)
 |----------------------------------------------------------------------|
 */
-
 Route::get('/', fn() => view('welcome'));
 Route::get('/about', fn() => view('about'))->name('about');
 Route::get('/partner', fn() => view('partner'))->name('partner');
 Route::get('/pricing', fn() => view('pricing'))->name('pricing');
 Route::get('/contact', fn() => view('contact'))->name('contact');
+
 
 Route::get('/industrial-and-cold-storage', function () {
     return view('pages.industrial-and-cold-storage');
@@ -116,34 +132,44 @@ Route::get('/service-agreement', fn () => view('pages.service-agreement'))->name
 Route::get('/blog', [BlogController::class, 'index']);
 Route::get('/blog/{slug}', [BlogController::class, 'show']);
 
+// QR Code Routes
+Route::prefix('qr')->name('qr.')->group(function () {
+    // Public scan page (no auth required)
+    Route::get('/scan/{company}/{branch?}', [\App\Http\Controllers\QRController::class, 'scan'])
+        ->name('scan');
+        
+    // Public visitor creation form (no auth required)
+    Route::get('/{company}/visitor/create', [\App\Http\Controllers\QRController::class, 'createVisitor'])
+        ->name('visitor.create');
+        
+    // Store new visitor (no auth required)
+    Route::post('/{company}/visitor', [\App\Http\Controllers\QRController::class, 'storeVisitor'])
+        ->name('visitor.store');
+        
+    // Public visit form (no auth required)
+    Route::get('/{company}/visit/{branch?}', [\App\Http\Controllers\QRController::class, 'showVisitForm'])
+        ->name('visit');
+        
+    // Download QR code
+    Route::get('/{company}/download', [\App\Http\Controllers\QRController::class, 'downloadQR'])
+        ->name('download');
+});
+
 
 /*
 |----------------------------------------------------------------------|
-| Company Auth Routes (login/logout)
+| Company Auth Routes
 |----------------------------------------------------------------------|
 */
 Route::get('/company/login', [CompanyLoginController::class, 'showLoginForm'])->name('company.login');
 Route::post('/company/login', [CompanyLoginController::class, 'login'])->name('company.login.custom');
 Route::post('/company/logout', [CompanyAuthController::class, 'logout'])->name('company.logout');
 
-// Test Email Route
-Route::get('/test-email', function() {
-    try {
-        Mail::to('test@example.com')->send(new OtpVerificationMail('123456'));
-        return 'Test email sent successfully. Check your Mailtrap inbox at https://mailtrap.io/inboxes';
-    } catch (\Exception $e) {
-        return 'Error sending email: ' . $e->getMessage();
-    }
-})->name('test.email');
-
 // OTP Verification Routes
 Route::middleware('web')->group(function () {
-    Route::get('/otp/verify', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'show'])
-        ->name('otp.verify');
-    Route::post('/otp/verify', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'verify'])
-        ->name('otp.verify.post');
-    Route::post('/otp/resend', [\App\Http\Controllers\Auth\OtpVerificationController::class, 'resend'])
-        ->name('otp.resend');
+    Route::get('/otp/verify', [OtpVerificationController::class, 'show'])->name('otp.verify');
+    Route::post('/otp/verify', [OtpVerificationController::class, 'verify'])->name('otp.verify.post');
+    Route::post('/otp/resend', [OtpVerificationController::class, 'resend'])->name('otp.resend');
 });
 
 /*
@@ -152,16 +178,25 @@ Route::middleware('web')->group(function () {
 |----------------------------------------------------------------------|
 */
 Route::middleware(['auth'])->group(function () {
-    // AJAX: Get departments for a company (used in user/visitor forms)
+    // AJAX: Get departments for a company
     Route::get('/companies/{company}/departments', [DepartmentController::class, 'getByCompany'])
         ->name('companies.departments');
 
-    // AJAX: Get branches for a company (used in user form)
+    // AJAX: Get branches for a company
     Route::get('/companies/{company}/branches', [CompanyController::class, 'getBranches'])
         ->name('companies.branches');
 
-    // AJAX: Lookup visitor by phone (superadmin/web panel)
+    // AJAX: Lookup visitor by phone
     Route::get('/visitors/lookup', [VisitorController::class, 'lookupByPhone'])->name('visitors.lookup');
+    
+    // Face Recognition Routes
+    Route::prefix('face-recognition')->name('face.')->group(function () {
+        Route::get('/recognize', [FaceRecognitionController::class, 'recognize'])->name('recognize');
+        Route::post('/detect', [FaceRecognitionController::class, 'detect'])->name('detect');
+        Route::post('/verify', [FaceRecognitionController::class, 'verify'])->name('verify');
+        Route::post('/register', [FaceRecognitionController::class, 'register'])->name('register');
+        Route::get('/status/{visitor}', [FaceRecognitionController::class, 'status'])->name('status');
+    });
 });
 
 /*
@@ -169,62 +204,94 @@ Route::middleware(['auth'])->group(function () {
 | Super Admin Panel Routes (Role: superadmin)
 |----------------------------------------------------------------------|
 */
-Route::middleware(['auth', 'verified', \App\Http\Middleware\VerifyOtp::class, 'role:superadmin'])->group(function () {
-    // Dashboard Route
+Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
+    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // Security Check Reports
-    Route::prefix('reports')->group(function() {
-        Route::get('/security-checks', [ReportController::class, 'securityChecks'])->name('reports.security-checks');
-        Route::get('/security-checks/export', [ReportController::class, 'exportSecurityChecks'])->name('reports.security-checks.export');
-    });
-
-    // Profile Routes
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Visitors Routes
-    Route::resource('visitors', VisitorController::class);
+    // Reports - Must come before resource to avoid conflicts
+    Route::prefix('reports')->name('reports.')->group(function () {
+        // Main Visitor Report
+        Route::get('/visitors', [VisitorController::class, 'report'])->name('visitors');
+        Route::get('/visitors/export', [VisitorController::class, 'reportExport'])->name('visitors.export');
+        
+        // In/Out Report
+        Route::get('/inout', [VisitorController::class, 'inOutReport'])->name('inout');
+        Route::get('/inout/export', [VisitorController::class, 'inOutReportExport'])->name('inout.export');
+        
+        // Security Checkpoints Report
+        Route::get('/security', [VisitorController::class, 'securityReport'])->name('security');
+        Route::get('/security/export', [VisitorController::class, 'securityReportExport'])->name('security.export');
+        
+        // Approval Status Report
+        Route::get('/approval', [VisitorController::class, 'approvalReport'])->name('approval');
+        Route::get('/approval/export', [VisitorController::class, 'approvalReportExport'])->name('approval.export');
+        
+        // Hourly Report
+        Route::get('/hourly', [VisitorController::class, 'hourlyReport'])->name('hourly');
+        Route::get('/hourly/export', [VisitorController::class, 'hourlyReportExport'])->name('hourly.export');
+    });
+
+    // Visitors
+    Route::resource('visitors', VisitorController::class)->except(['show']);
+    
+    // Handle old report URL redirection
+    Route::get('/visitors/report', function () {
+        return redirect()->route('reports.visitors');
+    });
+    
+    Route::get('/visitors/{visitor}', [VisitorController::class, 'show'])->name('visitors.show');
     Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
     Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
     Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
     Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
     Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
-
-    // Visitor Approvals
+    Route::post('/visitors/{visitor}/checkin', [VisitorController::class, 'checkin'])->name('visitors.checkin');
+    Route::post('/visitors/{visitor}/checkout', [VisitorController::class, 'checkout'])->name('visitors.checkout');
     Route::get('/visitor-approvals', [VisitorController::class, 'approvals'])->name('visitors.approvals');
 
-    // Manage Companies, Users, Departments, Employees
+    // Face Recognition Management
+    Route::prefix('face-management')->name('face.management.')->group(function () {
+        Route::get('/', [FaceRecognitionController::class, 'index'])->name('index');
+        Route::get('/train', [FaceRecognitionController::class, 'trainModel'])->name('train');
+        Route::post('/train', [FaceRecognitionController::class, 'processTraining'])->name('process.training');
+    });
+
+    // Resources
     Route::resource('companies', CompanyController::class);
+    
+    // QR Code Management
+    Route::prefix('qr-management')->name('qr-management.')->group(function () {
+        Route::get('/', [QRManagementController::class, 'index'])->name('index');
+        Route::get('/company/{company}', [QRManagementController::class, 'show'])->name('show');
+        Route::get('/company/{company}/download/{branch?}', [QRManagementController::class, 'download'])->name('download');
+    });
+    
+    // Legacy routes (keep for backward compatibility)
+    Route::get('/companies/{company}/qr/{branch?}', [QRManagementController::class, 'show'])
+        ->name('companies.qr');
+    Route::get('/companies/{company}/download-qr/{branch?}', [QRManagementController::class, 'download'])
+        ->name('companies.download-qr');
+        
     Route::resource('departments', DepartmentController::class);
     Route::resource('users', UserController::class);
     Route::resource('employees', EmployeeController::class);
     Route::resource('visitor-categories', VisitorCategoryController::class);
 
-    // Security Check Routes
-    Route::prefix('security-checks')->group(function () {
-        Route::get('/', [SecurityCheckController::class, 'index'])->name('security-checks.index');
-        Route::get('/create/{visitorId}', [SecurityCheckController::class, 'create'])->name('security-checks.create');
-        Route::post('/', [SecurityCheckController::class, 'store'])->name('security-checks.store');
-        Route::get('/{securityCheck}', [SecurityCheckController::class, 'show'])->name('security-checks.show');
-        Route::get('/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('security-checks.print');
+    // Security Checks
+    Route::prefix('security-checks')->name('security-checks.')->group(function () {
+        Route::get('/', [SecurityCheckController::class, 'index'])->name('index');
+        Route::get('/create/{visitorId}', [SecurityCheckController::class, 'create'])->name('create');
+        Route::post('/', [SecurityCheckController::class, 'store'])->name('store');
+        Route::get('/{securityCheck}', [SecurityCheckController::class, 'show'])->name('show');
+        Route::get('/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('print');
     });
 
-    // Reports Routes
-    Route::prefix('reports')->group(function () {
-        Route::get('/visitors', [VisitorController::class, 'report'])->name('visitors.report');
-        Route::get('/visitors/export', [VisitorController::class, 'reportExport'])->name('visitors.report.export');
-        Route::get('/visitors/inout', [VisitorController::class, 'inOutReport'])->name('visitors.report.inout');
-        Route::get('/visitors/inout/export', [VisitorController::class, 'inOutReportExport'])->name('visitors.report.inout.export');
-        Route::get('/visitors/approvals', [VisitorController::class, 'approvalReport'])->name('visitors.report.approval');
-        Route::get('/visitors/approvals/export', [VisitorController::class, 'approvalReportExport'])->name('visitors.report.approval.export');
-        Route::get('/visitors/security', [VisitorController::class, 'securityReport'])->name('visitors.report.security');
-        Route::get('/visitors/security/export', [VisitorController::class, 'securityReportExport'])->name('visitors.report.security.export');
-        Route::get('/visitors/hourly', [VisitorController::class, 'hourlyReport'])->name('visitors.report.hourly');
-        Route::get('/visitors/hourly/export', [VisitorController::class, 'hourlyReportExport'])->name('visitors.report.hourly.export');
-    });
 });
 
 /*
@@ -232,56 +299,97 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\VerifyOtp::class, 'r
 | Company Panel Routes (Role: company)
 |----------------------------------------------------------------------|
 */
-Route::prefix('company')->middleware(['auth:company', 'role:company'])->name('company.')->group(function () {
-    // Dashboard Route for Company
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::prefix('company')
+    ->middleware(['auth:company', 'verified', 'role:company'])
+    ->name('company.')
+    ->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [DashboardController::class, 'companyDashboard'])->name('dashboard');
 
-    // Profile Routes for Company users
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        // Profile
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // Visitors Routes for Company
-    Route::resource('visitors', VisitorController::class)->middleware(CheckMasterPageAccess::class . ':visitors');
-    Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
-    Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
+        // Visitors
+        Route::resource('visitors', VisitorController::class)->middleware(CheckMasterPageAccess::class . ':visitors');
+        Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
+        Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
+        Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
+        Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
+        Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
+        Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+        
+        // Face Recognition
+        Route::post('/visitors/{visitor}/verify-face', [FaceRecognitionController::class, 'verifyVisitor'])->name('visitors.verify-face');
+        Route::post('/visitors/{visitor}/register-face', [FaceRecognitionController::class, 'registerVisitor'])->name('visitors.register-face');
+        Route::post('/visitors/{visitor}/checkin-face', [FaceRecognitionController::class, 'checkInWithFace'])->name('visitors.checkin-face');
+        Route::post('/visitors/{visitor}/checkout-face', [FaceRecognitionController::class, 'checkOutWithFace'])->name('visitors.checkout-face');
 
-    // History & Entry Routes for Company
-    Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
-    Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
-    Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
-    Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+        // Approvals
+        Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
 
-    // AJAX: Lookup visitor by phone (company panel)
-    Route::get('/visitors/lookup', [VisitorController::class, 'lookupByPhone'])->name('visitors.lookup');
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/visitors', [ReportController::class, 'visitors'])->name('visitors');
+            Route::get('/visitors/export', [ReportController::class, 'exportVisitors'])->name('visitors.export');
+            Route::get('/visits', [ReportController::class, 'visits'])->name('visits');
+            Route::get('/visits/export', [ReportController::class, 'exportVisits'])->name('visits.export');
+        });
 
-    // Approvals Routes for Company
-    Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
+        // Resources
+        Route::resource('employees', EmployeeController::class)->except(['show']);
+        Route::resource('departments', DepartmentController::class)->except(['show']);
+        
+        // Users
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-    // Reports (Company Panel)
-    Route::prefix('reports')->group(function () {
-        Route::get('/visitors', [VisitorController::class, 'report'])->name('visitors.report');
-        Route::get('/visitors/export', [VisitorController::class, 'reportExport'])->name('visitors.report.export');
-        Route::get('/visitors/inout', [VisitorController::class, 'inOutReport'])->name('visitors.report.inout');
-        Route::get('/visitors/inout/export', [VisitorController::class, 'inOutReportExport'])->name('visitors.report.inout.export');
-        Route::get('/visitors/approvals', [VisitorController::class, 'approvalReport'])->name('visitors.report.approval');
-        Route::get('/visitors/approvals/export', [VisitorController::class, 'approvalReportExport'])->name('visitors.report.approval.export');
-        Route::get('/visitors/security', [VisitorController::class, 'securityReport'])->name('visitors.report.security');
-        Route::get('/visitors/security/export', [VisitorController::class, 'securityReportExport'])->name('visitors.report.security.export');
-        Route::get('/visitors/hourly', [VisitorController::class, 'hourlyReport'])->name('visitors.report.hourly');
-        Route::get('/visitors/hourly/export', [VisitorController::class, 'hourlyReportExport'])->name('visitors.report.hourly.export');
+        // Security Checks
+        Route::resource('security-checks', SecurityCheckController::class)->except(['edit', 'update', 'destroy']);
+        Route::get('security-checks/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('security-checks.print');
     });
 
-    // Employees & Departments Routes
-    Route::resource('employees', EmployeeController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-    Route::resource('departments', DepartmentController::class);
-    Route::resource('users', UserController::class);
-
-    // Security Check Routes for Company
-    Route::resource('security-checks', SecurityCheckController::class)->only(['index', 'create', 'store', 'show']);
-    Route::get('security-checks/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('company.security-checks.print');
+/*
+|----------------------------------------------------------------------|
+| Public Face Recognition Endpoints (for kiosk mode)
+|----------------------------------------------------------------------|
+*/
+Route::prefix('public')->name('public.')->group(function () {
+    Route::get('/face-verification', [FaceRecognitionController::class, 'showVerification'])->name('face-verification');
+    Route::post('/verify-face', [FaceRecognitionController::class, 'publicVerify'])->name('verify-face');
 });
 
-// Breeze/Auth Routes (handled by Laravel)
+/*
+|----------------------------------------------------------------------|
+| API Routes
+|----------------------------------------------------------------------|
+*/
+Route::prefix('api')->name('api.')->group(function () {
+    // Face API
+    Route::prefix('face')->name('face.')->group(function () {
+        Route::post('/detect', [FaceRecognitionController::class, 'apiDetect'])->name('detect');
+        Route::post('/verify', [FaceRecognitionController::class, 'apiVerify'])->name('verify');
+        Route::post('/register', [FaceRecognitionController::class, 'apiRegister'])->name('register');
+        Route::get('/models', [FaceRecognitionController::class, 'getModels'])->name('models');
+    });
+
+    // Visitor API
+    Route::get('/visitors', [VisitorController::class, 'apiIndex'])->name('visitors.index');
+    Route::get('/visitors/{visitor}', [VisitorController::class, 'apiShow'])->name('visitors.show');
+});
+
+// Serve face recognition models
+Route::get('/models/{filename}', function ($filename) {
+    $path = public_path('models/' . $filename);
+    if (file_exists($path)) {
+        return response()->file($path);
+    }
+    abort(404, 'Model file not found: ' . $filename);
+})->where('filename', '.*');
+
+// Breeze/Auth Routes
 require __DIR__ . '/auth.php';
-
-

@@ -56,21 +56,43 @@ class UserController extends Controller
 
     public function create()
     {
-        $auth    = Auth::user();
+        $auth = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        
+        if (!$auth) {
+            return redirect()->route('login');
+        }
+
         $isSuper = in_array($auth->role, ['super_admin','superadmin'], true);
 
+        // If user is a company user, get their company
         $companies = $isSuper
             ? Company::select('id','name')->orderBy('name')->get()
-            : collect();
+            : collect([
+                Company::select('id','name')
+                    ->where('id', $auth->company_id)
+                    ->first()
+            ])->filter();
 
         $user = new User();
+        
+        // If user is a company user, set the company_id for the new user
+        if (!$isSuper && $auth->company_id) {
+            $user->company_id = $auth->company_id;
+        }
 
-        return view('users.create', compact('companies','user'));
+        return view('users.create', compact('companies', 'user'));
     }
 
     public function store(Request $request)
     {
-        $authUser = auth()->user();
+        // Get the authenticated user, checking both guards
+        $authUser = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        
+        if (!$authUser) {
+            return redirect()->route('login');
+        }
+
+        $isSuper = in_array($authUser->role, ['super_admin','superadmin'], true);
 
         $rules = [
             'name'        => ['required','string','max:255','regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u'],
@@ -87,8 +109,13 @@ class UserController extends Controller
             'branch_id'       => ['nullable','exists:branches,id'],
         ];
 
-        if (in_array($authUser->role, ['super_admin','superadmin'], true)) {
+        // Only super admins can set company_id
+        if ($isSuper) {
             $rules['company_id'] = ['required','exists:companies,id'];
+            $rules['role'] = ['required', 'string', 'in:superadmin,admin,company,employee'];
+        } else {
+            // For company users, set default role to 'employee' if not provided
+            $request->merge(['role' => $request->input('role', 'employee')]);
         }
 
         $messages = [
@@ -105,11 +132,12 @@ class UserController extends Controller
         $user->phone    = $data['phone'] ?? null;
         $user->role     = $request->role; // e.g. superadmin/company/employee
 
-        // company assignment
-        if (in_array($authUser->role, ['company','company_user'], true)) {
-            $user->company_id = $authUser->company_id;
-        } else {
+        // Set company_id based on user role
+        if ($isSuper) {
             $user->company_id = $data['company_id'] ?? null;
+        } else {
+            // For company users, use their company_id
+            $user->company_id = $authUser->company_id;
         }
 
         // branch (optional)
@@ -119,27 +147,30 @@ class UserController extends Controller
         $user->master_pages = $data['master_pages'] ?? [];
         $user->save();
 
-        // Sync to company_users for company guard login
+        // Sync to company_users for company guard login if role is company
         if (in_array(($request->role ?? ''), ['company','company_user'], true)) {
-            $payload = [
-                'name' => $user->name,
-                // Assign plain password; CompanyUser casts will hash automatically
-                'password' => $data['password'],
-                'company_id' => $user->company_id,
-                'role' => 'company',
-                'master_pages' => $user->master_pages ?? [],
-            ];
-            // mirror branch_id if the column exists in company_users
             try {
-                if (\Schema::hasColumn('company_users','branch_id')) {
+                $payload = [
+                    'name' => $user->name,
+                    'password' => $data['password'], // Will be hashed by model's setPasswordAttribute
+                    'company_id' => $user->company_id,
+                    'role' => 'company',
+                    'master_pages' => $user->master_pages ?? [],
+                ];
+
+                // mirror branch_id if the column exists in company_users
+                if (\Schema::hasColumn('company_users', 'branch_id')) {
                     $payload['branch_id'] = $user->branch_id;
                 }
-            } catch (\Throwable $e) {}
 
-            CompanyUser::updateOrCreate(
-                ['email' => $user->email],
-                $payload
-            );
+                CompanyUser::updateOrCreate(
+                    ['email' => $user->email],
+                    $payload
+                );
+            } catch (\Exception $e) {
+                // Log the error but don't fail the entire operation
+                \Log::error('Failed to sync user to company_users table: ' . $e->getMessage());
+            }
         }
 
         // departments pivot (support both field names)

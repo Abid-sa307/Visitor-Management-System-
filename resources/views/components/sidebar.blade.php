@@ -94,11 +94,11 @@
     ];
 
     $reportItems = [
-        ['title' => 'Visitor Reports',   'route' => $isCompany ? 'company.visitors.report'          : 'visitors.report',           'page' => 'reports'],
-        ['title' => 'In/Out Reports',    'route' => $isCompany ? 'company.visitors.report.inout'    : 'visitors.report.inout',     'page' => 'reports'],
-        ['title' => 'Approvals Reports', 'route' => $isCompany ? 'company.visitors.report.approval' : 'visitors.report.approval',  'page' => 'reports'],
-        ['title' => 'Security Reports',  'route' => $isCompany ? 'company.visitors.report.security' : 'visitors.report.security',  'page' => 'reports'],
-        ['title' => 'Hourly Reports',    'route' => $isCompany ? 'company.visitors.report.hourly'   : 'visitors.report.hourly',    'page' => 'reports'],
+        ['title' => 'Visitor Report',          'route' => 'reports.visitors', 'page' => 'reports'],
+        ['title' => 'In/Out Report',           'route' => 'reports.inout', 'page' => 'reports'],
+        ['title' => 'Security Checkpoints',    'route' => 'reports.security', 'page' => 'reports'],
+        ['title' => 'Approval Status',         'route' => 'reports.approval', 'page' => 'reports'],
+        ['title' => 'Hourly Report',           'route' => 'reports.hourly', 'page' => 'reports']
     ];
     $reportActive = collect($reportItems)->contains(fn($i) => request()->routeIs($i['route']));
 
@@ -127,6 +127,16 @@
             </li>
         @endif
     @endforeach
+
+    <!-- QR Codes Section -->
+    @if($isSuper || $canPage('qr_codes'))
+        <li class="nav-item {{ $active(['qr-management.*']) }}">
+            <a class="nav-link" href="{{ url('/qr-management') }}">
+                <i class="bi bi-qr-code-scan me-2"></i>
+                <span>QR Codes</span>
+            </a>
+        </li>
+    @endif
 
     <!-- Reports (group visible only if user has "reports") -->
     @if($canPage('reports'))

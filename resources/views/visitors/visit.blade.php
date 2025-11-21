@@ -20,15 +20,20 @@
             <div class="row mb-3">
                 <div class="col">
                     <label class="form-label fw-semibold">Company</label>
-                    <select name="company_id" id="companySelect" class="form-select" required>
-                        <option value="">-- Select Company --</option>
-                        @foreach($companies as $company)
-                            <option value="{{ $company->id }}" 
-                                {{ old('company_id', $visitor->company_id ?? '') == $company->id ? 'selected' : '' }}>
-                                {{ $company->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @if($isSuper)
+                        <select name="company_id" id="companySelect" class="form-select" required>
+                            <option value="">-- Select Company --</option>
+                            @foreach($companies as $company)
+                                <option value="{{ $company->id }}" 
+                                    {{ old('company_id', $visitor->company_id ?? '') == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @else
+                        <input type="hidden" name="company_id" value="{{ $user->company_id }}">
+                        <input type="text" class="form-control" value="{{ $user->company->name }}" readonly>
+                    @endif
                 </div>
 
                 <div class="col">
@@ -44,6 +49,39 @@
                     </select>
                 </div>
             </div>
+
+            {{-- Branch Selection --}}
+            @if($branches->isNotEmpty())
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Branch</label>
+                @if($isSuper)
+                    <select name="branch_id" id="branchSelect" class="form-select">
+                        <option value="">-- Select Branch --</option>
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}" 
+                                {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                @else
+                    @if($branches->count() === 1)
+                        <input type="hidden" name="branch_id" value="{{ $branches[0]->id }}">
+                        <input type="text" class="form-control" value="{{ $branches[0]->name }}" readonly>
+                    @else
+                        <select name="branch_id" id="branchSelect" class="form-select" required>
+                            <option value="">-- Select Branch --</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" 
+                                    {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
+                @endif
+            </div>
+            @endif
 
             {{-- Person to Visit --}}
             <div class="mb-3">
@@ -103,14 +141,14 @@
             </div>
 
             {{-- Status --}}
-            <div class="mb-3">
+            <!-- <div class="mb-3">
                 <label class="form-label fw-semibold">Status</label>
                 <select name="status" class="form-select">
                     <option value="Pending" {{ $visitor->status == 'Pending' ? 'selected' : '' }}>Pending</option>
                     <option value="Approved" {{ $visitor->status == 'Approved' ? 'selected' : '' }}>Approved</option>
                     <option value="Rejected" {{ $visitor->status == 'Rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
-            </div>
+            </div> -->
 
             <button type="submit" class="btn btn-success w-100 fw-bold">Save Visit Info</button>
         </form>

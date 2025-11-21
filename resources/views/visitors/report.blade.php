@@ -2,10 +2,7 @@
 
 @section('content')
 @php
-    $isCompanyPanel = request()->is('company/*');
-    $reportExportRoute = $isCompanyPanel && Route::has('company.visitors.report.export')
-        ? 'company.visitors.report.export'
-        : 'visitors.report.export';
+    $reportExportRoute = 'reports.visitors.export';
 @endphp
 
 <div class="container py-4">

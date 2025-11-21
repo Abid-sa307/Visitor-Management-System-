@@ -11,6 +11,29 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     @stack('styles')
+    
+    <!-- Face API JS -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script>
+        // Simple check to see if face-api is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof faceapi === 'undefined') {
+                console.error('Face API not loaded!');
+                // Show error in the console
+                const errorDiv = document.createElement('div');
+                errorDiv.style.position = 'fixed';
+                errorDiv.style.top = '10px';
+                errorDiv.style.right = '10px';
+                errorDiv.style.zIndex = '9999';
+                errorDiv.style.padding = '15px';
+                errorDiv.style.background = '#dc3545';
+                errorDiv.style.color = 'white';
+                errorDiv.style.borderRadius = '5px';
+                errorDiv.innerHTML = '<strong>Error:</strong> Face detection not working. Please check console for details.';
+                document.body.appendChild(errorDiv);
+            }
+        });
+    </script>
 
     <style>
     /* Make sidebar sticky and scrollable */

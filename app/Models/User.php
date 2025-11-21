@@ -65,17 +65,25 @@ class User extends Authenticatable
         $keys = $this->master_pages_list;
         if (empty($keys)) return '—';
 
-        // Map keys/slugs to nice labels (adjust to your app)
+        // Map keys/slugs to nice labels
         $labelsMap = [
-            // 'users' => 'Users',
-            // 'companies' => 'Companies',
-            // 'departments' => 'Departments',
-            // 'reports' => 'Reports',
-            // add all your page keys here...
+            'dashboard' => 'Dashboard',
+            'visitors' => 'Visitors',
+            'visitor_history' => 'Visitor History',
+            'visitor_inout' => 'Visitor In/Out',
+            'approvals' => 'Approvals',
+            'reports' => 'Reports',
+            'employees' => 'Employees',
+            'visitor_categories' => 'Visitor Categories',
+            'departments' => 'Departments',
+            'users' => 'Users',
+            'security_checks' => 'Security Checks',
+            'visitor_checkup' => 'Visitor Checkup',
+            'qr_code' => 'QR Code'
         ];
 
         $labels = collect($keys)->map(function ($k) use ($labelsMap) {
-            return $labelsMap[$k] ?? ucfirst(str_replace('_',' ', (string) $k));
+            return $labelsMap[$k] ?? ucfirst(str_replace('_', ' ', (string) $k));
         });
 
         return $labels->join(', ');

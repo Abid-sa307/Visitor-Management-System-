@@ -31,7 +31,8 @@
                             <th>Branches</th>
                             <th>Auto Approve</th>
                             <th>Website</th>
-                            <th style="width: 160px;">Actions</th>
+                            <th class="text-center">Quick Check-in</th>
+                            <th style="width: 120px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,21 +62,31 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td>
-                                <a href="{{ route('companies.edit', $company->id) }}" class="btn btn-sm btn-warning me-1">
-                                    <i class="fas fa-edit"></i>
+                            <td class="text-center">
+                                <a href="{{ route('qr.scan', $company) }}" class="btn btn-sm btn-outline-primary" target="_blank" title="Quick Check-in">
+                                    <i class="fas fa-sign-in-alt"></i> Check-in
                                 </a>
-                                <form action="{{ route('companies.destroy', $company->id) }}" method="POST" class="d-inline">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this company?')">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ route('companies.qr', $company) }}" class="btn btn-sm btn-info me-1" title="Manage QR Code">
+                                        <i class="fas fa-qrcode"></i>
+                                    </a>
+                                    <a href="{{ route('companies.edit', $company->id) }}" class="btn btn-sm btn-warning me-1" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('companies.destroy', $company->id) }}" method="POST" class="d-inline">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this company?')" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-muted py-4">No companies found.</td>
+                            <td colspan="8" class="text-muted py-4">No companies found.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -88,4 +99,21 @@
         {{ $companies->links() }}
     </div>
 </div>
+
+<style>
+    .qr-code-link {
+        display: inline-block;
+        padding: 5px;
+        background: white;
+        border-radius: 4px;
+        transition: transform 0.2s;
+    }
+    .qr-code-link:hover {
+        transform: scale(1.1);
+    }
+    .qr-code-link svg {
+        display: block;
+        margin: 0 auto;
+    }
+</style>
 @endsection

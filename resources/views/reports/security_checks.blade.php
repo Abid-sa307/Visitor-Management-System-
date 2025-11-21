@@ -55,7 +55,11 @@
                             <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
                             <td>{{ $check->security_officer_name }}</td>
                             <td class="text-center">
-                                <span class="badge badge-primary">{{ count($check->responses ?? []) }}</span>
+                                @php
+                                    $responses = is_string($check->responses) ? json_decode($check->responses, true) : ($check->responses ?? []);
+                                    $responseCount = is_countable($responses) ? count($responses) : 0;
+                                @endphp
+                                <span class="badge badge-primary">{{ $responseCount }}</span>
                             </td>
                             <td>
                                 <a href="{{ route('security-checks.show', $check->id) }}" class="btn btn-sm btn-info">
