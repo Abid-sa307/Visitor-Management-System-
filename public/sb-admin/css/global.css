@@ -65,8 +65,17 @@
   border-radius:20px;
   margin-left:1rem;
 }
-mega-menu {
+
+/* ===== Mega menu (desktop dropdown) ===== */
+.mega-menu {
   width: 300px; /* your single-column width */
+}
+#companyDesktopMenu {
+  width: 180px;   /* yahan apni desired width */
+}
+
+.mega-menu.show {
+  display:block;
 }
 
 .mega-menu .dropdown-item {
@@ -90,118 +99,174 @@ mega-menu {
   padding: 0.4rem 1rem; /* same horizontal padding for alignment */
 }
 
+/* ===== Offcanvas styling ===== */
+.offcanvas {
+  background-color: rgba(255, 255, 255, 0.95); /* Light background similar to navbar */
+  color: var(--dark); /* Dark text color to match your site's theme */
+  width: 250px; /* Set width of the off-canvas */
+  border-right: 1px solid rgba(0, 0, 0, 0.1); /* Light border for separation */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Same shadow as navbar */
+}
 
+.offcanvas-header {
+  background-color: rgba(255, 255, 255, 0.95); /* Same as offcanvas background */
+  color: var(--dark); /* Dark text for the header */
+  padding: 15px 20px; /* Padding for header */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Border below header */
+}
 
-  /* Offcanvas styling */
-  .offcanvas {
-    background-color: rgba(255, 255, 255, 0.95); /* Light background similar to navbar */
-    color: var(--dark); /* Dark text color to match your site's theme */
-    width: 250px; /* Set width of the off-canvas */
-    border-right: 1px solid rgba(0, 0, 0, 0.1); /* Light border for separation */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Same shadow as navbar */
-  }
+.offcanvas-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
 
-  .offcanvas-header {
-    background-color: rgba(255, 255, 255, 0.95); /* Same as offcanvas background */
-    color: var(--dark); /* Dark text for the header */
-    padding: 15px 20px; /* Padding for header */
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Border below header */
-  }
+.btn-close {
+  color: var(--dark); /* Close button text color */
+  font-size: 20px; /* Close button size */
+  border: none;
+  background: none;
+}
 
-  .offcanvas-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
+/* Navbar links inside the offcanvas */
+.offcanvas-body {
+  padding: 20px 15px; /* Add padding for content inside */
+}
 
-  .btn-close {
-    color: var(--dark); /* Close button text color */
-    font-size: 20px; /* Close button size */
-    border: none;
-    background: none;
-  }
+.offcanvas .navbar-nav .nav-item .nav-link {
+  color: var(--dark) !important; /* Same dark text as navbar */
+  font-size: 16px; /* Font size of links */
+  padding: 12px 20px; /* Padding for each link */
+  transition: all 0.3s ease; /* Smooth transition for hover effect */
+}
 
-  /* Navbar links inside the offcanvas */
-  .offcanvas-body {
-    padding: 20px 15px; /* Add padding for content inside */
-  }
+.offcanvas .navbar-nav .nav-item .nav-link:hover {
+  color: var(--primary) !important; /* Color change on hover (match navbar) */
+  background-color: rgba(0, 123, 255, 0.1); /* Slight blue background on hover */
+}
 
-  .offcanvas .navbar-nav .nav-item .nav-link {
-    color: var(--dark) !important; /* Same dark text as navbar */
-    font-size: 16px; /* Font size of links */
-    padding: 12px 20px; /* Padding for each link */
-    transition: all 0.3s ease; /* Smooth transition for hover effect */
-  }
+.offcanvas .navbar-nav .nav-item .nav-link.active {
+  color: var(--primary) !important; /* Primary color for active link */
+  font-weight: 600; /* Bold for active link */
+}
 
-  .offcanvas .navbar-nav .nav-item .nav-link:hover {
-    color: var(--primary) !important; /* Color change on hover (match navbar) */
-    background-color: rgba(0, 123, 255, 0.1); /* Slight blue background on hover */
-  }
+/* Styling for Login & Contact buttons in Offcanvas */
+.offcanvas .navbar-nav .nav-item .btn-outline-primary {
+  color: var(--primary); /* Primary color text */
+  border: 1px solid var(--primary); /* Border with primary color */
+  padding: 0.4rem 1rem;
+  font-size: 1rem;
+  border-radius: 20px;
+  transition: all 0.3s ease; /* Smooth transition for hover effect */
+  margin-top: 10px;
+}
 
-  .offcanvas .navbar-nav .nav-item .nav-link.active {
-    color: var(--primary) !important; /* Primary color for active link */
-    font-weight: 600; /* Bold for active link */
-  }
+/* Hover effect for buttons */
+.offcanvas .navbar-nav .nav-item .btn-outline-primary:hover {
+  background-color: var(--primary); /* Background changes to primary on hover */
+  color: white; /* White text on hover */
+}
 
-  /* Styling for Login & Contact buttons in Offcanvas */
-  .offcanvas .navbar-nav .nav-item .btn-outline-primary {
-    color: var(--primary); /* Primary color text */
-    border: 1px solid var(--primary); /* Border with primary color */
-    padding: 0.4rem 1rem;
-    font-size: 1rem;
-    border-radius: 20px;
-    transition: all 0.3s ease; /* Smooth transition for hover effect */
-    margin-top: 10px;
-  }
+/* For dropdown menu items */
+.dropdown-menu {
+  background-color: #f8f9fa; /* Light background for dropdown */
+  border-radius: 5px; /* Rounded corners for dropdown */
+}
 
-  /* Hover effect for buttons */
-  .offcanvas .navbar-nav .nav-item .btn-outline-primary:hover {
-    background-color: var(--primary); /* Background changes to primary on hover */
-    color: white; /* White text on hover */
-  }
+.dropdown-item {
+  padding: 8px 20px; /* Padding for dropdown items */
+  color: #333;
+}
 
-  /* For dropdown menu items */
-  .dropdown-menu {
-    background-color: #f8f9fa; /* Light background for dropdown */
-    border-radius: 5px; /* Rounded corners for dropdown */
-  }
+.dropdown-item:hover {
+  background-color: #007bff; /* Blue background for dropdown hover */
+  color: white; /* White text for dropdown hover */
+}
 
-  .dropdown-item {
-    padding: 8px 20px; /* Padding for dropdown items */
-    color: #333;
-  }
-
-  .dropdown-item:hover {
-    background-color: #007bff; /* Blue background for dropdown hover */
-    color: white; /* White text for dropdown hover */
-  }
-
-  /* Make the offcanvas scrollable if content is long */
-  .offcanvas-body {
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-
-
-
+/* Make the offcanvas scrollable if content is long */
+.offcanvas-body {
+  max-height: 80vh;
+  overflow-y: auto;
+}
 
 /*////////////////////Footer/////////////////////////*/
- /* Footer */
-        footer {
-            background: #fff;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fadeIn {
-            animation: fadeIn 1s ease forwards;
-        }
-        
-        .delay-1 { animation-delay: 0.2s; }
-        .delay-2 { animation-delay: 0.4s; }
-        .delay-3 { animation-delay: 0.6s; }
-        
+/* Footer */
+footer {
+  background: #fff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease forwards;
+}
+
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.4s; }
+.delay-3 { animation-delay: 0.6s; }
+
+/* ========= EXTRA: caret + mobile dropdown colors (jisse sab blue na ho) ========= */
+
+/* Mobile accordion arrow + active color */
+.mobile-accordion-toggle .bi-chevron-down {
+  transition: transform .2s ease;
+}
+.mobile-accordion-toggle[aria-expanded="true"] .bi-chevron-down {
+  transform: rotate(180deg);
+}
+.mobile-accordion-toggle[aria-expanded="true"] {
+  color: #0d6efd; /* blue when open */
+}
+
+/* Desktop caret rotation for both dropdowns */
+#solutionsDesktopToggle .bi-caret-down-fill,
+#companyDesktopToggle .bi-caret-down-fill {
+  transition: transform .2s ease;
+}
+#solutionsDesktopToggle[aria-expanded="true"] .bi-caret-down-fill,
+#companyDesktopToggle[aria-expanded="true"] .bi-caret-down-fill {
+  transform: rotate(180deg);
+}
+
+/* MOBILE: Company dropdown links (About / Blog) */
+#mobileCompany a {
+  color: #1f2933;
+  text-decoration: none;
+}
+#mobileCompany a:visited {
+  color: #1f2933;
+}
+#mobileCompany a:hover {
+  color: #0d6efd;
+  text-decoration: underline;
+}
+#mobileCompany a.text-primary {
+  font-weight: 500;
+}
+
+/* Mobile Solutions links: normal dark, hover blue, active blue+bold */
+.mobile-solutions-link {
+  color: #1f2933;
+  text-decoration: none;
+}
+.mobile-solutions-link:hover {
+  color: #0d6efd;
+  text-decoration: underline;
+}
+.mobile-solutions-link.text-primary {
+  font-weight: 500;
+}
+
+/* Mobile containers show/hide (custom, no bootstrap collapse) */
+#mobileSolutions,
+#mobileCompany {
+  display: none;
+}
+#mobileSolutions.show,
+#mobileCompany.show {
+  display: block;
+}

@@ -9,14 +9,15 @@
     || request()->is('resident-buildings')
     || request()->is('office-workplace-management')
     || request()->is('healthcare-facilities')
-    || request()->is('malls-and-events');
+    || request()->is('malls-and-events')
+    || request()->is('temple-and-dargah');
 @endphp
 
 <nav id="mainHeader" class="navbar navbar-expand-lg navbar-light sticky-top bg-white" style="z-index:1050;">
   <div class="container">
     <!-- Logo -->
     <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-      <img src="images/vmslogo.png" alt="VMS Logo" style="height:50px; width:auto; object-fit:contain;" />
+      <img src="images/vmslogo.png" alt="VMS Logo" class="logo-img" />
     </a>
 
     <!-- Mobile hamburger (custom, no offcanvas attributes) -->
@@ -33,9 +34,25 @@
           <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">Home</a>
         </li>
 
-        <!-- About -->
-        <li class="nav-item">
-          <a class="nav-link {{ request()->is('about') ? 'active' : '' }}" href="{{ route('about') }}">About Us</a>
+        {{-- DESKTOP: Company menu (N&T Software Pvt Ltd) --}}
+        <li class="nav-item position-relative d-none d-lg-block" id="companyDesktopItem">
+          <button type="button"
+            class="nav-link d-flex align-items-center bg-transparent border-0 px-0"
+            id="companyDesktopToggle"
+            aria-expanded="false">
+            N&T Software Pvt Ltd
+            <i class="bi bi-caret-down-fill ms-1 small"></i>
+          </button>
+
+          <div class="dropdown-menu p-4 border-0 shadow-lg mega-menu"
+               id="companyDesktopMenu">
+            <div class="row">
+              <div class="col-md-12">
+                <a class="dropdown-item" href="{{ route('about') }}">About Us</a>
+                <a class="dropdown-item" href="{{ route('blog.index') }}">Blog</a>
+              </div>
+            </div>
+          </div>
         </li>
 
         <!-- DESKTOP: Solutions -> click to open/close -->
@@ -49,20 +66,35 @@
 
           <div class="dropdown-menu p-4 border-0 shadow-lg mega-menu" id="solutionsDesktopMenu">
             <div class="row">
-              <div class="col-md-6">
+              <div class="col-md-12">
                 <h6 class="dropdown-header text-uppercase">Industries</h6>
-                <a class="dropdown-item" href="{{ route('industrial-manufacturing-unit') }}">Industrial Manufacturing
-                  Unit</a>
-                <a class="dropdown-item" href="{{ route('industrial-and-cold-storage') }}">Warehouse & Cold Storage</a>
-                <a class="dropdown-item" href="{{ route('school-and-colleges') }}">School, Colleges & Universities</a>
-                <a class="dropdown-item" href="{{ route('resident-societies') }}">Residents' Societies</a>
-                <a class="dropdown-item" href="{{ route('resident-buildings') }}">Residents' Buildings</a>
-                <a class="dropdown-item" href="{{ route('office-workplace-management') }}">Offices Workplace
-                  Management</a>
-                <a class="dropdown-item" href="{{ route('healthcare-facilities') }}">Healthcare Facilities</a>
-                <a class="dropdown-item" href="{{ route('malls-and-events') }}">Malls & Event</a>
-                <a class="dropdown-item" href="{{ route('temple-and-dargah') }}">Temple & Dargah</a>
-
+                <a class="dropdown-item" href="{{ route('industrial-manufacturing-unit') }}">
+                  Industrial Manufacturing Unit
+                </a>
+                <a class="dropdown-item" href="{{ route('industrial-and-cold-storage') }}">
+                  Warehouse & Cold Storage
+                </a>
+                <a class="dropdown-item" href="{{ route('school-and-colleges') }}">
+                  School, Colleges & Universities
+                </a>
+                <a class="dropdown-item" href="{{ route('resident-societies') }}">
+                  Residents' Societies
+                </a>
+                <a class="dropdown-item" href="{{ route('resident-buildings') }}">
+                  Residents' Buildings
+                </a>
+                <a class="dropdown-item" href="{{ route('office-workplace-management') }}">
+                  Offices Workplace Management
+                </a>
+                <a class="dropdown-item" href="{{ route('healthcare-facilities') }}">
+                  Healthcare Facilities
+                </a>
+                <a class="dropdown-item" href="{{ route('malls-and-events') }}">
+                  Malls & Event
+                </a>
+                <a class="dropdown-item" href="{{ route('temple-and-dargah') }}">
+                  Temple & Dargah
+                </a>
               </div>
             </div>
           </div>
@@ -70,32 +102,23 @@
 
         <!-- Become Our Partner -->
         <li class="nav-item">
-          <a class="nav-link {{ request()->is('partner') ? 'active' : '' }}" href="{{ route('partner') }}">Become Our
-            Partner</a>
+          <a class="nav-link {{ request()->is('partner') ? 'active' : '' }}" href="{{ route('partner') }}">
+            Become Our Partner
+          </a>
         </li>
 
         <!-- Pricing -->
         <li class="nav-item">
-          <a class="nav-link {{ request()->is('pricing') ? 'active' : '' }}" href="{{ route('pricing') }}">Pricing</a>
-        </li>
-
-        {{-- Old pricing dropdown (commented) --}}
-        {{--
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="pricingDropdown" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            Pricing <i class="bi bi-caret-down-fill ms-1"></i>
+          <a class="nav-link {{ request()->is('pricing') ? 'active' : '' }}" href="{{ route('pricing') }}">
+            Pricing
           </a>
-          <ul class="dropdown-menu" aria-labelledby="pricingDropdown">
-            <li><a class="dropdown-item" href="/pricing">Plans and pricing</a></li>
-          </ul>
         </li>
-        --}}
 
         <!-- Contact -->
         <li class="nav-item">
-          <a class="nav-link {{ request()->is('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact
-            Us</a>
+          <a class="nav-link {{ request()->is('contact') ? 'active' : '' }}" href="{{ route('contact') }}">
+            Contact Us
+          </a>
         </li>
 
         <!-- Login -->
@@ -128,13 +151,29 @@
           </a>
         </li>
 
-        <!-- About -->
-        <li class="nav-item">
-          <a class="nav-link {{ request()->is('about') ? 'active text-primary' : '' }}" href="{{ route('about') }}">
-            About Us
-          </a>
-        </li>
+        <!-- MOBILE: Company accordion (About + Blog) -->
+        <li class="nav-item mt-1">
+          <button
+            class="btn w-100 text-start d-flex justify-content-between align-items-center mobile-accordion-toggle nav-link"
+            type="button"
+            id="mobileCompanyToggle"
+            aria-expanded="{{ (request()->is('about') || request()->is('blog') || request()->is('blog/*')) ? 'true' : 'false' }}">
+            <span>N&T Software Pvt Ltd</span>
+            <i class="bi bi-chevron-down small"></i>
+          </button>
 
+          <div class="ps-3 pt-1 {{ (request()->is('about') || request()->is('blog') || request()->is('blog/*')) ? 'show' : '' }}"
+               id="mobileCompany">
+            <a class="d-block py-1 small {{ request()->is('about') ? 'text-primary fw-semibold' : '' }}"
+               href="{{ route('about') }}">
+              About Us
+            </a>
+            <a class="d-block py-1 small {{ (request()->is('blog') || request()->is('blog/*')) ? 'text-primary fw-semibold' : '' }}"
+               href="{{ route('blog.index') }}">
+              Blog
+            </a>
+          </div>
+        </li>
 
         <!-- MOBILE: Solutions accordion (custom JS, no Bootstrap collapse) -->
         <li class="nav-item mt-1">
@@ -204,21 +243,24 @@
 
         <!-- Become Our Partner -->
         <li class="nav-item mt-2">
-          <a class="nav-link {{ request()->is('partner') ? 'active text-primary' : '' }}" href="{{ route('partner') }}">
+          <a class="nav-link {{ request()->is('partner') ? 'active text-primary' : '' }}"
+             href="{{ route('partner') }}">
             Become Our Partner
           </a>
         </li>
 
         <!-- Pricing -->
         <li class="nav-item">
-          <a class="nav-link {{ request()->is('pricing') ? 'active text-primary' : '' }}" href="{{ route('pricing') }}">
+          <a class="nav-link {{ request()->is('pricing') ? 'active text-primary' : '' }}"
+             href="{{ route('pricing') }}">
             Pricing
           </a>
         </li>
 
         <!-- Contact -->
         <li class="nav-item">
-          <a class="nav-link {{ request()->is('contact') ? 'active text-primary' : '' }}" href="{{ route('contact') }}">
+          <a class="nav-link {{ request()->is('contact') ? 'active text-primary' : '' }}"
+             href="{{ route('contact') }}">
             Contact Us
           </a>
         </li>
@@ -235,80 +277,22 @@
   </div>
 </div>
 
-<!-- Bootstrap JS -->
+<!-- Bootstrap JS (if not already included globally) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<style>
-  /* Mobile accordion arrow + active color */
-  .mobile-accordion-toggle .bi-chevron-down {
-    transition: transform .2s ease;
-  }
-
-  .mobile-accordion-toggle[aria-expanded="true"] .bi-chevron-down {
-    transform: rotate(180deg);
-  }
-
-  .mobile-accordion-toggle[aria-expanded="true"] {
-    color: #0d6efd;
-    /* blue when open */
-  }
-
-  /* Desktop Solutions caret rotation */
-  #solutionsDesktopToggle .bi-caret-down-fill {
-    transition: transform .2s ease;
-  }
-
-  #solutionsDesktopToggle[aria-expanded="true"] .bi-caret-down-fill {
-    transform: rotate(180deg);
-  }
-
-  /* Desktop Solutions menu visibility (JS controls .show) */
-  #solutionsDesktopMenu {
-    display: none;
-  }
-
-  #solutionsDesktopMenu.show {
-    display: block;
-  }
-
-  /* Mobile Solutions links: normal dark, hover blue, active blue+bold */
-  .mobile-solutions-link {
-    color: #1f2933;
-    text-decoration: none;
-  }
-
-  .mobile-solutions-link:hover {
-    color: #0d6efd;
-    text-decoration: underline;
-  }
-
-  .mobile-solutions-link.text-primary {
-    font-weight: 500;
-  }
-
-  /* Mobile Solutions container show/hide (custom, no bootstrap collapse) */
-  #mobileSolutions {
-    display: none;
-  }
-
-  #mobileSolutions.show {
-    display: block;
-  }
-</style>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const header = document.getElementById("mainHeader");
     const overlay = document.getElementById("mobileNavOverlay");
-    const drawer = document.getElementById("mobileNavDrawer");
-    const toggle = document.getElementById("mobileNavToggle");
+    const drawer  = document.getElementById("mobileNavDrawer");
+    const toggle  = document.getElementById("mobileNavToggle");
     const backdrop = overlay ? overlay.querySelector(".mobile-backdrop") : null;
 
-    // Header height => drawer starts below navbar (React headerH logic)
+    // Header height => drawer starts below navbar
     function updateHeaderHeight() {
       const h = header ? header.offsetHeight || 64 : 64;
       if (overlay) overlay.style.top = h + "px";
-      if (drawer) drawer.style.top = h + "px";
+      if (drawer)  drawer.style.top  = h + "px";
     }
 
     updateHeaderHeight();
@@ -358,7 +342,7 @@
 
     // MOBILE: Solutions accordion (custom JS)
     const mobileSolToggle = document.getElementById("mobileSolutionsToggle");
-    const mobileSolMenu = document.getElementById("mobileSolutions");
+    const mobileSolMenu   = document.getElementById("mobileSolutions");
 
     if (mobileSolToggle && mobileSolMenu) {
       let solOpen = mobileSolToggle.getAttribute("aria-expanded") === "true"
@@ -384,9 +368,77 @@
       });
     }
 
+    // MOBILE: Company accordion (About + Blog)
+    const mobileCompanyToggle = document.getElementById("mobileCompanyToggle");
+    const mobileCompanyMenu   = document.getElementById("mobileCompany");
+
+    if (mobileCompanyToggle && mobileCompanyMenu) {
+      let companyOpen = mobileCompanyToggle.getAttribute("aria-expanded") === "true"
+        || mobileCompanyMenu.classList.contains("show");
+
+      function setMobCompanyOpen(open) {
+        companyOpen = open;
+        if (companyOpen) {
+          mobileCompanyMenu.classList.add("show");
+          mobileCompanyToggle.setAttribute("aria-expanded", "true");
+        } else {
+          mobileCompanyMenu.classList.remove("show");
+          mobileCompanyToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+
+      // initial state
+      setMobCompanyOpen(companyOpen);
+
+      mobileCompanyToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setMobCompanyOpen(!companyOpen);
+      });
+    }
+
+    // DESKTOP: Company (N&T) click-to-toggle
+    const companyToggle = document.getElementById("companyDesktopToggle");
+    const companyMenu   = document.getElementById("companyDesktopMenu");
+    let companyOpen = false;
+
+    function setCompanyOpen(open) {
+      companyOpen = open;
+      if (companyMenu && companyToggle) {
+        if (companyOpen) {
+          companyMenu.classList.add("show");
+          companyToggle.setAttribute("aria-expanded", "true");
+        } else {
+          companyMenu.classList.remove("show");
+          companyToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+    }
+
+    if (companyToggle && companyMenu) {
+      companyToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setCompanyOpen(!companyOpen);
+      });
+
+      // Click outside closes Company
+      document.addEventListener("click", function (e) {
+        if (!companyOpen) return;
+        if (!companyMenu.contains(e.target) && !companyToggle.contains(e.target)) {
+          setCompanyOpen(false);
+        }
+      });
+
+      // On resize to mobile, close dropdown
+      window.addEventListener("resize", function () {
+        if (window.innerWidth < 992) {
+          setCompanyOpen(false);
+        }
+      });
+    }
+
     // DESKTOP: Solutions click-to-toggle
     const desktopToggle = document.getElementById("solutionsDesktopToggle");
-    const desktopMenu = document.getElementById("solutionsDesktopMenu");
+    const desktopMenu   = document.getElementById("solutionsDesktopMenu");
     let desktopOpen = false;
 
     function setDesktopOpen(open) {
