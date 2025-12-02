@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\{
     ProfileController,
     VisitorController,
@@ -80,6 +81,9 @@ Route::get('/healthcare-facilities', function () {
 Route::get('/malls-and-events', function () {
     return view('pages.malls-and-events');
 })->name(name: 'malls-and-events');
+Route::get('/temple-and-dargah', function () {
+    return view('pages.temple-and-dargah');
+})->name(name: 'temple-and-dargah');
 Route::get('/privacy-policy', function () {
     return view('pages.privacy-policy');
 })->name('privacy-policy');
@@ -92,7 +96,9 @@ Route::get('/refund-and-cancellation', function () {
 Route::get('/service-agreement', function () {
     return view('pages.service-agreement');
 })->name('service-agreement');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 
 
@@ -129,8 +135,7 @@ Route::get('/terms-of-use', fn () => view('pages.terms-of-use'))->name('terms-of
 Route::get('/refund-and-cancellation', fn () => view('pages.refund-and-cancellation'))->name('refund-and-cancellation');
 Route::get('/service-agreement', fn () => view('pages.service-agreement'))->name('service-agreement');
 
-Route::get('/blog', [BlogController::class, 'index']);
-Route::get('/blog/{slug}', [BlogController::class, 'show']);
+
 
 // QR Code Routes
 Route::prefix('qr')->name('qr.')->group(function () {
@@ -393,3 +398,20 @@ Route::get('/models/{filename}', function ($filename) {
 
 // Breeze/Auth Routes
 require __DIR__ . '/auth.php';
+////////////////robot.txt////////////////////
+Route::get('/robots.txt', function () {
+    
+
+    $content  = "User-agent: *\n";
+    $content .= "Allow: /\n";
+
+    
+    $content .= "Sitemap: " . url('/sitemap-0.xml') . "\n";
+
+    return response($content, 200)
+        ->header('Content-Type', 'text/plain');
+});
+
+//////////////site map///////
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
+

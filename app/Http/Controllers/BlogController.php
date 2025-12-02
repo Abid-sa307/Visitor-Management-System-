@@ -6,48 +6,95 @@ use Illuminate\Support\Facades\Http;
 
 class BlogController extends Controller
 {
+    /**
+     * Sanity config.
+     */
+    protected string $projectId  = '1bthezjc';      // Sanity project ID
+    protected string $dataset    = 'production';    // Sanity dataset
+    protected string $apiVersion = 'v2021-10-21';   // Sanity API version
+
+    /**
+     * Build Sanity query URL.
+     */
+    protected function sanityUrl(string $groq): string
+    {
+        $encoded = urlencode($groq);
+
+        return "https://{$this->projectId}.api.sanity.io/{$this->apiVersion}/data/query/{$this->dataset}?query={$encoded}";
+    }
+
+    /**
+     * Blog index – list all posts.
+     */
     public function index()
     {
-        $projectId = "cpsm01rs";   // ✅ Sanity project ID
-        $dataset   = "production"; // ✅ Sanity dataset
-
-        // ✅ Fetching proper fields
-        $query = urlencode('*[_type == "post"]{
+        // Latest first
+        $groq = '*[_type == "post"] | order(publishedAt desc){
             title,
             slug,
             "imageUrl": mainImage.asset->url,
             publishedAt,
+            excerpt,
+            description,
             author->{name}
-        }');
+        }';
 
-        $url = "https://$projectId.api.sanity.io/v2021-10-21/data/query/$dataset?query=$query";
+        $response = Http::get($this->sanityUrl($groq));
 
-        $response = Http::get($url);
-        $posts = $response->json()['result'] ?? [];
+        if (! $response->ok()) {
+            $posts = [];
+        } else {
+            $posts = $response->json()['result'] ?? [];
+        }
 
         return view('blog.index', compact('posts'));
     }
 
-    public function show($slug)
+    /**
+     * Single blog post page with related posts.
+     */
+    public function show(string $slug)
     {
-        $projectId = "cpsm01rs";   // ✅ Same projectId
-        $dataset   = "production";
-
-        // ✅ Fetch single post with image, author, date
-        $query = urlencode('*[_type == "post" && slug.current == "'.$slug.'"][0]{
+        // One query: current post + related (max 3) using shared categories
+        $groq = '*[_type == "post" && slug.current == "'.$slug.'"][0]{
             title,
-            slug,
+            "slug": slug.current,
             "imageUrl": mainImage.asset->url,
             body,
             publishedAt,
-            author->{name}
-        }');
+            excerpt,
+            description,
+            author->{
+                name,
+                description,
+                link,
+                "imageUrl": image.asset->url
+            },
+            categories[]->{ title },
 
-        $url = "https://$projectId.api.sanity.io/v2021-10-21/data/query/$dataset?query=$query";
+            // related posts (same categories, different slug)
+            "related": *[
+                _type == "post" &&
+                slug.current != ^.slug.current &&
+                count((categories[]->title)[@ in ^.categories[]->title]) > 0
+            ] | order(publishedAt desc)[0..2]{
+                title,
+                "slug": slug.current,
+                "imageUrl": mainImage.asset->url,
+                publishedAt
+            }
+        }';
 
-        $response = Http::get($url);
-        $post = $response->json()['result'] ?? null;
+        $response = Http::get($this->sanityUrl($groq));
 
-        return view('blog.show', compact('post'));
+        if (! $response->ok()) {
+            $post    = null;
+            $related = [];
+        } else {
+            $post    = $response->json()['result'] ?? null;
+            $related = $post['related'] ?? [];
+        }
+
+        return view('blog.show', compact('post', 'related'));
     }
 }

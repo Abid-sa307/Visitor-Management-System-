@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visitor Management for Healthcare Facilities | VMS</title>
+    <title>Visitor Management System for Hospitals &amp; Healthcare Facilities</title>
+
+    <meta name="description" content="Smart Visitor Management System for hospitals, clinics and healthcare facilities—whether you run a single hospital or a multi-location healthcare network. Digitize patient attendant &amp; visitor check-ins, OPD/IPD registration, vendor and contractor entry with QR/OTP passes, self check-in kiosks, face-recognition access, visiting-hours control, badge printing and real-time visitor logs from one centralized platform. Improve security, compliance and patient experience—book a free demo today.">
+
+    <meta name="keywords" content="hospital visitor management system, healthcare visitor management software, clinic visitor tracking, medical facility visitor check-in, single hospital visitor system, multi location hospital visitor management, healthcare network visitor platform, OPD visitor registration system, IPD patient attendant management, visiting hours control software, QR code visitor pass hospital, OTP visitor entry healthcare, face recognition access hospital, digital visitor register for hospitals, vendor and contractor check-in healthcare, badge printing for visitors, real-time visitor logs hospital, healthcare security and compliance software, paperless hospital reception">
 
     {{-- Bootstrap & Icons --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -56,11 +60,11 @@
 <!-- HERO -->
 <section class="hero">
     <div class="container">
-        <h1>Visitor Management for Healthcare Facilities</h1>
+        <h1>Visitor Management System for Hospitals, Clinics &amp; Healthcare Networks</h1>
         <p class="lead mt-3 mx-auto" style="max-width:750px;">
-            Ensure patient privacy, safety, and regulatory compliance with our
+            Ensure patient privacy, safety and regulatory compliance with our
             specialized visitor management solution built for hospitals,
-            clinics, and diagnostic centers.
+            clinics and diagnostic centers.
         </p>
     </div>
 </section>
@@ -70,7 +74,7 @@
     <div class="container">
         <div class="section-title text-center mb-5">
             <h2>Healthcare-Focused Features</h2>
-            <p>Designed to protect patient data, maintain infection control, and streamline visitor flows.</p>
+            <p>Designed to protect patient data, maintain infection control and streamline visitor flows.</p>
         </div>
 
         <div class="row g-4">
@@ -92,7 +96,7 @@
                         <i class="bi bi-clock-history"></i>
                     </div>
                     <h4>Hourly Visitor Analysis</h4>
-                    <p>Monitor visitor inflow/outflow by hour to improve staffing, safety, and patient flow efficiency.</p>
+                    <p>Monitor visitor inflow/outflow by hour to improve staffing, safety and patient flow efficiency.</p>
                 </div>
             </div>
 
@@ -240,14 +244,14 @@
     <div class="container">
         <div class="section-title text-center mb-5">
             <h2 class="fw-bold">Key Benefits for Healthcare Facilities</h2>
-            <p class="text-muted">Our visitor management system provides measurable advantages to hospitals, clinics, and patient care teams, improving security, compliance, and visitor experience.</p>
+            <p class="text-muted">Our visitor management system provides measurable advantages to hospitals, clinics and patient care teams, improving security, compliance and visitor experience.</p>
         </div>
 
         <div class="row g-4 justify-content-center">
             @foreach ([
                 ['icon'=>'bi-shield-lock','title'=>'Enhanced Patient Safety','desc'=>'Monitor and control visitor access to protect patients and staff, ensuring a secure environment.'],
-                ['icon'=>'bi-clock','title'=>'Reduced Administrative Workload','desc'=>'Automate check-ins, visitor logs, and reporting to free up administrative resources.'],
-                ['icon'=>'bi-bar-chart-line','title'=>'Real-Time Visitor Analytics','desc'=>'Track visitor flow, peak times, and entry points to make data-driven operational decisions.'],
+                ['icon'=>'bi-clock','title'=>'Reduced Administrative Workload','desc'=>'Automate check-ins, visitor logs and reporting to free up administrative resources.'],
+                ['icon'=>'bi-bar-chart-line','title'=>'Real-Time Visitor Analytics','desc'=>'Track visitor flow, peak times and entry points to make data-driven operational decisions.'],
                 ['icon'=>'bi-file-earmark-text','title'=>'Regulatory Compliance','desc'=>'Generate audit-ready reports for HIPAA and local healthcare regulations effortlessly.'],
                 ['icon'=>'bi-people','title'=>'Improved Visitor Experience','desc'=>'Faster, touchless check-in and pre-scheduled visits minimize waiting times and overcrowding.'],
             ] as $b)
@@ -266,6 +270,69 @@
         </div>
     </div>
 </section>
+
+<section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
+           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+
+    {{-- Radial glow background --}}
+    <div style="position:absolute;inset:0;opacity:0.35;
+        background:radial-gradient(60% 60% at 50% 0%,#ffffff 0%,transparent 60%);">
+    </div>
+
+    <div class="container" style="position:relative;z-index:1;">
+      <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-4" style="
+                position:relative;
+                z-index:1;
+                border-radius:32px;
+                background:linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+                border:1px solid rgba(255,255,255,0.25);
+                backdrop-filter:blur(20px);
+                -webkit-backdrop-filter:blur(20px);
+                box-shadow:0 24px 60px rgba(15,23,42,0.55);
+                padding:36px 40px;
+             ">
+
+        {{-- LEFT: Title + small text --}}
+        <div class="flex-grow-1 text-start">
+          <h2 class="mb-2" style="font-weight:800;font-size:1.9rem;line-height:1.25;margin-bottom:0.75rem;">
+            Need a custom Visitor Management System & mobile app for your healthcare facility?
+          </h2>
+
+          <p style="margin-bottom:0;opacity:0.9;font-size:0.98rem;">
+            Let’s talk about your requirements.
+          </p>
+        </div>
+
+        {{-- RIGHT: Button --}}
+        <div class="mt-3 mt-md-0 text-md-end">
+          <a href="{{ url('/contact') }}" aria-label="Go to contact page" style="
+                        display:inline-flex;
+                        align-items:center;
+                        justify-content:center;
+                        border-radius:999px;
+                        background:#ffffff;
+                        color:#4338ca;
+                        font-weight:800;
+                        letter-spacing:0.04em;
+                        padding:0.9rem 2.3rem;
+                        border:1px solid rgba(15,23,42,0.06);
+                        box-shadow:0 16px 40px rgba(15,23,42,0.35);
+                        text-decoration:none;
+                        white-space:nowrap;
+                   ">
+            Contact Us
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+              style="margin-left:0.5rem;">
+              <path d="M5 12h14"></path>
+              <path d="M12 5l7 7-7 7"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
 
 
 
@@ -289,7 +356,7 @@
           <div class="faq-answer mt-2 d-none">
             <p>
               Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
-              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real-time.
+              to monitor visitor trends, inflow/outflow analysis and compliance requirements in real-time.
             </p>
           </div>
         </div>
@@ -330,7 +397,7 @@
           </div>
           <div class="faq-answer mt-2 d-none">
             <p>
-              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
+              Yes, AI-powered face recognition ensures secure, touchless and fast entry authentication 
               for visitors, reducing manual verification needs.
             </p>
           </div>
@@ -387,7 +454,7 @@
           <div class="faq-answer mt-2 d-none">
             <p>
               The system supports multiple entry options including manual entry by security staff, 
-              face recognition, and QR code scanning for seamless visitor management.
+              face recognition and QR code scanning for seamless visitor management.
             </p>
           </div>
         </div>
@@ -414,7 +481,7 @@
     <div class="container">
         <div class="cta-content px-3 py-5 rounded-4 shadow-lg" style="background: rgba(0,0,0,0.2);">
             <h2 class="fw-bold mb-3">Enhance Safety and Efficiency in Your Healthcare Facility</h2>
-            <p class="mb-4">Join leading hospitals, clinics, and healthcare centers that trust IndVMS to streamline visitor management, improve patient safety, and ensure compliance. Schedule a personalized demo today.</p>
+            <p class="mb-4">Join leading hospitals, clinics and healthcare centers that trust IndVMS to streamline visitor management, improve patient safety and ensure compliance. Schedule a personalized demo today.</p>
             <a href="/contact" class="btn btn-light btn-lg shadow-sm hover-cta">Request a Demo</a>
         </div>
     </div>

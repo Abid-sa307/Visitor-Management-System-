@@ -7,7 +7,7 @@ export default defineConfig({
   name: 'default',
   title: 'Visitor-Management-System',
 
-  projectId: 'cpsm01rs',
+  projectId: '1bthezjc',
   dataset: 'production',
 
   plugins: [structureTool(), visionTool()],

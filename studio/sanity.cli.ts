@@ -2,14 +2,12 @@ import {defineCliConfig} from 'sanity/cli'
 
 export default defineCliConfig({
   api: {
-    projectId: 'cpsm01rs',
-    dataset: 'production'
+    projectId: '1bthezjc',
+    dataset: 'production',
   },
   deployment: {
-    /**
-     * Enable auto-updates for studios.
-     * Learn more at https://www.sanity.io/docs/cli#auto-updates
-     */
-    autoUpdates: true,
-  }
+    appId: 'kebaisk305lhec1mjdzp2122',
+  },
+  
+  studioHost: 'visitor-management-system',
 })
