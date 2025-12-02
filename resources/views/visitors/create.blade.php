@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container d-flex justify-content-center mt-5">
-  <div class="card shadow-lg p-4 w-100" style="max-width: 650px;">
+  <div class="card shadow-lg p-4 w-100" style="max-width: 800px;">
     <h3 class="mb-4 text-center fw-bold text-primary">
       Register New Visitor
     </h3>
@@ -19,177 +19,408 @@
     @endif
 
     <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}" 
-        method="POST" enctype="multipart/form-data" novalidate>
+        method="POST" enctype="multipart/form-data" id="visitorForm">
       @csrf
+      
 
-      <!-- Phone (first) -->
-      <div class="mb-2">
-        <label class="form-label fw-semibold">Phone Number</label>
-        <input type="text" name="phone" id="phoneInput" class="form-control @error('phone') is-invalid @enderror" required value="{{ old('phone') }}" placeholder="Enter mobile number">
-        @error('phone')
-          <div class="invalid-feedback d-block">{{ $message }}</div>
-        @enderror
-      </div>
-      <div id="autofillHint" class="alert alert-info py-2 px-3 d-none">
-        A previous visitor with this number was found.
-        <button type="button" id="autofillBtn" class="btn btn-sm btn-primary ms-2">Autofill name & email</button>
-      </div>
-
-      <!-- Name -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Full Name</label>
-        <input type="text" name="name" id="nameInput" class="form-control @error('name') is-invalid @enderror" required value="{{ old('name') }}">
-        @error('name')
-          <div class="invalid-feedback d-block">{{ $message }}</div>
-        @enderror
-      </div>
-
-      <!-- Email (Optional) -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Email (optional)</label>
-        <input type="email" name="email" id="emailInput" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}">
-        @error('email')
-          <div class="invalid-feedback d-block">{{ $message }}</div>
-        @enderror
-      </div>
-
-      <!-- Photo -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Photo</label>
-        <div class="d-grid gap-2">
-          <div class="d-flex gap-2 align-items-center mb-2">
-            <button type="button" class="btn btn-sm btn-outline-primary" id="startCameraBtn">Use Camera</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="stopCameraBtn" disabled>Stop Camera</button>
-            <button type="button" class="btn btn-sm btn-success ms-auto" id="captureBtn" disabled>Capture</button>
+      <div class="row">
+        <!-- Left Column -->
+        <div class="col-md-6">
+          <!-- Phone -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+            <input type="text" name="phone" id="phoneInput" class="form-control @error('phone') is-invalid @enderror" required 
+                   value="{{ old('phone') }}" placeholder="Enter mobile number" autofocus>
+            @error('phone')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </div>
+          <div id="autofillHint" class="alert alert-info py-2 px-3 d-none">
+            A previous visitor with this number was found.
+            <button type="button" id="autofillBtn" class="btn btn-sm btn-primary ms-2">Autofill name & email</button>
           </div>
 
-          <div class="border rounded p-2 text-center">
-            <video id="cameraStream" autoplay playsinline style="max-width:100%; display:none;"></video>
-            <canvas id="snapshotCanvas" style="max-width:100%; display:none;"></canvas>
-            <div id="placeholderText" class="text-muted">No camera active. You can start the camera or upload a photo below. (Optional)</div>
+          <!-- Name -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="nameInput" class="form-control @error('name') is-invalid @enderror" 
+                   required value="{{ old('name') }}" placeholder="Enter full name">
+            @error('name')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
           </div>
 
-          <input type="hidden" name="photo_base64" id="photoBase64">
+          <!-- Email -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" name="email" id="emailInput" class="form-control @error('email') is-invalid @enderror" 
+                   value="{{ old('email') }}" placeholder="Enter email address">
+            @error('email')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </div>
+        </div>
 
-          <div class="text-center small text-muted">OR</div>
-          <input type="file" name="photo" class="form-control @error('photo') is-invalid @enderror" accept="image/*">
-          @error('photo')
-            <div class="invalid-feedback d-block">{{ $message }}</div>
-          @enderror
+        <!-- Right Column -->
+        <div class="col-md-6">
+          <!-- Face Capture Section -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Face Capture <span class="text-danger">*</span></label>
+            <div class="face-capture-container mb-2">
+              <div class="face-detection-box">
+                <video id="video" width="320" height="240" autoplay playsinline></video>
+                <div class="face-overlay">
+                  <div class="circle"></div>
+                </div>
+              </div>
+              <canvas id="canvas" class="d-none"></canvas>
+              <div id="capturedPhoto" class="d-none">
+                <img id="photoPreview" class="img-fluid rounded" src="" alt="Captured photo">
+              </div>
+            </div>
+            <div class="text-center">
+              <div id="status" class="small mb-2">Position your face inside the circle</div>
+              <button type="button" id="startCamera" class="btn btn-primary btn-sm">
+                <i class="fas fa-camera me-1"></i> Start Camera
+              </button>
+              <button type="button" id="retakePhoto" class="btn btn-warning btn-sm d-none">
+                <i class="fas fa-redo me-1"></i> Retake
+              </button>
+              <input type="hidden" name="face_image" id="faceImageInput">
+              <input type="hidden" name="face_encoding" id="faceEncodingInput">
+            </div>
+            @error('face_image')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </div>
         </div>
       </div>
 
-      <!-- Documents -->
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Documents (optional)</label>
-        <input type="file" name="documents[]" class="form-control @error('documents.*') is-invalid @enderror" multiple>
-        @error('documents.*')
-          <div class="invalid-feedback d-block">{{ $message }}</div>
-        @enderror
+      <!-- Submit Button -->
+      <div class="d-grid gap-2 mt-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="fas fa-user-plus me-2"></i>Register Visitor
+        </button>
       </div>
-
-      <!-- Submit -->
-      <button class="btn btn-primary w-100 fw-bold">Register Visitor</button>
     </form>
   </div>
 </div>
+
+@push('styles')
+<style>
+.face-capture-container {
+  max-width: 320px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.face-detection-box {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  margin-bottom: 10px;
+}
+
+.face-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.circle {
+  width: 200px;
+  height: 200px;
+  border: 3px solid #dc3545;
+  border-radius: 50%;
+  transition: border-color 0.3s ease;
+}
+
+.circle.face-detected {
+  border-color: #28a745;
+  box-shadow: 0 0 20px rgba(40, 167, 69, 0.5);
+}
+
+#video, #canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+#photoPreview {
+  max-width: 100%;
+  max-height: 240px;
+  display: block;
+  margin: 0 auto;
+}
+
+#status {
+  min-height: 24px;
+  font-weight: 500;
+}
+</style>
+@endpush
+
 @push('scripts')
+<!-- Load face-api.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
 <script>
-(function(){
-  const startBtn = document.getElementById('startCameraBtn');
-  const stopBtn = document.getElementById('stopCameraBtn');
-  const captureBtn = document.getElementById('captureBtn');
-  const video = document.getElementById('cameraStream');
-  const canvas = document.getElementById('snapshotCanvas');
-  const placeholder = document.getElementById('placeholderText');
-  const out = document.getElementById('photoBase64');
-  // Lookup/autofill elements
-  const phoneInput = document.getElementById('phoneInput');
-  const hint = document.getElementById('autofillHint');
-  const autofillBtn = document.getElementById('autofillBtn');
-  let lookupData = null;
+document.addEventListener('DOMContentLoaded', async function() {
+  // DOM Elements
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const photoPreview = document.getElementById('photoPreview');
+  const startCameraBtn = document.getElementById('startCamera');
+  const retakePhotoBtn = document.getElementById('retakePhoto');
+  const statusElement = document.getElementById('status');
+  const faceImageInput = document.getElementById('faceImageInput');
+  const faceEncodingInput = document.getElementById('faceEncodingInput');
+  const faceOverlay = document.querySelector('.circle');
+  const capturedPhoto = document.getElementById('capturedPhoto');
+  
   let stream = null;
-
-  async function startCamera(){
+  let isFaceDetected = false;
+  let faceDescriptor = null;
+  let detectionInterval = null;
+  
+  // Load face-api models
+  async function loadModels() {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      statusElement.textContent = 'Loading face detection models...';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+        faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+        faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+      ]);
+      statusElement.textContent = 'Models loaded. Starting camera...';
+      return true;
+    } catch (error) {
+      console.error('Error loading models:', error);
+      statusElement.textContent = 'Error loading face detection. Please refresh the page.';
+      return false;
+    }
+  }
+  
+  // Start camera
+  async function startCamera() {
+    try {
+      // Stop any existing stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Request camera access
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user' 
+        },
+        audio: false
+      });
+      
+      // Set video source
       video.srcObject = stream;
-      video.style.display = 'block';
-      canvas.style.display = 'none';
-      placeholder.style.display = 'none';
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-      captureBtn.disabled = false;
-    } catch(e){
-      console.error('Camera error:', e);
-      alert('Could not access camera. Please allow camera access or use file upload.');
+      await video.play();
+      
+      // Start face detection
+      startFaceDetection();
+      
+      // Update UI
+      startCameraBtn.classList.add('d-none');
+      statusElement.textContent = 'Position your face inside the circle';
+      
+    } catch (error) {
+      console.error('Camera error:', error);
+      statusElement.textContent = 'Could not access camera. Please ensure you have granted camera permissions.';
     }
   }
-
-  function stopCamera(){
-    if (stream){
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-    video.style.display = 'none';
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    captureBtn.disabled = true;
-    if (!canvas.toDataURL || canvas.style.display === 'none') {
-      placeholder.style.display = 'block';
-    }
+  
+  // Start face detection
+  function startFaceDetection() {
+    if (detectionInterval) clearInterval(detectionInterval);
+    
+    detectionInterval = setInterval(async () => {
+      if (video.readyState === 4) { // Video is ready
+        const detections = await faceapi.detectAllFaces(
+          video,
+          new faceapi.TinyFaceDetectorOptions()
+        ).withFaceLandmarks().withFaceDescriptors();
+        
+        if (detections.length > 0) {
+          // Get the largest face
+          const detection = detections.reduce((prev, current) => 
+            (prev.detection.box.area() > current.detection.box.area()) ? prev : current
+          );
+          
+          // Check if face is properly centered
+          const videoWidth = video.videoWidth;
+          const videoHeight = video.videoHeight;
+          const box = detection.detection.box;
+          const centerX = box.x + box.width / 2;
+          const centerY = box.y + box.height / 2;
+          
+          // Define the center area (40% of the video)
+          const centerArea = {
+            x1: videoWidth * 0.3,
+            x2: videoWidth * 0.7,
+            y1: videoHeight * 0.3,
+            y2: videoHeight * 0.7
+          };
+          
+          const isCentered = centerX > centerArea.x1 && centerX < centerArea.x2 &&
+                            centerY > centerArea.y1 && centerY < centerArea.y2;
+          
+          if (isCentered) {
+            faceOverlay.classList.add('face-detected');
+            statusElement.textContent = 'Face detected! Capturing in 2 seconds...';
+            
+            // Auto-capture after 2 seconds of centered face
+            if (!isFaceDetected) {
+              isFaceDetected = true;
+              setTimeout(capturePhoto, 2000);
+            }
+          } else {
+            faceOverlay.classList.remove('face-detected');
+            statusElement.textContent = 'Center your face in the circle';
+            isFaceDetected = false;
+          }
+        } else {
+          faceOverlay.classList.remove('face-detected');
+          statusElement.textContent = 'Position your face inside the circle';
+          isFaceDetected = false;
+        }
+      }
+    }, 300); // Check every 300ms
   }
-
-  function capture(){
-    if (!video.videoWidth || !video.videoHeight){
-      alert('Camera not ready yet. Please try again.');
-      return;
-    }
-    const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    out.value = dataUrl;
-    canvas.style.display = 'block';
-    placeholder.style.display = 'none';
-  }
-
-  startBtn?.addEventListener('click', startCamera);
-  stopBtn?.addEventListener('click', stopCamera);
-  captureBtn?.addEventListener('click', capture);
-
-  // Stop camera when navigating away
-  window.addEventListener('beforeunload', stopCamera);
-
-  // Lightweight phone lookup & autofill (name, email only)
-  function companyPrefix(){ return window.location.pathname.startsWith('/company') ? '/company' : ''; }
-  async function lookupByPhone(phone){
-    if (!phone || phone.trim().length < 5) { hint.classList.add('d-none'); lookupData = null; return; }
+  
+  // Capture photo
+  async function capturePhoto() {
+    if (!stream) return;
+    
     try {
-      const res = await fetch(`${companyPrefix()}/visitors/lookup?phone=${encodeURIComponent(phone)}`);
-      if (!res.ok) throw new Error('lookup failed');
-      const data = await res.json();
-      lookupData = data || null;
-      hint.classList.toggle('d-none', !lookupData);
-    } catch(e){
-      lookupData = null;
-      hint.classList.add('d-none');
+      // Stop face detection
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+      }
+      
+      // Set canvas dimensions
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw current video frame to canvas
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert canvas to data URL
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Update UI
+      photoPreview.src = imageData;
+      video.classList.add('d-none');
+      capturedPhoto.classList.remove('d-none');
+      faceImageInput.value = imageData;
+      
+      // Get face descriptor
+      const detections = await faceapi.detectAllFaces(
+        canvas,
+        new faceapi.TinyFaceDetectorOptions()
+      ).withFaceLandmarks().withFaceDescriptors();
+      
+      if (detections.length > 0) {
+        const detection = detections[0];
+        faceDescriptor = Array.from(detection.descriptor);
+        faceEncodingInput.value = JSON.stringify(faceDescriptor);
+        statusElement.textContent = 'Photo captured successfully!';
+      } else {
+        throw new Error('No face found in the captured photo');
+      }
+      
+      // Show retake button
+      retakePhotoBtn.classList.remove('d-none');
+      
+      // Stop camera stream
+      stream.getTracks().forEach(track => track.stop());
+      
+    } catch (error) {
+      console.error('Capture error:', error);
+      statusElement.textContent = 'Error capturing photo. Please try again.';
+      retakePhoto();
     }
   }
-
-  phoneInput?.addEventListener('blur', ()=> lookupByPhone(phoneInput.value));
-  phoneInput?.addEventListener('input', ()=> { if (!phoneInput.value) { hint.classList.add('d-none'); lookupData=null; } });
-
-  autofillBtn?.addEventListener('click', function(){
-    if (!lookupData) return;
-    const nameEl = document.getElementById('nameInput');
-    const emailEl = document.getElementById('emailInput');
-    if (nameEl && (lookupData.name ?? '') !== '') nameEl.value = lookupData.name;
-    if (emailEl && (lookupData.email ?? '') !== '') emailEl.value = lookupData.email;
-    hint.classList.add('d-none');
+  
+  // Retake photo
+  function retakePhoto() {
+    // Reset UI
+    capturedPhoto.classList.add('d-none');
+    video.classList.remove('d-none');
+    retakePhotoBtn.classList.add('d-none');
+    faceOverlay.classList.remove('face-detected');
+    
+    // Clear previous data
+    faceImageInput.value = '';
+    faceEncodingInput.value = '';
+    isFaceDetected = false;
+    
+    // Restart camera
+    startCamera();
+  }
+  
+  // Event Listeners
+  startCameraBtn.addEventListener('click', async () => {
+    const modelsLoaded = await loadModels();
+    if (modelsLoaded) {
+      startCamera();
+    }
   });
-})();
+  
+  retakePhotoBtn.addEventListener('click', retakePhoto);
+  
+  // Form submission
+  const form = document.getElementById('visitorForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (!faceImageInput.value || !faceEncodingInput.value) {
+        e.preventDefault();
+        alert('Please capture a photo before submitting.');
+        return false;
+      }
+      
+      const submitButton = this.querySelector('button[type="submit"]');
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+      }
+    });
+  }
+  
+  // Clean up on page unload
+  window.addEventListener('beforeunload', () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    if (detectionInterval) {
+      clearInterval(detectionInterval);
+    }
+  });
+});
 </script>
 @endpush
+
 @endsection

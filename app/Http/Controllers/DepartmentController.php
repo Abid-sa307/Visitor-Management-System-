@@ -104,11 +104,18 @@ class DepartmentController extends Controller
      */
     public function getByCompany($companyId)
     {
-        if (auth()->user()->role !== 'superadmin') {
-            // Ignore passed $companyId and use user's own company
-            $companyId = auth()->user()->company_id;
+        $user = auth()->user();
+        
+        // If not superadmin, ensure they can only access their own company's departments
+        if (!in_array($user->role, ['superadmin', 'super_admin'])) {
+            $companyId = $user->company_id;
         }
 
-        return Department::where('company_id', $companyId)->get();
+        $departments = Department::where('company_id', $companyId)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($departments);
     }
 }

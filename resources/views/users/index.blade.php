@@ -41,9 +41,15 @@
                 </button>
             </form>
 
-            <a href="{{ route($routeCreate) }}" class="btn btn-sm btn-primary shadow-sm">
-                <i class="bi bi-person-plus-fill me-1"></i> Add User
-            </a>
+            @if($isCompany)
+                <a href="{{ route('company.users.create') }}" class="btn btn-sm btn-primary shadow-sm">
+                    <i class="bi bi-person-plus-fill me-1"></i> Add User
+                </a>
+            @else
+                <a href="{{ route('users.create') }}" class="btn btn-sm btn-primary shadow-sm">
+                    <i class="bi bi-person-plus-fill me-1"></i> Add User
+                </a>
+            @endif
         </div>
     </div>
 

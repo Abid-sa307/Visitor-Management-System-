@@ -73,25 +73,44 @@
                             <td>{{ $visitor->goods_in_car ?? '—' }}</td>
                             <td>
                                 @php
-                                  $st = $visitor->status;
-                                  $cls = $st === 'Approved' ? 'success' : ($st === 'Rejected' ? 'danger' : ($st === 'Completed' ? 'secondary' : 'warning'));
-                                  $updateRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
+                                    $st = $visitor->status;
+                                    $cls = $st === 'Approved' ? 'success' : ($st === 'Rejected' ? 'danger' : ($st === 'Completed' ? 'secondary' : 'warning'));
+                                    $updateRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
+                                    $canUndo = $visitor->can_undo_status && $st !== 'Completed';
+                                    $minutesLeft = $canUndo ? max(0, 30 - ($visitor->status_changed_at ? $visitor->status_changed_at->diffInMinutes(now()) : 0)) : 0;
                                 @endphp
                                 <div class="d-flex flex-column align-items-center">
-                                  <span class="badge bg-{{ $cls }} js-status-badge px-2 fw-normal" data-id="{{ $visitor->id }}" style="min-width: 80px; font-size: 0.85em; padding: 0.2rem 0.5rem;">{{ $visitor->status }}</span>
-                                  @if($visitor->can_undo_status)
-                                    @php
-                                      $minutesElapsed = $visitor->status_changed_at ? $visitor->status_changed_at->diffInMinutes(now()) : 0;
-                                      $minutesLeft = max(0, 30 - $minutesElapsed);
-                                    @endphp
-                                    <form action="{{ route($updateRoute, $visitor->id) }}" method="POST" class="d-flex flex-column align-items-center gap-1">
-                                      @csrf
-                                      @method('PUT')
-                                      <input type="hidden" name="action" value="undo">
-                                      <button type="submit" class="btn btn-outline-secondary btn-sm">Undo</button>
-                                      <small class="text-muted">{{ $minutesLeft }} min left</small>
-                                    </form>
-                                  @endif
+                                    <span class="badge bg-{{ $cls }} js-status-badge px-2 fw-normal" 
+                                          style="min-width: 80px; font-size: 0.85em; padding: 0.2rem 0.5rem;"
+                                          data-id="{{ $visitor->id }}"
+                                          data-status="{{ $st }}">
+                                        {{ $st }}
+                                    </span>
+                                    
+                                    @if($st === 'Pending')
+                                        <div class="d-flex gap-2 mt-2">
+                                            <form action="{{ route($updateRoute, $visitor->id) }}" method="POST" class="js-approval-form">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="status" value="Approved">
+                                                <button type="submit" class="btn btn-sm btn-success js-approve">Approve</button>
+                                            </form>
+                                            <form action="{{ route($updateRoute, $visitor->id) }}" method="POST" class="js-approval-form">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="status" value="Rejected">
+                                                <button type="submit" class="btn btn-sm btn-danger js-reject">Reject</button>
+                                            </form>
+                                        </div>
+                                    @elseif($canUndo)
+                                        <form action="{{ route($updateRoute, $visitor->id) }}" method="POST" class="js-approval-form mt-2">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="action" value="undo">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Undo</button>
+                                            <div class="small text-muted">{{ $minutesLeft }} min left</div>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                             <td class="d-flex justify-content-center gap-2">
@@ -129,62 +148,150 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  // AJAX approvals with better UX
-  document.querySelectorAll('form.js-approval-form').forEach(form => {
-    form.addEventListener('submit', async function(e){
-      e.preventDefault();
-      const url = this.action;
-      const formData = new FormData(this);
+function updateStatusCell(cell, data) {
+    const status = data.status;
+    const canUndo = data.can_undo || false;
+    const isCompanyPath = window.location.pathname.includes('company');
+    const baseUrl = isCompanyPath ? '{{ url("company/visitors") }}' : '{{ url("visitors") }}';
+    const updateRoute = isCompanyPath ? 'company.visitors.update' : 'visitors.update';
+    
+    let statusHtml = `
+        <span class="badge bg-${status === 'Approved' ? 'success' : status === 'Rejected' ? 'danger' : status === 'Completed' ? 'secondary' : 'warning'} 
+                     js-status-badge px-2 fw-normal" 
+                     style="min-width: 80px; font-size: 0.85em; padding: 0.2rem 0.5rem;"
+                     data-id="${data.id}"
+                     data-status="${status}">
+            ${status}
+        </span>
+    `;
 
-      const approveBtn = this.querySelector('.js-approve');
-      const rejectBtn  = this.querySelector('.js-reject');
-      const btns = [approveBtn, rejectBtn].filter(Boolean);
-      btns.forEach(b=>{ b.disabled = true; b.dataset.oldText = b.textContent; b.textContent = 'Processing...'; });
+    let actionHtml = '';
+    
+    if (status === 'Pending') {
+        actionHtml = `
+            <div class="d-flex gap-2 mt-2">
+                <form action="${baseUrl}/${data.id}" method="POST" class="js-approval-form">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="status" value="Approved">
+                    <button type="submit" class="btn btn-sm btn-success js-approve">Approve</button>
+                </form>
+                <form action="${baseUrl}/${data.id}" method="POST" class="js-approval-form">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="status" value="Rejected">
+                    <button type="submit" class="btn btn-sm btn-danger js-reject">Reject</button>
+                </form>
+            </div>
+        `;
+    } else if (canUndo) {
+        const minutesLeft = Math.max(0, 30 - (data.minutes_elapsed || 0));
+        const basePath = isCompanyPath ? '{{ url("company/visitors") }}' : '{{ url("visitors") }}';
+        const undoUrl = `${basePath}/${data.id}`;
+            
+        actionHtml = `
+            <form action="${undoUrl}" method="POST" class="js-approval-form mt-2">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="action" value="undo">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Undo</button>
+                <div class="small text-muted">${minutesLeft} min left</div>
+            </form>
+        `;
+    }
 
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'X-HTTP-Method-Override': 'PUT',
-            'Accept': 'application/json'
-          },
-          body: formData
+    cell.innerHTML = `
+        <div class="d-flex flex-column align-items-center">
+            ${statusHtml}
+            ${actionHtml}
+        </div>
+    `;
+
+    // Re-attach event listeners
+    const newForm = cell.querySelector('form.js-approval-form');
+    if (newForm) {
+        newForm.addEventListener('submit', handleFormSubmit);
+    }
+}
+
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    const isUndoAction = formData.get('action') === 'undo';
+    
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-HTTP-Method-Override': 'PUT',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
         });
-        let payload = null;
-        const text = await res.text();
-        try { payload = JSON.parse(text); } catch(_) { /* non-JSON */ }
 
-        if (!res.ok) throw new Error(payload?.message || 'Request failed');
-
-        const msg = payload?.message || 'Visitor status updated successfully';
-        // Update status badge in-place
-        const row = form.closest('tr');
-        const badge = row?.querySelector('.js-status-badge');
-        if (badge && payload?.status) {
-          badge.textContent = payload.status;
-          badge.classList.remove('bg-success','bg-danger','bg-warning','bg-secondary');
-          const cls = payload.status === 'Approved' ? 'bg-success' : (payload.status === 'Rejected' ? 'bg-danger' : 'bg-warning');
-          badge.classList.add(cls);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Request failed');
         }
-        // Inline success note
-        const note = document.createElement('div');
-        note.className = 'small text-success mt-1';
-        note.textContent = msg;
-        form.appendChild(note);
-        // Disable buttons after action is completed
-        btns.forEach(b=>{ b.disabled = true; b.textContent = payload?.status || 'Updated'; });
-        setTimeout(()=>window.location.reload(), 400);
-      } catch (err) {
-        const note = document.createElement('div');
-        note.className = 'small text-danger mt-1';
-        note.textContent = err?.message || 'Something went wrong';
-        form.appendChild(note);
-        btns.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.oldText || b.textContent; });
-      }
+        
+        // For Undo action, we need to update the entire row
+        if (isUndoAction) {
+            // Reload the page to ensure all data is fresh
+            window.location.reload();
+        } else {
+            // For other actions, just update the status cell
+            const cell = form.closest('td');
+            if (cell) {
+                // Add can_undo flag to the response data
+                data.can_undo = data.status === 'Approved' || data.status === 'Rejected';
+                data.minutes_elapsed = 0; // Reset the timer
+                updateStatusCell(cell, data);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'small text-danger mt-1';
+        errorDiv.textContent = error.message || 'An error occurred';
+        form.appendChild(errorDiv);
+        
+        // Re-enable the button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all approval forms
+    document.querySelectorAll('form.js-approval-form').forEach(form => {
+        form.addEventListener('submit', handleFormSubmit);
     });
-  });
+    
+    // Set up timer to update the minutes left for undo buttons
+    setInterval(() => {
+        document.querySelectorAll('.js-undo-time').forEach(element => {
+            const timeLeft = parseInt(element.dataset.secondsLeft) - 1;
+            if (timeLeft <= 0) {
+                // If time's up, reload the page to update the UI
+                window.location.reload();
+            } else {
+                element.textContent = `${Math.floor(timeLeft / 60)} min ${timeLeft % 60} sec left`;
+                element.dataset.secondsLeft = timeLeft;
+            }
+        });
+    }, 1000);
 });
 </script>
 @endpush

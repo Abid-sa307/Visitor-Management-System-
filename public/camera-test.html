@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #video { border: 2px solid #333; max-width: 640px; width: 100%; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Camera Test Page</h1>
+    <div id="status" class="status">Initializing...</div>
+    <video id="video" autoplay playsinline></video>
+    
+    <script>
+        const statusEl = document.getElementById('status');
+        const video = document.getElementById('video');
+        
+        async function testCamera() {
+            try {
+                // Check if browser supports mediaDevices
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Browser does not support camera access');
+                }
+                
+                // List available devices
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log('Available devices:', devices);
+                
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                console.log('Video devices:', videoDevices);
+                
+                if (videoDevices.length === 0) {
+                    throw new Error('No video devices found');
+                }
+                
+                // Try to access camera
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    }
+                });
+                
+                // Show video stream
+                video.srcObject = stream;
+                statusEl.textContent = 'Camera is working! 🎉';
+                statusEl.className = 'status success';
+                
+                // Log success
+                console.log('Camera access successful!');
+                
+            } catch (error) {
+                console.error('Camera test failed:', error);
+                statusEl.textContent = `Error: ${error.message}`;
+                statusEl.className = 'status error';
+                
+                // Provide specific guidance based on error
+                if (error.name === 'NotAllowedError') {
+                    console.error('Please allow camera access in your browser settings');
+                } else if (error.name === 'NotFoundError') {
+                    console.error('No camera found. Please connect a camera.');
+                } else if (error.name === 'NotReadableError') {
+                    console.error('Camera is already in use by another application');
+                }
+            }
+        }
+        
+        // Start the test when page loads
+        testCamera();
+    </script>
+</body>
+</html>

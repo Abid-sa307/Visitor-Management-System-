@@ -4,10 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Branch;
+use App\Models\User;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CompanyController extends Controller
 {
+    use AuthorizesRequests;
     public function index()
     {
         $companies = Company::with('branches')->latest()->paginate(10);
@@ -170,5 +179,93 @@ class CompanyController extends Controller
     {
         $company->delete();
         return redirect()->route('companies.index')->with('success', 'Company deleted successfully.');
+    }
+
+    /**
+     * Display the QR code management page for a company.
+     */
+    /**
+     * Display a listing of companies for QR code management.
+     */
+    public function qrIndex()
+    {
+        $this->authorize('viewAny', Company::class);
+        
+        $companies = Company::withCount('branches')
+            ->orderBy('name')
+            ->get();
+            
+        return view('companies.qr-index', compact('companies'));
+    }
+    
+    /**
+     * Display the QR code management page for a specific company.
+     */
+    public function qr(Company $company)
+    {
+        $this->authorize('view', $company);
+        
+        // Eager load the branches relationship with proper ordering
+        $company->load(['branches' => function($query) {
+            $query->orderBy('name');
+        }]);
+        
+        // Debug: Log the company and branches data
+        \Log::info('Company QR View', [
+            'company_id' => $company->id,
+            'branches_count' => $company->branches ? $company->branches->count() : 0,
+            'branches' => $company->branches ? $company->branches->toArray() : []
+        ]);
+        
+        return view('companies.qr', compact('company'));
+    }
+
+    /**
+     * Download the QR code for a company.
+     */
+    public function downloadQr(Company $company, Branch $branch = null)
+    {
+        $this->authorize('view', $company);
+        
+        // Generate QR code data
+        $qrData = [
+            'company' => $company->name,
+            'email' => $company->email,
+            'contact' => $company->contact_number,
+            'branch' => $branch ? $branch->name : null,
+            'branch_address' => $branch ? $branch->address : null,
+            'checkin_url' => $branch 
+                ? route('qr.scan', ['company' => $company, 'branch' => $branch])
+                : route('qr.scan', $company)
+        ];
+        
+        // Format as human-readable text
+        $qrText = "Company: " . $qrData['company'] . "\n";
+        $qrText .= "Email: " . $qrData['email'] . "\n";
+        $qrText .= "Contact: " . $qrData['contact'] . "\n";
+        
+        if ($branch) {
+            $qrText .= "\nBranch: " . $qrData['branch'] . "\n";
+            if (!empty($branch->address)) {
+                $qrText .= "Address: " . $qrData['branch_address'] . "\n";
+            }
+        }
+        
+        $qrText .= "\nCheck-in URL: " . $qrData['checkin_url'];
+        
+        // Generate QR code as SVG string
+        $qrCode = QrCode::format('svg')
+            ->size(1000) // Larger size for better quality when printed
+            ->generate($qrText);
+        
+        // Create a descriptive filename
+        $filename = 'qr-code-' . 
+                   str_slug($company->name) . 
+                   ($branch ? '-' . str_slug($branch->name) : '') . 
+                   '.svg';
+        
+        return response($qrCode)
+            ->header('Content-Type', 'image/svg+xml')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 }

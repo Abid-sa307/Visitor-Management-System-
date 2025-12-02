@@ -1,0 +1,603 @@
+@extends('layouts.sb')
+
+@section('content')
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0 fw-bold text-primary">Visitor Entry / Exit</h3>
+    </div>
+
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <div class="table-responsive shadow-sm border rounded-3">
+        <table class="table table-hover table-striped align-middle text-center mb-0">
+            <thead class="table-primary">
+                <tr>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Purpose</th>
+                    <th>In Time</th>
+                    <th>Out Time</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($visitors as $visitor)
+                    <tr>
+                        <td class="fw-semibold">{{ $visitor->name }}</td>
+                        <td>{{ $visitor->department->name ?? '—' }}</td>
+                        <td>{{ $visitor->purpose ?? '—' }}</td>
+                        <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>
+                        <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('d M, h:i A') : '—' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 
+                                $visitor->status === 'Approved' ? 'success' : 
+                                ($visitor->status === 'Completed' ? 'secondary' : 'warning') }}">
+                                {{ $visitor->status }}
+                            </span>
+                        </td>
+                        <td>
+                            @php
+                                $isCompany = request()->is('company/*');
+                                $toggleRoute = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
+                            @endphp
+                            @if(auth()->user()->role !== 'guard')
+                                @if(!$visitor->out_time)
+                                    <div class="d-flex gap-2">
+                                        <!-- Verify Face Button -->
+                                        <button type="button" 
+                                            class="btn btn-sm btn-outline-primary d-flex align-items-center justify-content-center" 
+                                            style="width: 32px; height: 32px;" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#faceVerificationModal"
+                                            data-visitor-id="{{ $visitor->id }}"
+                                            data-visitor-name="{{ $visitor->name }}"
+                                            data-visitor-photo="{{ $visitor->photo ? asset('storage/' . $visitor->photo) : 'https://ui-avatars.com/api/?name=' . urlencode($visitor->name) }}"
+                                            title="Verify Face">
+                                            <i class="fas fa-user-check" style="font-size: 0.8rem;"></i>
+                                        </button>
+
+                                        <!-- Mark In/Out -->
+                                        <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline" id="markForm{{ $visitor->id }}">
+                                            @csrf
+                                            <input type="hidden" name="face_verified" id="faceVerified{{ $visitor->id }}" value="0">
+                                            <button type="button" class="btn btn-sm rounded-pill mark-btn {{ !$visitor->in_time ? 'btn-primary' : 'btn-danger' }}" data-visitor-id="{{ $visitor->id }}">
+                                                {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                @else
+                                    <span class="text-muted">Completed</span>
+                                @endif
+                            @else
+                                <span class="text-muted">Guard View Only</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-muted">No visitors found.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-4 d-flex justify-content-center">
+        {{ $visitors->links() }}
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<!-- Face Verification Modal -->
+<div class="modal fade" id="faceVerificationModal" tabindex="-1" aria-labelledby="faceVerificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="faceVerificationModalLabel">Face Verification</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Visitor Photo -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Visitor's Photo</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <img id="visitorPhoto" src="" alt="Visitor Photo" class="img-fluid rounded" style="max-height: 300px;">
+                                <p class="mt-2 mb-0 fw-semibold" id="visitorName"></p>
+                                <p class="text-muted small mb-0">Registered Photo</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Camera -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Face Verification</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info d-flex align-items-center mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <div class="small">Please take a clear photo of the visitor's face for verification.</div>
+                                </div>
+                                <div id="faceStatus" class="alert alert-warning mb-3 py-2 d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                    <span id="faceStatusText">Loading face detection models...</span>
+                                </div>
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="startCameraBtn">
+                                        <i class="fas fa-camera me-1"></i> Start Camera
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="stopCameraBtn" disabled>
+                                        <i class="fas fa-stop me-1"></i> Stop
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-success ms-auto" id="captureBtn" disabled>
+                                        <i class="fas fa-camera me-1"></i> Capture
+                                    </button>
+                                </div>
+                                <div class="border rounded-3 overflow-hidden mb-3" style="background: #000; min-height: 300px; position: relative;">
+                                    <div style="position: relative; width: 100%; height: 100%; min-height: 300px;">
+                                        <video id="cameraStream" 
+                                               style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;" 
+                                               autoplay playsinline muted></video>
+                                        <div id="previewContainer" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;">
+                                            <img id="snapshotPreview" style="width:100%;height:100%;object-fit:contain;" alt="Captured photo">
+                                        </div>
+                                        <canvas id="faceDetectionCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+                                        <div id="placeholderText" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f8f9fa;flex-direction:column;">
+                                            <div class="text-center p-4">
+                                                <div style="background:white;border-radius:50%;width:60px;height:60px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;border:2px solid #dee2e6;box-shadow:0 0 10px rgba(0,0,0,0.1);">
+                                                    <i class="fas fa-user text-muted" style="font-size:1.5rem;"></i>
+                                                </div>
+                                                <p class="text-muted mb-0 small">Camera is not active<br><small>Click 'Start Camera' to begin</small></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="verificationResult" class="alert d-none">
+                                    <i class="fas me-2"></i>
+                                    <span id="verificationText"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="verifyBtn" disabled>Verify Identity</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load face-api.js -->
+<script>
+// Global variables
+let modelsLoaded = false;
+let stream = null;
+let capturedImage = null;
+
+// Set the base URL for models
+const BASE_URL = window.location.origin;
+let MODEL_URL = `${BASE_URL}/models/`;
+console.log('Base URL:', BASE_URL);
+console.log('Model URL:', MODEL_URL);
+
+// Function to check if a file exists
+async function fileExists(url) {
+    try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok;
+    } catch (error) {
+        console.error(`Error checking file ${url}:`, error);
+        return false;
+    }
+}
+
+// Wait for the document to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Load face-api.js dynamically
+    const script = document.createElement('script');
+    script.src = '{{ asset('js/face-api/face-api.min.js') }}';
+    script.onload = function() {
+        console.log('face-api.js loaded successfully');
+        // Initialize models after face-api is loaded
+        loadModels();
+    };
+    script.onerror = function() {
+        console.error('Failed to load face-api.js');
+        updateFaceStatus('Error: Failed to load face detection library', 'danger');
+    };
+    document.head.appendChild(script);
+});
+
+// Function to update status messages
+function updateFaceStatus(message, type = 'info') {
+    const el = document.getElementById('faceStatus');
+    const txt = document.getElementById('faceStatusText');
+    if (!el || !txt) return;
+    
+    // Update text
+    txt.textContent = message;
+    
+    // Update status type
+    const types = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
+    types.forEach(t => el.classList.remove(`alert-${t}`));
+    el.classList.add(`alert-${type}`);
+    
+    // Show/hide spinner
+    const spinner = el.querySelector('.spinner-border');
+    if (spinner) {
+        spinner.style.display = type === 'info' ? 'inline-block' : 'none';
+    }
+}
+
+// Function to load face detection models
+async function loadModels() {
+    // Skip if models are already loaded
+    if (modelsLoaded) {
+        console.log('Models already loaded');
+        return true;
+    }
+
+    try {
+        updateFaceStatus('Loading face detection models...', 'info');
+        
+        // Load the models with progress updates
+        console.log('Loading SSD MobileNet model...');
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        
+        console.log('Loading Face Landmark model...');
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        
+        console.log('Loading Face Recognition model...');
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+        // If everything loads fine
+        console.log("All models loaded successfully!");
+        modelsLoaded = true;
+        updateFaceStatus("Face detection ready! Click 'Start Camera' to begin.", "success");
+        
+        // Enable the start camera button
+        const startBtn = document.getElementById('startCameraBtn');
+        if (startBtn) startBtn.disabled = false;
+        
+        return true;
+    } catch (error) {
+        // If there's an error
+        console.error("Error loading face models:", error);
+        updateFaceStatus("Error loading models: " + (error.message || 'Unknown error'), "danger");
+        return false;
+    }
+}
+
+// Function to stop the camera
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    const video = document.getElementById('cameraStream');
+    if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+    }
+    
+    const canvas = document.getElementById('faceDetectionCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    const startBtn = document.getElementById('startCameraBtn');
+    const stopBtn = document.getElementById('stopCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    
+    if (startBtn) startBtn.disabled = false;
+    if (stopBtn) stopBtn.disabled = true;
+    if (captureBtn) captureBtn.disabled = true;
+    
+    updateFaceStatus('Camera stopped', 'info');
+}
+
+// Function to reset verification
+function resetVerification() {
+    const previewContainer = document.getElementById('previewContainer');
+    const video = document.getElementById('cameraStream');
+    const verifyBtn = document.getElementById('verifyBtn');
+    
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (video) video.style.display = 'block';
+    if (verifyBtn) verifyBtn.disabled = true;
+    
+    const startBtn = document.getElementById('startCameraBtn');
+    const stopBtn = document.getElementById('stopCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    
+    if (startBtn) startBtn.disabled = false;
+    if (stopBtn) stopBtn.disabled = true;
+    if (captureBtn) captureBtn.disabled = true;
+}
+
+async function loadModels() {
+    // Skip if models are already loaded
+    if (modelsLoaded) {
+        console.log('Models already loaded');
+        return true;
+    }
+
+    try {
+        console.log('Starting to load models from:', MODEL_URL);
+        updateFaceStatus('Loading face detection models...', 'info');
+        
+        // Verify faceapi is available
+        if (typeof faceapi === 'undefined') {
+            throw new Error('faceapi is not defined. Check if face-api.js is loaded correctly.');
+        }
+        
+        // Test model URL accessibility
+        try {
+            const testUrl = `${MODEL_URL}ssd_mobilenetv1_model-weights_manifest.json`;
+            console.log('Testing model URL accessibility:', testUrl);
+            const response = await fetch(testUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to access model file: ${response.status} ${response.statusText}`);
+            }
+            console.log('Model URL is accessible');
+        } catch (fetchError) {
+            console.error('Error accessing model files:', fetchError);
+            throw new Error(`Cannot access model files. Please check if the path '${MODEL_URL}' is correct and accessible.`);
+        }
+        
+        // Load the models with progress updates
+        try {
+            console.log('Loading SSD MobileNet model...');
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+            console.log('SSD MobileNet model loaded successfully');
+            
+            console.log('Loading Face Landmark model...');
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            console.log('Face Landmark model loaded successfully');
+            
+            console.log('Loading Face Recognition model...');
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            console.log('Face Recognition model loaded successfully');
+
+            // If everything loads fine
+            console.log("All models loaded successfully!");
+            modelsLoaded = true;
+            updateFaceStatus("Face detection ready! Click 'Start Camera' to begin.", "success");
+            
+            // Enable the start camera button
+            const startBtn = document.getElementById('startCameraBtn');
+            if (startBtn) startBtn.disabled = false;
+            return true;
+        } catch (modelError) {
+            console.error('Error loading a specific model:', modelError);
+            throw modelError; // Re-throw to be caught by the outer catch
+        }
+    } catch (error) {
+        // If there's an error
+        const errorMsg = `Error loading face models: ${error.message || error}`;
+        console.error(errorMsg, error);
+        updateFaceStatus(errorMsg, "danger");
+        
+        // Log additional debugging info
+        console.log('Model URL being used:', MODEL_URL);
+        console.log('faceapi available:', typeof faceapi !== 'undefined');
+        if (typeof faceapi !== 'undefined') {
+            console.log('faceapi.nets:', faceapi.nets);
+        }
+        
+        return false;
+    }
+        updateFaceStatus("Error loading models", "danger");
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('faceVerificationModal');
+    const startBtn = document.getElementById('startCameraBtn');
+    const stopBtn = document.getElementById('stopCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const video = document.getElementById('cameraStream');
+    const visitorPhoto = document.getElementById('visitorPhoto');
+    const visitorName = document.getElementById('visitorName');
+    const previewContainer = document.getElementById('previewContainer');
+    const snapshotPreview = document.getElementById('snapshotPreview');
+
+    modal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const visitorId = button.getAttribute('data-visitor-id');
+        const name = button.getAttribute('data-visitor-name');
+        const photo = button.getAttribute('data-visitor-photo');
+        
+        modal.setAttribute('data-visitor-id', visitorId);
+        visitorName.textContent = name;
+        visitorPhoto.src = photo || '{{ asset("img/default-avatar.png") }}';
+        visitorPhoto.onerror = () => {
+            visitorPhoto.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`;
+        };
+        resetVerification();
+        loadModels();
+    });
+
+    modal.addEventListener('hidden.bs.modal', stopCamera);
+
+    startBtn.onclick = async function() {
+        try {
+            // Ensure models are loaded first
+            if (!modelsLoaded) {
+                updateFaceStatus('Loading face detection models...', 'info');
+                try {
+                    await loadModels();
+                    if (!modelsLoaded) {
+                        throw new Error('Failed to load face detection models');
+                    }
+                } catch (error) {
+                    console.error('Error loading models:', error);
+                    updateFaceStatus('Error loading face detection models', 'danger');
+                    return;
+                }
+            }
+
+            // Show loading state
+            updateFaceStatus('Starting camera...', 'info');
+            
+            // Hide placeholder and show video
+            const placeholderText = document.getElementById('placeholderText');
+            if (placeholderText) placeholderText.style.display = 'none';
+            
+            // Set up video element
+            video.style.display = 'block';
+            
+            // Stop any existing stream
+            if (stream) {
+                stopCamera();
+            }
+            
+            // Get camera stream with constraints
+            const constraints = {
+                video: { 
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user'
+                },
+                audio: false
+            };
+
+            // Request camera access
+            console.log('Requesting camera access...');
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            if (!stream) {
+                throw new Error('Could not access camera');
+            }
+            
+            // Set video source
+            video.srcObject = stream;
+            
+            // Wait for video to be ready
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error('Camera took too long to start'));
+                }, 5000);
+                
+                video.onloadedmetadata = () => {
+                    clearTimeout(timeout);
+                    video.play().then(resolve).catch(reject);
+                };
+                
+                video.onerror = (error) => {
+                    clearTimeout(timeout);
+                    reject(error);
+                };
+            });
+            
+            // Update UI
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            captureBtn.disabled = false;
+            updateFaceStatus('Camera started. Position your face in the frame.', 'success');
+            
+            // Start face detection
+            detectFaces();
+            
+        } catch (error) {
+            console.error('Error in startCamera:', error);
+            updateFaceStatus(`Error: ${error.message || 'Failed to start camera'}`, 'danger');
+            
+            // Show error in placeholder if it exists
+            // Show placeholder again
+            const placeholderText = document.getElementById('placeholderText');
+            if (placeholderText) {
+                placeholderText.style.display = 'flex';
+                placeholderText.querySelector('p').innerHTML = 'Failed to start camera<br><small>' + (error.message || 'Please try again') + '</small>';
+            }
+            
+            // Stop any existing stream
+            stopCamera();
+        }
+    };
+
+    stopBtn.onclick = function() {
+        stopCamera();
+    };
+
+    captureBtn.onclick = async function() {
+        const canvas = faceapi.createCanvasFromMedia(video);
+        const displaySize = { width: video.width, height: video.height };
+        canvas.width = displaySize.width;
+        canvas.height = displaySize.height;
+        const detections = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+        
+        if (!detections) {
+            alert("No face detected. Please try again.");
+            return;
+        }
+
+        capturedImage = canvas.toDataURL('image/jpeg');
+        snapshotPreview.src = capturedImage;
+        previewContainer.style.display = 'block';
+        video.style.display = 'none';
+        verifyBtn.disabled = false;
+    };
+
+    verifyBtn.onclick = function() {
+        if (!capturedImage) return updateFaceStatus('Please capture an image first.', 'warning');
+        updateFaceStatus('Verifying...', 'info');
+        verifyBtn.disabled = true;
+        setTimeout(() => updateFaceStatus('Verification successful!', 'success'), 1500);
+    };
+
+    function resetVerification() {
+        previewContainer.style.display = 'none';
+        video.style.display = 'block';
+        verifyBtn.disabled = true;
+        updateFaceStatus('Ready for face verification', 'info');
+    }
+
+    function updateFaceStatus(message, type = 'info') {
+        const el = document.getElementById('faceStatus');
+        const txt = document.getElementById('faceStatusText');
+        if (!el || !txt) return;
+        txt.textContent = message;
+        el.className = `alert alert-${type} mb-3 py-2 d-flex align-items-center`;
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        video.srcObject = null;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        captureBtn.disabled = true;
+        verifyBtn.disabled = true;
+        updateFaceStatus('Camera stopped', 'info');
+    }
+});
+</script>
+@endpush

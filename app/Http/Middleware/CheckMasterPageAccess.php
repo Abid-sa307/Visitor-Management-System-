@@ -25,31 +25,72 @@ class CheckMasterPageAccess
             return $next($request); // Superadmin can access anything
         }
 
-        // If user is company, skip master_pages check (company users manage their own panel)
-        if ($role === 'company') {
+        // If no page is provided, try to get it from the route
+        if (!$page) {
+            $page = $request->route()->defaults['page'] ?? null;
+            // If still no page, try to determine from the route name
+            if (!$page) {
+                $routeName = $request->route()->getName();
+                // Map route names to page keys
+                $routeToPageMap = [
+                    'dashboard' => 'dashboard',
+                    'visitors.index' => 'visitors',
+                    'visitors.history' => 'visitor_history',
+                    'visitors.inout' => 'visitor_inout',
+                    'approvals.index' => 'approvals',
+                    'reports.*' => 'reports',
+                    'employees.*' => 'employees',
+                    'visitor-categories.*' => 'visitor_categories',
+                    'departments.*' => 'departments',
+                    'users.*' => 'users',
+                    'security-checks.*' => 'security_checks',
+                    'visitor-checkup.*' => 'visitor_checkup',
+                    'qr-code.*' => 'qr_code'
+                ];
+
+                foreach ($routeToPageMap as $routePattern => $pageKey) {
+                    if (str_is($routePattern, $routeName)) {
+                        $page = $pageKey;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If still no specific page to check, proceed
+        if (!$page) {
             return $next($request);
         }
 
-        // If no page is provided, proceed normally
-        if (!$page) {
-            $page = $request->route()->defaults['page'] ?? null;
+        // For company users, check if they have access to the requested page
+        if ($role === 'company') {
+            $pages = $user->master_pages ?? [];
+            if (!is_array($pages)) {
+                $pages = is_string($pages) && $pages !== '' ? json_decode($pages, true) : [];
+            }
+
+            // Special case: company users should have access to their own company dashboard
+            if ($page === 'dashboard' && $request->is('company/dashboard*')) {
+                return $next($request);
+            }
+
+            // Check if the user has access to the requested page
+            if (!empty($pages) && !in_array($page, $pages, true)) {
+                return redirect('/company/dashboard')->with('error', 'Access denied for this section.');
+            }
+
+            return $next($request);
         }
 
-        if (!$page) return $next($request); // If no specific page, proceed normally
-
-        // Decode master_pages and check for access
-        $pages = $user->master_pages;
+        // For other users, check master pages access
+        $pages = $user->master_pages ?? [];
         if (!is_array($pages)) {
             $pages = is_string($pages) && $pages !== '' ? json_decode($pages, true) : [];
         }
 
-        // If the user does not have access to this page, redirect to the correct dashboard
-        if (!in_array($page, $pages, true)) {
-            if ($role === 'company') {
-                return redirect('/company/dashboard')->with('error', 'Access denied for this section.');
-            } else {
-                return redirect('/dashboard')->with('error', 'Access denied for this section.');
-            }
+        // If the user doesn't have access to the requested page, redirect to dashboard
+        if (!empty($pages) && !in_array($page, $pages, true)) {
+            return redirect('/dashboard')->with('error', 'Access denied for this section.');
         }
 
         return $next($request);

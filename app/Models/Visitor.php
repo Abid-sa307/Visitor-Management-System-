@@ -28,7 +28,8 @@ class Visitor extends Model
         'visitor_category_id',
         'email',
         'phone',
-        'photo',
+        'face_encoding',
+        'face_image',
         'department_id',
         'purpose',
         'person_to_visit',
@@ -41,6 +42,41 @@ class Visitor extends Model
         'last_status',
         'status_changed_at',
     ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'documents' => 'array',
+        'in_time' => 'datetime',
+        'out_time' => 'datetime',
+        'status_changed_at' => 'datetime',
+        'face_encoding' => 'array',
+    ];
+
+    /**
+     * Get the face_encoding attribute.
+     *
+     * @param  mixed  $value
+     * @return mixed
+     */
+    public function getFaceEncodingAttribute($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        // If it's already an array, return it as is
+        if (is_array($value)) {
+            return $value;
+        }
+
+        // If it's a JSON string, decode it
+        $decoded = json_decode($value, true);
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+    }
 
     /**
      * Get the branch that the visitor belongs to.
@@ -78,15 +114,6 @@ class Visitor extends Model
             }
         });
     }
-
-    protected $casts = [
-        'documents' => 'array',
-        'status_changed_at' => 'datetime',
-        'in_time' => 'datetime',
-        'out_time' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
 
 
     public function category()
