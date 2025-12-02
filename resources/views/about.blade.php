@@ -349,99 +349,6 @@
           </p>
         </div>
 
-        <!-- Slide 2 -->
-        <div class="carousel-item">
-          <div class="row justify-content-center">
-            <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
-              <img src="{{ asset('images/team-img/lucky-maddhesiya.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Lucky Maddhesiya">
-              <h4 class="fw-bold">Lucky Maddhesiya</h4>
-              <p class="team-role">Junior Software Developer</p>
-              <p class="team-quote">"Focused on learning, building, and contributing."</p>
-            </div>
-            <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
-              <img src="{{ asset('images/team-img/jaimin-prajapati.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Jaimin Prajapati">
-              <h4 class="fw-bold">Jaimin Prajapati</h4>
-              <p class="team-role">Software Testing</p>
-              <p class="team-quote">"Delivering bug-free quality products."</p>
-            </div>
-            <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
-              <img src="{{ asset('images/team-img/praveen-patel.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Pravin Patel">
-              <h4 class="fw-bold">Pravin Patel</h4>
-              <p class="team-role">DevOps Engineer</p>
-              <p class="team-quote">"Bridging development & operations."</p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Carousel Controls -->
-      <button class="carousel-control-prev" type="button" data-bs-target="#teamCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#teamCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span>
-      </button>
-    </div>
-  </div>
-</section> 
-
-
-<!-- TEAM SECTION -->
-<section id="team" class="py-5 bg-white">
-  <div class="container">
-    <div class="d-flex justify-content-between align-items-end mb-4">
-      <h2 class="fw-bold mb-0">The Team</h2>
-    </div>
-
-    <!-- Swiper -->
-    <div class="swiper myTeamSwiper">
-      <div class="swiper-wrapper">
-
-        @php
-          $team = [
-            [
-              'name' => 'Shahnavaz Saiyed',
-              'role' => 'Project Manager',
-              'photo' => asset('images/team-img/shahnavaz-saiyed.png'),
-              'quote' => 'Leading projects with vision, precision, and teamwork.'
-            ],
-            [
-              'name' => 'Abid Saiyed',
-              'role' => 'Software Engineer',
-              'photo' => asset('images/team-img/abid-saiyed.jpg'),
-              'quote' => 'Passionate about writing clean, scalable code.'
-            ],
-            [
-              'name' => 'Adnan Syed',
-              'role' => 'Support & Sales Head',
-              'photo' => asset('images/team-img/adnan-saiyed.png'),
-              'quote' => 'Ensuring clients get the right solutions.'
-            ],
-            [
-              'name' => 'Lucky Maddhesiya',
-              'role' => 'Junior Software Developer',
-              'photo' => asset('images/team-img/lucky-maddhesiya.png'),
-              'quote' => 'Focused on learning, building, and contributing.'
-            ],
-            [
-              'name' => 'Jaimin Prajapati',
-              'role' => 'Software Testing',
-              'photo' => asset('images/team-img/jaimin-prajapati.png'),
-              'quote' => 'Delivering bug-free quality products.'
-            ],
-            [
-              'name' => 'Pravin Patel',
-              'role' => 'DevOps Engineer',
-              'photo' => asset('images/team-img/praveen-patel.png'),
-              'quote' => 'Bridging development & operations.'
-            ],
-          ];
-        @endphp
-
-        @foreach($team as $member)
-        <div class="swiper-slide">
-          <div class="team-card text-center border rounded-4 bg-white p-4 shadow-sm position-relative h-100 d-flex flex-column justify-content-between">
         <div class="col-lg-6 text-center">
           <div class="mb-3" style="font-size: 3rem; color: #fff;">
             
@@ -656,7 +563,7 @@
               ],
               [
                 'name' => 'Abid Saiyed',
-                'role' => 'Senior Software Developer',
+                'role' => 'Software Engineer',
                 'photo' => asset('images/team-img/abid-saiyed.png'),
                 'quote' => 'Passionate about writing clean, scalable code.'
               ],
