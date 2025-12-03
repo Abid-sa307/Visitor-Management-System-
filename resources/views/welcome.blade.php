@@ -6,6 +6,26 @@
     <title>Smart Visitor Management System </title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+     <!-- ✅ Google Search Console verification -->
+    <meta name="google-site-verification" content="Z0TK86oKOkh7F64lpcdDYq4SxFx2cV4toObeeQ_wCYE" />
+
+    <!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TP5XHMCV');</script>
+<!-- End Google Tag Manager -->
+
+    <!-- ✅ Google Analytics GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8PZQRBG9FJ"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-8PZQRBG9FJ');
+    </script>
+    
     <!-- SEO Meta Tags -->
     <meta name="description"
         content="Powerful Visitor Management System for any setup—single location or multi-location workplaces. Manage visitors for offices, factories, hospitals, schools, hotels, malls, events, residential societies, industrial units, cold storage and even kabrastan/burial grounds from one platform. Smart self check-in, QR/OTP entry, face recognition, access control, digital visitor logs, staff attendance, contractor management & real-time dashboards. Request a free demo now.">
@@ -505,6 +525,10 @@
 </head>
 
 <body class="d-flex flex-column min-vh-100">
+    <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TP5XHMCV"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
     {{-- Header --}}
     @include('layouts.header')

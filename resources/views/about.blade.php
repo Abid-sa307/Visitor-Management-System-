@@ -351,9 +351,7 @@
 
         <div class="col-lg-6 text-center">
           <div class="mb-3" style="font-size: 3rem; color: #fff;">
-            <span class="badge rounded-circle p-4" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
-              <i class="bi bi-building"></i>
-            </span>
+            
           </div>
           <img
             src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
@@ -566,7 +564,7 @@
               [
                 'name' => 'Abid Saiyed',
                 'role' => 'Software Engineer',
-                'photo' => asset('images/team-img/abid-saiyed.jpg'),
+                'photo' => asset('images/team-img/abid-saiyed.png'),
                 'quote' => 'Passionate about writing clean, scalable code.'
               ],
               [
