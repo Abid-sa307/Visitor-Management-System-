@@ -18,15 +18,16 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
   <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
   <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
   <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
   <link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icons/icon-192x192.png') }}">
-  {{--
-  <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
+  {{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
   <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+
   <style>
     :root {
       --primary: #4e73df;
@@ -47,7 +48,6 @@
       color: #4a4a4a;
       line-height: 1.6;
     }
-
 
     /* About Hero Section */
     .about-hero {
@@ -175,19 +175,6 @@
       left: -50px;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .mv-card {
-        padding: 2rem;
-      }
-
-      .mv-icon {
-        width: 80px;
-        height: 80px;
-        font-size: 2rem;
-      }
-    }
-
     /* Values Section */
     .values-section {
       background-color: #fff;
@@ -223,27 +210,6 @@
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
 
-    /* Team Section */
-    .team-section {
-      padding: 100px 0;
-      background-color: var(--light);
-    }
-
-    .team-member {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .team-img {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin: 0 auto 1.5rem;
-      border: 5px solid white;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    }
-
     /* Stats Section */
     .stats-section {
       padding: 80px 0;
@@ -263,7 +229,7 @@
       background-color: var(--light);
     }
 
-    .team-member {
+    .team-card {
       text-align: center;
       margin-bottom: 2rem;
       background: white;
@@ -274,19 +240,9 @@
       height: 100%;
     }
 
-    .team-member:hover {
+    .team-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-    }
-
-    .team-img {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin: 0 auto 1.5rem;
-      border: 5px solid white;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     }
 
     .team-role {
@@ -298,11 +254,7 @@
     .team-quote {
       font-style: italic;
       color: #666;
-      border-left: 3px solid var(--primary);
-      padding-left: 1rem;
-      margin-top: 1rem;
     }
-
 
     /* CTA Section */
     .cta-section {
@@ -310,14 +262,17 @@
       background-color: white;
     }
 
-
     /* Responsive adjustments */
     @media (max-width: 768px) {
       .about-hero {
         padding: 80px 0 60px;
       }
 
-      .mission-icon {
+      .mv-card {
+        padding: 2rem;
+      }
+
+      .mv-icon {
         width: 80px;
         height: 80px;
         font-size: 2rem;
@@ -332,18 +287,6 @@
       .stat-number {
         font-size: 2.5rem;
       }
-
-      .team-slider {
-        padding: 0 30px;
-      }
-
-      .carousel-control-prev,
-      .carousel-control-next {
-        width: 40px;
-        height: 40px;
-      }
-
-
     }
   </style>
 </head>
@@ -357,19 +300,20 @@
     <div class="container about-hero-content">
       <div class="row justify-content-center">
         <div class="col-lg-8 text-center">
-          {{-- <h1 class="display-4 fw-bold mb-4">Reimagining Visitor Management for the Modern Workplace</h1> --}}
-          <h1 class="display-4 fw-bold mb-4">About N&amp;T Software &ndash; Building a Paperless Future in Visitor
-            Management</h1>
-
-          <p class="lead">We're on a mission to create safer, more efficient and welcoming spaces through innovative
-            technology that transforms how organizations manage their visitors.</p>
+          <h1 class="display-4 fw-bold mb-4">
+            About N&amp;T Software – Building a Paperless Future in Visitor Management
+          </h1>
+          <p class="lead">
+            We're on a mission to create safer, more efficient and welcoming spaces through innovative
+            technology that transforms how organizations manage their visitors.
+          </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Mission Section -->
-  <section class="mission-section">
+  <!-- Our Story -->
+  <section class="mission-section py-5 bg-white">
     <div class="container">
       <div class="row align-items-center">
         <div class="col-lg-6">
@@ -377,8 +321,7 @@
 
           <p class="lead">
             Founded in 2022, <strong>N&T Software Pvt Ltd</strong> set out with a clear vision: to transform the world
-            into a
-            pen-paperless future by empowering organizations with smart, secure and fully digital solutions.
+            into a pen-paperless future by empowering organizations with smart, secure and fully digital solutions.
           </p>
 
           <p>
@@ -404,119 +347,32 @@
             <em>"Our vision is not just to digitize visitor management, but to inspire a global movement
               towards innovation, sustainability and a truly paperless world."</em>
           </p>
-
         </div>
-<<<<<<< HEAD
+
         <div class="col-lg-6 text-center">
-          <div class="mission-icon">
-            <i class="bi bi-building"></i>
+          <div class="mb-3" style="font-size: 3rem; color: #fff;">
+            <span class="badge rounded-circle p-4" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+              <i class="bi bi-building"></i>
+            </span>
           </div>
           <img
             src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
             alt="Modern office reception" class="img-fluid rounded shadow">
         </div>
-=======
-    </div>
-</section>
-
-<!-- Leadership & Mission Section -->
-<section class="py-5 bg-light">
-  <div class="container">
-    <div class="row align-items-center mb-5">
-      
-      <!-- Founder & MD -->
-      <div class="col-lg-6">
-        <h2 class="fw-bold mb-4">Founder & Chairman</h2>
-        <p class="lead">
-          <strong>Talemahmad Tunvar</strong>, the visionary Founder and 
-          Chairman of <strong>N&T Group Of Company</strong>, 
-          laid the foundation of the company with a mission to 
-          transform India into a truly paperless nation.
-        </p>
-        <p>
-          His dedication to building smart, secure, and digital-first 
-          solutions has redefined the concept of visitor management. 
-          Under his leadership, our VMS platform has become a catalyst 
-          for digital transformation across industries, aligning with 
-          the vision of <strong>Digital World</strong>.
-        </p>
-        <p>
-          With a deep commitment to sustainability and innovation, 
-          he continues to inspire organizations to move beyond 
-          manual processes and embrace automation for a smarter, 
-          more eco-friendly future.
-        </p>
-      </div>
-      <div class="col-lg-6 text-center">
-        <img src="/images/founder-img.jpeg" 
-             alt="Talemahmad Tunvar - Founder & MD" 
-             class="img-fluid rounded-circle shadow" 
-             style="max-width: 280px;">
->>>>>>> 48c412247fa2167594cd3f10516a9b33dca9b07e
       </div>
     </div>
   </section>
 
-<<<<<<< HEAD
-  <!-- Leadership & Mission Section -->
+  <!-- Leadership Section -->
   <section class="py-5 bg-light">
-=======
-    <div class="row align-items-center">
-      <!-- Director -->
-      <div class="col-lg-6 order-lg-2">
-        <h2 class="fw-bold mb-4">Project Manager</h2>
-        <p class="lead">
-          <strong>Shahnavaz saiyed</strong>, Project Manager at 
-          <strong>N&T Software Pvt Ltd</strong>, plays a pivotal 
-          role in ensuring operational excellence and innovation 
-          across all our solutions.
-        </p>
-        <p>
-          He is the driving force behind aligning our Visitor 
-          Management System with global standards and customer 
-          expectations. His leadership ensures every feature 
-          reflects efficiency, scalability, and security.
-        </p>
-        <p>
-          With a future-focused approach, Shahnavaz continues to 
-          guide our teams in building solutions that don’t just 
-          serve businesses today but are ready for tomorrow’s 
-          challenges.
-        </p>
-      </div>
-      <div class="col-lg-6 text-center order-lg-1">
-        <img src="/images/team-img/shahnavaz-saiyed.png" 
-             alt="Shahnavaw - Director" 
-             class="img-fluid rounded-circle shadow" 
-             style="max-width: 280px;">
-      </div>
-    </div>
-
-    <!-- Mission Statement -->
-    <div class="row mt-5">
-      <div class="col-lg-10 mx-auto text-center">
-        <p class="lead fw-bold">
-          <em>“Our vision is not just to digitize visitor management, 
-          but to inspire a nationwide movement towards innovation, 
-          sustainability, and a truly paperless world.”</em>
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Mission Vision Section -->
-<section class="mission-vision-section">
->>>>>>> 48c412247fa2167594cd3f10516a9b33dca9b07e
     <div class="container">
       <div class="row align-items-center mb-5">
-
-        <!-- Founder & MD -->
+        <!-- Founder & Chairman -->
         <div class="col-lg-6">
-          <h2 class="fw-bold mb-4">Our Founder & MD</h2>
+          <h2 class="fw-bold mb-4">Founder & Chairman</h2>
           <p class="lead">
             <strong>Talemahmad Tunvar</strong>, the visionary Founder and
-            Managing Director of <strong>N&T Group Of Company</strong>,
+            Chairman of <strong>N&T Group Of Company</strong>,
             laid the foundation of the company with a mission to
             transform India into a truly paperless nation.
           </p>
@@ -525,7 +381,7 @@
             solutions has redefined the concept of visitor management.
             Under his leadership, our VMS platform has become a catalyst
             for digital transformation across industries, aligning with
-            the vision of <strong>Digital World</strong>.
+            the vision of a <strong>Digital World</strong>.
           </p>
           <p>
             With a deep commitment to sustainability and innovation,
@@ -535,17 +391,19 @@
           </p>
         </div>
         <div class="col-lg-6 text-center">
-          <img src="/images/founder-img.png" alt="Talemahmad Tunvar - Founder & MD"
-            class="img-fluid rounded-circle shadow" style="max-width: 280px;">
+          <img src="/images/founder-img.jpeg"
+               alt="Talemahmad Tunvar - Founder & Chairman"
+               class="img-fluid rounded-circle shadow"
+               style="max-width: 280px;">
         </div>
       </div>
 
       <div class="row align-items-center">
-        <!-- Director -->
+        <!-- Project Manager -->
         <div class="col-lg-6 order-lg-2">
-          <h2 class="fw-bold mb-4">Our Director & Project Manager</h2>
+          <h2 class="fw-bold mb-4">Project Manager</h2>
           <p class="lead">
-            <strong>Shahnavaz saiyed</strong>, Director & Project Manager at
+            <strong>Shahnavaz Saiyed</strong>, Project Manager at
             <strong>N&T Software Pvt Ltd</strong>, plays a pivotal
             role in ensuring operational excellence and innovation
             across all our solutions.
@@ -564,8 +422,10 @@
           </p>
         </div>
         <div class="col-lg-6 text-center order-lg-1">
-          <img src="/images/team-img/shahnavaz-saiyed.png" alt="Shahnavaw - Director"
-            class="img-fluid rounded-circle shadow" style="max-width: 280px;">
+          <img src="/images/team-img/shahnavaz-saiyed.png"
+               alt="Shahnavaz Saiyed - Project Manager"
+               class="img-fluid rounded-circle shadow"
+               style="max-width: 280px;">
         </div>
       </div>
 
@@ -582,7 +442,7 @@
     </div>
   </section>
 
-  <!-- Mission Vision Section -->
+  <!-- Mission & Vision Section -->
   <section class="mission-vision-section">
     <div class="container">
       <h2 class="text-center fw-bold mb-5">Our Mission & Vision</h2>
@@ -592,94 +452,18 @@
             <div class="mv-icon mission">
               <i class="bi bi-bullseye"></i>
             </div>
-<<<<<<< HEAD
             <div class="mv-content">
               <h3>Our Mission</h3>
-              <p>To empower organizations with a smart, secure and seamless visitor management solution that enhances
+              <p>
+                To empower organizations with a smart, secure and seamless visitor management solution that enhances
                 safety, optimizes workflows and creates a professional experience for every visitor. We're committed to
                 delivering innovative technology that transforms how businesses manage their visitors while ensuring the
-                highest standards of security and efficiency.</p>
-=======
-            <div class="col-md-4">
-                <div class="value-card">
-                    <div class="value-icon" style="background: linear-gradient(135deg, var(--success) 0%, #17a673 100%);">
-                        <i class="bi bi-lightbulb"></i>
-                    </div>
-                    <h4 class="fw-bold">Innovation</h4>
-                    <p>We continuously evolve our platform to incorporate the latest technologies and meet emerging needs.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="value-card">
-                    <div class="value-icon" style="background: linear-gradient(135deg, var(--info) 0%, #2a96a5 100%);">
-                        <i class="bi bi-people"></i>
-                    </div>
-                    <h4 class="fw-bold">User-Centric Design</h4>
-                    <p>We build products that are intuitive, accessible, and delightful for everyone who interacts with them.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Stats Section -->
-<section class="stats-section text-center">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-3 col-6 mb-4 mb-md-0">
-                <div class="stat-number">500+</div>
-                <div class="stat-label">Organizations Served</div>
-            </div>
-            <div class="col-md-3 col-6 mb-4 mb-md-0">
-                <div class="stat-number">1M+</div>
-                <div class="stat-label">Visitors Processed</div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-number">99.9%</div>
-                <div class="stat-label">Uptime Reliability</div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Customer Support</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- <!-- Team Section -->
-<section class="team-section py-5">
-  <div class="container">
-    <h2 class="text-center fw-bold mb-3">Our Amazing Team</h2>
-    <p class="text-center fw-bold mb-5">Who Committed to Providing Excellent Customer Service</p>
-
-    <!-- Multi-item Carousel -->
-    <div id="teamCarousel" class="carousel slide" data-bs-ride="carousel">
-      <div class="carousel-inner">
-
-        <!-- Slide 1 -->
-        <div class="carousel-item active">
-          <div class="row justify-content-center">
-            <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
-              <img src="{{ asset('images/team-img/shahnavaz-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Shahnavaz Saiyed">
-              <h4 class="fw-bold">Shahnavaz Saiyed</h4>
-              <p class="team-role">Project Manager</p>
-              <p class="team-quote">"Leading projects with vision, precision, and teamwork."</p>
-            </div>
-            <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
-              <img src="{{ asset('images/team-img/abid-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Abid Saiyed">
-              <h4 class="fw-bold">Abid Saiyed</h4>
-              <p class="team-role">Software Engineer</p>
-              <p class="team-quote">"Passionate about writing clean, scalable code."</p>
-            </div>
-            <div class="col-lg-4 col-md-6 col-sm-12 text-center mb-4">
-              <img src="{{ asset('images/team-img/adnan-saiyed.png') }}" class="rounded-circle mb-3" width="120" height="130" alt="Adnan Syed">
-              <h4 class="fw-bold">Adnan Syed</h4>
-              <p class="team-role">Support & Sales Head</p>
-              <p class="team-quote">"Ensuring clients get the right solutions."</p>
->>>>>>> 48c412247fa2167594cd3f10516a9b33dca9b07e
+                highest standards of security and efficiency.
+              </p>
             </div>
           </div>
         </div>
+
         <div class="col-md-6">
           <div class="mv-card vision-card">
             <div class="mv-icon vision">
@@ -687,11 +471,13 @@
             </div>
             <div class="mv-content">
               <h3>Our Vision</h3>
-              <p>To become the global standard for visitor management, revolutionizing how organizations welcome and
+              <p>
+                To become the global standard for visitor management, revolutionizing how organizations welcome and
                 manage guests. We envision a world where every visitor experience is seamless, secure and
                 memorable—where technology fosters connections rather than creating barriers. Through continuous
                 innovation and customer-centric design, we aim to set new benchmarks for safety, efficiency and
-                hospitality in the digital age.</p>
+                hospitality in the digital age.
+              </p>
             </div>
           </div>
         </div>
@@ -699,8 +485,6 @@
     </div>
   </section>
 
-
-<<<<<<< HEAD
   <!-- Values Section -->
   <section class="values-section">
     <div class="container">
@@ -709,69 +493,8 @@
         <div class="col-md-4">
           <div class="value-card">
             <div class="value-icon"
-              style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+                 style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
               <i class="bi bi-shield-check"></i>
-=======
-<!-- TEAM SECTION -->
-<section id="team" class="py-5 bg-white">
-  <div class="container">
-    <div class="d-flex justify-content-between align-items-end mb-4">
-      <h2 class="fw-bold mb-0">The Team</h2>
-    </div>
-
-    <!-- Swiper -->
-    <div class="swiper myTeamSwiper">
-      <div class="swiper-wrapper">
-
-        @php
-          $team = [
-            [
-              'name' => 'Shahnavaz Saiyed',
-              'role' => 'Project Manager',
-              'photo' => asset('images/team-img/shahnavaz-saiyed.png'),
-              'quote' => 'Leading projects with vision, precision, and teamwork.'
-            ],
-            [
-              'name' => 'Abid Saiyed',
-              'role' => 'Software Engineer',
-              'photo' => asset('images/team-img/abid-saiyed.jpg'),
-              'quote' => 'Passionate about writing clean, scalable code.'
-            ],
-            [
-              'name' => 'Adnan Syed',
-              'role' => 'Support & Sales Head',
-              'photo' => asset('images/team-img/adnan-saiyed.png'),
-              'quote' => 'Ensuring clients get the right solutions.'
-            ],
-            [
-              'name' => 'Lucky Maddhesiya',
-              'role' => 'Junior Software Developer',
-              'photo' => asset('images/team-img/lucky-maddhesiya.png'),
-              'quote' => 'Focused on learning, building, and contributing.'
-            ],
-            [
-              'name' => 'Jaimin Prajapati',
-              'role' => 'Software Testing',
-              'photo' => asset('images/team-img/jaimin-prajapati.png'),
-              'quote' => 'Delivering bug-free quality products.'
-            ],
-            [
-              'name' => 'Pravin Patel',
-              'role' => 'DevOps Engineer',
-              'photo' => asset('images/team-img/praveen-patel.png'),
-              'quote' => 'Bridging development & operations.'
-            ],
-          ];
-        @endphp
-
-        @foreach($team as $member)
-        <div class="swiper-slide">
-          <div class="team-card text-center border rounded-4 bg-white p-4 shadow-sm position-relative h-100 d-flex flex-column justify-content-between">
-            
-            <!-- Top gradient bar -->
-            <div class="top-bar position-absolute top-0 start-0 w-100 rounded-top-4" 
-                 style="height: 5px; background: linear-gradient(to right, #2563eb, #10b981);">
->>>>>>> 48c412247fa2167594cd3f10516a9b33dca9b07e
             </div>
             <h4 class="fw-bold">Security First</h4>
             <p>We prioritize the safety and security of your premises, employees and visitors above all else.</p>
@@ -779,7 +502,8 @@
         </div>
         <div class="col-md-4">
           <div class="value-card">
-            <div class="value-icon" style="background: linear-gradient(135deg, var(--success) 0%, #17a673 100%);">
+            <div class="value-icon"
+                 style="background: linear-gradient(135deg, var(--success) 0%, #17a673 100%);">
               <i class="bi bi-lightbulb"></i>
             </div>
             <h4 class="fw-bold">Innovation</h4>
@@ -788,7 +512,8 @@
         </div>
         <div class="col-md-4">
           <div class="value-card">
-            <div class="value-icon" style="background: linear-gradient(135deg, var(--info) 0%, #2a96a5 100%);">
+            <div class="value-icon"
+                 style="background: linear-gradient(135deg, var(--info) 0%, #2a96a5 100%);">
               <i class="bi bi-people"></i>
             </div>
             <h4 class="fw-bold">User-Centric Design</h4>
@@ -811,7 +536,7 @@
           <div class="stat-number">1M+</div>
           <div class="stat-label">Visitors Processed</div>
         </div>
-        <div class="col-md-3 col-6">
+        <div class="col-md-3 col-6 mb-4 mb-md-0">
           <div class="stat-number">99.9%</div>
           <div class="stat-label">Uptime Reliability</div>
         </div>
@@ -823,30 +548,25 @@
     </div>
   </section>
 
-
   <!-- TEAM SECTION -->
-  <section id="team" class="py-5 bg-white">
+  <section id="team" class="team-section">
     <div class="container">
-      <div class="d-flex justify-content-between align-items-end mb-4">
-        <h2 class="fw-bold mb-0">The Team</h2>
-      </div>
+      <h2 class="fw-bold text-center mb-4">The Team</h2>
 
-      <!-- Swiper -->
       <div class="swiper myTeamSwiper">
         <div class="swiper-wrapper">
-
           @php
             $team = [
               [
                 'name' => 'Shahnavaz Saiyed',
-                'role' => 'Director & Project Manager',
+                'role' => 'Project Manager',
                 'photo' => asset('images/team-img/shahnavaz-saiyed.png'),
                 'quote' => 'Leading projects with vision, precision and teamwork.'
               ],
               [
                 'name' => 'Abid Saiyed',
-                'role' => 'Senior Software Developer',
-                'photo' => asset('images/team-img/abid-saiyed.png'),
+                'role' => 'Software Engineer',
+                'photo' => asset('images/team-img/abid-saiyed.jpg'),
                 'quote' => 'Passionate about writing clean, scalable code.'
               ],
               [
@@ -871,42 +591,37 @@
                 'name' => 'Pravin Patel',
                 'role' => 'DevOps Engineer',
                 'photo' => asset('images/team-img/praveen-patel.png'),
-                'quote' => 'Bridging development & operations.'
+                'quote' => 'Bridging development and operations.'
               ],
               [
                 'name' => 'Divyesh Bhambhana',
                 'role' => 'Full-stack Engineer (MERN)',
                 'photo' => asset('images/team-img/divyesh.jpeg'),
-                'quote' => 'Building reliable MERN applications.',
-
+                'quote' => 'Building reliable MERN applications.'
               ]
             ];
           @endphp
 
-          @foreach($team as $member)
+          @foreach ($team as $member)
             <div class="swiper-slide">
-              <div
-                class="team-card text-center border rounded-4 bg-white p-4 shadow-sm position-relative h-100 d-flex flex-column justify-content-between">
-
-                <!-- Top gradient bar -->
+              <div class="team-card border rounded-4 bg-white p-4 shadow-sm position-relative h-100 d-flex flex-column justify-content-between">
                 <div class="top-bar position-absolute top-0 start-0 w-100 rounded-top-4"
                   style="height: 5px; background: linear-gradient(to right, #2563eb, #10b981);">
                 </div>
 
-                <!-- ✅ Removed blue glow background -->
                 <div class="position-relative mt-3 mb-3">
                   <img src="{{ $member['photo'] }}" alt="{{ $member['name'] }}"
-                    class="rounded-circle shadow-sm border border-2 border-white position-relative" width="100"
-                    height="100">
+                       class="rounded-circle shadow-sm border border-2 border-white position-relative"
+                       width="100" height="100">
                 </div>
 
                 <h5 class="fw-semibold mt-2 mb-1">{{ $member['name'] }}</h5>
                 <span class="badge bg-light text-dark small mb-3">{{ $member['role'] }}</span>
 
                 <hr class="mx-auto"
-                  style="width: 60px; background: linear-gradient(to right, #2563eb, #10b981); height: 2px; border: none;">
+                    style="width: 60px; background: linear-gradient(to right, #2563eb, #10b981); height: 2px; border: none;">
 
-                <blockquote class="fst-italic text-muted px-2 small position-relative">
+                <blockquote class="team-quote fst-italic text-muted px-2 small position-relative">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#93c5fd"
                     class="bi bi-quote position-absolute" viewBox="0 0 16 16" style="left:0; top:-5px;">
                     <path
@@ -917,7 +632,6 @@
               </div>
             </div>
           @endforeach
-
         </div>
 
         <!-- Swiper Controls -->
@@ -928,13 +642,30 @@
     </div>
   </section>
 
+  <!-- CTA Section -->
+  <section class="cta-section text-center">
+    <div class="container">
+      <h2 class="fw-bold mb-4">Ready to Transform Your Visitor Experience?</h2>
+      <p class="lead mb-5">Join hundreds of organizations using our platform to create safer, more efficient spaces.</p>
+      <a href="{{ url('/contact') }}" class="btn btn-primary btn-lg px-5 me-3">Get in Touch</a>
+      <a href="{{ url('/pricing') }}" class="btn btn-outline-primary btn-lg px-5">View Pricing</a>
+    </div>
+  </section>
+
+  {{-- Footer --}}
+  @include('layouts.footer')
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       new Swiper('.myTeamSwiper', {
         loop: true,
         speed: 600,
         autoplay: {
-          delay: 3000, // 3 seconds
+          delay: 3000,
           disableOnInteraction: false
         },
         slidesPerView: 1,
@@ -955,47 +686,5 @@
       });
     });
   </script>
-
- <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      new Swiper('.myTeamSwiper', {
-        slidesPerView: 1,
-        spaceBetween: 20,
-        loop: true,
-        navigation: {
-          nextEl: '.swiper-button-next',
-          prevEl: '.swiper-button-prev',
-        },
-        pagination: {
-          el: '.swiper-pagination',
-          clickable: true,
-        },
-        breakpoints: {
-          640: { slidesPerView: 2 },
-          1024: { slidesPerView: 3 },
-          1280: { slidesPerView: 4 },
-        },
-      });
-    });
-  </script>
-
-
-  <!-- CTA Section -->
-  <section class="cta-section text-center">
-    <div class="container">
-      <h2 class="fw-bold mb-4">Ready to Transform Your Visitor Experience?</h2>
-      <p class="lead mb-5">Join hundreds of organizations using our platform to create safer, more efficient spaces.</p>
-      <a href="{{ url('/contact') }}" class="btn btn-primary btn-lg px-5 me-3">Get in Touch</a>
-      <a href="{{ url('/pricing') }}" class="btn btn-outline-primary btn-lg px-5">View Pricing</a>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  @include('layouts.footer')
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-<!-- Swiper JS -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
 </html>

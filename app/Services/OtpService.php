@@ -5,14 +5,13 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpVerificationMail;
+use Illuminate\Support\Facades\Log;
 
 class OtpService
 {
-    /**
-     * Generate and save OTP for user
-     */
     public function generateAndSendOtp(User $user): string
     {
+        // Generate a 6-digit OTP
         $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         
         try {
@@ -20,10 +19,11 @@ class OtpService
             $user->update([
                 'otp' => $otp,
                 'otp_expires_at' => now()->addMinutes(10), // OTP valid for 10 minutes
+                'otp_verified_at' => null,
             ]);
 
-            // Log the OTP for testing purposes
-            \Log::info('OTP generated for user', [
+            // Log the OTP generation
+            Log::info('OTP generated for user', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'otp' => $otp,
@@ -31,14 +31,17 @@ class OtpService
             ]);
 
             // Send OTP via email
-            Mail::to($user->email)->send(new OtpVerificationMail($otp));
+Mail::to($user->email)->send(new OtpVerificationMail($otp));
             
-            \Log::info('OTP email sent successfully', ['email' => $user->email]);
+            Log::info('OTP email sent successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
             
             return $otp;
             
         } catch (\Exception $e) {
-            \Log::error('Failed to send OTP email', [
+            Log::error('Failed to send OTP email', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'error' => $e->getMessage(),
@@ -50,14 +53,12 @@ class OtpService
         }
     }
 
-    /**
-     * Verify OTP
-     */
     public function verifyOtp(User $user, string $otp): bool
     {
         // Log the verification attempt
-        \Log::info('Verifying OTP in service', [
+        Log::info('Verifying OTP in service', [
             'user_id' => $user->id,
+            'email' => $user->email,
             'provided_otp' => $otp,
             'stored_otp' => $user->otp,
             'otp_expires_at' => $user->otp_expires_at,
@@ -68,19 +69,34 @@ class OtpService
             'not_expired' => $user->otp_expires_at && $user->otp_expires_at > now()
         ]);
 
-        if ($user->otp === $otp && $user->otp_expires_at > now()) {
+        // Check if OTP matches and is not expired
+        if ($user->otp === $otp && $user->otp_expires_at && $user->otp_expires_at->isFuture()) {
+            // Clear the OTP and mark as verified
             $user->update([
                 'otp' => null,
                 'otp_expires_at' => null,
                 'otp_verified_at' => now(),
             ]);
-            \Log::info('OTP verification successful', ['user_id' => $user->id]);
+            
+            Log::info('OTP verification successful', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+            
             return true;
         }
         
-        \Log::warning('OTP verification failed', [
+        // Log the failure reason
+        $reason = !$user->otp ? 'No OTP set for user' : 
+                ($user->otp !== $otp ? 'OTP mismatch' : 'OTP expired');
+                
+        Log::warning('OTP verification failed', [
             'user_id' => $user->id,
-            'reason' => $user->otp !== $otp ? 'OTP mismatch' : 'OTP expired'
+            'email' => $user->email,
+            'reason' => $reason,
+            'stored_otp' => $user->otp,
+            'provided_otp' => $otp,
+            'is_expired' => $user->otp_expires_at ? $user->otp_expires_at->isPast() : 'no expiry set'
         ]);
         
         return false;

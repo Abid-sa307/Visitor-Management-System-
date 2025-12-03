@@ -3,100 +3,149 @@
 @section('content')
 <div class="container mt-5">
     <div class="card shadow-lg p-4 w-100 mx-auto" style="max-width: 800px;">
-        <h4 class="mb-4 text-center text-primary fw-bold">Visitor Check-In</h4>
+        <h4 class="mb-4 text-center text-primary fw-bold">Visitor Action Details</h4>
 
-        <form action="#" method="POST" enctype="multipart/form-data">
-            @csrf
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
 
-            {{-- Company --}}
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Company</label>
-                <input type="hidden" name="company_id" value="{{ $company->id }}">
-                <input type="text" class="form-control" value="{{ $company->name }}" readonly>
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('qr.visit.store', [
+    'company' => $company->id, 
+    'branch' => $branch->id ?? null
+]) }}" enctype="multipart/form-data">
+    @csrf
+    @if(isset($visitor) && $visitor->id)
+        <input type="hidden" name="visitor_id" value="{{ $visitor->id }}">
+    @endif
+
+            {{-- Company & Department --}}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Company</label>
+                    <input type="hidden" name="company_id" value="{{ $company->id }}">
+                    <input type="text" class="form-control" value="{{ $company->name }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Department</label>
+                    <select name="department_id" id="departmentSelect" class="form-select" required>
+                        <option value="">-- Select Department --</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}" data-company="{{ $dept->company_id }}"
+                                {{ old('department_id', $visitor->department_id ?? '') == $dept->id ? 'selected' : '' }}>
+                                {{ $dept->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
-            {{-- Branch --}}
-            @if($branch)
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Branch</label>
-                <input type="hidden" name="branch_id" value="{{ $branch->id }}">
-                <input type="text" class="form-control" value="{{ $branch->name }}" readonly>
+
+            @if($branches->isNotEmpty())
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Branch</label>
+                    @if($branches->count() === 1)
+                        <input type="hidden" name="branch_id" value="{{ $branches[0]->id }}">
+                        <input type="text" class="form-control" value="{{ $branches[0]->name }}" readonly>
+                    @else
+                        <select name="branch_id" id="branchSelect" class="form-select" required>
+                            <option value="">-- Select Branch --</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" 
+                                    {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
+                </div>
             </div>
             @endif
 
-            {{-- Phone Number --}}
-            <div class="mb-3">
-                <label for="phone" class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                    <input type="tel" class="form-control @error('phone') is-invalid @enderror" 
-                           id="phone" name="phone" value="{{ old('phone') }}" 
-                           placeholder="Enter your registered phone number" required>
-                    @error('phone')
-                        <div class="invalid-feedback">{{ $message }}</div>
+            {{-- Visitor Category --}}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Visitor Category</label>
+                    <select name="visitor_category_id" class="form-select" required>
+                        <option value="">-- Select Category --</option>
+                        @foreach($visitorCategories as $category)
+                            <option value="{{ $category->id }}" 
+                                {{ old('visitor_category_id', $visitor->visitor_category_id ?? '') == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('visitor_category_id')
+                        <div class="text-danger small">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="form-text">Enter the phone number you used during registration.</div>
-            </div>
-
-            {{-- Person to Visit --}}
-            <div class="mb-3">
-                <label for="person_to_visit" class="form-label fw-semibold">Person to Visit <span class="text-danger">*</span></label>
-                <input type="text" name="person_to_visit" id="person_to_visit" 
-                       class="form-control @error('person_to_visit') is-invalid @enderror" 
-                       value="{{ old('person_to_visit') }}" required>
-                @error('person_to_visit')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Person to Visit</label>
+                    <input type="text" name="person_to_visit" class="form-control" value="{{ old('person_to_visit', $visitor->person_to_visit ?? '') }}">
+                </div>
             </div>
 
             {{-- Purpose of Visit --}}
             <div class="mb-3">
-                <label for="purpose" class="form-label fw-semibold">Purpose of Visit <span class="text-danger">*</span></label>
-                <textarea class="form-control @error('purpose') is-invalid @enderror" 
-                         id="purpose" name="purpose" rows="3" required 
-                         placeholder="Please describe the purpose of your visit">{{ old('purpose') }}</textarea>
-                @error('purpose')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <label class="form-label fw-semibold">Purpose of Visit</label>
+                <input type="text" name="purpose" class="form-control" value="{{ old('purpose', $visitor->purpose ?? '') }}">
             </div>
 
-            {{-- Visitor's Company --}}
+            {{-- Visitor Company --}}
             <div class="mb-3">
-                <label for="visitor_company" class="form-label fw-semibold">Your Company Name</label>
-                <input type="text" name="visitor_company" id="visitor_company" 
-                       class="form-control @error('visitor_company') is-invalid @enderror" 
-                       value="{{ old('visitor_company') }}">
-                @error('visitor_company')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <label class="form-label fw-semibold">Visitor's Company Name</label>
+                <input type="text" name="visitor_company" class="form-control" value="{{ old('visitor_company', $visitor->visitor_company ?? '') }}">
+            </div>
+
+            {{-- Visitor Website --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Visitor Company Website (optional)</label>
+                <input type="url" name="visitor_website" class="form-control" value="{{ old('visitor_website', $visitor->visitor_website ?? '') }}">
             </div>
 
             {{-- Vehicle Information --}}
             <div class="row mb-3">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <label for="vehicle_type" class="form-label fw-semibold">Vehicle Type</label>
-                    <select name="vehicle_type" id="vehicle_type" class="form-select">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Vehicle Type</label>
+                    <select name="vehicle_type" class="form-select">
                         <option value="">-- Select --</option>
-                        <option value="Car" {{ old('vehicle_type') == 'Car' ? 'selected' : '' }}>Car</option>
-                        <option value="Bike" {{ old('vehicle_type') == 'Bike' ? 'selected' : '' }}>Bike</option>
-                        <option value="Scooter" {{ old('vehicle_type') == 'Scooter' ? 'selected' : '' }}>Scooter</option>
-                        <option value="Bicycle" {{ old('vehicle_type') == 'Bicycle' ? 'selected' : '' }}>Bicycle</option>
-                        <option value="Other" {{ old('vehicle_type') == 'Other' ? 'selected' : '' }}>Other</option>
+                        <option value="2-wheeler" {{ old('vehicle_type', $visitor->vehicle_type ?? '') == '2-wheeler' ? 'selected' : '' }}>2-Wheeler</option>
+                        <option value="3-wheeler" {{ old('vehicle_type', $visitor->vehicle_type ?? '') == '3-wheeler' ? 'selected' : '' }}>3-Wheeler</option>
+                        <option value="4-wheeler" {{ old('vehicle_type', $visitor->vehicle_type ?? '') == '4-wheeler' ? 'selected' : '' }}>4-Wheeler</option>
+                        <option value="6-wheeler" {{ old('vehicle_type', $visitor->vehicle_type ?? '') == '6-wheeler' ? 'selected' : '' }}>6-Wheeler</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label for="vehicle_number" class="form-label fw-semibold">Vehicle Number</label>
-                    <input type="text" name="vehicle_number" id="vehicle_number" 
-                           class="form-control" value="{{ old('vehicle_number') }}">
+                    <label class="form-label fw-semibold">Vehicle Number</label>
+                    <input type="text" name="vehicle_number" class="form-control" value="{{ old('vehicle_number', $visitor->vehicle_number ?? '') }}">
                 </div>
             </div>
 
             {{-- Goods in Vehicle --}}
             <div class="mb-3">
-                <label for="goods_in_vehicle" class="form-label fw-semibold">Goods in Vehicle (if any)</label>
-                <textarea name="goods_in_vehicle" id="goods_in_vehicle" 
-                          class="form-control" rows="2">{{ old('goods_in_vehicle') }}</textarea>
+                <label class="form-label fw-semibold">Goods in Vehicle</label>
+                <input type="text" name="goods_in_car" class="form-control" value="{{ old('goods_in_car', $visitor->goods_in_car ?? '') }}">
+            </div>
+
+            {{-- Workman Policy --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Upload Workman Policy Photo (Optional)</label>
+                <input type="file" name="workman_policy_photo" class="form-control">
+                @if(isset($visitor->workman_policy_photo) && $visitor->workman_policy_photo)
+                    <small><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">View current</a></small>
+                @endif
             </div>
 
             {{-- Action Buttons --}}
@@ -104,14 +153,10 @@
                 <a href="{{ route('qr.scan', $company) }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Back
                 </a>
-                <div>
-                    <a href="{{ route('qr.visitor.create', $company) }}" class="btn btn-outline-primary me-2">
-                        <i class="fas fa-user-plus me-1"></i> New Visitor
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-sign-in-alt me-1"></i> Check In
-                    </button>
-                </div>
+                 <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send-fill me-2"></i> Submit Visit Details
+                </button>
             </div>
         </form>
     </div>
@@ -132,31 +177,55 @@
         border-color: #86b7fe;
         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
     }
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-// Enable form validation
-(function () {
-    'use strict'
-    
-    // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    var forms = document.querySelectorAll('.needs-validation')
-    
-    // Loop over them and prevent submission
-    Array.prototype.slice.call(forms)
-        .forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                
-                form.classList.add('was-validated')
-            }, false)
-        })
-})()
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+
+    // Department filtering based on company
+    const companySelect = document.getElementById('companySelect');
+    const departmentSelect = document.getElementById('departmentSelect');
+
+    function filterDepartments() {
+        const selectedCompanyId = companySelect ? companySelect.value : '{{ $company->id }}';
+
+        Array.from(departmentSelect.options).forEach(option => {
+            const belongsTo = option.getAttribute('data-company');
+            if (!belongsTo || belongsTo === selectedCompanyId || option.value === "") {
+                option.hidden = false;
+            } else {
+                option.hidden = true;
+            }
+        });
+
+        // Reset if selected option is now hidden
+        if (departmentSelect.selectedOptions[0]?.hidden) {
+            departmentSelect.value = "";
+        }
+    }
+
+    if (companySelect) {
+        companySelect.addEventListener('change', filterDepartments);
+    }
+    filterDepartments(); // Run once on page load
+});
 </script>
 @endpush
 @endsection

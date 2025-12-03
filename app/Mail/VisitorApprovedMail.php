@@ -20,7 +20,8 @@ class VisitorApprovedMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Your Visit Has Been Approved')
+        $companyName = $this->visitor->company->name ?? config('app.name');
+        return $this->subject('Your Visit to ' . $companyName . ' Has Been Approved')
             ->view('emails.visitor_approved')
             ->with([
                 'visitor' => $this->visitor,

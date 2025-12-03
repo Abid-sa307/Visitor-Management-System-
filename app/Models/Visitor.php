@@ -19,7 +19,7 @@ class Visitor extends Model
      *
      * @var array
      */
-    protected $with = ['company', 'department'];
+    protected $with = ['company', 'department', 'branch', 'approvedBy', 'rejectedBy'];
 
     protected $fillable = [
         'company_id',
@@ -38,9 +38,14 @@ class Visitor extends Model
         'workman_policy_photo',
         'status',
         'in_time',
+            'document_path',
+
         'out_time',
         'last_status',
         'status_changed_at',
+        'approved_by',
+        'rejected_by',
+        'reject_reason'
     ];
 
     /**
@@ -94,6 +99,25 @@ class Visitor extends Model
         return $this->belongsTo(Company::class);
     }
     
+    /**
+     * Get the department that the visitor is visiting.
+     */
+    /**
+     * Get the user who approved this visitor.
+     */
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the user who rejected this visitor.
+     */
+    public function rejectedBy()
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
     /**
      * Get the department that the visitor is visiting.
      */

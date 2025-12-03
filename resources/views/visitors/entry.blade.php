@@ -165,18 +165,34 @@
                         </td>
                         <td>
                             @php
-                                $isCompany = request()->is('company/*');
+                                // Use the correct company toggle route
                                 $toggleRoute = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
                             @endphp
                             @if(auth()->user()->role !== 'guard')
                                 @if(!$visitor->out_time)
                                     <div class="d-flex gap-2">
-                                        <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
+                                        @if($isCompany)
+                                            <a href="#" 
+                                               onclick="event.preventDefault(); document.getElementById('toggle-form-{{ $visitor->id }}').submit();" 
+                                               class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
                                                 {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
-                                            </button>
-                                        </form>
+                                            </a>
+                                            <form id="toggle-form-{{ $visitor->id }}" 
+                                                  action="{{ route($toggleRoute, $visitor->id) }}" 
+                                                  method="POST" 
+                                                  style="display: none;">
+                                                @csrf
+                                                @method('POST')
+                                            </form>
+                                        @else
+                                            <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('POST')
+                                                <button type="submit" class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
+                                                    {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
+                                                </button>
+                                            </form>
+                                        @endif
                                         @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]')
                                             <button type="button" 
                                                     class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
@@ -501,7 +517,7 @@ async function detectFaces() {
                         verificationStartTime = null; // Reset verification timer
                         faceOutline.classList.add('error');
                         faceOutline.classList.remove('detected');
-                        message.textContent = 'Face not recognized. Please ensure good lighting and try again.';
+                        message.textContent = 'Face not recognized. Please try again.';
                     }
                 } else {
                     // Face detected but not centered

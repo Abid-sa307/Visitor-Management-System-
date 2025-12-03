@@ -33,26 +33,54 @@ class UserController extends Controller
     }
 
     public function index(Request $request)
-    {
-        $authUser  = auth()->user();
-        $isCompany = $request->is('company/*');
+{
+    $isCompany = auth()->guard('company')->check();
+    $isSuper = auth()->user()->isSuperAdmin();
 
-        $users = User::with([
-                'company:id,name',
-                'departments:id,name',
-                'department:id,name',   // if you keep department_id
-            ])
-            ->when(!in_array($authUser->role, ['super_admin','superadmin'], true), function ($q) use ($authUser) {
-                $q->where('company_id', $authUser->company_id);
-            })
-            ->latest()
-            ->paginate(15);
-
-        $view = $isCompany ? 'company.users.index' : 'users.index';
-        if (!view()->exists($view)) $view = 'users.index';
-
-        return view($view, compact('users'));
+    // Get companies for the filter (only for super admins)
+    $companies = [];
+    if ($isSuper) {
+        $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
     }
+
+    $query = User::query()->with(['company', 'departments']);
+
+    // Apply search
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where(function($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        });
+    }
+
+    // Rest of your existing filters...
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->input('company_id'));
+    }
+
+    if ($request->filled('status')) {
+        $query->where('is_active', $request->input('status') === 'active');
+    }
+
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('created_at', [
+            $request->input('from'),
+            \Carbon\Carbon::parse($request->input('to'))->endOfDay()
+        ]);
+    }
+
+    $users = $query->latest()->paginate(15);
+
+    return view('users.index', [
+        'users' => $users,
+        'companies' => $companies,
+        'isSuper' => $isSuper,
+        'isCompany' => $isCompany,
+        'from' => $request->input('from', now()->subDays(30)->format('Y-m-d')),
+        'to' => $request->input('to', now()->format('Y-m-d')),
+    ]);
+}
 
     public function create()
     {
@@ -152,7 +180,8 @@ class UserController extends Controller
             try {
                 $payload = [
                     'name' => $user->name,
-                    'password' => $data['password'], // Will be hashed by model's setPasswordAttribute
+                    'email' => $user->email, // Make sure email is included
+                    'password' => Hash::make($data['password']), // Explicitly hash the password
                     'company_id' => $user->company_id,
                     'role' => 'company',
                     'master_pages' => $user->master_pages ?? [],
@@ -173,11 +202,21 @@ class UserController extends Controller
             }
         }
 
-        // departments pivot (support both field names)
-        $deptIds = $request->input('department_ids', $request->input('departments', []));
-        if (!empty($deptIds)) {
-            $user->departments()->sync($deptIds);
+        // Handle department assignments
+        $deptIds = $request->input('department_ids', $request->input('departments', ''));
+        
+        // Convert to array if it's a string
+        if (is_string($deptIds) && !empty($deptIds)) {
+            $deptIds = explode(',', $deptIds);
+        } elseif (empty($deptIds)) {
+            $deptIds = [];
         }
+        
+        // Ensure we have an array of integers
+        $deptIds = array_filter(array_map('intval', (array)$deptIds));
+        
+        // Sync departments
+        $user->departments()->sync($deptIds);
 
         return redirect()->route('users.index')->with('success','User created successfully.');
     }
@@ -254,11 +293,21 @@ class UserController extends Controller
 
         $user->save();
 
-        // departments pivot
-        if ($request->has('department_ids') || $request->has('departments')) {
-            $deptIds = $request->input('department_ids', $request->input('departments', []));
-            $user->departments()->sync($deptIds ?: []);
+        // Handle department assignments
+        $deptIds = $request->input('department_ids', $request->input('departments', ''));
+        
+        // Convert to array if it's a string
+        if (is_string($deptIds) && !empty($deptIds)) {
+            $deptIds = explode(',', $deptIds);
+        } elseif (empty($deptIds)) {
+            $deptIds = [];
         }
+        
+        // Ensure we have an array of integers
+        $deptIds = array_filter(array_map('intval', (array)$deptIds));
+        
+        // Sync departments
+        $user->departments()->sync($deptIds);
 
         // mirror to company_users if role is company/company_user
         if (in_array(($user->role ?? ''), ['company','company_user'], true)) {

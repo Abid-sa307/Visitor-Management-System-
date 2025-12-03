@@ -67,6 +67,50 @@
                     <label class="form-check-label" for="auto_approve_visitors">Auto Approve Visitors</label>
                 </div>
 
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="face_recognition_enabled" name="face_recognition_enabled" value="1"
+                        {{ old('face_recognition_enabled', $company->face_recognition_enabled ?? 0) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="face_recognition_enabled">Enable Face Recognition for Visitors</label>
+                    <small class="form-text text-muted d-block">When enabled, visitors will be able to verify their identity using face recognition during check-in.</small>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="mail_service_enabled" name="mail_service_enabled" value="1"
+                        {{ old('mail_service_enabled', $company->mail_service_enabled ?? 0) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="mail_service_enabled">Enable Mail Service</label>
+                    <small class="form-text text-muted d-block">When enabled, mail notifications will be sent for Company activities.</small>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="security_checkin_enabled" name="security_checkin_enabled" value="1"
+                        {{ old('security_checkin_enabled', $company->security_checkin_enabled ?? 0) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="security_checkin_enabled">Enable Security Check-in Service</label>
+                    <small class="form-text text-muted d-block">When enabled, security check-in and check-out functionality will be available for visitors.</small>
+                </div>
+
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Branch Operation Start Time <small class="text-muted">(When the branch opens)</small></label>
+                        <input type="time" name="branch_start_time" class="form-control" 
+                               value="{{ old('branch_start_time', $company->branch_start_time ?? '09:00') }}" 
+                               placeholder="Select start time">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Branch Operation End Time <small class="text-muted">(When the branch closes)</small></label>
+                        <input type="time" name="branch_end_time" class="form-control" 
+                               value="{{ old('branch_end_time', $company->branch_end_time ?? '18:00') }}" 
+                               placeholder="Select end time">
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="face_recognition_enabled" name="face_recognition_enabled" value="1"
+                        {{ old('face_recognition_enabled', $company->face_recognition_enabled ?? 0) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="face_recognition_enabled">Security Check with dropdown</label>
+                    <small class="form-text text-muted d-block"></small>
+                </div>
+
                 <hr class="my-4">
                 <h5 class="fw-bold mb-3">Branches</h5>
                 <div id="branchesRepeater" class="mb-3">
@@ -75,10 +119,12 @@
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
-                                    <th style="width: 22%">Name</th>
-                                    <th style="width: 18%">Phone</th>
-                                    <th style="width: 22%">Email</th>
+                                    <th style="width: 20%">Name</th>
+                                    <th style="width: 15%">Phone</th>
+                                    <th style="width: 20%">Email</th>
                                     <th>Address</th>
+                                    <th style="width: 15%">Start Time</th>
+                                    <th style="width: 15%">End Time</th>
                                     <th style="width: 60px"></th>
                                 </tr>
                             </thead>
@@ -97,6 +143,14 @@
                                     </td>
                                     <td>
                                         <input name="branches[address][]" class="form-control form-control-sm" value="{{ $b->address }}" placeholder="Address">
+                                    </td>
+                                    <td>
+                                        <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"
+                                               value="{{ $b->start_time ? $b->start_time->format('H:i') : '' }}">
+                                    </td>
+                                    <td>
+                                        <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"
+                                               value="{{ $b->end_time ? $b->end_time->format('H:i') : '' }}">
                                     </td>
                                     <td class="text-end">
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
@@ -138,6 +192,8 @@ document.addEventListener('DOMContentLoaded', function(){
       <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
       <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
       <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
+      <td><input type="date" name="branches[start_date][]" class="form-control form-control-sm"></td>
+      <td><input type="date" name="branches[end_date][]" class="form-control form-control-sm"></td>
       <td class="text-end">
         <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
       </td>`;

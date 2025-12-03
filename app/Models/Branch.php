@@ -10,7 +10,12 @@ class Branch extends Model
     use HasFactory;
 
     protected $fillable = [
-        'company_id', 'name', 'address', 'phone', 'email'
+        'company_id', 'name', 'address', 'phone', 'email', 'start_date', 'end_date'
+    ];
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     public function company()

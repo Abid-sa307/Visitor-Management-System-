@@ -13,29 +13,33 @@ class QRController extends Controller
      * The layout that should be used for responses.
      */
     protected $layout = 'layouts.guest';
-    /**
-     * Display the public visitor page for a company
-     */
-    public function scan(Company $company, $branch = null)
-    {
-        $branchModel = null;
-        if ($branch) {
-            $branchModel = $company->branches()->find($branch);
+    public function scan(Company $company, $branch = null, Request $request = null)
+{
+    $request = $request ?? request();
+    $branchModel = $branch ? $company->branches()->find($branch) : null;
+
+    // Get visitor from session
+    $visitor = null;
+    if (session('current_visitor_id')) {
+        $visitor = Visitor::find(session('current_visitor_id'));
+        
+        // Check if visitor exists and is checked out
+        if ($visitor && $visitor->status === 'checked_out') {
+            // Clear the visitor from session
+            $request->session()->forget('current_visitor_id');
+            $visitor = null;
+        } elseif (!$visitor) {
+            // If visitor not found, clear the session
+            $request->session()->forget('current_visitor_id');
         }
-
-        $visitors = Visitor::where('company_id', $company->id)
-            ->when($branchModel, function($query) use ($branchModel) {
-                return $query->where('branch_id', $branchModel->id);
-            })
-            ->latest()
-            ->paginate(10);
-
-        return view('visitors.public-index', [
-            'company' => $company,
-            'branch' => $branchModel,
-            'visitors' => $visitors
-        ]);
     }
+
+    return view('visitors.public-index', [
+        'company' => $company,
+        'branch' => $branchModel,
+        'visitor' => $visitor
+    ]);
+}
 
     /**
      * Show the form for creating a new visitor
@@ -57,9 +61,18 @@ class QRController extends Controller
             $branchModel = $company->branches()->find($branch);
         }
         
+        // Get departments for the company
+        $departments = $company->departments()->get();
+        
+        // Get branches for the company
+        $branches = $company->branches()->get();
+        
         return view('visitors.public-visit', [
             'company' => $company,
-            'branch' => $branchModel
+            'branch' => $branchModel,
+            'departments' => $departments,
+            'branches' => $branches,
+            'visitor' => new \App\Models\Visitor() // Add empty visitor to prevent undefined variable errors
         ]);
     }
 
@@ -176,6 +189,9 @@ class QRController extends Controller
             // Save the visitor
             $visitor->save();
             
+            // Store visitor ID in session
+            session(['current_visitor_id' => $visitor->id]);
+            
             // Handle document uploads
             if ($request->hasFile('documents')) {
                 foreach ($request->file('documents') as $file) {
@@ -201,4 +217,152 @@ class QRController extends Controller
                 ->with('error', 'Error registering visitor: ' . $e->getMessage());
         }
     }
+
+public function storeVisit(Request $request, Company $company, $branch = null)
+{
+    $validated = $request->validate([
+        'visitor_id' => 'required|exists:visitors,id',
+        'department_id' => 'required|exists:departments,id',
+        'person_to_visit' => 'required|string|max:255',
+        'purpose' => 'required|string',
+        'vehicle_number' => 'nullable|string|max:50',
+        'documents' => 'nullable|array',
+        'documents.*' => 'file|max:2048',
+    ]);
+
+    // Find the visitor
+    $visitor = Visitor::findOrFail($request->visitor_id);
+    
+    // Update visitor details
+    $visitor->update([
+        'department_id' => $validated['department_id'],
+        'person_to_visit' => $validated['person_to_visit'],
+        'purpose' => $validated['purpose'],
+        'vehicle_number' => $validated['vehicle_number'] ?? null,
+        'status' => 'checked_in',
+        'in_time' => now(),
+    ]);
+
+    // Handle document uploads if any
+    if ($request->hasFile('documents')) {
+        $documents = [];
+        foreach ($request->file('documents') as $file) {
+            $path = $file->store('visitor_documents', 'public');
+            $documents[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'type' => $file->getClientMimeType()
+            ];
+        }
+        $visitor->documents = $documents;
+        $visitor->save();
+    }
+
+    // Redirect to the scan page with the company ID
+    return redirect()->route('qr.scan', ['company' => $company->id])->with('success', 'Visit details submitted successfully!');
+}
+
+/**
+ * Show the public visit form (no auth required)
+ */
+public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
+{
+    $request = $request ?? request(); // Get the request instance if not injected
+    
+    $branchModel = null;
+    if ($branch) {
+        $branchModel = $company->branches()->find($branch);
+    }
+    
+    // Get visitor ID from query parameter
+    $visitorId = $request->query('visitor');
+    
+    if (!$visitorId) {
+        return redirect()->back()->with('error', 'No visitor specified.');
+    }
+    
+    $visitor = Visitor::find($visitorId);
+    
+    if (!$visitor) {
+        return redirect()->back()->with('error', 'Visitor not found.');
+    }
+    
+    // Store visitor ID in session
+    session(['current_visitor_id' => $visitor->id]);
+    
+    // Get departments, branches and visitor categories
+    $departments = $company->departments()->get();
+    $branches = $company->branches()->get();
+    
+    // Get active visitor categories for the company
+    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get();
+    
+    return view('visitors.public-visit', [
+        'company' => $company,
+        'branch' => $branchModel,
+        'departments' => $departments,
+        'visitorCategories' => $visitorCategories,
+        'branches' => $branches,
+        'visitor' => $visitor
+    ]);
+}
+
+/**
+ * Handle public visit form submission (no auth required)
+ */
+public function storePublicVisit(Request $request, Company $company, $branch = null)
+{
+    // Get visitor ID from form input or route parameter
+    $visitorId = $request->input('visitor_id') ?? $request->route('visitor');
+    
+    $validated = $request->validate([
+        'visitor_id' => 'required|exists:visitors,id',
+        'department_id' => 'required|exists:departments,id',
+        'person_to_visit' => 'required|string|max:255',
+        'purpose' => 'required|string',
+        'vehicle_number' => 'nullable|string|max:50',
+        'documents' => 'nullable|array',
+        'documents.*' => 'file|max:2048',
+    ], [
+        'visitor_id.required' => 'Visitor information is required.',
+        'visitor_id.exists' => 'Invalid visitor information provided.'
+    ]);
+
+    // Find the visitor
+    $visitor = Visitor::findOrFail($request->visitor_id);
+    
+    // Update visitor details
+    $visitor->update([
+        'department_id' => $validated['department_id'],
+        'person_to_visit' => $validated['person_to_visit'],
+        'purpose' => $validated['purpose'],
+        'vehicle_number' => $validated['vehicle_number'] ?? null,
+        'status' => 'checked_in',
+        'in_time' => now(),
+    ]);
+
+    // Handle document uploads if any
+    if ($request->hasFile('documents')) {
+        $documents = [];
+        foreach ($request->file('documents') as $file) {
+            $path = $file->store('visitor_documents', 'public');
+            $documents[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'type' => $file->getClientMimeType()
+            ];
+        }
+        $visitor->documents = $documents;
+        $visitor->save();
+    }
+
+    // Store visitor in session
+    session(['current_visitor_id' => $visitor->id]);
+
+    // Redirect to the scan page with success message
+    return redirect()->route('qr.scan', ['company' => $company->id])->with('success', 'Visit details submitted successfully!');
+}
 }

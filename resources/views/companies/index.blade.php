@@ -31,7 +31,7 @@
                             <th>Branches</th>
                             <th>Auto Approve</th>
                             <th>Website</th>
-                            <th class="text-center">Quick Check-in</th>
+                            <th>Working Hours</th>
                             <th style="width: 120px;">Actions</th>
                         </tr>
                     </thead>
@@ -62,14 +62,19 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td class="text-center">
-                                <a href="{{ route('qr.scan', $company) }}" class="btn btn-sm btn-outline-primary" target="_blank" title="Quick Check-in">
-                                    <i class="fas fa-sign-in-alt"></i> Check-in
-                                </a>
+                            <td>
+                                @if($company->start_time && $company->end_time)
+                                    {{ \Carbon\Carbon::parse($company->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($company->end_time)->format('h:i A') }}
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('companies.qr', $company) }}" class="btn btn-sm btn-info me-1" title="Manage QR Code">
+                                    <a href="{{ route('companies.branches', $company) }}" class="btn btn-sm btn-primary me-1" title="View Branches">
+                                        <i class="fas fa-code-branch"></i>
+                                    </a>
+                                    <a href="{{ route('companies.qr', $company) }}" class="btn btn-sm btn-info me-1" title="Download QR Code" target="_blank">
                                         <i class="fas fa-qrcode"></i>
                                     </a>
                                     <a href="{{ route('companies.edit', $company->id) }}" class="btn btn-sm btn-warning me-1" title="Edit">

@@ -1,13 +1,101 @@
 @extends('layouts.sb')
 
 @section('content')
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h4 text-gray-800 mb-0">Employees</h1>
-        <a href="{{ route('employees.create') }}" class="btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-user-plus me-1"></i> Add Employee
-        </a>
-    </div>
+<div class="container py-4">
+    <div class="bg-white shadow-sm rounded-4 p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="fw-bold text-primary m-0">Employees</h2>
+            <a href="{{ route('employees.create') }}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-1"></i> Add Employee
+            </a>
+        </div>
+
+        <form method="GET" id="filterForm" class="mb-4">
+            <div class="row g-3 align-items-end">
+                {{-- Date Range --}}
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label">Date Range</label>
+                    <div class="input-group mb-2">
+                        <input type="date" name="from" id="from_date" class="form-control"
+                               value="{{ request('from', now()->subDays(30)->format('Y-m-d')) }}">
+                        <span class="input-group-text">to</span>
+                        <input type="date" name="to" id="to_date" class="form-control"
+                               value="{{ request('to', now()->format('Y-m-d')) }}">
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">
+                            Today
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="yesterday" type="button">
+                            Yesterday
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="this-month" type="button">
+                            This Month
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="last-month" type="button">
+                            Last Month
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Company Dropdown (superadmin only) --}}
+                @if($isSuper)
+                    <div class="col-lg-3 col-md-6">
+                        <label for="company_id" class="form-label">Company</label>
+                        <select name="company_id" id="company_id" class="form-select" data-is-super="1">
+                            <option value="">All Companies</option>
+                            @foreach($companies as $id => $name)
+                                <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                {{-- Branch Dropdown --}}
+                <div class="col-lg-3 col-md-6">
+                    <label for="branch_id" class="form-label">Branch</label>
+                    <select name="branch_id" id="branch_id" class="form-select"
+                            @if($isSuper && !request('company_id')) disabled @endif>
+                        <option value="">All Branches</option>
+                        @if(!empty($branches))
+                            @foreach($branches as $id => $name)
+                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+
+                {{-- Department Dropdown --}}
+                <div class="col-lg-2 col-md-6">
+                    <label for="department_id" class="form-label">Department</label>
+                    <select name="department_id" id="department_id" class="form-select"
+                            @if($isSuper && !request('company_id')) disabled @endif>
+                        <option value="">All Departments</option>
+                        @if(!empty($departments))
+                            @foreach($departments as $id => $name)
+                                <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+
+                {{-- Buttons --}}
+                <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> Apply
+                    </button>
+                    <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-undo me-1"></i> Reset
+                    </a>
+                </div>
+            </div>
+        </form>
 
     @if(session('success'))
         <div class="alert alert-success small alert-dismissible fade show" role="alert">
@@ -16,10 +104,11 @@
         </div>
     @endif
 
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
+        @if($employees->isEmpty())
+            <div class="alert alert-info mb-0">No employees found for the selected criteria.</div>
+        @else
             <div class="table-responsive">
-                <table class="table table-hover align-middle text-center mb-0">
+                <table class="table table-hover align-middle text-center">
                     <thead class="table-light text-secondary small">
                         <tr>
                             <th>#</th>
@@ -33,7 +122,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($employees as $emp)
+                        @foreach($employees as $emp)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td class="fw-semibold">{{ $emp->name }}</td>
@@ -57,15 +146,151 @@
                                 </div>
                             </td>
                         </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-muted py-4">No employees found.</td>
-                        </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            @if($employees->hasPages())
+                <div class="mt-4">
+                    {{ $employees->withQueryString()->links() }}
+                </div>
+            @endif
+        @endif
     </div>
 </div>
+
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const companySelect = document.getElementById('company_id');
+        const branchSelect = document.getElementById('branch_id');
+        const departmentSelect = document.getElementById('department_id');
+        const fromDate = document.getElementById('from_date');
+        const toDate = document.getElementById('to_date');
+        const quickRangeButtons = document.querySelectorAll('.quick-range');
+        const filterForm = document.getElementById('filterForm');
+
+        // Handle quick range buttons
+        quickRangeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const range = this.getAttribute('data-range');
+                const today = new Date();
+                let from = new Date();
+                
+                switch(range) {
+                    case 'today':
+                        // Already set to today
+                        break;
+                    case 'yesterday':
+                        from.setDate(today.getDate() - 1);
+                        toDate.valueAsDate = from;
+                        from.setDate(from.getDate());
+                        break;
+                    case 'this-month':
+                        from = new Date(today.getFullYear(), today.getMonth(), 1);
+                        break;
+                    case 'last-month':
+                        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                        from = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+                        toDate.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                        break;
+                }
+                
+                fromDate.valueAsDate = from;
+                if (range !== 'yesterday' && range !== 'last-month') {
+                    toDate.valueAsDate = today;
+                }
+                
+                filterForm.submit();
+            });
+        });
+
+        // Handle company change - load branches and departments
+        if (companySelect) {
+            companySelect.addEventListener('change', function() {
+                const companyId = this.value;
+                
+                // Reset and disable dependent dropdowns
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+                    branchSelect.disabled = true;
+                }
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">Loading departments...</option>';
+                    departmentSelect.disabled = true;
+                }
+
+                // If no company selected, reset and enable all
+                if (!companyId) {
+                    if (branchSelect) {
+                        branchSelect.innerHTML = '<option value="">All Branches</option>';
+                        branchSelect.disabled = false;
+                    }
+                    if (departmentSelect) {
+                        departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                        departmentSelect.disabled = false;
+                    }
+                    return;
+                }
+
+                // Load branches for selected company
+                fetch(`/api/branches?company_id=${companyId}`)
+                    .then(response => response.json())
+                    .then(branches => {
+                        if (branchSelect) {
+                            branchSelect.innerHTML = '<option value="">All Branches</option>';
+                            if (branches && branches.length > 0) {
+                                branches.forEach(branch => {
+                                    const option = new Option(branch.name, branch.id);
+                                    branchSelect.add(option);
+                                });
+                            }
+                            branchSelect.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading branches:', error);
+                        if (branchSelect) {
+                            branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                        }
+                    });
+
+                // Load departments for selected company
+                fetch(`/api/departments?company_id=${companyId}`)
+                    .then(response => response.json())
+                    .then(departments => {
+                        if (departmentSelect) {
+                            departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                            if (departments && departments.length > 0) {
+                                departments.forEach(dept => {
+                                    const option = new Option(dept.name, dept.id);
+                                    departmentSelect.add(option);
+                                });
+                            }
+                            departmentSelect.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading departments:', error);
+                        if (departmentSelect) {
+                            departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+                        }
+                    });
+            });
+        }
+
+        // Handle form submission for super admin
+        if (filterForm && companySelect && companySelect.dataset.isSuper) {
+            filterForm.addEventListener('submit', function(e) {
+                if (!companySelect.value) {
+                    if (branchSelect) branchSelect.disabled = true;
+                    if (departmentSelect) departmentSelect.disabled = true;
+                }
+            });
+        }
+    });
+</script>
+@endpush

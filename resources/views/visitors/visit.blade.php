@@ -49,27 +49,14 @@
                     </select>
                 </div>
             </div>
-
+            
             {{-- Branch Selection --}}
             @if($branches->isNotEmpty())
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Branch</label>
-                @if($isSuper)
-                    <select name="branch_id" id="branchSelect" class="form-select">
-                        <option value="">-- Select Branch --</option>
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" 
-                                {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
-                                {{ $branch->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                @else
-                    @if($branches->count() === 1)
-                        <input type="hidden" name="branch_id" value="{{ $branches[0]->id }}">
-                        <input type="text" class="form-control" value="{{ $branches[0]->name }}" readonly>
-                    @else
-                        <select name="branch_id" id="branchSelect" class="form-select" required>
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label fw-semibold">Branch</label>
+                    @if($isSuper)
+                        <select name="branch_id" id="branchSelect" class="form-select">
                             <option value="">-- Select Branch --</option>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}" 
@@ -78,8 +65,38 @@
                                 </option>
                             @endforeach
                         </select>
+                    @else
+                        @if($branches->count() === 1)
+                            <input type="hidden" name="branch_id" value="{{ $branches[0]->id }}">
+                            <input type="text" class="form-control" value="{{ $branches[0]->name }}" readonly>
+                        @else
+                            <select name="branch_id" id="branchSelect" class="form-select" required>
+                                <option value="">-- Select Branch --</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->id }}" 
+                                        {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
+                                        {{ $branch->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                     @endif
-                @endif
+                </div>
+                <div class="col">
+                    <label class="form-label fw-semibold">Visitor Category</label>
+                    <select name="visitor_category_id" class="form-select" required>
+                        <option value="">-- Select Category --</option>
+                        @foreach($visitorCategories as $category)
+                            <option value="{{ $category->id }}" 
+                                {{ old('visitor_category_id', $visitor->visitor_category_id ?? '') == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('visitor_category_id')
+                        <div class="text-danger small">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
             @endif
 

@@ -20,7 +20,9 @@ class VisitorCreatedNotification extends Mailable
 
     public function build()
     {
-        return $this->subject('New Visitor Registration - ' . $this->visitor->name)
-                   ->view('emails.visitor-created');
+        $companyName = $this->visitor->company->name ?? config('app.name');
+        return $this->subject('New Visitor Registration - ' . $this->visitor->name . ' - ' . $companyName)
+                   ->view('emails.visitor-created')
+                   ->with(['visitor' => $this->visitor]);
     }
 }

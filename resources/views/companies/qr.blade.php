@@ -12,10 +12,37 @@
 
 @section('content')
 <div class="container-fluid px-4">
+    <!-- Search Bar Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ route('companies.qr', $company) }}" class="d-flex">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" 
+                           name="search" 
+                           class="form-control border-start-0" 
+                           placeholder="Search branches by name, address, or phone..." 
+                           value="{{ request('search') }}"
+                           aria-label="Search branches">
+                    @if(request()->has('search'))
+                        <a href="{{ route('companies.qr', $company) }}" class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-times me-1"></i> Clear
+                        </a>
+                    @endif
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search me-1"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">QR Code Management</h1>
-        <a href="{{ route('companies.index') }}" class="btn btn-secondary btn-sm">
-            <i class="fas fa-arrow-left me-1"></i> Back to Companies
+        <a href="{{ route('dashboard') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
         </a>
     </div>
 
@@ -72,31 +99,51 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($company->branches as $branch)
-                                    <tr>
-                                        <td class="fw-semibold">{{ $branch->name }}</td>
-                                        <td>{{ $branch->address ?? '—' }}</td>
-                                        <td>{{ $branch->phone ?? '—' }}</td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                    data-bs-toggle="modal" data-bs-target="#qrModal{{ $branch->id }}">
-                                                <i class="fas fa-qrcode me-1"></i> View QR
-                                            </button>
-                                        </td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <a href="{{ route('companies.download-qr', ['company' => $company, 'branch' => $branch]) }}" 
-                                                   class="btn btn-sm btn-success" title="Download QR Code">
-                                                    <i class="fas fa-download"></i>
-                                                </a>
-                                                <a href="{{ route('qr.scan', ['company' => $company, 'branch' => $branch]) }}" 
-                                                   class="btn btn-sm btn-info" title="Quick Check-in" target="_blank">
-                                                    <i class="fas fa-sign-in-alt"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endforeach
+                                    @php
+                                        $branches = $company->branches;
+                                        if (request()->has('search')) {
+                                            $search = strtolower(request('search'));
+                                            $branches = $branches->filter(function($branch) use ($search) {
+                                                return str_contains(strtolower($branch->name), $search) || 
+                                                       str_contains(strtolower($branch->address ?? ''), $search) ||
+                                                       str_contains(strtolower($branch->phone ?? ''), $search);
+                                            });
+                                        }
+                                    @endphp
+                                    
+                                    @if($branches->count() > 0)
+                                        @foreach($branches as $branch)
+                                        <tr>
+                                            <td class="fw-semibold">{{ $branch->name }}</td>
+                                            <td>{{ $branch->address ?? '—' }}</td>
+                                            <td>{{ $branch->phone ?? '—' }}</td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                        data-bs-toggle="modal" data-bs-target="#qrModal{{ $branch->id }}">
+                                                    <i class="fas fa-qrcode me-1"></i> View QR
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{{ route('companies.download-qr', ['company' => $company, 'branch' => $branch]) }}" 
+                                                       class="btn btn-sm btn-success" title="Download QR Code">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                    <a href="{{ route('qr.scan', ['company' => $company, 'branch' => $branch]) }}" 
+                                                       class="btn btn-sm btn-info" title="Quick Check-in" target="_blank">
+                                                        <i class="fas fa-sign-in-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="5" class="text-muted py-4">
+                                                No branches found matching your search.
+                                            </td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -160,6 +207,10 @@
     }
     .card-header {
         border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
     }
 </style>
 

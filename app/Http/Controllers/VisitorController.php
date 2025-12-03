@@ -99,7 +99,7 @@ class VisitorController extends Controller
             ->when($end,   fn($q) => $q->where($column, '<=', $end));
     }
 
-    private function getCompanies()
+   private function getCompanies()
     {
         if ($this->isSuper()) {
             return Company::orderBy('name')->get();
@@ -117,6 +117,7 @@ class VisitorController extends Controller
         return Department::where('company_id', $u->company_id)->orderBy('name')->get();
     }
 
+
     private function authorizeVisitor($visitor)
     {
         $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
@@ -128,13 +129,13 @@ class VisitorController extends Controller
     /* --------------------------- CRUD --------------------------- */
 
     public function index()
-    {
-        $query = $this->companyScope(Visitor::query()->latest());
-        // Show all statuses in company list so nothing is hidden from operators
-        // (Dashboard will still hide Pending/Rejected when auto-approve is on)
-        $visitors = $query->paginate(10);
-        return view('visitors.index', compact('visitors'));
-    }
+{
+    $query = $this->companyScope(Visitor::with(['company', 'branch', 'department'])->latest());
+    // Show all statuses in company list so nothing is hidden from operators
+    // (Dashboard will still hide Pending/Rejected when auto-approve is on)
+    $visitors = $query->paginate(10);
+    return view('visitors.index', compact('visitors'));
+}
 
     public function create()
     {
@@ -179,6 +180,8 @@ public function store(Request $request)
             'goods_in_car'        => 'nullable|string|max:255',
             'workman_policy'      => 'nullable|in:Yes,No',
             'workman_policy_photo'=> 'nullable|image|max:2048',
+            'photo' => 'sometimes|image|mimes:jpeg,png,jpg|max:2048',
+            'document' => 'sometimes|file|mimes:pdf,doc,docx,jpeg,png|max:5120', // 5MB max
         ], $messages);
 
         $validated['name'] = Str::squish($validated['name']);
@@ -255,6 +258,24 @@ public function store(Request $request)
             ]);
         }
 
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('visitor_photos', 'public');
+            $visitor->photo_path = $path;
+        }
+
+        if ($request->hasFile('document')) {
+            $documentPath = $request->file('document')->store('visitor_documents', 'public');
+            $visitor->document_path = $documentPath;
+        }
+
+
+        // Handle document upload
+        if ($request->hasFile('document')) {
+            $document = $request->file('document');
+            $documentPath = $document->store('documents', 'public');
+            $validated['document_path'] = $documentPath;
+        }
         // Handle face image (base64)
         if ($request->filled('face_image')) {
             $dataUrl = $request->input('face_image');
@@ -463,6 +484,17 @@ private function schema_has_column(string $table, string $column): bool
                 ]);
             }
 
+
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('visitor_photos', 'public');
+                $visitor->photo_path = $path;
+            }
+
+            if ($request->hasFile('document')) {
+                $documentPath = $request->file('document')->store('visitor_documents', 'public');
+                $visitor->document_path = $documentPath;
+            }
+
             return redirect()->back()->with('success', $message);
         }
 
@@ -594,72 +626,103 @@ private function schema_has_column(string $table, string $column): bool
     /* --------------------------- Other flows --------------------------- */
 
     public function history(Request $request)
-    {
-        $query = $this->companyScope(Visitor::query());
+{
+    // Get the base query
+    $query = $this->companyScope(Visitor::query())
+        ->with(['company', 'branch', 'department'])
+        ->when($request->filled('status'), function($q) use ($request) {
+            $q->where('status', $request->status);
+        })
+        ->when($request->filled('company_id'), function($q) use ($request) {
+            $q->where('company_id', $request->company_id);
+        })
+        ->when($request->filled('branch_id'), function($q) use ($request) {
+            $q->where('branch_id', $request->branch_id);
+        })
+        ->when($request->filled('department_id'), function($q) use ($request) {
+            $q->where('department_id', $request->department_id);
+        });
 
-        // Show all statuses in history for company users so nothing is hidden
+    // Apply date range filter
+    $from = $request->input('from', now()->subDays(30)->format('Y-m-d'));
+    $to = $request->input('to', now()->format('Y-m-d'));
+    
+    $query->whereBetween('in_time', [
+        Carbon::parse($from)->startOfDay(),
+        Carbon::parse($to)->endOfDay()
+    ]);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+    // Get the data
+    $visitors = $query->latest()->paginate(20);
 
-        // Superadmin may filter by specific company
-        if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
-        }
+    // Get filter data
+    $companies = $this->isSuper() 
+        ? Company::orderBy('name')->get()
+        : Company::where('id', auth()->user()->company_id)->get();
 
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
+    $branches = collect();
+    $departments = collect();
 
-        // Optional branch filter for users who can view multiple branches
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
+    if ($request->filled('company_id')) {
+        $branches = Branch::where('company_id', $request->company_id)
+            ->orderBy('name')
+            ->get();
 
-        $this->applyDateRange($query, 'in_time', $request);
-
-        $visitors = $query->latest()->paginate(10)->appends($request->query());
-        $companies = $this->getCompanies();
-
-        $departments = $request->filled('company_id')
-            ? Department::where('company_id', $request->company_id)->orderBy('name')->get()
-            : $this->getDepartments();
-
-        return view('visitors.history', compact('visitors', 'companies', 'departments'));
+        $departments = Department::where('company_id', $request->company_id)
+            ->orderBy('name')
+            ->get();
     }
 
-    public function visitForm($id)
-    {
-        $visitor = Visitor::findOrFail($id);
-        $this->authorizeVisitor($visitor);
+    return view('visitors.history', compact(
+        'visitors',
+        'companies',
+        'branches',
+        'departments'
+    ));
+}
 
-        $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-        $isSuper = $this->isSuper();
-        
-        // Get companies - all for super admin, only user's company for others
-        $companies = $isSuper ? $this->getCompanies() : collect([$user->company]);
-        
-        $departments = $this->getDepartments();
-        
-        // Get branches - all for super admin, only user's company branches for others
-        $branchesQuery = Branch::query();
-        if (!$isSuper && $user->company_id) {
-            $branchesQuery->where('company_id', $user->company_id);
-        }
-        $branches = $branchesQuery->orderBy('name')->get();
-        
-        return view('visitors.visit', [
-            'visitor' => $visitor,
-            'departments' => $departments,
-            'companies' => $companies,
-            'branches' => $branches,
-            'isSuper' => $isSuper,
-            'user' => $user
-        ]);
+ public function visitForm($id)
+{
+    $visitor = Visitor::findOrFail($id);
+    $this->authorizeVisitor($visitor);
+
+    $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+    $isSuper = $this->isSuper();
+    
+    // Get companies - all for super admin, only user's company for others
+    $companies = $isSuper ? $this->getCompanies() : collect([$user->company]);
+    
+    // Get departments for the visitor's company or the first company if not set
+    $companyId = $visitor->company_id ?? ($companies->first()->id ?? null);
+    $departments = $companyId ? $this->getDepartments($companyId) : collect();
+    
+    // Get branches for the company
+    $branchesQuery = Branch::query();
+    if ($companyId) {
+        $branchesQuery->where('company_id', $companyId);
     }
+    $branches = $branchesQuery->orderBy('name')->get();
+    
+    // Get visitor categories for the company
+    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $companyId)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get();
+    
+    return view('visitors.visit', [
+        'visitor' => $visitor,
+        'departments' => $departments,
+        'companies' => $companies,
+        'branches' => $branches,
+        'visitorCategories' => $visitorCategories,
+        'isSuper' => $isSuper,
+        'user' => $user
+    ]);
+}
 
-    public function submitVisit(Request $request, $id)
+
+
+   public function submitVisit(Request $request, $id)
     {
         $visitor = Visitor::findOrFail($id);
         $this->authorizeVisitor($visitor);
@@ -700,7 +763,70 @@ private function schema_has_column(string $table, string $column): bool
     public function entryPage()
     {
         $visitors = $this->companyScope(Visitor::query()->with(['company','department'])->latest('created_at'))->paginate(10);
-        return view('visitors.entry', compact('visitors'));
+        $isCompany = $this->isCompany();
+        return view('visitors.entry', compact('visitors', 'isCompany'));
+    }
+
+    /**
+     * Toggle visitor check-in/out status for company users
+     *
+     * @param int $id Visitor ID
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function companyToggleEntry($id)
+    {
+        try {
+            $visitor = Visitor::findOrFail($id);
+            $this->authorizeVisitor($visitor);
+            
+            $isCheckingIn = !$visitor->in_time;
+            
+            DB::beginTransaction();
+            
+            if ($isCheckingIn) {
+                // Check if already checked in
+                if ($visitor->in_time) {
+                    return redirect()->route('company.visitors.entry.page')
+                        ->with('error', 'Visitor is already checked in.');
+                }
+                
+                $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
+                if (!$companyAuto && $visitor->status !== 'Approved') {
+                    return redirect()->route('company.visitors.entry.page')
+                        ->with('error', 'Visitor must be approved before checking in.');
+                }
+                
+                $visitor->in_time = now();
+                $visitor->status = $visitor->status === 'Pending' && $companyAuto ? 'Approved' : $visitor->status;
+                $message = 'Visitor checked in successfully.';
+            } else {
+                // Check if already checked out
+                if ($visitor->out_time) {
+                    return redirect()->route('company.visitors.entry.page')
+                        ->with('error', 'Visitor has already been checked out.');
+                }
+                
+                $visitor->out_time = now();
+                $visitor->status = 'Completed';
+                $message = 'Visitor checked out successfully.';
+            }
+            
+            $visitor->save();
+            DB::commit();
+            
+            return redirect()->route('company.visitors.entry.page')
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Company Toggle Entry Error: ' . $e->getMessage(), [
+                'visitor_id' => $id,
+                'exception' => $e
+            ]);
+            
+            return redirect()->route('company.visitors.entry.page')
+                ->with('error', 'An error occurred. Please try again.');
+        }
     }
 
     /**
@@ -711,6 +837,20 @@ private function schema_has_column(string $table, string $column): bool
      */
     public function toggleEntry($id)
     {
+        // Log the request details for debugging
+        \Log::info('Toggle Entry Request:', [
+            'visitor_id' => $id,
+            'url' => request()->fullUrl(),
+            'method' => request()->method(),
+            'ajax' => request()->ajax(),
+            'input' => request()->all(),
+            'user' => auth()->user() ? auth()->user()->toArray() : null,
+            'company_user' => auth('company')->user() ? auth('company')->user()->toArray() : null,
+            'headers' => request()->header(),
+            'previous_url' => url()->previous(),
+            'current_url' => url()->current()
+        ]);
+
         // If you later add guard role, leave this check; otherwise remove.
         if ((auth()->user()->role ?? null) === 'guard') {
             abort(403, 'Unauthorized action.');
@@ -800,7 +940,8 @@ private function schema_has_column(string $table, string $column): bool
             // Commit the transaction
             DB::commit();
             
-            return back()->with('success', $message);
+            // Always redirect back to the previous URL with the success message
+            return redirect()->back()->with('success', $message);
             
         } catch (\Exception $e) {
             // Rollback the transaction on error
@@ -817,14 +958,19 @@ private function schema_has_column(string $table, string $column): bool
     }
 
     public function printPass($id)
-    {
-        $visitor = Visitor::with('company')->findOrFail($id);
-        $this->authorizeVisitor($visitor);
-        if ($visitor->status !== 'Approved') {
-            return redirect()->back()->with('error', 'Pass is available only after the visitor is approved.');
-        }
-        return view('visitors.pass', compact('visitor'));
+{
+    $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
+    $this->authorizeVisitor($visitor);
+    
+    if ($visitor->status !== 'Approved') {
+        return redirect()->back()->with('error', 'Pass is available only after the visitor is approved.');
     }
+    
+    return view('visitors.pass', [
+        'visitor' => $visitor,
+        'company' => $visitor->company
+    ]);
+}
 
     // --------------------------- AJAX: Lookup by phone ---------------------------
     public function lookupByPhone(Request $request)
@@ -864,71 +1010,194 @@ private function schema_has_column(string $table, string $column): bool
     /* --------------------------- Reports --------------------------- */
 
     // Visitor Report (filters by in_time)
-    public function report(Request $request)
-    {
-        $today = Carbon::today();
-        $month = Carbon::now()->month;
+ /**
+ * Display a listing of visitors for reporting.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\View\View
+ */
+public function report(Request $request)
+{
+    $today = Carbon::today();
+    $month = Carbon::now()->month;
 
-        $todayVisitors = $this->companyScope(
-            Visitor::whereDate('created_at', $today)
-        )->count();
+    // Get counts for today and this month
+    $todayVisitors = $this->companyScope(
+        Visitor::whereDate('created_at', $today)
+    )->count();
 
-        $monthVisitors = $this->companyScope(
-            Visitor::whereMonth('created_at', $month)
-        )->count();
+    $monthVisitors = $this->companyScope(
+        Visitor::whereMonth('created_at', $month)
+    )->count();
 
-        $statusCounts = $this->companyScope(
-            Visitor::select('status', DB::raw('count(*) as total'))->groupBy('status')
-        )->pluck('total', 'status');
+    // Get status counts
+    $statusCounts = $this->companyScope(
+        Visitor::select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+    )->pluck('total', 'status');
 
-        $query = $this->companyScope(Visitor::query())->latest();
+    // Start building the query
+    $query = $this->companyScope(Visitor::query())
+        ->with(['company', 'department', 'branch'])
+        ->latest();
 
-        $this->applyDateRange($query, 'in_time', $request);
+    // Apply date range filter
+    $this->applyDateRange($query, 'in_time', $request);
 
-        $visitors = $query->paginate(10)->appends($request->query());
-
-        return view('visitors.report', compact('visitors', 'todayVisitors', 'monthVisitors', 'statusCounts'));
+    // Apply company filter if provided and user is superadmin
+    if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
+        $query->where('company_id', $request->company_id);
     }
 
-    // Visitor In/Out Report (range across in_time OR out_time)
+    // Apply department filter if provided
+    if ($request->filled('department_id')) {
+        $query->where('department_id', $request->department_id);
+    }
+    
+    // Apply branch filter if provided
+    if ($request->filled('branch_id')) {
+        $query->where('branch_id', $request->branch_id);
+    }
+
+    // Get companies for filter dropdown
+    $companies = $this->getCompanies()->pluck('name', 'id');
+    
+    // Get departments based on selected company
+    $departmentsQuery = $this->getDepartments();
+    if ($request->filled('company_id')) {
+        $departmentsQuery->where('company_id', $request->company_id);
+    }
+    $departments = $departmentsQuery->pluck('name', 'id');
+    
+    // Get branches based on selected company
+    $branchesQuery = Branch::query();
+    if (auth()->user()->role !== 'superadmin') {
+        $branchesQuery->where('company_id', auth()->user()->company_id);
+    } elseif ($request->filled('company_id')) {
+        $branchesQuery->where('company_id', $request->company_id);
+    }
+    $branches = $branchesQuery->pluck('name', 'id');
+
+    // Get paginated results
+    $visitors = $query->paginate(10)->appends($request->query());
+
+    return view('visitors.report', compact(
+        'visitors', 
+        'todayVisitors', 
+        'monthVisitors', 
+        'statusCounts',
+        'companies',
+        'departments',
+        'branches'
+    ));
+}
     public function inOutReport(Request $request)
-    {
-        $query = $this->companyScope(Visitor::query());
+{
+    $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch']);
 
-        if ($request->filled('from') || $request->filled('to')) {
-            $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
-            $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
+    if ($request->filled('from') || $request->filled('to')) {
+        $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
+        $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
 
-            $query->where(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
-                  ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
-            })->orWhere(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
-                  ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
-            });
-        }
-
-        $visitors = $query->latest('in_time')->paginate(10)->appends($request->query());
-
-        return view('visitors.visitor_inout', compact('visitors'));
+        $query->where(function ($q) use ($from, $to) {
+            $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
+              ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
+        })->orWhere(function ($q) use ($from, $to) {
+            $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
+              ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
+        });
     }
 
-    // Approval Status Report (filter by department + date range on updated_at; change to approved_at if you add that)
-    public function approvalReport(Request $request)
-    {
-        $query = $this->companyScope(Visitor::with(['department']))->latest('updated_at');
-
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
-
-        $this->applyDateRange($query, 'updated_at', $request);
-
-        $visitors    = $query->paginate(10)->appends($request->query());
-        $departments = $this->getDepartments();
-
-        return view('visitors.approval_status', compact('visitors', 'departments'));
+    // Apply company filter
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
     }
+
+    // Apply department filter
+    if ($request->filled('department_id')) {
+        $query->where('department_id', $request->department_id);
+    }
+
+    // Apply branch filter
+    if ($request->filled('branch_id')) {
+        $query->where('branch_id', $request->branch_id);
+    }
+
+    $visits = $query->latest('in_time')->paginate(20);
+    
+    // Get filter data
+    $companies = $this->getCompanies();
+    $departments = $request->filled('company_id') 
+        ? Department::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
+        : [];
+    $branches = $request->filled('company_id')
+        ? Branch::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
+        : [];
+
+    return view('visitors.visitor_inout', compact(
+        'visits', 
+        'companies', 
+        'departments', 
+        'branches'
+    ));
+}
+
+    /**
+ * Approval Status Report (filter by company, department, branch + date range)
+ */
+public function approvalReport(Request $request)
+{
+    $query = $this->companyScope(Visitor::query())
+        ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
+        ->whereIn('status', ['approved', 'rejected'])
+        ->latest('updated_at');
+
+    // Apply date range filter
+    $this->applyDateRange($query, 'updated_at', $request);
+
+    // Apply company filter if provided and user is superadmin
+    if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
+        $query->where('company_id', $request->company_id);
+    }
+
+    // Apply department filter if provided
+    if ($request->filled('department_id')) {
+        $query->where('department_id', $request->department_id);
+    }
+    
+    // Apply branch filter if provided
+    if ($request->filled('branch_id')) {
+        $query->where('branch_id', $request->branch_id);
+    }
+
+    // Get companies for filter dropdown
+    $companies = $this->getCompanies()->pluck('name', 'id');
+    
+    // Get departments based on selected company
+    $departmentsQuery = $this->getDepartments();
+    if ($request->filled('company_id')) {
+        $departmentsQuery->where('company_id', $request->company_id);
+    }
+    $departments = $departmentsQuery->pluck('name', 'id');
+    
+    // Get branches based on selected company
+    $branchesQuery = Branch::query();
+    if (auth()->user()->role !== 'superadmin') {
+        $branchesQuery->where('company_id', auth()->user()->company_id);
+    } elseif ($request->filled('company_id')) {
+        $branchesQuery->where('company_id', $request->company_id);
+    }
+    $branches = $branchesQuery->pluck('name', 'id');
+
+    $visitors = $query->paginate(10)->appends($request->query());
+
+    return view('visitors.approval_status', compact(
+        'visitors',
+        'companies',
+        'departments',
+        'branches'
+    ));
+}
 
     // Security Checkpoints Report (filter by creation timestamp; acts as verification time)
     public function securityReport(Request $request)
@@ -948,84 +1217,103 @@ private function schema_has_column(string $table, string $column): bool
 
         $this->applyDateRange($query, 'created_at', $request);
 
-        $checks = $query->paginate(10)->appends($request->query());
+    $securityChecks = $query->paginate(10)->appends($request->query());
+    
+    // Get companies for the filter dropdown
+    $companies = $this->getCompanies();
+    
+    // Get departments based on selected company
+    $departments = [];
+    if ($request->filled('company_id')) {
+        $departments = Department::where('company_id', $request->company_id)
+            ->pluck('name', 'id')
+            ->toArray();
+    }
 
-        return view('visitors.security_checkpoints', compact('checks'));
+    return view('visitors.security_checkpoints', compact('securityChecks', 'companies', 'departments'));
     }
 
     // Hourly visitors report (counts of in/out per hour over a date range)
-    public function hourlyReport(Request $request)
-    {
-        $from = $request->input('from');
-        $to   = $request->input('to');
-        $start = $from ? Carbon::parse($from)->startOfDay() : Carbon::today()->startOfDay();
-        $end   = $to   ? Carbon::parse($to)->endOfDay()   : Carbon::today()->endOfDay();
+    // In ReportController.php
 
-        $selectedCompany = $request->input('company_id');
-        $selectedBranch  = $request->input('branch_id');
+public function hourlyReport(Request $request)
+{
+    $query = Visitor::whereNotNull('in_time')
+        ->select(
+            DB::raw('HOUR(in_time) as hour'),
+            DB::raw('DATE(in_time) as date'),
+            DB::raw('COUNT(*) as count')
+        )
+        ->groupBy('hour', 'date')
+        ->orderBy('date')
+        ->orderBy('hour');
 
-        // Base query (hourly counts based on in_time)
-        $inQ = Visitor::query();
-
-        // Scope by role/company/branch
-        if ($this->isSuper()) {
-            if ($selectedCompany) {
-                $inQ->where('company_id', $selectedCompany);
-            }
-            if ($selectedBranch) {
-                $inQ->where('branch_id', $selectedBranch);
-            }
-        } else {
-            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-            $inQ->where('company_id', $u->company_id);
-            if (!empty($u->branch_id)) {
-                $inQ->where('branch_id', $u->branch_id);
-            } elseif ($selectedBranch) {
-                $inQ->where('branch_id', $selectedBranch);
-            }
-        }
-
-        // Apply range for in_time and aggregate hourly counts
-        $inAgg = $inQ->whereBetween('in_time', [$start, $end])
-            ->select(DB::raw("DATE_FORMAT(in_time, '%Y-%m-%d %H:00:00') as hour_slot"), DB::raw('COUNT(*) as total'))
-            ->groupBy('hour_slot')
-            ->pluck('total', 'hour_slot');
-
-        // Build full hourly series
-        $series = [];
-        $cursor = $start->copy()->startOfHour();
-        $endHour = $end->copy()->startOfHour();
-        while ($cursor <= $endHour) {
-            $key = $cursor->format('Y-m-d H:00:00');
-            $series[] = [
-                'hour'  => $key,
-                'count' => (int)($inAgg[$key] ?? 0),
-            ];
-            $cursor->addHour();
-        }
-
-        $companies = $this->getCompanies();
-
-        // Branches list for superadmin if company selected; for company users, we can show all their branches
-        $branches = Branch::query()
-            ->when(!$this->isSuper(), function($q){
-                $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-                $q->where('company_id', $u->company_id);
-            })
-            ->when($this->isSuper() && $selectedCompany, fn($q)=>$q->where('company_id', $selectedCompany))
-            ->orderBy('name')
-            ->get();
-
-        return view('visitors.reports_hourly', [
-            'series'          => $series,
-            'from'            => $start->format('Y-m-d'),
-            'to'              => $end->format('Y-m-d'),
-            'companies'       => $companies,
-            'branches'        => $branches,
-            'selectedCompany' => $selectedCompany,
-            'selectedBranch'  => $selectedBranch,
-        ]);
+    // Apply date range filter
+    if ($request->filled('from')) {
+        $query->whereDate('in_time', '>=', $request->from);
     }
+    if ($request->filled('to')) {
+        $query->whereDate('in_time', '<=', $request->to);
+    }
+
+    // Apply company filter
+    if ($request->filled('company_id')) {
+        $query->where('company_id', $request->company_id);
+    }
+
+    // Apply department filter
+    if ($request->filled('department_id')) {
+        $query->where('department_id', $request->department_id);
+    }
+
+    // Apply branch filter
+    if ($request->filled('branch_id')) {
+        $query->where('branch_id', $request->branch_id);
+    }
+
+    // Apply company filter for non-superadmins
+    if (auth()->user()->role !== 'superadmin') {
+        $query->where('company_id', auth()->user()->company_id);
+
+        // If user has specific departments assigned
+        if (auth()->user()->departments->isNotEmpty()) {
+            $query->whereIn('department_id', auth()->user()->departments->pluck('id'));
+        }
+    }
+
+    // Get the raw results
+    $hourlyData = $query->get();
+
+    // Format the data for the view
+    $series = $hourlyData->map(function($item) {
+        return [
+            'hour' => $item->date . ' ' . str_pad($item->hour, 2, '0', STR_PAD_LEFT) . ':00:00',
+            'count' => $item->count
+        ];
+    })->toArray();
+
+    // Get companies, departments, and branches for filters
+    $companies = $this->getCompanies();
+    $departments = $this->getDepartments($request);
+    
+    // Get branches based on selected company
+    $branches = [];
+    if ($request->filled('company_id')) {
+        $branches = \App\Models\Branch::where('company_id', $request->company_id)
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
+    return view('visitors.reports_hourly', [
+        'series' => $series,
+        'from' => $request->input('from', now()->startOfDay()->format('Y-m-d')),
+        'to' => $request->input('to', now()->endOfDay()->format('Y-m-d')),
+        'companies' => $companies->pluck('name', 'id'),
+        'departments' => $departments->pluck('name', 'id'),
+        'branches' => $branches,
+        'filters' => $request->all()
+    ]);
+}
 
     public function reportExport(Request $request)
     {
@@ -1147,34 +1435,31 @@ private function schema_has_column(string $table, string $column): bool
     }
 
     public function approvalReportExport(Request $request)
-    {
-        $query = $this->companyScope(Visitor::with(['department']))->latest('updated_at');
+{
+    $query = $this->companyScope(Visitor::query())
+        ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
+        ->whereIn('status', ['approved', 'rejected'])
+        ->latest('updated_at');
 
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
+    // Apply the same filters as the report
+    $this->applyDateRange($query, 'updated_at', $request);
 
-        $this->applyDateRange($query, 'updated_at', $request);
-
-        $visitors = $query->get();
-
-        $headings = ['Visitor Name', 'Department', 'Approved By', 'Rejected By', 'Reject Reason'];
-
-        $rows = $visitors->map(function ($visitor) {
-            return [
-                $visitor->name,
-                optional($visitor->department)->name ?? '—',
-                $visitor->approved_by ?? '—',
-                $visitor->rejected_by ?? '—',
-                $visitor->reject_reason ?? '—',
-            ];
-        })->toArray();
-
-        return Excel::download(
-            new ArrayExport($headings, $rows),
-            'visitor-approvals-' . now()->format('Ymd_His') . '.xlsx'
-        );
+    if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
+        $query->where('company_id', $request->company_id);
     }
+
+    if ($request->filled('department_id')) {
+        $query->where('department_id', $request->department_id);
+    }
+    
+    if ($request->filled('branch_id')) {
+        $query->where('branch_id', $request->branch_id);
+    }
+
+    $visitors = $query->get();
+
+    return Excel::download(new VisitorsExport($visitors), 'approval-report-' . now()->format('Y-m-d') . '.xlsx');
+}
 
     public function securityReportExport(Request $request)
     {

@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Contracts\AuthenticatableUser as AuthenticatableUserContract;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements AuthenticatableUserContract
 {
     use HasFactory, Notifiable, HasRoles;
 
@@ -99,4 +100,56 @@ class User extends Authenticatable
     // IMPORTANT: remove any custom hasRole() you added.
     // Using the method below will SHADOW Spatie’s version. Delete it if present.
     // public function hasRole($role) { ... }  // <-- REMOVE THIS
+    // Add these methods to your User model, before the closing brace
+
+    /**
+     * Check if user is a super admin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return in_array($this->role, ['super_admin', 'superadmin']) || $this->is_super_admin === true;
+    }
+
+    /**
+     * Get the company ID for the user
+     *
+     * @return int|null
+     */
+    public function getCompanyId()
+    {
+        return $this->company_id;
+    }
+
+    /**
+     * Check if user is a company admin
+     */
+    public function isCompanyAdmin(): bool
+    {
+        return $this->role === 'company' || $this->hasRole('company');
+    }
+
+    /**
+     * Check if user is a company user
+     */
+    public function isCompanyUser(): bool
+    {
+        return $this->role === 'company_user' || $this->hasRole('company_user');
+    }
+
+    /**
+     * Check if user is a security guard
+     */
+    public function isGuard(): bool
+    {
+        return $this->role === 'guard' || $this->hasRole('guard');
+    }
+
+    /**
+     * Check if user has any admin role
+     */
+    public function isAdmin(): bool
+    {
+        return $this->isSuperAdmin() || $this->isCompanyAdmin();
+    }
+
 }

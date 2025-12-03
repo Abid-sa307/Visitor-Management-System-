@@ -10,7 +10,7 @@ class OtpVerificationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $otp;
+    public string $otp;
 
     /**
      * Create a new message instance.

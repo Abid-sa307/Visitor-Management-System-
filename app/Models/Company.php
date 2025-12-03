@@ -2,29 +2,58 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Scopes\MultiTenantScope;
-use Illuminate\Support\Facades\Auth;
 
-class Company extends Model
+class Company extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $guard = 'company';
 
     protected $fillable = [
         'name',
+        'email',
+        'password',
         'address',
         'contact_number',
         'logo',
         'gst_number',
         'website',
-        'email',
         'notification_settings',
+        'face_recognition_enabled',
+        'auto_approve_visitors',
+        'branch_start_date',
+        'branch_end_date',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [
+        'email_verified_at' => 'datetime',
         'notification_settings' => 'array',
+        'face_recognition_enabled' => 'boolean',
+        'auto_approve_visitors' => 'boolean',
+        'branch_start_date' => 'date',
+        'branch_end_date' => 'date',
     ];
+
+
+    /**
+     * Automatically hash the password when it's set.
+     *
+     * @param string $value
+     * @return void
+     */
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = bcrypt($value);
+    }
 
     // protected static function booted()
     // {

@@ -145,7 +145,7 @@
             <footer class="sticky-footer bg-white mt-auto">
                 <div class="container my-auto">
                     <div class="text-center my-auto">
-                        <span>&copy; {{ date('Y') }} Visitor Management System</span>
+                        <span>&copy; 2025 Visitor Management System  <a href="https://www.nntsoftware.com" target="_blank">(Developed By N&T Software)</a></span>
                     </div>
                 </div>
             </footer>

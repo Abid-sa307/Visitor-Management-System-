@@ -3,56 +3,92 @@
 namespace App\Http\Controllers;
 
 use App\Models\VisitorCategory;
+use App\Http\Requests\VisitorCategoryRequest;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VisitorCategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = VisitorCategory::with('company')->latest()->paginate(10);
-        return view('visitor_categories.index', compact('categories'));
+        $categories = VisitorCategory::query()
+            ->when($request->has('company_id'), function($query) use ($request) {
+                return $query->where('company_id', $request->company_id);
+            })
+            ->with('company')
+            ->latest()
+            ->paginate(10);
+
+        $companies = auth()->user()->hasRole('superadmin') 
+            ? Company::orderBy('name')->pluck('name', 'id')
+            : collect();
+
+        return view('visitor-categories.index', compact('categories', 'companies'));
     }
 
     public function create()
     {
-        $companies = Company::all();
-        return view('visitor_categories.create', compact('companies'));
+        $companies = auth()->user()->hasRole('superadmin') 
+            ? Company::orderBy('name')->pluck('name', 'id')
+            : null;
+
+        return view('visitor-categories.create', compact('companies'));
     }
 
-    public function store(Request $request)
+    public function store(VisitorCategoryRequest $request)
     {
-        $validated = $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'name' => 'required|string|max:255',
-        ]);
+        $data = $request->validated();
+        
+        // For company users, set their company_id
+        if (auth()->guard('company')->check()) {
+            $data['company_id'] = auth()->guard('company')->id();
+        }
 
-        VisitorCategory::create($validated);
+        VisitorCategory::create($data);
 
-        return redirect()->route('visitor-categories.index')->with('success', 'Category created successfully.');
+        return redirect()->route('visitor-categories.index')
+            ->with('success', 'Visitor category created successfully.');
     }
 
-    public function edit(VisitorCategory $visitor_category)
+    public function show(VisitorCategory $visitorCategory)
     {
-        $companies = Company::all();
-        return view('visitor_categories.edit', compact('visitor_category', 'companies'));
+        $this->authorize('view', $visitorCategory);
+        return view('visitor-categories.show', compact('visitorCategory'));
     }
 
-    public function update(Request $request, VisitorCategory $visitor_category)
+    public function edit(VisitorCategory $visitorCategory)
     {
-        $validated = $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'name' => 'required|string|max:255',
-        ]);
+        $this->authorize('update', $visitorCategory);
+        
+        $companies = auth()->user()->hasRole('superadmin') 
+            ? Company::orderBy('name')->pluck('name', 'id')
+            : null;
 
-        $visitor_category->update($validated);
-
-        return redirect()->route('visitor-categories.index')->with('success', 'Category updated successfully.');
+        return view('visitor-categories.edit', compact('visitorCategory', 'companies'));
     }
 
-    public function destroy(VisitorCategory $visitor_category)
+    public function update(VisitorCategoryRequest $request, VisitorCategory $visitorCategory)
     {
-        $visitor_category->delete();
-        return back()->with('success', 'Category deleted.');
+        $this->authorize('update', $visitorCategory);
+        
+        $visitorCategory->update($request->validated());
+
+        return redirect()->route('visitor-categories.index')
+            ->with('success', 'Visitor category updated successfully');
+    }
+
+    public function destroy(VisitorCategory $visitorCategory)
+    {
+        $this->authorize('delete', $visitorCategory);
+        
+        if ($visitorCategory->visitors()->exists()) {
+            return back()->with('error', 'Cannot delete category with associated visitors.');
+        }
+
+        $visitorCategory->delete();
+
+        return redirect()->route('visitor-categories.index')
+            ->with('success', 'Visitor category deleted successfully');
     }
 }

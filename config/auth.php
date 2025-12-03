@@ -1,6 +1,5 @@
 <?php
 
-
 return [
 
     /*
@@ -28,10 +27,6 @@ return [
     | Of course, a great default configuration has been defined for you
     | which utilizes session storage plus the Eloquent user provider.
     |
-    | All authentication guards have a user provider, which defines how the
-    | users are actually retrieved out of your database or other storage
-    | system used by the application. Typically, Eloquent is utilized.
-    |
     | Supported: "session"
     |
     */
@@ -41,35 +36,23 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'company' => [
+            'driver' => 'session',
+            'provider' => 'company_users',
+        ],
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | User Providers
-    |--------------------------------------------------------------------------
-    |
-    | All authentication guards have a user provider, which defines how the
-    | users are actually retrieved out of your database or other storage
-    | system used by the application. Typically, Eloquent is utilized.
-    |
-    | If you have multiple user tables or models you may configure multiple
-    | providers to represent the model / table. These providers may then
-    | be assigned to any extra authentication guards you have defined.
-    |
-    | Supported: "database", "eloquent"
-    |
-    */
-
+    
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'company_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\CompanyUser::class,
+        ],
     ],
 
     /*
@@ -98,6 +81,12 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+        'companies' => [
+            'provider' => 'companies',
+            'table' => 'company_password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*
@@ -112,40 +101,5 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
-
-    'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'users',
-        ],
-
-        'company' => [
-            'driver' => 'session',
-            'provider' => 'companies',
-        ],
-
-        'guard' => [
-            'driver' => 'session',
-            'provider' => 'guards',
-        ],
-    ],
-
-    'providers' => [
-        'users' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\User::class,
-        ],
-
-        'companies' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\CompanyUser::class, 
-        ],
-
-        'guards' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\SecurityGuard::class, 
-        ],
-    ],
-
 
 ];

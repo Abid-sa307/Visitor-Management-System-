@@ -8,25 +8,142 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h2 class="fw-bold text-primary m-0">Visitor Report</h2>
-        <form method="GET" action="{{ route($reportExportRoute) }}">
+        <form method="GET" action="{{ route($reportExportRoute) }}" class="d-flex gap-2">
             <input type="hidden" name="from" value="{{ request('from') }}">
             <input type="hidden" name="to" value="{{ request('to') }}">
+            @if(request('company_id'))
+                <input type="hidden" name="company_id" value="{{ request('company_id') }}">
+            @endif
+            @if(request('department_id'))
+                <input type="hidden" name="department_id" value="{{ request('department_id') }}">
+            @endif
+            @if(request('branch_id'))
+                <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
+            @endif
             <button type="submit" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel
             </button>
         </form>
     </div>
 
-    <!-- Date filter -->
-    <form method="GET" class="row g-3 align-items-end mb-3">
-        <div class="col-md-6">
-            @include('components.date_range')
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                @if(auth()->user()->role === 'superadmin')
+                <div class="col-md-3">
+                    <label for="company_id" class="form-label">Company</label>
+                    <select name="company_id" id="company_id" class="form-select">
+                        <option value="">All Companies</option>
+                        @foreach($companies as $id => $name)
+                            <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                <div class="col-md-3">
+                    <label for="department_id" class="form-label">Department</label>
+                    <select name="department_id" id="department_id" class="form-select" {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                        <option value="">All Departments</option>
+                        @foreach($departments as $id => $name)
+                            <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="branch_id" class="form-label">Branch</label>
+                    <select name="branch_id" id="branch_id" class="form-select" {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                        <option value="">All Branches</option>
+                        @foreach($branches as $id => $name)
+                            <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    @include('components.date_range')
+                </div>
+                
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel me-1"></i> Filter
+                    </button>
+                </div>
+                
+                <div class="col-md-2">
+                    <a href="{{ url()->current() }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                    </a>
+                </div>
+            </form>
         </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">Filter</button>
-            <a href="{{ url()->current() }}" class="btn btn-secondary">Reset</a>
-        </div>
-    </form>
+    </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const companySelect = document.getElementById('company_id');
+            const departmentSelect = document.getElementById('department_id');
+            const branchSelect = document.getElementById('branch_id');
+
+            if (companySelect) {
+                companySelect.addEventListener('change', function() {
+                    const companyId = this.value;
+                    
+                    // Enable/disable department and branch selects
+                    departmentSelect.disabled = !companyId;
+                    if (branchSelect) branchSelect.disabled = !companyId;
+                    
+                    // Reset department select
+                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                    
+                    // Reset branch select
+                    if (branchSelect) {
+                        branchSelect.innerHTML = '<option value="">All Branches</option>';
+                    }
+                    
+                    if (companyId) {
+                        // Load departments for the selected company
+                        fetch(`/companies/${companyId}/departments`)
+                            .then(response => response.json())
+                            .then(data => {
+                                data.forEach(department => {
+                                    const option = document.createElement('option');
+                                    option.value = department.id;
+                                    option.textContent = department.name;
+                                    departmentSelect.appendChild(option);
+                                });
+                            });
+                            
+                        // Load branches for the selected company
+                        if (branchSelect) {
+                            fetch(`/companies/${companyId}/branches-json`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    data.forEach(branch => {
+                                        const option = document.createElement('option');
+                                        option.value = branch.id;
+                                        option.textContent = branch.name;
+                                        branchSelect.appendChild(option);
+                                    });
+                                })
+                                .catch(error => {
+                                    console.error('Error loading branches:', error);
+                                });
+                        }
+                    }
+                });
+                
+                // Trigger change event if company is already selected
+                if (companySelect.value) {
+                    companySelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    </script>
+    @endpush
 
     @if($visitors->count())
         <div class="table-responsive shadow-sm border rounded">

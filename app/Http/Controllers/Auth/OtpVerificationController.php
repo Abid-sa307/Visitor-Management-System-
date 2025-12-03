@@ -8,20 +8,23 @@ use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 
 class OtpVerificationController extends Controller
 {
     protected $otpService;
 
     public function __construct(OtpService $otpService)
-    {
-        $this->otpService = $otpService;
-    }
+{
+    $this->otpService = $otpService;
+    $this->middleware('auth'); // or simply remove middleware line entirely
+}
+
 
     /**
      * Show the OTP verification form.
      */
-    public function show()
+    public function showOtpForm(Request $request)
     {
         if (!Session::has('otp_required') || !Session::has('otp_user_id')) {
             return redirect()->route('login')->with('error', 'Invalid OTP verification request.');
@@ -42,145 +45,124 @@ class OtpVerificationController extends Controller
             return $this->loginUser($user);
         }
         
-        return view('auth.verify-otp', [
-            'resendUrl' => route('otp.resend')
-        ]);
+        return view('auth.verify-otp');
     }
 
     /**
      * Verify the OTP code.
      */
-    public function verify(Request $request)
-    {
-        $request->validate([
-            'otp' => 'required|string|size:6',
-        ]);
+    public function verifyOtp(Request $request)
+{
+    $request->validate([
+        'otp' => 'required|string|size:6',
+    ]);
 
-        // Get the OTP from the request and ensure it's a string
-        $otp = (string) $request->input('otp');
-        
-        // Log the received OTP for debugging
-        \Log::info('Verifying OTP', [
-            'otp_received' => $otp,
-            'otp_length' => strlen($otp),
-            'session_id' => $request->session()->getId()
-        ]);
-
-        $userId = $request->session()->get('otp_user_id');
-        if (!$userId) {
-            \Log::warning('OTP verification failed: No user ID in session');
-            return redirect()->route('login')->with('error', 'Session expired. Please log in again.');
-        }
-
-        $user = User::find($userId);
-        if (!$user) {
-            $request->session()->forget(['otp_user_id', 'otp_required']);
-            \Log::warning('OTP verification failed: User not found', ['user_id' => $userId]);
-            return redirect()->route('login')->with('error', 'User not found.');
-        }
-
-        // Log the OTP verification attempt
-        \Log::info('Attempting OTP verification', [
-            'user_id' => $user->id,
-            'stored_otp' => $user->otp,
-            'otp_expires_at' => $user->otp_expires_at,
-            'current_time' => now()
-        ]);
-
-        if ($this->otpService->verifyOtp($user, $otp)) {
-            // Mark OTP as verified in the session
-            $request->session()->put('otp_verified', true);
-            
-            // Log the user in
-            Auth::login($user);
-            
-            // Clear OTP session data
-            $request->session()->forget(['otp_user_id', 'otp_required']);
-            
-            // Regenerate session ID for security
-            $request->session()->regenerate();
-            
-            return redirect()->intended(route('dashboard'))
-                ->with('status', 'Successfully logged in!');
-        }
-
-        return back()->withErrors([
-            'otp' => 'The provided OTP is invalid or has expired.',
-        ]);
+    $otp = (string) $request->input('otp');
+    $userId = $request->session()->get('otp_user_id');
+    
+    if (!$userId) {
+        return redirect()->route('login')->with('error', 'Session expired. Please log in again.');
     }
 
+    $user = User::find($userId);
+    if (!$user) {
+        $request->session()->forget(['otp_user_id', 'otp_required']);
+        return redirect()->route('login')->with('error', 'User not found.');
+    }
+
+    if ($this->otpService->verifyOtp($user, $otp)) {
+        // Mark OTP as verified in the session
+        $request->session()->put('otp_verified', true);
+        $request->session()->forget(['otp_required', 'otp_user_id']);
+        
+        // Log the user in
+        Auth::login($user);
+        $request->session()->regenerate();
+        
+        // Redirect to intended URL or dashboard
+        return redirect()->intended(route('dashboard'))
+            ->with('status', 'You have been successfully logged in!');
+    }
+
+    return back()->withErrors([
+        'otp' => 'The provided OTP is invalid or has expired. Please try again.',
+    ]);
+}
+
     /**
-     * Resend the OTP code.
+     * Resend the OTP to the user.
      */
-    public function resend(Request $request)
+    public function resendOtp(Request $request)
     {
         $userId = $request->session()->get('otp_user_id');
+        
         if (!$userId) {
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Session expired. Please log in again.'], 401);
-            }
-            return redirect()->route('login')->with('error', 'Session expired. Please log in again.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Session expired. Please log in again.'
+            ], 401);
         }
         
         $user = User::find($userId);
         
         if (!$user) {
             $request->session()->forget(['otp_user_id', 'otp_required']);
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'User not found.'], 404);
-            }
-            return redirect()->route('login')->with('error', 'User not found.');
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found. Please log in again.'
+            ], 404);
         }
         
         try {
             // Generate and send new OTP
-            $this->otpService->generateAndSendOtp($user);
+            $otp = $this->otpService->generateAndSendOtp($user);
             
-            $message = 'A new OTP has been sent to your email.';
-            
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => $message,
+            if ($otp) {
+                Log::info('OTP resent successfully', [
+                    'user_id' => $user->id,
                     'email' => $user->email
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'A new OTP has been sent to your email.'
                 ]);
             }
             
-            return back()->with('status', $message);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send OTP. Please try again.'
+            ], 500);
             
         } catch (\Exception $e) {
-            \Log::error('Failed to resend OTP', [
+            Log::error('Failed to resend OTP', [
                 'user_id' => $user->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             
-            $error = 'Failed to send OTP. Please try again.';
-            
-            if ($request->expectsJson()) {
-                return response()->json(['error' => $error], 500);
-            }
-            
-            return back()->with('error', $error);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while sending OTP. Please try again.'
+            ], 500);
         }
     }
     
     /**
-     * Log in the user and redirect to dashboard
-     * 
-     * @param \App\Models\User $user
-     * @return \Illuminate\Http\RedirectResponse
+     * Log the user in and redirect to the intended page.
      */
     protected function loginUser($user)
     {
-        // Log in the user
         Auth::login($user);
         
         // Clear OTP session data
-        Session::forget(['otp_user_id', 'otp_required', 'otp_verified']);
+        Session::forget(['otp_user_id', 'otp_required', 'otp_verified', 'otp_email']);
         
-        // Regenerate the session
+        // Regenerate session ID for security
         request()->session()->regenerate();
         
+        // Redirect to intended URL or dashboard
         return redirect()->intended(route('dashboard'))
-            ->with('status', 'Successfully logged in!');
+            ->with('status', 'You have been successfully logged in!');
     }
 }

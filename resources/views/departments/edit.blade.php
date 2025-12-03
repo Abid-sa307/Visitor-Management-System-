@@ -35,16 +35,22 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Company</label>
-                    <select name="company_id" class="form-select" required>
-                        <option value="">-- Select Company --</option>
-                        @foreach($companies as $company)
-                            <option value="{{ $company->id }}" {{ old('company_id', $department->company_id) == $company->id ? 'selected' : '' }}>
-                                {{ $company->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+    <label class="form-label fw-semibold">Company</label>
+    @if(isset($department) && $department->company)
+        <input type="hidden" name="company_id" value="{{ $department->company_id }}">
+        <input type="text" class="form-control" value="{{ $department->company->name }}" disabled>
+        <small class="text-muted">Company cannot be changed</small>
+    @else
+        <select name="company_id" class="form-select" required>
+            <option value="">-- Select Company --</option>
+            @foreach($companies as $company)
+                <option value="{{ $company->id }}" {{ old('company_id', $department->company_id ?? '') == $company->id ? 'selected' : '' }}>
+                    {{ $company->name }}
+                </option>
+            @endforeach
+        </select>
+    @endif
+</div>
 
                 <div class="text-end">
                     <button type="submit" class="btn btn-success px-4">

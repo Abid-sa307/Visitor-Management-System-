@@ -90,19 +90,37 @@ class DepartmentController extends Controller
 
     public function destroy(Department $department)
     {
-        if (auth()->user()->role !== 'superadmin' && $department->company_id !== auth()->user()->company_id) {
-            abort(403, 'Unauthorized action.');
-        }
-
         $department->delete();
-        return redirect()->route('departments.index')->with('success', 'Department deleted.');
+        return redirect()->route('departments.index')
+            ->with('success', 'Department deleted successfully');
+    }
+
+    /**
+     * Get departments by company (API)
+     */
+    public function getByCompany(Company $company)
+    {
+        try {
+            $departments = $company->departments()->select('id', 'name', 'company_id')->get();
+            
+            return response()->json($departments)
+                ->header('Content-Type', 'application/json')
+                ->header('Access-Control-Allow-Origin', '*')
+                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        } catch (\Exception $e) {
+            \Log::error('Error fetching departments: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to load departments',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * JSON endpoint to fetch departments for a company (AJAX).
      * Secured so company users can only fetch their own company's departments.
      */
-    public function getByCompany($companyId)
+    public function getByCompanyAjax($companyId)
     {
         $user = auth()->user();
         

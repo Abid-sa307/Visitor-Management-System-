@@ -59,6 +59,26 @@
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
           </div>
+          
+          <!-- Document Upload -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Upload Document (Optional)</label>
+            <div class="input-group">
+              <input type="file" class="form-control" id="documentUpload" name="document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+              <button class="btn btn-outline-secondary" type="button" id="documentUploadBtn">
+                <i class="fas fa-file-upload me-1"></i> Choose File
+              </button>
+            </div>
+            <div class="form-text">Accepted formats: PDF, DOC, DOCX, JPG, PNG (max 5MB)</div>
+            @error('document')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+            <div id="documentPreview" class="mt-2 d-none">
+              <div class="alert alert-success py-2">
+                <i class="fas fa-check-circle me-2"></i> Document selected
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Right Column -->
@@ -180,6 +200,45 @@
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
+// Document upload handling
+const documentUpload = document.getElementById('documentUpload');
+const documentUploadBtn = document.getElementById('documentUploadBtn');
+const documentPreview = document.getElementById('documentPreview');
+
+if (documentUploadBtn && documentUpload) {
+    documentUploadBtn.addEventListener('click', function() {
+        documentUpload.click();
+    });
+
+    documentUpload.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            const fileSize = file.size / 1024 / 1024; // in MB
+            const fileTypes = ['application/pdf', 'application/msword', 
+                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+                             'image/jpeg', 'image/png'];
+            
+            if (!fileTypes.includes(file.type)) {
+                alert('Please select a valid file type (PDF, DOC, DOCX, JPG, or PNG)');
+                this.value = '';
+                documentPreview.classList.add('d-none');
+                return;
+            }
+            
+            if (fileSize > 5) {
+                alert('File size should not exceed 5MB');
+                this.value = '';
+                documentPreview.classList.add('d-none');
+                return;
+            }
+            
+            documentPreview.classList.remove('d-none');
+        } else {
+            documentPreview.classList.add('d-none');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
   // DOM Elements
   const video = document.getElementById('video');

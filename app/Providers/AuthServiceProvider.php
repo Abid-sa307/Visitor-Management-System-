@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Models\Company;
 use App\Policies\CompanyPolicy;
+use App\Policies\VisitorPolicy;
+use App\Policies\VisitorCategoryPolicy;
+use App\Policies\QRManagementPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -15,6 +18,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Company::class => CompanyPolicy::class,
+        Visitor::class => VisitorPolicy::class,
+        VisitorCategory::class => VisitorCategoryPolicy::class,
+        \App\Http\Controllers\QRManagementController::class => QRManagementPolicy::class,
     ];
 
     /**

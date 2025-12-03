@@ -14,18 +14,35 @@
     $menuItems = [
         ['key' => 'dashboard', 'route' => 'company.dashboard', 'label' => 'Dashboard', 'icon' => 'fas fa-fw fa-home'],
 
+        // Visitors Section
         ['key' => 'visitors', 'route' => 'company.visitors.index', 'label' => 'Visitors', 'icon' => 'fas fa-fw fa-users'],
+        
+        // Only show QR Code if user has permission
+        @if($companyUser->can_access_qr_code ?? false)
+        ['key' => 'qr_code', 'route' => 'qrcode', 'label' => 'QR Code', 'icon' => 'fas fa-fw fa-qrcode'],
+        @endif
+        
+        // Only show Visitor Categories if user has permission
+        @if($companyUser->can_access_visitor_category ?? false)
         ['key' => 'visitor_categories', 'route' => 'visitor-categories.index', 'label' => 'Visitor Categories', 'icon' => 'fas fa-fw fa-tags'],
+        @endif
+        
         ['key' => 'visitor_approvals', 'route' => 'company.approvals.index', 'label' => 'Visitor Approvals', 'icon' => 'fas fa-fw fa-user-check'],
         ['key' => 'visitor_in_out', 'route' => 'company.visitors.inout', 'label' => 'Visitor In & Out', 'icon' => 'fas fa-fw fa-sign-in-alt'],
         ['key' => 'visitor_reports', 'route' => 'company.visitors.report', 'label' => 'Visitor Reports', 'icon' => 'fas fa-fw fa-chart-line'],
         ['key' => 'visitor_history', 'route' => 'company.visitors.history', 'label' => 'Visitor History', 'icon' => 'fas fa-fw fa-history'],
 
+        // Company Management
         ['key' => 'companies', 'route' => 'companies.index', 'label' => 'Companies', 'icon' => 'fas fa-fw fa-building'],
         ['key' => 'departments', 'route' => 'departments.index', 'label' => 'Departments', 'icon' => 'fas fa-fw fa-sitemap'],
         ['key' => 'employees', 'route' => 'company.employees.index', 'label' => 'Employees', 'icon' => 'fas fa-fw fa-id-badge'],
+        
+        // User Management
+        @if($companyUser->can_manage_users ?? false)
         ['key' => 'users', 'route' => 'users.index', 'label' => 'Users', 'icon' => 'fas fa-fw fa-user'],
+        @endif
 
+        // Settings
         ['key' => 'settings', 'route' => 'company.settings', 'label' => 'Settings', 'icon' => 'fas fa-fw fa-cogs'],
     ];
 @endphp

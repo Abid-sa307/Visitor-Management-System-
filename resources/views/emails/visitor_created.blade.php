@@ -12,8 +12,8 @@
     </p>
     <p>
       <strong>Visit Details</strong><br>
-      Purpose: {{ $visitor->purpose ?? 'N/A' }}<br>
-      To Visit: {{ $visitor->person_to_visit ?? 'N/A' }}<br>
+      <!-- Purpose: {{ $visitor->purpose ?? 'N/A' }}<br>
+      To Visit: {{ $visitor->person_to_visit ?? 'N/A' }}<br> -->
       Status: {{ $visitor->status }}
     </p>
     <p style="color:#555; font-size: 12px;">

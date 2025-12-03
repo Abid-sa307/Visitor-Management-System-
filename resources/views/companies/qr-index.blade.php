@@ -11,9 +11,29 @@
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white py-3">
-            <h6 class="m-0 fw-bold text-primary">
-                <i class="fas fa-qrcode me-2"></i>Select a Company
-            </h6>
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="fas fa-qrcode me-2"></i>Select a Company
+                </h6>
+                <form method="GET" action="{{ route('companies.qr.index') }}" class="d-flex" style="max-width: 300px;">
+                    <div class="input-group">
+                        <input type="text" 
+                               name="search" 
+                               class="form-control form-control-sm" 
+                               placeholder="Search companies..." 
+                               value="{{ request('search') }}"
+                               aria-label="Search companies">
+                        @if(request()->has('search'))
+                            <a href="{{ route('companies.qr.index') }}" class="btn btn-outline-secondary btn-sm" type="button">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        @endif
+                        <button class="btn btn-primary btn-sm" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -46,7 +66,13 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="text-muted py-4">No companies found.</td>
+                            <td colspan="4" class="text-muted py-4">
+                                @if(request()->has('search'))
+                                    No companies found matching your search.
+                                @else
+                                    No companies found.
+                                @endif
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -66,6 +92,10 @@
     }
     .card-header {
         border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
     }
 </style>
 

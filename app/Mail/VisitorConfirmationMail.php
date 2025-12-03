@@ -20,7 +20,8 @@ class VisitorConfirmationMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Your Visit Registration is Pending - ' . config('app.name'))
-                   ->view('emails.visitor-confirmation');
+
+                   ->view('emails.visitor-confirmation')
+                   ->with(['visitor' => $this->visitor]);
     }
 }

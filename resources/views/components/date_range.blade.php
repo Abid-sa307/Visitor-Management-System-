@@ -1,156 +1,95 @@
 @php
-  $from = $from ?? request('from');
-  $to   = $to   ?? request('to');
-  $inputId = $id ?? 'dateRangePicker_' . uniqid();
+    $from = $from ?? request('from', now()->format('Y-m-d'));
+    $to = $to ?? request('to', now()->format('Y-m-d'));
 @endphp
 
-<div class="mb-3">
-  <label class="form-label fw-semibold">Date Range</label>
-  <input type="text" class="form-control" id="{{ $inputId }}" placeholder="yyyy-MM-dd ~ yyyy-MM-dd"
-         value="{{ $from && $to ? ($from.' ~ '.$to) : '' }}" autocomplete="off">
-  <input type="hidden" name="from" id="{{ $inputId }}_from" value="{{ $from }}">
-  <input type="hidden" name="to" id="{{ $inputId }}_to" value="{{ $to }}">
-  <div class="form-text">Format: yyyy-MM-dd ~ yyyy-MM-dd</div>
-  <div class="mt-2 d-flex flex-wrap gap-2">
-    <button type="button" class="btn btn-sm btn-outline-primary" data-range="today" data-target="{{ $inputId }}">Today</button>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-range="yesterday" data-target="{{ $inputId }}">Yesterday</button>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-range="this-month" data-target="{{ $inputId }}">This Month</button>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-range="last-month" data-target="{{ $inputId }}">Last Month</button>
-  </div>
+<div class="date-range-container">
+    <label class="form-label d-block fw-semibold mb-2">Date Range</label>
+    
+    <div class="d-flex flex-wrap gap-2 mb-2">
+        <div class="flex-grow-1" style="min-width: 120px;">
+            <input type="date" 
+                class="form-control form-control-sm" 
+                name="from" 
+                value="{{ $from }}"
+                max="{{ now()->format('Y-m-d') }}">
+        </div>
+        <span class="align-self-center text-muted">to</span>
+        <div class="flex-grow-1" style="min-width: 120px;">
+            <input type="date" 
+                class="form-control form-control-sm" 
+                name="to" 
+                value="{{ $to }}"
+                max="{{ now()->format('Y-m-d') }}">
+        </div>
+    </div>
+    
+    <div class="d-flex flex-wrap gap-1">
+        @php
+            $quickLinks = [
+                'Today' => [now()->format('Y-m-d'), now()->format('Y-m-d')],
+                'Yesterday' => [now()->subDay()->format('Y-m-d'), now()->subDay()->format('Y-m-d')],
+                'This Month' => [now()->startOfMonth()->format('Y-m-d'), now()->format('Y-m-d')],
+                'Last Month' => [now()->subMonth()->startOfMonth()->format('Y-m-d'), now()->subMonth()->endOfMonth()->format('Y-m-d')]
+            ];
+        @endphp
+        
+        @foreach($quickLinks as $label => $dates)
+            @php
+                $isActive = request('from') === $dates[0] && request('to') === $dates[1];
+            @endphp
+            <a href="?from={{ $dates[0] }}&to={{ $dates[1] }}{{ request('company_id') ? '&company_id='.request('company_id') : '' }}{{ request('department_id') ? '&department_id='.request('department_id') : '' }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" 
+               class="btn btn-sm mb-1 {{ $isActive ? 'btn-primary' : 'btn-outline-primary' }}"
+               style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                {{ $label }}
+            </a>
+        @endforeach
+    </div>
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css" />
+<style>
+    .date-range-container {
+        width: 100%;
+    }
+    
+    .date-range-container .form-control-sm {
+        height: calc(1.5em + 0.5rem + 2px);
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 576px) {
+        .date-range-container .d-flex {
+            flex-direction: column;
+        }
+        
+        .date-range-container .align-self-center {
+            align-self: flex-start !important;
+            margin: 0.25rem 0;
+        }
+        
+        .date-range-container .flex-grow-1 {
+            width: 100%;
+        }
+    }
+</style>
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
 <script>
-(function(){
-  const input   = document.getElementById('{{ $inputId }}');
-  const fromEl  = document.getElementById('{{ $inputId }}_from');
-  const toEl    = document.getElementById('{{ $inputId }}_to');
-
-  function fmt(d){
-    const pad = n => String(n).padStart(2, '0');
-    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
-  }
-  function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
-  function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-  function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
-  function lastMonthRange(t){
-    const first = new Date(t.getFullYear(), t.getMonth()-1, 1);
-    return { from: first, to: endOfMonth(first) };
-  }
-
-  const picker = new Litepicker({
-    element: input,
-    singleMode: false,
-    numberOfMonths: 2,
-    numberOfColumns: 2,
-    format: 'YYYY-MM-DD',
-    allowRepick: true,
-    autoApply: true,
-    dropdowns: { months: true, years: true },
-    setup: (p) => {
-      p.on('selected', (date1, date2) => {
-        if (date1) fromEl.value = date1.format('YYYY-MM-DD');
-        if (date2) toEl.value   = date2.format('YYYY-MM-DD');
-      });
-      // Quick ranges like screenshot
-      setTimeout(() => {
-        const toolbar = p.ui.querySelector('.container__main');
-        if (!toolbar) return;
-        const bar = document.createElement('div');
-        bar.className = 'd-flex gap-2 px-3 pb-2';
-        const mkBtn = (label, fn) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'btn btn-sm btn-outline-primary me-2';
-          b.textContent = label;
-          b.onclick = () => {
-            const today = new Date();
-            const {from,to} = fn(today);
-            p.setDateRange(from, to, true);
-            input.value = fmt(from)+' ~ '+fmt(to);
-            fromEl.value = fmt(from);
-            toEl.value = fmt(to);
-            // auto-submit closest form for immediate filtering
-            const form = input.closest('form');
-            if (form) form.submit();
-          };
-          return b;
-        };
-        bar.appendChild(mkBtn('Today', (t)=>({from: t, to: t})));
-        bar.appendChild(mkBtn('Yesterday', (t)=>({from: addDays(t,-1), to: addDays(t,-1)})));
-        bar.appendChild(mkBtn('This Month', (t)=>({from: startOfMonth(t), to: endOfMonth(t)})));
-        bar.appendChild(mkBtn('Last Month', lastMonthRange));
-        toolbar.parentElement.insertBefore(bar, toolbar);
-      }, 0);
-    },
-  });
-
-  // Initialize from existing hidden inputs
-  if (fromEl.value && toEl.value) {
-    picker.setDateRange(fromEl.value, toEl.value, true);
-  }
-
-  // Helpers to manage active state on quick buttons
-  function setActiveButton(rangeKey){
-    const buttons = document.querySelectorAll('button[data-target="{{ $inputId }}"]');
-    buttons.forEach(b => {
-      const isActive = b.dataset.range === rangeKey;
-      b.classList.remove('btn-primary','text-white','active');
-      b.classList.add('btn-outline-primary');
-      if (isActive) {
-        b.classList.remove('btn-outline-primary');
-        b.classList.add('btn-primary','text-white','active');
-      }
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle date input changes
+    const dateInputs = document.querySelectorAll('.date-range-container input[type="date"]');
+    dateInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Find the closest form and submit it
+            let form = this.closest('form');
+            if (form) {
+                form.submit();
+            }
+        });
     });
-  }
-
-  function detectPreset(fromStr, toStr){
-    if (!fromStr || !toStr) return '';
-    const today = new Date();
-    const y = addDays(today,-1);
-    const sToday = fmt(today), sY = fmt(y);
-    const monthStart = fmt(startOfMonth(today));
-    const monthEnd   = fmt(endOfMonth(today));
-    const last = lastMonthRange(today);
-    const lastStart = fmt(last.from), lastEnd = fmt(last.to);
-    if (fromStr === sToday && toStr === sToday) return 'today';
-    if (fromStr === sY && toStr === sY) return 'yesterday';
-    if (fromStr === monthStart && toStr === monthEnd) return 'this-month';
-    if (fromStr === lastStart && toStr === lastEnd) return 'last-month';
-    return '';
-  }
-
-  // Visible quick buttons under input
-  document.querySelectorAll('button/data-target="{{ $inputId }}"');
-  document.querySelectorAll('button[data-target="{{ $inputId }}"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const today = new Date();
-      let range;
-      switch (btn.dataset.range) {
-        case 'today': range = {from: today, to: today}; break;
-        case 'yesterday': range = {from: addDays(today,-1), to: addDays(today,-1)}; break;
-        case 'this-month': range = {from: startOfMonth(today), to: endOfMonth(today)}; break;
-        case 'last-month': range = lastMonthRange(today); break;
-      }
-      if (!range) return;
-      const sFrom = fmt(range.from), sTo = fmt(range.to);
-      input.value = sFrom+' ~ '+sTo;
-      fromEl.value = sFrom;
-      toEl.value   = sTo;
-      setActiveButton(btn.dataset.range);
-      try { picker.setDateRange(range.from, range.to, true); } catch(e) {}
-      const form = input.closest('form');
-      if (form) form.submit();
-    });
-  });
-
-  // On load, set active if current from/to match a preset
-  setActiveButton(detectPreset(fromEl.value, toEl.value));
-})();
+});
 </script>
 @endpush

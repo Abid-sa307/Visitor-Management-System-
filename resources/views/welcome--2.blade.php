@@ -305,7 +305,7 @@
 
 <!-- Footer Section -->
 <footer>
-    <small>&copy; {{ date('Y') }} Smart Visitor Management System. All rights reserved.</small>
+    <small>&copy; 2025 Visitor Management System (Developed By N&T Software) <a href="https://www.nntsoftware.com" target="_blank">(Url Redirection)</a></small>
     <br>
     <a href="#">Privacy Policy</a>
     <a href="#">Terms of Service</a>

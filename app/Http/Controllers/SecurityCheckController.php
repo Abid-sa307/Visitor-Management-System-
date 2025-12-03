@@ -19,30 +19,72 @@ class SecurityCheckController extends Controller
         $authUser = $isCompany ? Auth::guard('company')->user() : Auth::user();
         $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
-        $visitorQuery = Visitor::query()->with(['company', 'department'])->latest('created_at');
+        // Base query
+        $visitorQuery = Visitor::query()->with(['company', 'department', 'branch'])->latest('created_at');
 
-        if ($isCompany && $authUser) {
-            $visitorQuery->where('company_id', $authUser->company_id);
+        // Apply date range filter if provided
+        $fromDate = $request->input('from') ?: now()->subDays(30)->format('Y-m-d');
+        $toDate = $request->input('to') ?: now()->format('Y-m-d');
+        $visitorQuery->whereDate('created_at', '>=', $fromDate)
+                    ->whereDate('created_at', '<=', $toDate);
+
+        // Company filter (for superadmin)
+        $companyId = null;
+        if ($isSuper) {
+            $companyId = $request->input('company_id');
+            if ($companyId) {
+                $visitorQuery->where('company_id', $companyId);
+            }
+        } elseif ($isCompany && $authUser) {
+            $companyId = $authUser->company_id;
+            $visitorQuery->where('company_id', $companyId);
         }
 
+        // Branch filter
+        if ($request->filled('branch_id')) {
+            $visitorQuery->where('branch_id', $request->input('branch_id'));
+        }
+
+        // Department filter
         if ($request->filled('department_id')) {
             $visitorQuery->where('department_id', $request->input('department_id'));
         }
 
         $visitors = $visitorQuery->paginate(10)->appends($request->query());
 
-        $departmentsQuery = Department::query()->orderBy('name');
-        if ($isCompany && $authUser) {
-            $departmentsQuery->where('company_id', $authUser->company_id);
+        // Get companies for superadmin dropdown
+        $companies = [];
+        if ($isSuper) {
+            $companies = \App\Models\Company::orderBy('name')->pluck('name', 'id')->toArray();
         }
-        $departments = $departmentsQuery->get();
+
+        // Get branches based on company selection
+        $branches = [];
+        if ($companyId) {
+            $branches = \App\Models\Branch::where('company_id', $companyId)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        }
+
+        // Get departments based on company selection
+        $departments = [];
+        if ($companyId) {
+            $departments = \App\Models\Department::where('company_id', $companyId)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        }
 
         return view('security_checks.index', [
             'visitors' => $visitors,
             'departments' => $departments,
-            'selectedDepartment' => $request->input('department_id'),
+            'branches' => $branches,
+            'companies' => $companies,
             'isSuper' => $isSuper,
             'isCompany' => $isCompany,
+            'from' => $fromDate,
+            'to' => $toDate,
         ]);
     }
 

@@ -1,9 +1,15 @@
+{{-- In your _form.blade.php --}}
 @php
     $isSuper = in_array(auth()->user()->role, ['super_admin','superadmin'], true);
     $companies = $companies ?? collect();
-    // previously selected department IDs (old input or model relation)
-    $preselectedDeptIds = collect(old('department_ids', optional($user)->departments?->pluck('id')?->all() ?? []))->map(fn($v)=>(int)$v)->all();
+    $preselectedDeptIds = collect(old('department_ids', optional($user)->departments?->pluck('id')?->all() ?? []))
+        ->map(fn($v) => (int)$v)
+        ->all();
+    
+    // Get company ID - either from user, form input, or current user's company
+    $companyId = old('company_id', $user->company_id ?? (auth()->user()->company_id ?? null));
 @endphp
+
 
 <div class="mb-3">
     <label class="form-label fw-semibold">Name</label>
@@ -27,9 +33,9 @@
     <label for="role" class="form-label">Role</label>
     <select name="role" id="role" class="form-select" required>
         <option value="">Select Role</option>
-        @if($isSuper)
+        <!-- @if($isSuper)
             <option value="superadmin" {{ old('role', $user->role ?? '') == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
-        @endif
+        @endif -->
         <option value="company" {{ old('role', $user->role ?? '') == 'company' ? 'selected' : '' }}>Company</option>
         <option value="employee" {{ old('role', $user->role ?? '') == 'employee' ? 'selected' : '' }}>Employee</option>
     </select>
@@ -51,20 +57,19 @@
         @error('company_id') <div class="text-danger small">{{ $message }}</div> @enderror
     </div>
 @else
-    <input type="hidden" name="company_id" value="{{ auth()->user()->company_id }}">
+    <input type="hidden" name="company_id" id="companySelect" value="{{ auth()->user()->company_id }}">
 @endif
 
-{{-- Branch (depends on selected company) --}}
+{{-- Branches --}}
 <div class="mb-3">
     <label class="form-label fw-semibold">Branch</label>
     <select name="branch_id" id="branchSelect" class="form-select">
-        <option value="">-- All / None --</option>
+        <option value="">-- Select Branch --</option>
+        @if(isset($user) && $user->branch_id)
+            <option value="{{ $user->branch_id }}" selected>{{ $user->branch->name }}</option>
+        @endif
     </select>
     @error('branch_id') <div class="text-danger small">{{ $message }}</div> @enderror
-    <div id="branchHelp" class="form-text">If the company has multiple branches, select one to assign this user.</div>
-    <div id="branchLoading" class="small text-muted" style="display:none;">Loading branches...</div>
-    <div id="branchEmpty" class="small text-muted" style="display:none;">No branches found for the selected company.</div>
-    <input type="hidden" id="oldBranchId" value="{{ old('branch_id', $user->branch_id ?? '') }}">
 </div>
 
 {{-- Departments --}}
@@ -203,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             document.getElementById('departmentDropdownTitle').textContent = 'Loading...';
             
-            fetch(`/companies/${companyId}/departments`)
+            fetch(`/api/companies/${companyId}/departments`)
                 .then(response => {
                     if (!response.ok) throw new Error('Failed to load departments');
                     return response.json();
@@ -243,6 +248,20 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCheckboxes();
 });
 </script>
+
+{{-- Permissions --}}
+<div class="mb-4">
+    <h5 class="mb-3">Permissions</h5>
+    <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="can_access_qr_code" name="can_access_qr_code" value="1" 
+            {{ old('can_access_qr_code', $user->can_access_qr_code ?? false) ? 'checked' : '' }}>
+        <label class="form-check-label" for="can_access_qr_code">Can Access QR Code</label>
+    </div>
+    <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="can_access_visitor_category" name="can_access_visitor_category" value="1"
+            {{ old('can_access_visitor_category', $user->can_access_visitor_category ?? false) ? 'checked' : '' }}>
+        <label class="form-check-label" for="can_access_visitor_category">Can Access Visitor Category</label>
+    </div>
 </div>
 
 {{-- Master Pages --}}
@@ -264,16 +283,24 @@ document.addEventListener('DOMContentLoaded', function() {
             'users',
             'security_checks',
             'visitor_checkup',
-            'qr_code'  // Adding QR code access
+            'qr_scanner',  // QR Scanner access
+            'qr_code'      // QR Code management
         ];
         
         // Group modules for better organization in the UI
         $moduleGroups = [
             'Main' => ['dashboard'],
-            'Visitors' => ['visitors', 'visitor_history', 'visitor_inout', 'visitor_categories', 'visitor_checkup'],
+            'Visitors' => [
+                'visitors', 
+                'visitor_history', 
+                'visitor_inout', 
+                'visitor_categories', 
+                'visitor_checkup',
+                'approvals'  // Moved to Visitors group for better organization
+            ],
             'Management' => ['employees', 'departments', 'users', 'security_checks'],
-            'Reports' => ['reports', 'approvals'],
-            'QR Code' => ['qr_code']
+            'Reports' => ['reports'],
+            'QR Code' => ['qr_scanner', 'qr_code']
         ];
 
         // Always produce an array, regardless of whether value is array or legacy JSON string
@@ -360,360 +387,274 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @push('scripts')
 <script>
-// Department selection functionality
 document.addEventListener('DOMContentLoaded', function () {
-    const departmentList = document.getElementById('departmentList');
-    const selectedDepartments = document.getElementById('selectedDepartments');
-    const selectAllCheckbox = document.getElementById('selectAllDepartments');
-    const applyDepartmentsBtn = document.getElementById('applyDepartments');
-    const departmentDropdown = document.getElementById('departmentDropdown');
-    const companySelect = document.getElementById('companySelect');
-    const departmentIdsInput = document.getElementById('departmentIds');
-    let selectedDeptIds = @json($preselectedDeptIds);
-    let allDepartments = [];
-    
-    // Initialize department selection on page load
-    updateSelectedDepartmentsDisplay();
+    const companySelect       = document.getElementById('companySelect');   // select (super) or hidden input (company user)
+    const branchSelect        = document.getElementById('branchSelect');
 
-    // Function to update the selected departments display
-    function updateSelectedDepartmentsDisplay() {
-        if (selectedDeptIds.length > 0) {
-            const selectedDepts = allDepartments.filter(dept => 
-                selectedDeptIds.includes(parseInt(dept.id))
-            );
-            
-            if (selectedDepts.length > 0) {
-                selectedDepartments.innerHTML = `
-                    <small class="text-muted">Selected: </small>
-                    ${selectedDepts.map(dept => 
-                        `<span class="badge bg-primary me-1 mb-1">${dept.name}</span>`
-                    ).join('')}
-                `;
-                departmentDropdown.innerHTML = `${selectedDepts.length} selected`;
-            } else {
-                // If we have selected IDs but couldn't find them in allDepartments (e.g., after company change)
-                selectedDepartments.innerHTML = `
-                    <small class="text-muted">Selected: </small>
-                    ${selectedDeptIds.map(id => 
-                        `<span class="badge bg-secondary me-1 mb-1">Department #${id}</span>`
-                    ).join('')}
-                `;
-                departmentDropdown.innerHTML = `${selectedDeptIds.length} selected`;
-            }
-            
-            // Update the hidden input with selected department IDs
-            departmentIdsInput.value = selectedDeptIds.join(',');
-        } else {
-            selectedDepartments.innerHTML = '';
-            departmentDropdown.innerHTML = 'Select Departments';
-            departmentIdsInput.value = '';
-        }
+    // ---------- DEPARTMENTS MULTISELECT ----------
+    const departmentList      = document.getElementById('departmentList');
+    const departmentButton    = document.getElementById('departmentDropdown');
+    const departmentButtonText= document.getElementById('departmentButtonText');
+    const departmentIdsInput  = document.getElementById('departmentIds');
+    const selectAllBtn        = document.getElementById('selectAllDepartments');
+    const applyBtn            = document.getElementById('applyDepartments');
+
+    // IDs preselected from PHP - ensure it's always an array
+    let selectedDeptIds = Array.isArray(@json($preselectedDeptIds)) ? @json($preselectedDeptIds) : [];
+    console.log('Initial selectedDeptIds:', selectedDeptIds);
+
+    // Update button text + hidden input
+    function updateDeptButtonText() {
+        const count = selectedDeptIds.length;
+        departmentButtonText.textContent = count > 0 ? `${count} selected` : 'Select Departments';
+        departmentIdsInput.value = selectedDeptIds.join(',');
     }
-    
-    // Function to update the select all button text
-    function updateSelectAllButton() {
-        const selectAllBtn = document.getElementById('selectAllDepartments');
-        if (!selectAllBtn) return;
-        
-        const checkboxes = departmentList.querySelectorAll('.department-checkbox');
-        const selectedCount = selectedDeptIds.length;
-        const totalCount = checkboxes.length;
-        
-        if (selectedCount === totalCount && totalCount > 0) {
-            selectAllBtn.textContent = 'Deselect All';
-        } else {
-            selectAllBtn.textContent = 'Select All';
-        }
-    }
-    
-    // Function to update the checkboxes based on selectedDeptIds
-    function updateDepartmentCheckboxes() {
-        const checkboxes = departmentList.querySelectorAll('.department-checkbox');
-        
-        if (!checkboxes.length) return;
-        
-        checkboxes.forEach(checkbox => {
-            const deptId = parseInt(checkbox.value);
-            checkbox.checked = selectedDeptIds.includes(deptId);
+
+    // Sync checkboxes with selectedDeptIds
+    function syncDeptCheckboxes() {
+        if (!departmentList) return;
+        departmentList.querySelectorAll('.department-checkbox').forEach(cb => {
+            const id = parseInt(cb.value);
+            cb.checked = selectedDeptIds.includes(id);
         });
-        
-        updateSelectAllButton();
     }
 
-    // Function to load departments for a company
-    function loadDepartments(companyId) {
-        if (!companyId) {
-            departmentList.innerHTML = '<div class="col-12 text-muted">Please select a company first.</div>';
-            document.getElementById('companyName').textContent = 'Departments';
-            return;
-        }
-        
-        departmentList.innerHTML = '<div class="col-12 text-muted">Loading departments...</div>';
-        
-        // Update the company name in the header
-        const companySelect = document.getElementById('companySelect');
-        if (companySelect) {
-            const selectedOption = companySelect.options[companySelect.selectedIndex];
-            if (selectedOption) {
-                document.getElementById('companyName').textContent = selectedOption.text + ' Departments';
+    // Handle checkbox changes
+    if (departmentList) {
+        departmentList.addEventListener('change', function (e) {
+            if (!e.target.classList.contains('department-checkbox')) return;
+            const deptId = parseInt(e.target.value);
+            if (e.target.checked) {
+                if (!selectedDeptIds.includes(deptId)) selectedDeptIds.push(deptId);
+            } else {
+                selectedDeptIds = selectedDeptIds.filter(id => id !== deptId);
             }
-        }
-        
-        console.log('Fetching departments for company ID:', companyId);
-        // Fetch departments for the selected company
-        fetch(`/companies/${companyId}/departments`)
+        });
+    }
+
+    // Select / Deselect all departments
+    if (selectAllBtn && departmentList) {
+        selectAllBtn.addEventListener('click', function () {
+            const checkboxes = departmentList.querySelectorAll('.department-checkbox');
+            const allSelected = Array.from(checkboxes).every(cb => cb.checked);
+
+            selectedDeptIds = [];
+            checkboxes.forEach(cb => {
+                cb.checked = !allSelected;
+                if (!allSelected) {
+                    selectedDeptIds.push(parseInt(cb.value));
+                }
+            });
+        });
+    }
+
+    // Apply button: update text + close dropdown
+    if (applyBtn) {
+        applyBtn.addEventListener('click', function () {
+            updateDeptButtonText();
+            // Close bootstrap dropdown by toggling the button
+            if (departmentButton) {
+                departmentButton.click();
+            }
+        });
+    }
+
+    // Load departments via AJAX for superadmin when company changes
+    function loadDepartments(companyId) {
+        if (!companyId || !departmentList) return;
+
+        departmentList.innerHTML = '<div class="text-muted small">Loading departments...</div>';
+        document.getElementById('departmentDropdownTitle').textContent = 'Loading...';
+
+        console.log('Fetching departments for company:', companyId);
+        fetch(`/api/companies/${companyId}/departments`)
             .then(response => {
-                console.log('Response status:', response.status);
+                console.log('Department response status:', response.status);
                 if (!response.ok) {
-                    return response.text().then(text => {
-                        console.error('Error response:', text);
-                        throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+                    return response.json().then(err => {
+                        console.error('Department API error:', err);
+                        throw new Error(err.error || 'Failed to load departments');
+                    }).catch(() => {
+                        throw new Error('Failed to load departments');
                     });
                 }
                 return response.json();
             })
             .then(departments => {
-                console.log('Departments received:', departments);
-                allDepartments = departments;
-                
-                if (departments.length === 0) {
-                    departmentList.innerHTML = '<div class="col-12 text-muted">No departments found for this company.</div>';
+                console.log('Received departments:', departments);
+                if (!departments || !Array.isArray(departments) || departments.length === 0) {
+                    departmentList.innerHTML = '<div class="text-muted small">No departments found for this company</div>';
+                    selectedDeptIds = [];
+                    updateDeptButtonText();
                     return;
                 }
+
+                let html = '';
+                // Ensure we're working with an array of numbers
+                const selectedIds = Array.isArray(selectedDeptIds) ? 
+                    selectedDeptIds.map(id => parseInt(id)) : [];
                 
-                // Clear the department list
-                departmentList.innerHTML = '';
-                
-                // Add checkboxes for each department
                 departments.forEach(dept => {
-                    const isChecked = selectedDeptIds.includes(parseInt(dept.id));
-                    
-                    const col = document.createElement('div');
-                    col.className = 'col-md-6';
-                    col.innerHTML = `
+                    const checked = selectedIds.includes(parseInt(dept.id)) ? 'checked' : '';
+                    html += `
                         <div class="form-check">
-                            <input class="form-check-input department-checkbox" type="checkbox" 
-                                value="${dept.id}" id="dept-${dept.id}" ${isChecked ? 'checked' : ''}>
+                            <input class="form-check-input department-checkbox" type="checkbox"
+                                value="${dept.id}" id="dept-${dept.id}" ${checked}>
                             <label class="form-check-label" for="dept-${dept.id}">
                                 ${dept.name}
                             </label>
                         </div>
                     `;
-                    
-                    departmentList.appendChild(col);
                 });
                 
-                // Update the select all button and checkboxes state
-                updateDepartmentCheckboxes();
+                departmentList.innerHTML = html;
+                document.getElementById('departmentDropdownTitle').textContent = 'Departments';
+                syncDeptCheckboxes();
                 
-                // Update the select all button text based on selection
-                updateSelectAllButton();
-                
-                // Add event listeners to checkboxes
-                departmentList.querySelectorAll('.department-checkbox').forEach(checkbox => {
-                    checkbox.addEventListener('change', function() {
-                        const deptId = parseInt(this.value);
-                        
-                        if (this.checked) {
-                            if (!selectedDeptIds.includes(deptId)) {
-                                selectedDeptIds.push(deptId);
-                            }
-                        } else {
-                            selectedDeptIds = selectedDeptIds.filter(id => id !== deptId);
-                        }
-                        
-                        // Update the select all checkbox
-                        updateDepartmentCheckboxes();
-                    });
-                });
-                
-                // Toggle select all departments
-                document.addEventListener('click', function(e) {
-                    if (e.target && e.target.id === 'selectAllDepartments') {
-                        const checkboxes = departmentList.querySelectorAll('.department-checkbox');
-                        const selectedCount = selectedDeptIds.length;
-                        const totalCount = checkboxes.length;
-                        
-                        // Toggle between select all and deselect all
-                        const selectAll = selectedCount < totalCount;
-                        
-                        checkboxes.forEach(checkbox => {
-                            const deptId = parseInt(checkbox.value);
-                            
-                            if (selectAll) {
-                                // Add to selection if not already selected
-                                if (!selectedDeptIds.includes(deptId)) {
-                                    selectedDeptIds.push(deptId);
-                                }
-                            } else {
-                                // Remove from selection
-                                selectedDeptIds = selectedDeptIds.filter(id => id !== deptId);
-                            }
-                            checkbox.checked = selectAll;
-                        });
-                        
-                        updateSelectAllButton();
-                        updateSelectedDepartmentsDisplay();
-                    }
-                });
+                // Update the button text to show selected count
+                updateDeptButtonText();
             })
             .catch(error => {
                 console.error('Error loading departments:', error);
-                const errorMsg = `Error loading departments: ${error.message}. Please check the console for details.`;
-                console.error(errorMsg);
-                departmentList.innerHTML = `
-                    <div class="col-12 text-danger">
-                        ${errorMsg}
-                        <div class="small mt-2">URL: /companies/${companyId}/departments</div>
-                    </div>`;
+                departmentList.innerHTML = '<div class="text-danger small">Error loading departments. Please try again.</div>';
+                document.getElementById('departmentDropdownTitle').textContent = 'Error';
             });
     }
-    
-    // Load departments when company is selected
-    if (companySelect) {
-        companySelect.addEventListener('change', function() {
-            const companyId = this.value;
-            loadDepartments(companyId);
-            
-            // Clear branch selection when company changes
-            if (branchSelect) {
-                branchSelect.innerHTML = '<option value="">-- All / None --</option>';
-            }
-        });
-        
-        // If a company is already selected, load its departments
-        if (companySelect.value) {
-            loadDepartments(companySelect.value);
-        }
-    }
-});
-// Function to toggle fields based on selected role
-function toggleFieldsByRole(role) {
-    const isSuperAdmin = role === 'superadmin';
-    
-    // Toggle company field
-    const companyField = document.querySelector('.company-field');
-    if (companyField) {
-        companyField.style.display = isSuperAdmin ? 'none' : 'block';
-        // Hide company error message if exists
-        const companyError = companyField.nextElementSibling;
-        if (companyError && companyError.classList.contains('text-danger')) {
-            companyError.style.display = isSuperAdmin ? 'none' : 'block';
-        }
-    }
-    
-    // Toggle branch field
-    const branchField = document.getElementById('branchSelect')?.closest('.mb-3');
-    if (branchField) branchField.style.display = isSuperAdmin ? 'none' : 'block';
-    
-    // Toggle departments field
-    const departmentField = document.getElementById('departmentCheckboxes')?.closest('.mb-3');
-    if (departmentField) departmentField.style.display = isSuperAdmin ? 'none' : 'block';
-    
-    // Toggle master pages field
-    const masterPagesField = document.querySelector('.master-pages-field');
-    if (masterPagesField) masterPagesField.style.display = isSuperAdmin ? 'none' : 'block';
-        if (departmentField) departmentField.style.display = 'block';
-        if (masterPagesField) masterPagesField.style.display = 'block';
-    }
-}
 
-document.addEventListener('DOMContentLoaded', function () {
-    const companySelect   = document.getElementById('companySelect');   // only exists for superadmin
-    const departmentBox   = document.getElementById('departmentCheckboxes');
-    const preselected     = @json($preselectedDeptIds);
-    const branchSelect    = document.getElementById('branchSelect');
-    const branchLoading   = document.getElementById('branchLoading');
-    const branchEmpty     = document.getElementById('branchEmpty');
-    const oldBranchId     = document.getElementById('oldBranchId')?.value || '';
-    const roleSelect      = document.getElementById('role');
-    
-    // Initial toggle based on selected role
+    // ---------- BRANCHES DROPDOWN ----------
+    function resetBranches() {
+        if (!branchSelect) return;
+        branchSelect.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '-- All / None --';
+        branchSelect.appendChild(opt);
+    }
+
+    function loadBranches(companyId) {
+        if (!branchSelect) return;
+
+        resetBranches();
+
+        // no company selected → keep "-- All / None --"
+        if (!companyId) {
+            branchSelect.disabled = false;
+            return;
+        }
+
+        branchSelect.disabled = true;
+        const loadingOpt = document.createElement('option');
+        loadingOpt.value = '';
+        loadingOpt.textContent = 'Loading branches...';
+        branchSelect.appendChild(loadingOpt);
+
+        fetch(`/api/companies/${companyId}/branches`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load branches');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // remove loading option
+                resetBranches();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    // keep just "-- All / None --"
+                    branchSelect.disabled = false;
+                    return;
+                }
+
+                data.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.id;
+                    option.textContent = branch.name;
+                    branchSelect.appendChild(option);
+                });
+
+                // Preselect branch if we are editing a user
+                @if(isset($user) && $user->branch_id)
+                    branchSelect.value = '{{ $user->branch_id }}';
+                @endif
+
+                branchSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error loading branches:', error);
+                resetBranches();
+                const errorOpt = document.createElement('option');
+                errorOpt.value = '';
+                errorOpt.textContent = 'Error loading branches';
+                branchSelect.appendChild(errorOpt);
+                branchSelect.disabled = false;
+            });
+    }
+
+    // ---------- ROLE-BASED FIELD VISIBILITY (optional) ----------
+    const roleSelect = document.getElementById('role');
+
+    function toggleFieldsByRole(role) {
+        const isSuperAdmin = role === 'superadmin';
+
+        const companyField = document.querySelector('.company-field');
+        if (companyField) {
+            companyField.style.display = isSuperAdmin ? 'none' : 'block';
+        }
+
+        if (branchSelect) {
+            const branchField = branchSelect.closest('.mb-3');
+            if (branchField) branchField.style.display = isSuperAdmin ? 'none' : 'block';
+        }
+
+        const masterPagesField = document.querySelector('.master-pages-field');
+        if (masterPagesField) {
+            masterPagesField.style.display = isSuperAdmin ? 'none' : 'block';
+        }
+
+        if (departmentList) {
+            const deptField = departmentList.closest('.mb-3');
+            if (deptField) deptField.style.display = isSuperAdmin ? 'none' : 'block';
+        }
+    }
+
     if (roleSelect) {
-        // Run immediately
-        toggleFieldsByRole(roleSelect.value);
-        
-        // Add event listener for role change
-        roleSelect.addEventListener('change', function() {
+        toggleFieldsByRole(roleSelect.value || '');
+        roleSelect.addEventListener('change', function () {
             toggleFieldsByRole(this.value);
         });
-        
-        // Also run after a short delay to ensure all elements are loaded
-        setTimeout(() => toggleFieldsByRole(roleSelect.value), 100);
     }
 
-    function renderDepartments(list) {
-        if (!Array.isArray(list) || list.length === 0) {
-            departmentBox.innerHTML = '<p class="text-muted">No departments found.</p>';
-            return;
-        }
-        departmentBox.innerHTML = list.map(dept => {
-            const checked = preselected.includes(Number(dept.id)) ? 'checked' : '';
-            return `
-                <div class="col-md-6">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="department_ids[]"
-                               value="${dept.id}" id="dept${dept.id}" ${checked}>
-                        <label class="form-check-label" for="dept${dept.id}">${dept.name}</label>
-                    </div>
-                </div>`;
-        }).join('');
-    }
-
-    function fetchDepartments(companyId) {
-        if (!companyId) { departmentBox.innerHTML = ''; return; }
-        departmentBox.innerHTML = '<p class="text-muted">Loading departments...</p>';
-        fetch(`/companies/${companyId}/departments`)
-            .then(res => res.json())
-            .then(renderDepartments)
-            .catch(() => departmentBox.innerHTML = '<p class="text-danger">Error loading departments.</p>');
-    }
-
-    function renderBranches(list) {
-        branchSelect.innerHTML = '<option value="">-- All / None --</option>';
-        if (!Array.isArray(list) || list.length === 0) {
-            branchEmpty.style.display = 'block';
-            return;
-        }
-        branchEmpty.style.display = 'none';
-        list.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = b.id;
-            opt.textContent = b.name;
-            if (String(oldBranchId) === String(b.id)) opt.selected = true;
-            branchSelect.appendChild(opt);
-        });
-    }
-
-    function fetchBranches(companyId) {
-        if (!companyId) { branchSelect.innerHTML = '<option value="">-- All / None --</option>'; return; }
-        branchLoading.style.display = 'block';
-        branchEmpty.style.display = 'none';
-        fetch(`/companies/${companyId}/branches`)
-            .then(res => res.json())
-            .then(data => { renderBranches(data); })
-            .catch(() => { branchEmpty.style.display = 'block'; })
-            .finally(() => { branchLoading.style.display = 'none'; });
-    }
-
-    // Only bind listeners if the element exists (superadmin case)
+    // ---------- INITIAL LOAD ----------
+    // For superadmin: companySelect is a <select>, for company user: it's a hidden input
     if (companySelect) {
-        companySelect.addEventListener('change', () => {
-            fetchDepartments(companySelect.value);
-            fetchBranches(companySelect.value);
-        });
-        if (companySelect.value) {
-            fetchDepartments(companySelect.value);
-            fetchBranches(companySelect.value);
+        const initialCompanyId = companySelect.value;
+
+        // Initial load (edit mode)
+        if (initialCompanyId) {
+            // For superadmin, departments loaded via AJAX.
+            // For company users, departments are already rendered server-side.
+            @if($isSuper)
+                loadDepartments(initialCompanyId);
+            @endif
+
+            loadBranches(initialCompanyId);
         }
-    } else {
-        // For company users: use their own company id from hidden input
-        const hiddenCompany = document.querySelector('input[name="company_id"]');
-        if (hiddenCompany) {
-            fetchDepartments(hiddenCompany.value);
-            fetchBranches(hiddenCompany.value);
+
+        // Superadmin can change company
+        if (companySelect.tagName === 'SELECT') {
+            companySelect.addEventListener('change', function () {
+                const companyId = this.value;
+                @if($isSuper)
+                    loadDepartments(companyId);
+                @endif
+                loadBranches(companyId);
+            });
         }
     }
+
+    // Final init updates
+    updateDeptButtonText();
+    syncDeptCheckboxes();
 });
 </script>
 @endpush

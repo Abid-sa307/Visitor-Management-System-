@@ -109,21 +109,25 @@
 
       <!-- Bottom Footer -->
       <div class="row align-items-center">
-        <div class="col-md-6 text-center text-md-start">
-          <a href="https://www.nntsoftware.com/" class="text-white text-decoration-none d-block" target="_blank"
-            rel="noopener noreferrer" aria-label="Open NNT Software homepage">
-            &copy; Copyright 2025 N & T Software Private Limited . All rights reserved.
-          </a>
-
+        <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+          <p class="mb-0">
+            <a href="https://www.nntsoftware.com/" class="text-white text-decoration-none" target="_blank"
+              rel="noopener noreferrer" aria-label="Open NNT Software homepage">
+              &copy; {{ date('Y') }} Visitor Management System (Developed By N&T Software)
+            </a>
+          </p>
         </div>
 
         <div class="col-md-6 text-center text-md-end">
-          <p class="mb-0 text-light">
-            <a href="/privacy-policy?" class="text-decoration-none text-light">Privacy Policy</a> |
-            <a href="/terms-of-use" class="text-decoration-none text-light">Terms of Use</a> |
-            <a href="/refund-and-cancellation" class="text-decoration-none text-light">Refund & Cancellation</a> |
+          <div class="d-flex justify-content-center justify-content-md-end gap-3">
+            <a href="/privacy-policy" class="text-decoration-none text-light">Privacy Policy</a>
+            <span class="text-light">|</span>
+            <a href="/terms-of-use" class="text-decoration-none text-light">Terms of Use</a>
+            <span class="text-light">|</span>
+            <a href="/refund-and-cancellation" class="text-decoration-none text-light">Refund & Cancellation</a>
+            <span class="text-light">|</span>
             <a href="/service-agreement" class="text-decoration-none text-light">Service Agreement</a>
-          </p>
+          </div>
         </div>
 
       </div>

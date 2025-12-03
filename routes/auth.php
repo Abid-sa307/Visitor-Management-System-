@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\OtpVerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -29,6 +30,16 @@ Route::middleware('guest')->group(function () {
     Route::get('login', fn() => redirect('/'))->name('login');
     // Accept POST /login submissions from forms that use route('login')
     Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+
+    // OTP Verification Routes
+    Route::get('verify-otp', [OtpVerificationController::class, 'showOtpForm'])
+        ->name('otp.verify');
+        
+    Route::post('verify-otp', [OtpVerificationController::class, 'verifyOtp'])
+        ->name('otp.verify.post');
+        
+    Route::post('resend-otp', [OtpVerificationController::class, 'resendOtp'])
+        ->name('otp.resend');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

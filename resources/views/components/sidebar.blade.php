@@ -41,11 +41,42 @@
             'route' => $isCompany ? 'company.dashboard' : 'dashboard',
             'page'  => 'dashboard',
         ],
+
+         [
+            'title' => 'Companies',
+            'icon'  => 'bi-buildings',
+            'route' => 'companies.index',
+            'page'  => 'companies',
+            'super_only' => true,
+        ],
+
+        
+        [
+            'title' => 'Departments',
+            'icon'  => 'bi-building',
+            'route' => $isCompany ? 'company.departments.index' : 'departments.index',
+            'page'  => 'departments',
+        ],
+
         [
             'title' => 'Visitors',
             'icon'  => 'bi-person-lines-fill',
             'route' => $isCompany ? 'company.visitors.index' : 'visitors.index',
             'page'  => 'visitors',
+        ],
+
+        [
+            'title' => 'Security Checks',
+            'icon'  => 'bi-shield-check',
+            'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
+            'page'  => 'security_checks',
+        ],
+
+        [
+            'title' => 'Visitor Approvals',
+            'icon'  => 'bi-check2-circle',
+            'route' => $isCompany ? 'company.approvals.index' : 'visitors.approvals',
+            'page'  => 'approvals',
         ],
         [
             'title' => 'Visitor In & Out',
@@ -53,12 +84,7 @@
             'route' => $isCompany ? 'company.visitors.entry.page' : 'visitors.entry.page',
             'page'  => 'visitor_inout',
         ],
-        [
-            'title' => 'Visitor Approvals',
-            'icon'  => 'bi-check2-circle',
-            'route' => $isCompany ? 'company.visitors.approvals' : 'visitors.approvals',
-            'page'  => 'approvals',
-        ],
+        
         [
             'title' => 'Visitor History',
             'icon'  => 'bi-clock-history',
@@ -66,25 +92,14 @@
             'page'  => 'visitor_history',
         ],
         [
-            'title' => 'Security Checks',
-            'icon'  => 'bi-shield-check',
-            'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
-            'page'  => 'security_checks',
+            'title' => 'QR Scanner',
+            'icon'  => 'bi-qr-code-scan',
+            'route' => $isCompany ? 'company.qr.scanner' : 'qr.scanner',
+            'page'  => 'qr_scanner',
         ],
+        
         // Companies (superadmin only; never visible to company users)
-        [
-            'title' => 'Companies',
-            'icon'  => 'bi-buildings',
-            'route' => 'companies.index',
-            'page'  => 'companies',
-            'super_only' => true,
-        ],
-        [
-            'title' => 'Departments',
-            'icon'  => 'bi-building',
-            'route' => $isCompany ? 'company.departments.index' : 'departments.index',
-            'page'  => 'departments',
-        ],
+       
         [
             'title' => 'Employees',
             'icon'  => 'bi-person-workspace',
@@ -138,6 +153,25 @@
         </li>
     @endif
 
+   @can('viewAny', \App\Models\VisitorCategory::class)
+    <li class="nav-item {{ $active('visitor-categories.*') }}">
+        <a class="nav-link" href="{{ route('visitor-categories.index') }}">
+            <i class="fas fa-tags me-2"></i>
+            <span>Visitor Categories</span>
+        </a>
+    </li>
+@endcan
+
+ <!-- Users (visible only if user has 'users' permission; superadmin always) -->
+    @if(Route::has($usersRoute) && ($isSuper || $canPage('users')))
+        <li class="nav-item {{ $active($usersRoute) }}">
+            <a class="nav-link" href="{{ route($usersRoute) }}">
+                <i class="bi bi-person-bounding-box me-2"></i>
+                <span>Users</span>
+            </a>
+        </li>
+    @endif
+
     <!-- Reports (group visible only if user has "reports") -->
     @if($canPage('reports'))
         <li class="nav-item {{ $reportActive ? 'active' : '' }}">
@@ -167,15 +201,7 @@
         </li>
     @endif
 
-    <!-- Users (visible only if user has 'users' permission; superadmin always) -->
-    @if(Route::has($usersRoute) && ($isSuper || $canPage('users')))
-        <li class="nav-item {{ $active($usersRoute) }}">
-            <a class="nav-link" href="{{ route($usersRoute) }}">
-                <i class="bi bi-person-bounding-box me-2"></i>
-                <span>Users</span>
-            </a>
-        </li>
-    @endif
+   
 
     <hr class="sidebar-divider d-none d-md-block">
     

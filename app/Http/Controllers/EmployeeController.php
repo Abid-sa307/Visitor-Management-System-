@@ -5,15 +5,84 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\Company;
 use App\Models\Department;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $employees = Employee::with(['company', 'department'])->latest()->paginate(10);
-        return view('employees.index', compact('employees'));
+        $isCompany = Auth::guard('company')->check();
+        $authUser = $isCompany ? Auth::guard('company')->user() : Auth::user();
+        $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
+
+        // Base query with relationships
+        $employeeQuery = Employee::query()
+            ->with(['company', 'department'])
+            ->latest('created_at');
+
+        // Apply date range filter if provided
+        $fromDate = $request->input('from') ?: now()->subDays(30)->format('Y-m-d');
+        $toDate = $request->input('to') ?: now()->format('Y-m-d');
+        
+        $employeeQuery->whereDate('created_at', '>=', $fromDate)
+                     ->whereDate('created_at', '<=', $toDate);
+
+        // Company filter (for superadmin)
+        $companyId = null;
+        if ($isSuper) {
+            $companyId = $request->input('company_id');
+            if ($companyId) {
+                $employeeQuery->where('company_id', $companyId);
+            }
+        } elseif ($isCompany && $authUser) {
+            $companyId = $authUser->company_id;
+            $employeeQuery->where('company_id', $companyId);
+        }
+
+        // Department filter
+        if ($request->filled('department_id')) {
+            $employeeQuery->where('department_id', $request->input('department_id'));
+        }
+
+        $employees = $employeeQuery->paginate(10)->appends($request->query());
+
+        // Get companies for superadmin dropdown
+        $companies = [];
+        if ($isSuper) {
+            $companies = \App\Models\Company::orderBy('name')->pluck('name', 'id')->toArray();
+        }
+
+        // Get branches based on company selection
+        $branches = [];
+        if ($companyId) {
+            $branches = \App\Models\Branch::where('company_id', $companyId)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        }
+
+        // Get departments based on company selection
+        $departments = [];
+        if ($companyId) {
+            $departments = \App\Models\Department::where('company_id', $companyId)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        }
+
+        return view('employees.index', [
+            'employees' => $employees,
+            'departments' => $departments,
+            'branches' => $branches,
+            'companies' => $companies,
+            'isSuper' => $isSuper,
+            'isCompany' => $isCompany,
+            'from' => $fromDate,
+            'to' => $toDate,
+        ]);
     }
 
     public function create()

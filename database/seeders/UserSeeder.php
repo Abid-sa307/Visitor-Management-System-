@@ -28,14 +28,22 @@ public function run(): void
         ]
     );
 
-    User::firstOrCreate(
-        ['email' => 'abidsaiyednntsoftware@gmail.com'],
-        [
-            'name' => 'Test User',
-            'password' => bcrypt('password'),
-            'company_id' => $company->id, // ✅ now it's guaranteed to exist
-            'role' => 'superadmin',
-        ]
-    );
+        // Create or update super admin user
+        $superAdmin = User::updateOrCreate(
+            ['email' => 'visitormanagmentsystemsoftware@gmail.com'],
+            [
+                'name' => 'Admin User',
+                'password' => bcrypt('Nnt@12345'),
+                'company_id' => $company->id,
+                'role' => 'superadmin',
+                'is_super_admin' => 1,
+                'email_verified_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+        
+        // Ensure the user has the correct role and permissions
+        $superAdmin->assignRole('superadmin');
 }
 }
