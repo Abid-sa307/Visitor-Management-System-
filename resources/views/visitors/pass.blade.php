@@ -6,7 +6,6 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
@@ -69,10 +68,6 @@
             line-height: 1.1;
         }
 
-        .photo-wrapper {
-            margin: 2px 0;
-        }
-
         .visitor-photo {
             width: 55px;
             height: 70px;
@@ -88,16 +83,6 @@
             object-fit: cover;
         }
 
-        .photo-placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #e5e7eb;
-            font-size: 18px;
-        }
-
         .visitor-name {
             font-size: 11px;
             font-weight: 600;
@@ -107,14 +92,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        .visitor-company {
-            font-size: 8px;
-            opacity: 0.9;
-            text-align: center;
-            max-height: 22px;
-            overflow: hidden;
         }
 
         .visitor-id {
@@ -151,18 +128,6 @@
             letter-spacing: 0.6px;
         }
 
-        .status-badge {
-            background: #10b981;
-            color: #ffffff;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 8px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-
         .company-address {
             font-size: 7px;
             color: #6b7280;
@@ -196,13 +161,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        .validity-note {
-            font-size: 7.5px;
-            color: #b91c1c;
-            margin-top: 2px;
-            font-weight: 500;
         }
 
         .barcode-section {
@@ -257,7 +215,7 @@
 </head>
 <body>
     <div class="visitor-pass">
-        {{-- LEFT SIDE: BRAND + PHOTO --}}
+        <!-- LEFT SIDE: BRAND + PHOTO -->
         <div class="pass-left">
             <div class="text-center">
                 @if(!empty($company->logo))
@@ -268,106 +226,61 @@
                 </div>
             </div>
 
-            <div class="photo-wrapper">
-                <div class="visitor-photo">
-                    @if($visitor->photo)
-                        <img src="{{ asset('storage/' . $visitor->photo) }}" alt="Visitor Photo">
-                    @else
-                        <div class="photo-placeholder">
-                            <i class="bi bi-person"></i>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
             <div class="text-center">
                 <div class="visitor-name">
                     {{ $visitor->name }}
                 </div>
-                <div class="visitor-company">
-                    {{ $visitor->visitor_company ?? ($visitor->company->name ?? 'Visitor') }}
-                </div>
                 <div class="visitor-id">
-                    ID: {{ $visitor->visitor_id ?? 'N/A' }}
+                    {{ $visitor->phone }}
                 </div>
             </div>
         </div>
 
-        {{-- RIGHT SIDE: DETAILS --}}
+        <!-- RIGHT SIDE: DETAILS -->
         <div class="pass-right">
-            <div>
-                <div class="pass-header">
-                    <div>
-                        <div class="pass-title">Visitor Pass</div>
-                        @if(!empty($company->address))
-                            <div class="company-address">
-                                {{ $company->address }}
-                            </div>
-                        @endif
+            <div class="pass-header">
+                <div>
+                    <div class="pass-title">Visitor Pass</div>
+                    <div class="company-address">
+                        {{ $visitor->branch->name ?? 'N/A' }}
                     </div>
-                    <div class="status-badge">
-                        {{ ucfirst($visitor->status ?? 'Active') }}
+                </div>
+            </div>
+
+            <div class="details">
+                <div class="detail-row">
+                    <div class="detail-label">Department:</div>
+                    <div class="detail-value">
+                        {{ $visitor->department->name ?? 'N/A' }}
                     </div>
                 </div>
 
-                <div class="details">
-                    <div class="detail-row">
-                        <div class="detail-label">Date</div>
-                        <div class="detail-value">
-                            {{ $visitor->in_time
-                                ? \Carbon\Carbon::parse($visitor->in_time)->format('d M Y')
-                                : now()->format('d M Y') }}
-                        </div>
+                <div class="detail-row">
+                    <div class="detail-label">Visit To:</div>
+                    <div class="detail-value">
+                        {{ $visitor->employee->name ?? $visitor->person_to_visit ?? 'N/A' }}
                     </div>
+                </div>
 
-                    <div class="detail-row">
-                        <div class="detail-label">Time In</div>
-                        <div class="detail-value">
-                            {{ $visitor->in_time
-                                ? \Carbon\Carbon::parse($visitor->in_time)->format('h:i A')
-                                : now()->format('h:i A') }}
-                        </div>
+                <div class="detail-row">
+                    <div class="detail-label">Purpose:</div>
+                    <div class="detail-value">
+                        {{ $visitor->purpose ?? 'N/A' }}
                     </div>
+                </div>
 
-                    <div class="detail-row">
-                        <div class="detail-label">Meeting</div>
-                        <div class="detail-value">
-                            {{ $visitor->employee->name ?? $visitor->person_to_visit ?? 'N/A' }}
-                        </div>
-                    </div>
-
-                    <div class="detail-row">
-                        <div class="detail-label">Purpose</div>
-                        <div class="detail-value">
-                            {{ $visitor->purpose ?? 'N/A' }}
-                        </div>
-                    </div>
-
-                    <div class="detail-row">
-                        <div class="detail-label">Valid Until</div>
-                        <div class="detail-value">
-                            @php
-                                $inTime = $visitor->in_time
-                                    ? \Carbon\Carbon::parse($visitor->in_time)
-                                    : now();
-                            @endphp
-                            {{ $inTime->copy()->addHours(8)->format('h:i A') }}
-                        </div>
-                    </div>
-
-                    <div class="validity-note">
-                        Valid only for today and for this visit only.
+                <div class="detail-row">
+                    <div class="detail-label">Valid Until:</div>
+                    <div class="detail-value">
+                        {{ $visitor->valid_until ? \Carbon\Carbon::parse($visitor->valid_until)->format('d M Y h:i A') : 'N/A' }}
                     </div>
                 </div>
             </div>
 
             <div>
                 <div class="barcode-section">
-                    @php
-                        $code = $visitor->visitor_id ? strtoupper($visitor->visitor_id) : 'VISITOR';
-                    @endphp
                     <div class="barcode">
-                        *{{ $code }}*
+                        <!-- *{{ $visitor->visitor_id ?? 'VISITOR' }}* -->
                     </div>
                     <div class="barcode-label">VISITOR ID</div>
                 </div>

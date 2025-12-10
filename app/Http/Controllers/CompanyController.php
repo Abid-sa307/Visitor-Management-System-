@@ -14,13 +14,115 @@ use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Department;
+use Illuminate\Support\Str;
+use Illuminate\Http\Response;
 
 class CompanyController extends Controller
 {
-    use AuthorizesRequests;
-    public function index()
+    /**
+     * Generate QR code for a company
+     *
+     * @param Company $company
+     * @return \Illuminate\Http\Response
+     */
+    public function generateQrCode(Company $company)
     {
-        $companies = Company::with('branches')->latest()->paginate(10);
+        $this->authorize('view', $company);
+        
+        // Generate QR code URL
+        $url = route('qr.scan', ['company' => $company->id]);
+        
+        // Generate QR code
+        $qrCode = QrCode::size(300)
+            ->format('svg')
+            ->generate($url);
+        
+        return response($qrCode, 200, [
+            'Content-Type' => 'image/svg+xml',
+            'Content-Disposition' => 'inline; filename="' . Str::slug($company->name) . '-qrcode.svg"'
+        ]);
+    }
+    use AuthorizesRequests;
+
+    /**
+     * Show the QR code page
+     *
+     * @param Company $company
+     * @return \Illuminate\View\View
+     */
+    public function showQrPage(Company $company)
+    {
+        $this->authorize('view', $company);
+        
+        // Get the branch if branch_id is provided
+        $branch = null;
+        if (request()->has('branch_id')) {
+            $branch = Branch::where('company_id', $company->id)
+                           ->findOrFail(request('branch_id'));
+        }
+        
+        // Generate QR code URL
+        $url = route('qr.scan', [
+            'company' => $company->id,
+            'branch' => $branch?->id
+        ]);
+        
+        // Generate QR code
+        $qrCode = QrCode::size(300)
+            ->format('svg')
+            ->generate($url);
+        
+        return view('companies.qr', compact('company', 'branch', 'qrCode', 'url'));
+    }
+
+    /**
+     * Download QR code
+     *
+     * @param Company $company
+     * @param Branch|null $branch
+     * @return Response
+     */
+    public function downloadQrCode(Company $company, Branch $branch = null)
+    {
+        $this->authorize('view', $company);
+        
+        // Generate QR code URL
+        $url = route('qr.scan', [
+            'company' => $company->id,
+            'branch' => $branch?->id
+        ]);
+        
+        // Generate QR code
+        $qrCode = QrCode::size(300)
+            ->format('svg')
+            ->generate($url);
+        
+        $filename = ($branch ? $branch->slug : $company->slug) . '-qrcode.svg';
+        
+        return response($qrCode, 200, [
+            'Content-Type' => 'image/svg+xml',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+        ]);
+    }
+    public function index(Request $request)
+    {
+        $query = Company::with('branches')->latest();
+        
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('contact_number', 'like', '%' . $search . '%')
+                  ->orWhereHas('branches', function($q) use ($search) {
+                      $q->where('name', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+        
+        $companies = $query->paginate(10)->withQueryString();
+        
         return view('companies.index', compact('companies'));
     }
 
@@ -40,22 +142,55 @@ class CompanyController extends Controller
  * @param Company $company
  * @return \Illuminate\Http\JsonResponse
  */
+/**
+ * Get branches for a company as JSON
+ *
+ * @param Company $company
+ * @return \Illuminate\Http\JsonResponse
+ */
 public function getBranches(Company $company)
 {
     try {
+        \Log::info('getBranches called for company ID: ' . $company->id);
+        
+        // Check if the authenticated user has access to this company's branches
+        $user = auth()->user();
+        $companyUser = auth('company')->user();
+        
+        \Log::info('Auth check - User ID: ' . ($user ? $user->id : 'null') . 
+                  ', Company User ID: ' . ($companyUser ? $companyUser->id : 'null') .
+                  ', Company ID: ' . $company->id);
+        
+        // If user is a company user, ensure they can only access their own company's branches
+        if ($companyUser && $companyUser->id != $company->id) {
+            \Log::warning('Unauthorized access: Company user ' . $companyUser->id . ' tried to access company ' . $company->id);
+            return response()->json(['error' => 'Unauthorized access to branches (company user)'], 403);
+        }
+        
+        // If user is a regular user (admin/superadmin), check their role
+        if ($user && !in_array($user->role, ['superadmin', 'admin']) && $user->company_id != $company->id) {
+            \Log::warning('Unauthorized access: User ' . $user->id . ' tried to access company ' . $company->id);
+            return response()->json(['error' => 'Unauthorized access to branches (regular user)'], 403);
+        }
+
         $branches = $company->branches()
-            ->select('id', 'name') // or 'id','name','address' if that column exists
+            ->select('id', 'name')
             ->orderBy('name')
-            ->get()
-            ->map(fn($branch) => [
+            ->get();
+            
+        \Log::info('Found ' . $branches->count() . ' branches for company ' . $company->id);
+        
+        $mappedBranches = $branches->map(function($branch) {
+            return [
                 'id'   => $branch->id,
                 'name' => $branch->name,
-            ]);
+            ];
+        });
 
-        return response()->json($branches);
+        return response()->json($mappedBranches);
     } catch (\Exception $e) {
         \Log::error('Error fetching branches: ' . $e->getMessage());
-        return response()->json(['error' => 'Failed to load branches'], 500);
+        return response()->json(['error' => 'Failed to load branches: ' . $e->getMessage()], 500);
     }
 }
 

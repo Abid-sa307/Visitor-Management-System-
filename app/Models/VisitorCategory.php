@@ -8,25 +8,25 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VisitorCategory extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
     
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'v_categories';
+    protected $table = 'visitor_categories';
 
     protected $fillable = [
         'name',
-        'description',
-        'company_id',
-        'is_active'
+        'company_id'
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    // Active scope returns all categories since we don't have an is_active column
+    public function scopeActive($query)
+    {
+        return $query;
+    }
 
     public function company()
     {
@@ -38,12 +38,7 @@ class VisitorCategory extends Model
         return $this->hasMany(Visitor::class);
     }
 
-    // Scopes
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
+   
     public function scopeForCompany($query, $companyId = null)
     {
         if (auth()->user()->hasRole('superadmin') && $companyId) {

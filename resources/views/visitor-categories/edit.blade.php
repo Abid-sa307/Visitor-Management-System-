@@ -16,25 +16,30 @@
                             @csrf
                             @method('PUT')
                             
-                            @if(auth()->user()->hasRole('superadmin'))
-                                <div class="mb-3">
-                                    <label for="company_id" class="form-label">Company</label>
-                                    <select name="company_id" id="company_id" class="form-select @error('company_id') is-invalid @enderror" {{ $category->visitors()->count() > 0 ? 'disabled' : '' }}>
+                            <div class="mb-3">
+                                <label for="company_id" class="form-label">Company</label>
+                                @if(auth()->user()->hasRole('superadmin'))
+                                    <select name="company_id" id="company_id" class="form-select @error('company_id') is-invalid @enderror" required>
                                         <option value="">Select Company</option>
                                         @foreach($companies as $id => $name)
-                                            <option value="{{ $id }}" {{ old('company_id', $category->company_id) == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                            <option value="{{ $id }}" {{ old('company_id', $category->company_id) == $id ? 'selected' : '' }} {{ $category->visitors()->count() > 0 ? 'disabled' : '' }}>
+                                                {{ $name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @if($category->visitors()->count() > 0)
-                                        <small class="text-muted">Cannot change company as there are visitors associated with this category.</small>
+                                        <input type="hidden" name="company_id" value="{{ $category->company_id }}">
+                                        <small class="text-muted">Note: Company cannot be changed as there are visitors associated with this category.</small>
                                     @endif
                                     @error('company_id')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div>
-                            @else
-                                <input type="hidden" name="company_id" value="{{ $category->company_id }}">
-                            @endif
+                                @else
+                                    <input type="text" class="form-control" value="{{ $category->company->name }}" readonly>
+                                    <input type="hidden" name="company_id" value="{{ $category->company_id }}">
+                                    <small class="text-muted">Your company is automatically assigned.</small>
+                                @endif
+                            </div>
 
                             <div class="mb-3">
                                 <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>

@@ -25,6 +25,7 @@ class Visitor extends Model
         'company_id',
         'branch_id',
         'name',
+        'visitor_company',
         'visitor_category_id',
         'email',
         'phone',
@@ -38,8 +39,7 @@ class Visitor extends Model
         'workman_policy_photo',
         'status',
         'in_time',
-            'document_path',
-
+        'document_path',
         'out_time',
         'last_status',
         'status_changed_at',

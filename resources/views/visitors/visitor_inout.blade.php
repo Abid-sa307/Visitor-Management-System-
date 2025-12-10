@@ -116,62 +116,89 @@
         </form>
     </div>
 
-    <!-- Filters -->
-    <form method="GET" class="filter-section mb-4">
-        <div class="row g-2">
-            @if(auth()->user()->role === 'superadmin')
-            <div class="col-md-12 mb-3">
-                <div class="row">
-                    <div class="col-md-4">
-                        <label class="form-label">Company</label>
-                            <select name="company_id" id="company_id" class="form-select form-select-sm">
-                                <option value="">All Companies</option>
-                                @foreach($companies as $id => $name)
-                                    <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
-                                        {{ $name }}
+    <!-- Date Range Filter -->
+    <form method="GET" action="{{ route('reports.inout') }}" class="mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Filter Results</h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="input-group">
+                            <input type="date" name="from" id="from_date" class="form-control" 
+                                   value="{{ request('from') }}" max="{{ date('Y-m-d') }}">
+                            <span class="input-group-text">to</span>
+                            <input type="date" name="to" id="to_date" class="form-control" 
+                                   value="{{ request('to') ?? date('Y-m-d') }}" max="{{ date('Y-m-d') }}">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="today" onclick="setDateRange('today', event)">
+                                Today
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="yesterday" onclick="setDateRange('yesterday', event)">
+                                Yesterday
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="this-month" onclick="setDateRange('this-month', event)">
+                                This Month
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="last-month" onclick="setDateRange('last-month', event)">
+                                Last Month
+                            </button>
+                        </div>
+                    </div>
+
+                    @if(auth()->user()->role === 'superadmin')
+                    <div class="col-md-2">
+                        <label for="company_id" class="form-label">Company</label>
+                        <select name="company_id" id="company_id" class="form-select">
+                            <option value="">All Companies</option>
+                            @foreach($companies as $company)
+                                <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+
+                    <div class="col-md-2">
+                        <label for="branch_id" class="form-label">Branch</label>
+                        <select name="branch_id" id="branch_id" class="form-select" 
+                            {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
+                            <option value="">All Branches</option>
+                            @if(isset($branches) && count($branches) > 0)
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
+                                        {{ $branch->name }}
                                     </option>
                                 @endforeach
-                            </select>
+                            @endif
+                        </select>
                     </div>
-                    <div class="col-md-8">
-                        <label class="form-label">Date Range</label>
-                        @include('components.date_range')
+
+                    <div class="col-md-2">
+                        <label for="department_id" class="form-label">Department</label>
+                        <select name="department_id" id="department_id" class="form-select"
+                            {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
+                            <option value="">All Departments</option>
+                            @if(isset($departments) && count($departments) > 0)
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
+                                        {{ $department->name }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
-                </div>
-            </div>
-            @endif
 
-            <div class="col-md-4">
-                <label class="form-label">Department</label>
-                <select name="department_id" id="department_id" class="form-select form-select-sm" 
-                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                    <option value="">All Departments</option>
-                    @foreach($departments as $id => $name)
-                        <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Branch</label>
-                <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
-                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                    <option value="">All Branches</option>
-                    @foreach($branches ?? [] as $id => $name)
-                        <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-md-4 d-flex align-items-end">
-                <div class="w-100">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-funnel-fill me-1"></i> Apply Filters
-                    </button>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-funnel me-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('reports.inout') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,8 +297,68 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchBtn) {
     }
 
-    // Existing face recognition and verification code...
-    // ... (keep all existing JavaScript code for face recognition)
+    // Function to format date as YYYY-MM-DD
+    function formatDate(date) {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+
+    // Function to set date range based on selection
+    window.setDateRange = function(range, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const today = new Date();
+        const fromDate = document.getElementById('from_date');
+        const toDate = document.getElementById('to_date');
+        
+        if (!fromDate || !toDate) return;
+        
+        switch(range) {
+            case 'today':
+                fromDate.value = formatDate(today);
+                toDate.value = formatDate(today);
+                break;
+                
+            case 'yesterday':
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+                fromDate.value = formatDate(yesterday);
+                toDate.value = formatDate(yesterday);
+                break;
+                
+            case 'this-month':
+                const firstDayThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                fromDate.value = formatDate(firstDayThisMonth);
+                toDate.value = formatDate(today);
+                break;
+                
+            case 'last-month':
+                const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const lastDayLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                fromDate.value = formatDate(firstDayLastMonth);
+                toDate.value = formatDate(lastDayLastMonth);
+                break;
+        }
+        
+        // Submit the main filter form, not the export form
+        const filterForm = document.querySelector('form[action*="reports.inout"]');
+        if (filterForm) {
+            // Add a small delay to ensure the values are set before submission
+            setTimeout(() => {
+                filterForm.submit();
+            }, 50);
+        }
+    };
 });
 </script>
 @endpush

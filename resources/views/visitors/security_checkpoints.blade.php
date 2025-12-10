@@ -76,92 +76,106 @@
         </div>
     </div>
 
-    <!-- Filters Card -->
-    <div class="card shadow mb-4 filter-card">
-        <div class="card-header">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-filter me-2"></i>Filter Reports
-            </h6>
-        </div>
+    {{-- =================== FILTERS CARD =================== --}}
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form action="{{ route('reports.security') }}" method="GET" id="filterForm">
-                <div class="row g-3">
-                    @if(auth()->user()->role === 'superadmin')
-                    <div class="col-md-3">
-                        <label class="form-label">Company</label>
-                        <select name="company_id" id="company_id" class="form-select form-select-sm">
-                            <option value="">All Companies</option>
-                            @foreach($companies as $id => $name)
-                                <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        </select>
+            <form method="GET" action="{{ route('reports.security') }}" id="filterForm">
+                <div class="row g-3 align-items-end">
+                    {{-- Date Range --}}
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label">Date Range</label>
+                        <div class="input-group mb-2">
+                            @php
+                                $fromDate = request('from') ?? now()->subDays(30)->format('Y-m-d');
+                                $toDate = request('to') ?? now()->format('Y-m-d');
+                            @endphp
+                            <input type="date" name="from" id="from_date" class="form-control"
+                                   value="{{ $fromDate }}" max="{{ date('Y-m-d') }}">
+                            <span class="input-group-text">to</span>
+                            <input type="date" name="to" id="to_date" class="form-control"
+                                   value="{{ $toDate }}" max="{{ date('Y-m-d') }}">
+                        </div>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="today">
+                                Today
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="yesterday">
+                                Yesterday
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="this-month">
+                                This Month
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="last-month">
+                                Last Month
+                            </button>
+                        </div>
                     </div>
+
+                    {{-- Company (superadmin only) --}}
+                    @if(auth()->user()->role === 'superadmin')
+                        <div class="col-lg-3 col-md-6">
+                            <label for="company_id" class="form-label">Company</label>
+                            <select name="company_id" id="company_id" class="form-select">
+                                <option value="">All Companies</option>
+                                @foreach($companies as $company)
+                                    <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
+                                        {{ $company->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     @endif
 
-                    <div class="col-md-3">
-                        <label class="form-label">Department</label>
-                        <select name="department_id" id="department_id" class="form-select form-select-sm" 
-                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                            <option value="">All Departments</option>
-                            @foreach($departments as $id => $name)
-                                <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label">Branch</label>
-                        <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
-                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                    {{-- Branch --}}
+                    <div class="col-lg-3 col-md-6">
+                        <label for="branch_id" class="form-label">Branch</label>
+                        <select name="branch_id" id="branch_id"
+                                class="form-select"
+                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
                             <option value="">All Branches</option>
-                            @foreach($branches ?? [] as $id => $name)
-                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
+                            @if(isset($branches) && count($branches) > 0)
+                                @foreach($branches as $id => $name)
+                                    <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Date Range</label>
-                        <div class="input-group input-group-sm">
-                            <input type="date" 
-                                   name="from" 
-                                   id="from" 
-                                   class="form-control form-control-sm" 
-                                   value="{{ request('from') }}"
-                                   max="{{ date('Y-m-d') }}">
-                            <span class="input-group-text">to</span>
-                            <input type="date" 
-                                   name="to" 
-                                   id="to" 
-                                   class="form-control form-control-sm" 
-                                   value="{{ request('to') }}"
-                                   max="{{ date('Y-m-d') }}">
-                        </div>
+                    {{-- Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label for="department_id" class="form-label">Department</label>
+                        <select name="department_id" id="department_id"
+                                class="form-select"
+                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
+                            <option value="">All Departments</option>
+                            @if(isset($departments) && count($departments) > 0)
+                                @foreach($departments as $id => $name)
+                                    <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
 
-                    <div class="col-12 mt-3">
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-filter me-1"></i> Apply Filters
-                            </button>
-                            <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-undo me-1"></i> Reset
+                    {{-- Action Buttons --}}
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i> Reset
+                        </a>
+                        @if(request()->hasAny(['company_id', 'branch_id', 'department_id', 'from', 'to']))
+                            <a href="{{ route('reports.security.export', request()->query()) }}" 
+                               class="btn btn-success ms-auto" 
+                               data-bs-toggle="tooltip" 
+                               title="Export to Excel">
+                                <i class="fas fa-file-excel me-1"></i> Export
                             </a>
-                            @if(request()->hasAny(['company_id', 'department_id', 'branch_id', 'from', 'to']))
-                            <div class="ms-auto">
-                                <span class="badge bg-info text-dark">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    {{ $securityChecks->total() }} record(s) found
-                                </span>
-                            </div>
-                            @endif
-                        </div>
+                        @endif
                     </div>
                 </div>
             </form>
@@ -268,6 +282,267 @@
 
 @push('scripts')
 <script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Get form elements
+    const filterForm = document.getElementById('filterForm');
+    const companySelect = document.getElementById('company_id');
+    const branchSelect = document.getElementById('branch_id');
+    const departmentSelect = document.getElementById('department_id');
+    const fromDate = document.getElementById('from_date');
+    const toDate = document.getElementById('to_date');
+
+    // Quick date range buttons
+    document.querySelectorAll('.quick-date').forEach(button => {
+        button.addEventListener('click', function() {
+            const range = this.dataset.range;
+            const today = new Date();
+            const from = new Date();
+            
+            switch(range) {
+                case 'today':
+                    fromDate.valueAsDate = today;
+                    toDate.valueAsDate = today;
+                    break;
+                    
+                case 'yesterday':
+                    const yesterday = new Date(today);
+                    yesterday.setDate(today.getDate() - 1);
+                    fromDate.valueAsDate = yesterday;
+                    toDate.valueAsDate = yesterday;
+                    break;
+                    
+                case 'this-month':
+                    from.setDate(1); // First day of current month
+                    toDate.valueAsDate = today;
+                    fromDate.valueAsDate = from;
+                    break;
+                    
+                case 'last-month':
+                    const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const lastDayLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                    fromDate.valueAsDate = firstDayLastMonth;
+                    toDate.valueAsDate = lastDayLastMonth;
+                    break;
+            }
+            
+            filterForm.submit();
+        });
+    });
+
+    // Company change handler
+    if (companySelect) {
+        companySelect.addEventListener('change', function() {
+            const companyId = this.value;
+            const isSuperAdmin = {{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }};
+            
+            // Reset and disable dependent dropdowns
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">Loading departments...</option>';
+                departmentSelect.disabled = !companyId;
+            }
+            
+            if (branchSelect) {
+                branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+                branchSelect.disabled = !companyId;
+            }
+
+            // If no company selected, reset the form
+            if (!companyId) {
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                    departmentSelect.disabled = isSuperAdmin ? true : false;
+                }
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">All Branches</option>';
+                    branchSelect.disabled = isSuperAdmin ? true : false;
+                }
+                return;
+            }
+
+            // Load departments and branches for the selected company
+            Promise.all([
+                fetch(`/api/companies/${companyId}/departments`),
+                fetch(`/api/companies/${companyId}/branches`)
+            ])
+            .then(async ([deptResponse, branchResponse]) => {
+                const departments = await deptResponse.json();
+                const branches = await branchResponse.json();
+
+                // Update departments dropdown
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                    departments.forEach(dept => {
+                        const option = new Option(dept.name, dept.id);
+                        departmentSelect.add(option);
+                    });
+                    departmentSelect.disabled = false;
+                }
+
+                // Update branches dropdown
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">All Branches</option>';
+                    branches.forEach(branch => {
+                        const option = new Option(branch.name, branch.id);
+                        branchSelect.add(option);
+                    });
+                    branchSelect.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+                }
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                }
+            });
+        });
+    }
+
+    // Form validation
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            const from = fromDate.value ? new Date(fromDate.value) : null;
+            const to = toDate.value ? new Date(toDate.value) : null;
+            
+            if (from && to && from > to) {
+                e.preventDefault();
+                alert('End date must be after start date');
+                return false;
+            }
+            return true;
+        });
+    }
+});
+// Enable Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Handle company change for dynamic loading of departments and branches
+    const companySelect = document.getElementById('company_id');
+    const departmentSelect = document.getElementById('department_id');
+    const branchSelect = document.getElementById('branch_id');
+    const fromDate = document.getElementById('from_date');
+    const toDate = document.getElementById('to_date');
+    const filterForm = document.getElementById('filterForm');
+
+    // Quick date range buttons
+    document.querySelectorAll('.quick-date').forEach(button => {
+        button.addEventListener('click', function() {
+            const days = parseInt(this.dataset.days);
+            const today = new Date();
+            
+            toDate.valueAsDate = today;
+            
+            if (days > 0) {
+                const from = new Date();
+                from.setDate(today.getDate() - days);
+                fromDate.valueAsDate = from;
+            } else {
+                fromDate.valueAsDate = today;
+            }
+            
+            filterForm.submit();
+        });
+    });
+
+    // Company change handler
+    if (companySelect) {
+        companySelect.addEventListener('change', function() {
+            const companyId = this.value;
+            const isSuperAdmin = {{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }};
+            
+            // Reset and disable dependent dropdowns
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">Loading departments...</option>';
+                departmentSelect.disabled = !companyId;
+            }
+            
+            if (branchSelect) {
+                branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+                branchSelect.disabled = !companyId;
+            }
+
+            // If no company selected, reset the form
+            if (!companyId) {
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                    departmentSelect.disabled = !isSuperAdmin;
+                }
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">All Branches</option>';
+                    branchSelect.disabled = !isSuperAdmin;
+                }
+                return;
+            }
+
+            // Load departments and branches for the selected company
+            Promise.all([
+                fetch(`/api/companies/${companyId}/departments`),
+                fetch(`/api/companies/${companyId}/branches`)
+            ])
+            .then(async ([deptResponse, branchResponse]) => {
+                const departments = await deptResponse.json();
+                const branches = await branchResponse.json();
+
+                // Update departments dropdown
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                    departments.forEach(dept => {
+                        const option = new Option(dept.name, dept.id);
+                        departmentSelect.add(option);
+                    });
+                    departmentSelect.disabled = false;
+                }
+
+                // Update branches dropdown
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">All Branches</option>';
+                    branches.forEach(branch => {
+                        const option = new Option(branch.name, branch.id);
+                        branchSelect.add(option);
+                    });
+                    branchSelect.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+                }
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                }
+            });
+        });
+    }
+
+    // Form validation
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            const from = fromDate.value ? new Date(fromDate.value) : null;
+            const to = toDate.value ? new Date(toDate.value) : null;
+            
+            if (from && to && from > to) {
+                e.preventDefault();
+                alert('End date must be after start date');
+                return false;
+            }
+            return true;
+        });
+    }
+});
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

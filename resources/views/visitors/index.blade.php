@@ -113,11 +113,10 @@
       <table class="table table-striped table-hover align-middle text-center border shadow-sm rounded-4 overflow-hidden">
         <thead class="table-primary text-uppercase">
     <tr>
-        <th>Photo</th>
         <th>Name</th>
         <th>Phone</th>
         <th>Company</th>
-        <th>Branch</th> <!-- Added Branch column -->
+        <th>Branch</th>
         <th>Department</th>
         <th>Purpose</th>
         <th>Person to Visit</th>
@@ -129,19 +128,6 @@
 <tbody>
     @forelse($visitors as $visitor)
         <tr>
-            <td>
-                @php
-                    $photoPath = $visitor->photo ?? $visitor->face_image;
-                    $photoUrl = $photoPath ? (str_starts_with($photoPath, 'http') ? $photoPath : asset('storage/' . ltrim($photoPath, '/'))) : null;
-                @endphp
-                @if($photoUrl)
-                    <img src="{{ $photoUrl }}" width="40" height="40" class="rounded-circle object-fit-cover" alt="Visitor Photo">
-                @else
-                    <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle" style="width: 40px; height: 40px;">
-                        <i class="fas fa-user text-muted"></i>
-                    </div>
-                @endif
-            </td>
             <td>{{ $visitor->name }}</td>
             <td>{{ $visitor->phone }}</td>
             <td>{{ $visitor->company->name ?? '—' }}</td>

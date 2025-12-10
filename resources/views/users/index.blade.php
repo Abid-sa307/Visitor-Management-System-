@@ -36,25 +36,7 @@
         <!-- Filter Form -->
         <form method="GET" id="filterForm" class="mb-4">
             <div class="row g-3 align-items-end">
-                <!-- Date Range -->
-                <div class="col-lg-4 col-md-6">
-                    <label class="form-label">Date Range</label>
-                    <div class="input-group mb-2">
-                        <input type="date" name="from" id="from_date" class="form-control" 
-                               value="{{ request('from', now()->subDays(30)->format('Y-m-d')) }}">
-                        <span class="input-group-text">to</span>
-                        <input type="date" name="to" id="to_date" class="form-control" 
-                               value="{{ request('to', now()->format('Y-m-d')) }}">
-                    </div>
-                    <div class="d-flex flex-wrap gap-1">
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">Today</button>
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="yesterday" type="button">Yesterday</button>
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="this-month" type="button">This Month</button>
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="last-month" type="button">Last Month</button>
-                    </div>
-                </div>
-
-                <!-- Company Dropdown (for super admin) -->
+    <!-- Company Dropdown (for super admin) -->
                 @if(auth()->user()->isSuperAdmin())
                 <div class="col-lg-3 col-md-6">
                     <label for="company_id" class="form-label">Company</label>
@@ -137,16 +119,10 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0 me-2">
-                                        <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" 
-                                             class="rounded-circle" width="32" height="32">
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold">{{ $user->name }}</div>
-                                        <small class="text-muted">{{ $user->designation ?? '—' }}</small>
-                                    </div>
-                                </div>
+                                <div class="fw-semibold">{{ $user->name }}</div>
+                                @if($user->designation)
+                                    <small class="text-muted">{{ $user->designation }}</small>
+                                @endif
                             </td>
                             <td>{{ $user->email }}</td>
                             <td>
@@ -203,50 +179,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const companySelect = document.getElementById('company_id');
-    const fromDate = document.getElementById('from_date');
-    const toDate = document.getElementById('to_date');
-    const quickRangeButtons = document.querySelectorAll('.quick-range');
-    const filterForm = document.getElementById('filterForm');
-
-    // Handle quick range buttons
-    quickRangeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const range = this.getAttribute('data-range');
-            const today = new Date();
-            let from = new Date();
-            
-            switch(range) {
-                case 'today':
-                    // Already set to today
-                    break;
-                case 'yesterday':
-                    from.setDate(today.getDate() - 1);
-                    toDate.valueAsDate = from;
-                    from.setDate(from.getDate());
-                    break;
-                case 'this-month':
-                    from = new Date(today.getFullYear(), today.getMonth(), 1);
-                    break;
-                case 'last-month':
-                    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                    from = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
-                    toDate.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 0);
-                    break;
-            }
-            
-            fromDate.valueAsDate = from;
-            if (range !== 'yesterday' && range !== 'last-month') {
-                toDate.valueAsDate = today;
-            }
-            
-            filterForm.submit();
-        });
-    });
-});
-</script>
-@endpush

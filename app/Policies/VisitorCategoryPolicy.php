@@ -35,7 +35,10 @@ class VisitorCategoryPolicy
     public function create(User $user): bool
     {
         // Allow superadmins and company users to create visitor categories
-        return $user->hasRole('superadmin') || $user->hasRole('company');
+        // Also check if the user has the specific permission if using permissions
+        return $user->hasRole('superadmin') || 
+               $user->hasRole('company') || 
+               $user->can('create_visitor_categories');
     }
 
     /**

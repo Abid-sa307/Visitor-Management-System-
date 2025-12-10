@@ -294,9 +294,8 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
     $departments = $company->departments()->get();
     $branches = $company->branches()->get();
     
-    // Get active visitor categories for the company
+    // Get visitor categories for the company
     $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
-        ->where('is_active', true)
         ->orderBy('name')
         ->get();
     
@@ -313,56 +312,49 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
 /**
  * Handle public visit form submission (no auth required)
  */
-public function storePublicVisit(Request $request, Company $company, $branch = null)
+public function storePublicVisit(Request $request, Company $company, $visitorId = null)
 {
-    // Get visitor ID from form input or route parameter
-    $visitorId = $request->input('visitor_id') ?? $request->route('visitor');
+    // Get visitor ID from route parameter
+    $visitorId = $visitorId ?? $request->route('visitor');
     
     $validated = $request->validate([
-        'visitor_id' => 'required|exists:visitors,id',
+        'company_id' => 'required|exists:companies,id',
         'department_id' => 'required|exists:departments,id',
+        'branch_id' => 'nullable|exists:branches,id',
+        'visitor_category_id' => 'required|exists:visitor_categories,id',
         'person_to_visit' => 'required|string|max:255',
         'purpose' => 'required|string',
-        'vehicle_number' => 'nullable|string|max:50',
-        'documents' => 'nullable|array',
-        'documents.*' => 'file|max:2048',
-    ], [
-        'visitor_id.required' => 'Visitor information is required.',
-        'visitor_id.exists' => 'Invalid visitor information provided.'
+        'visitor_company' => 'nullable|string',
+        'visitor_website' => 'nullable|url',
+        'vehicle_type' => 'nullable|string',
+        'vehicle_number' => 'nullable|string',
+        'goods_in_car' => 'nullable|string',
+        'workman_policy' => 'nullable|in:Yes,No',
+        'workman_policy_photo' => 'nullable|image|max:2048',
     ]);
 
-    // Find the visitor
-    $visitor = Visitor::findOrFail($request->visitor_id);
-    
-    // Update visitor details
-    $visitor->update([
-        'department_id' => $validated['department_id'],
-        'person_to_visit' => $validated['person_to_visit'],
-        'purpose' => $validated['purpose'],
-        'vehicle_number' => $validated['vehicle_number'] ?? null,
-        'status' => 'checked_in',
-        'in_time' => now(),
-    ]);
-
-    // Handle document uploads if any
-    if ($request->hasFile('documents')) {
-        $documents = [];
-        foreach ($request->file('documents') as $file) {
-            $path = $file->store('visitor_documents', 'public');
-            $documents[] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'type' => $file->getClientMimeType()
-            ];
+    try {
+        // Find the visitor
+        $visitor = \App\Models\Visitor::findOrFail($visitorId);
+        
+        // Handle file upload if present
+        if ($request->hasFile('workman_policy_photo')) {
+            $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+            $validated['workman_policy_photo'] = $path;
         }
-        $visitor->documents = $documents;
-        $visitor->save();
+        
+        // Update visitor details
+        $visitor->update($validated);
+
+        // Redirect to the public visitor index page with success message
+        return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
+            ->with('success', 'Visit details submitted successfully!');
+            
+    } catch (\Exception $e) {
+        \Log::error('Error in storePublicVisit: ' . $e->getMessage());
+        return redirect()->back()
+            ->withInput()
+            ->with('error', 'An error occurred while saving the visit details. Please try again.');
     }
-
-    // Store visitor in session
-    session(['current_visitor_id' => $visitor->id]);
-
-    // Redirect to the scan page with success message
-    return redirect()->route('qr.scan', ['company' => $company->id])->with('success', 'Visit details submitted successfully!');
 }
 }

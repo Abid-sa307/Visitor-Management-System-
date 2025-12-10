@@ -106,11 +106,15 @@
                     <small class="form-text text-muted d-block">When enabled, mail notifications will be sent for Company activities.</small>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="security_checkin_enabled" name="security_checkin_enabled" value="1"
-                        {{ old('security_checkin_enabled') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="security_checkin_enabled">Enable Security Check-in Service</label>
-                    <small class="form-text text-muted d-block">When enabled, security check-in and check-out functionality will be available for visitors.</small>
+                <div class="mb-3">
+                    <label for="security_checkin_type" class="form-label">Security Check Service Type</label>
+                    <select class="form-select" id="security_checkin_type" name="security_checkin_type">
+                        <option value="" {{ old('security_checkin_type') === '' ? 'selected' : '' }}>Disabled</option>
+                        <option value="checkin" {{ old('security_checkin_type') === 'checkin' ? 'selected' : '' }}>Check-in Only</option>
+                        <option value="checkout" {{ old('security_checkin_type') === 'checkout' ? 'selected' : '' }}>Check-out Only</option>
+                        <option value="both" {{ old('security_checkin_type') === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
+                    </select>
+                    <small class="form-text text-muted">Select the type of security check service to enable for this company.</small>
                 </div>
 
                 <div class="row g-3">

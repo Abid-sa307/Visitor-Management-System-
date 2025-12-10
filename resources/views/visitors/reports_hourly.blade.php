@@ -114,35 +114,82 @@
 
   @if(!empty($series))
     @php
-      $groupedSeries = collect($series)->groupBy(fn($row) => \Carbon\Carbon::parse($row['hour'])->format('Y-m-d'));
+      // Create time slots from 00:00 to 23:00
+      $timeSlots = [];
+      for ($i = 0; $i < 24; $i++) {
+        $start = str_pad($i, 2, '0', STR_PAD_LEFT) . ':00';
+        $end = str_pad(($i + 1) % 24, 2, '0', STR_PAD_LEFT) . ':00';
+        $timeSlots[] = "$start-$end";
+      }
+      
+      // Get unique dates
+      $dates = collect($series)
+        ->map(fn($row) => \Carbon\Carbon::parse($row['hour'])->format('Y-m-d'))
+        ->unique()
+        ->sort()
+        ->values();
     @endphp
+    
     <div class="table-responsive shadow-sm border rounded">
-      <table class="table table-striped align-middle text-center mb-0">
+      <table class="table table-bordered align-middle text-center mb-0">
         <thead class="table-primary">
           <tr>
-            <th rowspan="2" class="align-middle text-start">Metric</th>
-            @foreach($groupedSeries as $dateKey => $group)
-              <th colspan="{{ $group->count() }}" class="text-center">
-                {{ \Carbon\Carbon::parse($dateKey)->format('d M Y') }}
-              </th>
+            <th class="text-center">Date</th>
+            @foreach($timeSlots as $slot)
+              <th class="text-center small" style="min-width: 80px;">{{ $slot }}</th>
             @endforeach
-          </tr>
-          <tr>
-            @foreach($groupedSeries as $group)
-              @foreach($group as $row)
-                <th>{{ \Carbon\Carbon::parse($row['hour'])->format('h A') }}</th>
-              @endforeach
-            @endforeach
+            <th class="text-center fw-bold">Total</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <th class="text-start">Total Visitors</th>
-            @foreach($groupedSeries as $group)
-              @foreach($group as $row)
-                <td><span class="badge bg-primary">{{ $row['count'] }}</span></td>
+          @foreach($dates as $date)
+            @php
+              $dateTotal = 0;
+              $dateFormatted = \Carbon\Carbon::parse($date)->format('d M Y');
+            @endphp
+            <tr>
+              <th class="text-center">{{ $dateFormatted }}</th>
+              @foreach($timeSlots as $index => $slot)
+                @php
+                  $startHour = str_pad($index, 2, '0', STR_PAD_LEFT);
+                  $endHour = str_pad(($index + 1) % 24, 2, '0', STR_PAD_LEFT);
+                  
+                  $count = collect($series)
+                    ->filter(function($row) use ($date, $startHour) {
+                      $rowDate = date('Y-m-d', strtotime($row['hour']));
+                      $rowHour = date('H', strtotime($row['hour']));
+                      return $rowDate === $date && $rowHour === $startHour;
+                    })
+                    ->sum('count');
+                  
+                  $dateTotal += $count;
+                @endphp
+                <td class="{{ $count > 0 ? 'bg-light' : '' }}">
+                  {{ $count > 0 ? $count : '-' }}
+                </td>
               @endforeach
+              <td class="fw-bold bg-light">{{ $dateTotal > 0 ? $dateTotal : '-' }}</td>
+            </tr>
+          @endforeach
+          
+          <!-- Hourly Total Row -->
+          <tr class="table-secondary">
+            <th class="text-center">Total</th>
+            @php
+              $hourlyTotals = array_fill(0, 24, 0);
+              $grandTotal = 0;
+              
+              foreach ($series as $row) {
+                $hour = (int)date('H', strtotime($row['hour']));
+                $hourlyTotals[$hour] += $row['count'];
+                $grandTotal += $row['count'];
+              }
+            @endphp
+            
+            @foreach($hourlyTotals as $total)
+              <td class="fw-bold">{{ $total > 0 ? $total : '-' }}</td>
             @endforeach
+            <td class="fw-bold bg-light">{{ $grandTotal > 0 ? $grandTotal : '-' }}</td>
           </tr>
         </tbody>
       </table>

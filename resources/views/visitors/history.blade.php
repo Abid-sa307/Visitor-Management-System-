@@ -19,11 +19,15 @@
     <label class="form-label">Date Range</label>
     <div class="input-group mb-2">
         <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+        @php
+            $fromDate = request('from', now()->startOfMonth()->format('Y-m-d'));
+            $toDate = request('to', now()->endOfMonth()->format('Y-m-d'));
+        @endphp
         <input type="date" name="from" id="from_date" class="form-control" 
-               value="{{ request('from', now()->subDays(30)->format('Y-m-d')) }}">
+               value="{{ $fromDate }}">
         <span class="input-group-text">to</span>
         <input type="date" name="to" id="to_date" class="form-control" 
-               value="{{ request('to', now()->format('Y-m-d')) }}">
+               value="{{ $toDate }}">
     </div>
     <div class="d-flex flex-wrap gap-1">
         <button type="button" class="btn btn-sm btn-outline-secondary quick-date" data-range="today">Today</button>
@@ -165,7 +169,85 @@
 
 @push('scripts')
 <script>
+// Format date as YYYY-MM-DD
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Get the first day of the month
+function getFirstDayOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+// Get the last day of the month
+function getLastDayOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Get the form and input elements
+    const filterForm = document.querySelector('form[method="GET"]');
+    const fromInput = document.getElementById('from_date');
+    const toInput = document.getElementById('to_date');
+    
+    // Initialize date inputs if they exist
+    if (fromInput && toInput) {
+        // Set initial dates if not set
+        if (!fromInput.value || !toInput.value) {
+            const today = new Date();
+            fromInput.value = formatDate(getFirstDayOfMonth(today));
+            toInput.value = formatDate(getLastDayOfMonth(today));
+        }
+        
+        // Handle quick date buttons
+        document.querySelectorAll('.quick-date').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const range = this.dataset.range;
+                const today = new Date();
+                let from, to;
+
+                switch(range) {
+                    case 'today':
+                        from = to = new Date();
+                        break;
+                    case 'yesterday':
+                        const yesterday = new Date();
+                        yesterday.setDate(today.getDate() - 1);
+                        from = to = yesterday;
+                        break;
+                    case 'this-month':
+                        from = getFirstDayOfMonth(today);
+                        to = getLastDayOfMonth(today);
+                        break;
+                    case 'last-month':
+                        const lastMonth = new Date(today);
+                        lastMonth.setMonth(today.getMonth() - 1);
+                        from = getFirstDayOfMonth(lastMonth);
+                        to = getLastDayOfMonth(lastMonth);
+                        break;
+                    default:
+                        return;
+                }
+
+                // Update input fields
+                fromInput.value = formatDate(from);
+                toInput.value = formatDate(to);
+                
+                // Submit the form
+                if (filterForm) {
+                    filterForm.submit();
+                }
+            });
+        });
+    }
+    
+    // Company/branch/department selectors
     const companySel = document.getElementById('companySelect');
     const branchSel = document.getElementById('branchSelect');
     const deptSel = document.getElementById('departmentSelect');
@@ -216,45 +298,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add this inside your existing DOMContentLoaded event listener
-document.querySelectorAll('.quick-date').forEach(button => {
-    button.addEventListener('click', function() {
-        const range = this.dataset.range;
-        const today = new Date();
-        let from, to;
-
-        switch(range) {
-            case 'today':
-                from = today;
-                to = today;
-                break;
-            case 'yesterday':
-                const yesterday = new Date(today);
-                yesterday.setDate(yesterday.getDate() - 1);
-                from = yesterday;
-                to = yesterday;
-                break;
-            case 'this-month':
-                from = new Date(today.getFullYear(), today.getMonth(), 1);
-                to = today;
-                break;
-            case 'last-month':
-                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                from = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
-                to = new Date(today.getFullYear(), today.getMonth(), 0);
-                break;
-            default:
-                return;
-        }
-
-        document.getElementById('from_date').value = from.toISOString().split('T')[0];
-        document.getElementById('to_date').value = to.toISOString().split('T')[0];
-        
-        // Optional: Auto-submit the form when a quick date is selected
-        // this.closest('form').submit();
-    });
-});
-
     // Initialize the form if company is already selected
     if (companySel && companySel.value) {
         companySel.dispatchEvent(new Event('change'));

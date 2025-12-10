@@ -13,11 +13,15 @@
                 <div class="col-lg-4 col-md-6">
                     <label class="form-label">Date Range</label>
                     <div class="input-group mb-2">
+                        @php
+                            $fromDate = request('from', now()->startOfMonth()->format('Y-m-d'));
+                            $toDate = request('to', now()->endOfMonth()->format('Y-m-d'));
+                        @endphp
                         <input type="date" name="from" id="from_date" class="form-control"
-                               value="{{ request('from', now()->subDays(30)->format('Y-m-d')) }}">
+                               value="{{ $fromDate }}">
                         <span class="input-group-text">to</span>
                         <input type="date" name="to" id="to_date" class="form-control"
-                               value="{{ request('to', now()->format('Y-m-d')) }}">
+                               value="{{ $toDate }}">
                     </div>
                     <div class="d-flex flex-wrap gap-1">
                         <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">
@@ -142,12 +146,30 @@
                                 </td>
                                 <td class="d-flex gap-2">
                                     @if($createRoute)
-                                        <a href="{{ route($createRoute, ['visitorId' => $visitor->id]) }}" class="btn btn-outline-success btn-sm">
-                                            <i class="fas fa-sign-in-alt me-1"></i> Check In
-                                        </a>
-                                        <a href="{{ route($createRoute, ['visitorId' => $visitor->id, 'action' => 'checkout']) }}" class="btn btn-outline-warning btn-sm">
-                                            <i class="fas fa-sign-out-alt me-1"></i> Check Out
-                                        </a>
+                                        @php
+                                            // Get the company's security check type
+                                            $securityCheckType = $visitor->company->security_checkin_type ?? '';
+                                            
+                                            // Show buttons based on the security check type
+                                            $showCheckIn = in_array($securityCheckType, ['checkin', 'both']);
+                                            $showCheckOut = in_array($securityCheckType, ['checkout', 'both']);
+                                        @endphp
+                                        
+                                        @if($showCheckIn)
+                                            <a href="{{ route($createRoute, ['visitorId' => $visitor->id]) }}" class="btn btn-outline-success btn-sm">
+                                                <i class="fas fa-sign-in-alt me-1"></i> Check In
+                                            </a>
+                                        @endif
+                                        
+                                        @if($showCheckOut)
+                                            <a href="{{ route($createRoute, ['visitorId' => $visitor->id, 'action' => 'checkout']) }}" class="btn btn-outline-warning btn-sm">
+                                                <i class="fas fa-sign-out-alt me-1"></i> Check Out
+                                            </a>
+                                        @endif
+                                        
+                                        @if(!$showCheckIn && !$showCheckOut)
+                                            <span class="text-muted">No actions available</span>
+                                        @endif
                                     @else
                                         <span class="text-muted">Routes unavailable</span>
                                     @endif
@@ -171,10 +193,73 @@
         const companySelect = document.getElementById('company_id');
         const branchSelect = document.getElementById('branch_id');
         const departmentSelect = document.getElementById('department_id');
-        const fromDate = document.getElementById('from_date');
-        const toDate = document.getElementById('to_date');
+        const fromInput = document.getElementById('from_date');
+        const toInput = document.getElementById('to_date');
         const quickRangeButtons = document.querySelectorAll('.quick-range');
         const filterForm = document.getElementById('filterForm');
+
+        // Format date as YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Get the first day of the month
+        function getFirstDayOfMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth(), 1);
+        }
+
+        // Get the last day of the month
+        function getLastDayOfMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        }
+
+        // Set initial dates if not set
+        if (fromInput && toInput && !fromInput.value && !toInput.value) {
+            const today = new Date();
+            fromInput.value = formatDate(getFirstDayOfMonth(today));
+            toInput.value = formatDate(getLastDayOfMonth(today));
+        }
+
+        // Handle quick range buttons
+        quickRangeButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const range = this.dataset.range;
+                const today = new Date();
+                let from, to;
+
+                switch(range) {
+                    case 'today':
+                        from = to = new Date();
+                        break;
+                    case 'yesterday':
+                        const yesterday = new Date();
+                        yesterday.setDate(today.getDate() - 1);
+                        from = to = yesterday;
+                        break;
+                    case 'this-month':
+                        from = getFirstDayOfMonth(today);
+                        to = getLastDayOfMonth(today);
+                        break;
+                    case 'last-month':
+                        const lastMonth = new Date(today);
+                        lastMonth.setMonth(today.getMonth() - 1);
+                        from = getFirstDayOfMonth(lastMonth);
+                        to = getLastDayOfMonth(lastMonth);
+                        break;
+                }
+
+                // Update input fields
+                if (from && to) {
+                    fromInput.value = formatDate(from);
+                    toInput.value = formatDate(to);
+                    filterForm.submit();
+                }
+            });
+        });
 
         // Function to handle API errors
         function handleApiError(error) {

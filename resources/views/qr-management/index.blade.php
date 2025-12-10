@@ -5,7 +5,7 @@
     <!-- Search Bar Section -->
     <div class="card shadow-sm mb-4">
         <div class="card-body p-3">
-<form method="GET" action="{{ route('qr.index') }}" class="d-flex">                <div class="input-group">
+<form method="GET" action="{{ route('qr-management.index') }}" class="d-flex">                <div class="input-group">
                     <span class="input-group-text bg-white border-end-0">
                         <i class="fas fa-search text-muted"></i>
                     </span>
@@ -15,8 +15,8 @@
                            placeholder="Search companies or branches by name, email, or contact..." 
                            value="{{ request('search') }}"
                            aria-label="Search companies and branches">
-                    @if(request()->has('search'))
-<a href="{{ route('qr.index') }}" class="btn btn-outline-secondary" type="button">
+                            @if(request()->has('search'))
+                            <a href="{{ route('qr.index') }}" class="btn btn-outline-secondary" type="button"> 
                             <i class="fas fa-times me-1"></i> Clear
                         </a>
                     @endif
@@ -84,10 +84,10 @@
                                     <td>{{ $item->email ?? '—' }}</td>
                                     <td>{{ $item->phone ?? '—' }}</td>
                                     <td>
-                                        <a href="{{ route('companies.qr', $item->company_id) }}?branch_id={{ $item->id }}" 
-                                           class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ route('companies.qr', $item->company_id) }}?branch_id={{ $item->id }}" 
+                                        class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-qrcode me-1"></i> View QR
-                                        </a>
+                                    </a>
                                     </td>
                                 </tr>
                             @else
@@ -101,7 +101,7 @@
                                     <td>{{ $item->phone ?? '—' }}</td>
                                     <td>
                                         <a href="{{ route('companies.qr', $item) }}" 
-                                           class="btn btn-sm btn-outline-primary">
+                                            class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-qrcode me-1"></i> View QR
                                         </a>
                                     </td>

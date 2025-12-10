@@ -59,18 +59,52 @@ Route::get('/partner', fn() => view('partner'))->name('partner');
 Route::get('/pricing', fn() => view('pricing'))->name('pricing');
 Route::get('/contact', fn() => view('contact'))->name('contact');
 
-Route::get('/industrial-and-cold-storage', fn() => view('pages.industrial-and-cold-storage'))->name('industrial-and-cold-storage');
-Route::get('/school-and-colleges', fn() => view('pages.school-and-colleges'))->name('school-and-colleges');
-Route::get('/industrial-manufacturing-unit', fn() => view('pages.industrial-manufacturing-unit'))->name('industrial-manufacturing-unit');
-Route::get('/resident-societies', fn() => view('pages.resident-societies'))->name('resident-societies');
-Route::get('/resident-buildings', fn() => view('pages.resident-buildings'))->name('resident-buildings');
-Route::get('/office-workplace-management', fn() => view('pages.office-workplace-management'))->name('office-workplace-management');
-Route::get('/healthcare-facilities', fn() => view('pages.healthcare-facilities'))->name('healthcare-facilities');
-Route::get('/malls-and-events', fn() => view('pages.malls-and-events'))->name('malls-and-events');
-Route::get('/temple-and-dargah', fn() => view('pages.temple-and-dargah'))->name('temple-and-dargah');
-Route::get('/privacy-policy', fn() => view('pages.privacy-policy'))->name('privacy-policy');
-Route::get('/terms-of-use', fn() => view('pages.terms-of-use'))->name('terms-of-use');
-Route::get('/refund-and-cancellation', fn() => view('pages.refund-and-cancellation'))->name('refund-and-cancellation');
+
+Route::get('/industrial-and-cold-storage', function () {
+    return view('pages.industrial-and-cold-storage');
+})->name(name: 'industrial-and-cold-storage');
+Route::get('/school-and-colleges', function () {
+    return view('pages.school-and-colleges');
+})->name(name: 'school-and-colleges');
+Route::get('/industrial-manufacturing-unit', function () {
+    return view('pages.industrial-manufacturing-unit');
+})->name(name: 'industrial-manufacturing-unit');
+Route::get('/resident-societies', function () {
+    return view('pages.resident-societies');
+})->name(name: 'resident-societies');
+Route::get('/resident-buildings', function () {
+    return view('pages.resident-buildings');
+})->name(name: 'resident-buildings');
+Route::get('/office-workplace-management', function () {
+    return view('pages.office-workplace-management');
+})->name(name: 'office-workplace-management');
+Route::get('/healthcare-facilities', function () {
+    return view('pages.healthcare-facilities');
+})->name(name: 'healthcare-facilities');
+Route::get('/malls-and-events', function () {
+    return view('pages.malls-and-events');
+})->name(name: 'malls-and-events');
+Route::get('/temple-and-dargah', function () {
+    return view('pages.temple-and-dargah');
+})->name(name: 'temple-and-dargah');
+Route::get('/privacy-policy', function () {
+    return view('pages.privacy-policy');
+})->name('privacy-policy');
+Route::get('/terms-of-use', function () {
+    return view('pages.terms-of-use');
+})->name('terms-of-use');
+Route::get('/refund-and-cancellation', function () {
+    return view('pages.refund-and-cancellation');
+})->name('refund-and-cancellation');
+Route::get('/service-agreement', function () {
+    return view('pages.service-agreement');
+})->name('service-agreement');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
+
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes (Unauthenticated Routes)
@@ -106,19 +140,41 @@ Route::get('/service-agreement', fn () => view('pages.service-agreement'))->name
 
 
 
-
 /*
 |--------------------------------------------------------------------------|
 | QR Code Management Routes
 |--------------------------------------------------------------------------|
 */
+// QR Code Management Routes
+// In routes/web.php
+Route::get('/public/company/{company}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])
+    ->name('public.visitor.index');
+
+
+    
 Route::prefix('qr')->name('qr.')->group(function () {
-    Route::get('/scan/{company}/{branch?}', [QRManagementController::class, 'scan'])->name('scan');
-    Route::get('/{company}/visitor/create', [QRManagementController::class, 'createVisitor'])->name('visitor.create');
-    Route::post('/{company}/visitor', [QRManagementController::class, 'storeVisitor'])->name('visitor.store');
-    Route::get('/{company}/visit/{branch?}', [QRManagementController::class, 'showVisitForm'])->name('visit.form');
-    Route::post('/{company}/visit/{branch?}', [QRManagementController::class, 'storePublicVisit'])->name('visit.store');
-    Route::get('/{company}/download', [QRManagementController::class, 'downloadQR'])->name('download');
+    // Public routes
+    Route::get('/scan/{company}/{visitor?}', [QRManagementController::class, 'scan'])
+        ->name('scan');
+        
+    Route::get('/{company}/visitor/create', [QRManagementController::class, 'createVisitor'])
+        ->name('visitor.create');
+        
+    Route::post('/{company}/visitor', [QRManagementController::class, 'storeVisitor'])
+        ->name('visitor.store');
+        
+    // Visit form for completing visitor registration
+    Route::get('/{company}/visitor/{visitor}/visit', [QRManagementController::class, 'showVisitForm'])
+        ->name('visitor.visit.form');
+        
+    // Handle visit form submission
+    Route::post('/{company}/visitor/{visitor}/visit', [QRManagementController::class, 'storeVisit'])
+        ->name('visitor.visit.store');
+        
+    // Protected routes (require authentication)
+    Route::middleware('auth')->group(function () {
+        // Add any protected routes here
+    });
 });
 
 /*
@@ -261,7 +317,7 @@ Route::prefix('company')
         // Visitors
         Route::resource('visitors', VisitorController::class)->middleware(CheckMasterPageAccess::class . ':visitors');
         Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
-        Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
+        Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('company.visitors.visit.submit');
         Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
         Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
         Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
@@ -317,10 +373,23 @@ Route::prefix('public')->name('public.')->group(function () {
 |----------------------------------------------------------------------|
 */
 // API Routes for AJAX requests
-// QR Code Route
-Route::get('/companies/{company}/qr', [CompanyController::class, 'generateQrCode'])
-    ->name('companies.qr')
-    ->middleware(['auth', 'role:superadmin']);
+// QR Code Routes
+Route::prefix('companies/{company}')->name('companies.')->group(function () {
+    // Show QR code page
+    Route::get('/qr', [CompanyController::class, 'showQrPage'])
+        ->name('qr')
+        ->middleware(['auth', 'role:superadmin']);
+        
+    // Download QR code
+    Route::get('/qr/download', [CompanyController::class, 'downloadQrCode'])
+        ->name('qr.download')
+        ->middleware(['auth', 'role:superadmin']);
+        
+    // Branch QR code download
+    Route::get('/branches/{branch}/qr/download', [CompanyController::class, 'downloadQrCode'])
+        ->name('branches.qr.download')
+        ->middleware(['auth', 'role:superadmin']);
+});
 
 // Test routes (remove in production)
 if (app()->environment('local')) {
@@ -530,7 +599,13 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::get('/companies/{company}/departments', [App\Http\Controllers\DepartmentController::class, 'getByCompany'])->name('departments.by_company');
     
     // Get branches for a company
-    Route::get('/companies/{company}/branches', [App\Http\Controllers\BranchController::class, 'getByCompany'])->name('branches.by_company');
+    Route::get('/companies/{company}/branches', [App\Http\Controllers\CompanyController::class, 'getBranches'])
+        ->name('branches.by_company')
+        ->middleware('auth:web,company');
+        
+    // Non-API route for backward compatibility
+    Route::get('/companies/{company}/branches/list', [App\Http\Controllers\CompanyController::class, 'getBranches'])
+        ->name('branches.list');
     
     Route::prefix('face')->name('face.')->group(function () {
         Route::post('/detect', [FaceRecognitionController::class, 'apiDetect'])->name('detect');
