@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\{
     ProfileController,
@@ -14,15 +15,15 @@ use App\Http\Controllers\{
     DashboardController,
     SecurityCheckController,
     ReportController,
-    Auth\CompanyLoginController,
+    // Auth\CompanyLoginController,
     Auth\CompanyAuthController,
     Auth\OtpVerificationController,
     ApprovalController,
     SettingsController,
-    BlogController,
     QRManagementController,
     FaceRecognitionController
 };
+use App\Http\Controllers\Auth\CompanyLoginController;
 use App\Http\Middleware\CheckMasterPageAccess;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Mail\OtpVerificationMail;
@@ -58,6 +59,9 @@ Route::get('/about', fn() => view('about'))->name('about');
 Route::get('/partner', fn() => view('partner'))->name('partner');
 Route::get('/pricing', fn() => view('pricing'))->name('pricing');
 Route::get('/contact', fn() => view('contact'))->name('contact');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
 
 Route::get('/industrial-and-cold-storage', fn() => view('pages.industrial-and-cold-storage'))->name('industrial-and-cold-storage');
 Route::get('/school-and-colleges', fn() => view('pages.school-and-colleges'))->name('school-and-colleges');
@@ -71,6 +75,10 @@ Route::get('/temple-and-dargah', fn() => view('pages.temple-and-dargah'))->name(
 Route::get('/privacy-policy', fn() => view('pages.privacy-policy'))->name('privacy-policy');
 Route::get('/terms-of-use', fn() => view('pages.terms-of-use'))->name('terms-of-use');
 Route::get('/refund-and-cancellation', fn() => view('pages.refund-and-cancellation'))->name('refund-and-cancellation');
+Route::get('/visitor-management-system-in-usa', fn() => view('pages.visitor-management-system-in-usa'))->name('visitor-management-system-in-usa');
+Route::get('/visitor-management-system-in-uk', fn() => view('pages.visitor-management-system-in-uk'))->name('visitor-management-system-in-uk');
+
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes (Unauthenticated Routes)

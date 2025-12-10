@@ -15,11 +15,12 @@
   -webkit-text-fill-color: transparent;
 }
 .logo-img{
-  height:50px; width:auto; object-fit:contain;
-  padding:6px 10px;        /* inside spacing for the logo */
-  margin-right:10px;       /* gap before nav */
+  height:55px;
+  width:auto;
+  margin-right:10px;
   display:block;
 }
+
 
 /* Links */
 .navbar .nav-link{
