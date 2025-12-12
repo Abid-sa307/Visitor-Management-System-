@@ -134,13 +134,14 @@ class QRController extends Controller
     {
         // Validate the request
         $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'purpose' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
-            'face_encoding' => 'nullable|json',
-            'face_image' => 'nullable|string',
+            'face_encoding' => 'nullable',
+            'face_image' => 'nullable',
+            'document' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
         ]);
         
         // Set default values for required fields if they're empty
@@ -149,16 +150,22 @@ class QRController extends Controller
         $validated['purpose'] = $validated['purpose'] ?? 'General Visit';
         
         try {
-            // Create the visitor
-            $visitor = new Visitor([
+            // Create the visitor with only the provided fields
+            $visitorData = [
                 'name' => $validated['name'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'phone' => $validated['phone'],
                 'purpose' => $validated['purpose'],
                 'company_id' => $company->id,
-                'face_encoding' => $validated['face_encoding'],
                 'is_approved' => $company->auto_approve_visitors,
-            ]);
+            ];
+            
+            // Only add face_encoding if it exists
+            if (!empty($validated['face_encoding'])) {
+                $visitorData['face_encoding'] = $validated['face_encoding'];
+            }
+            
+            $visitor = new Visitor($visitorData);
             
             // Handle face image
             if (!empty($validated['face_image'])) {

@@ -4,13 +4,13 @@
 <div class="container py-4">
     <div class="bg-white shadow-sm rounded-4 p-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-            <h2 class="fw-bold text-primary m-0">Security Checks</h2>
+            <h2 class="fw-bold text-primary m-0">Security Checks </h2>
         </div>
 
         <form method="GET" id="filterForm" class="mb-4">
             <div class="row g-3 align-items-end">
                 {{-- Date Range --}}
-                <div class="col-lg-4 col-md-6">
+                <div class="col-lg-4 col-md-6"> 
                     <label class="form-label">Date Range</label>
                     <div class="input-group mb-2">
                         @php

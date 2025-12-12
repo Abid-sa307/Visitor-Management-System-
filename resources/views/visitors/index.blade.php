@@ -121,7 +121,8 @@
         <th>Purpose</th>
         <th>Person to Visit</th>
         <th>Vehicle No</th>
-        <th>Status</th>
+        <th>Approval Status</th>
+        <th>In/Out Status</th>
         <th style="min-width: 220px;">Actions</th>
     </tr>
 </thead>
@@ -138,11 +139,21 @@
             <td>{{ $visitor->vehicle_number ?? '—' }}</td>
             <td>
                 @php
-                    $inOut = $visitor->in_time && !$visitor->out_time ? 'In' : ($visitor->out_time ? 'Out' : '—');
-                    $badgeClass = $inOut === 'In' ? 'success' : ($inOut === 'Out' ? 'dark' : 'secondary');
+                    $approvalStatus = $visitor->status ?? 'Pending';
+                    $approvalBadgeClass = $approvalStatus === 'Approved' ? 'success' : 
+                                        ($approvalStatus === 'Rejected' ? 'danger' : 'warning');
                 @endphp
-                <span class="badge bg-{{ $badgeClass }}">{{ $inOut }}</span>
-              </td>
+                <span class="badge bg-{{ $approvalBadgeClass }}">{{ $approvalStatus }}</span>
+            </td>
+            <td>
+                @php
+                    $inOut = $visitor->in_time && !$visitor->out_time ? 'In' : 
+                            ($visitor->out_time ? 'Out' : 'Pending');
+                    $inOutBadgeClass = $inOut === 'In' ? 'success' : 
+                                     ($inOut === 'Out' ? 'dark' : 'secondary');
+                @endphp
+                <span class="badge bg-{{ $inOutBadgeClass }}">{{ $inOut }}</span>
+            </td>
               <td>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                   @if($visitor->status === 'Approved' && $visitor->in_time && !$visitor->out_time)
@@ -151,21 +162,31 @@
 
                   {{-- Edit --}}
                   @if(Route::has($editRoute))
-                    <a href="{{ route($editRoute, $visitor->id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
-                      <i class="fas fa-edit"></i>
-                    </a>
+                    @if($visitor->status === 'Approved')
+                      <button class="btn btn-sm btn-outline-warning" disabled title="Edit (Locked - Visitor is approved)">
+                        <i class="fas fa-lock text-warning"></i>
+                      </button>
+                    @else
+                      <a href="{{ route($editRoute, $visitor->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                    @endif
                   @endif
 
                   {{-- Visit --}}
                   @if($visitRoute)
-                    @if($visitor->status === 'Approved' && $visitor->in_time && !$visitor->out_time)
-                      <button class="btn btn-sm btn-outline-secondary" title="Visit Details" disabled>
+                    @if($visitor->status === 'Approved' && $visitor->out_time)
+                      <button class="btn btn-sm btn-outline-secondary" title="Visit Details (Locked - Visitor has checked out)" disabled>
                         <i class="fas fa-lock"></i>
                       </button>
-                    @else
+                    @elseif($visitor->status === 'Approved')
                       <a href="{{ route($visitRoute, $visitor->id) }}" class="btn btn-sm btn-outline-info" title="Visit Details">
                         <i class="fas fa-eye"></i>
                       </a>
+                    @else
+                      <button class="btn btn-sm btn-outline-secondary" title="Visit Details (Waiting for approval)" disabled>
+                        <i class="fas fa-clock"></i>
+                      </button>
                     @endif
                   @endif
 

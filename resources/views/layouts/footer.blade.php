@@ -14,7 +14,9 @@
         <!-- Company Information -->
         <div class="col-lg-4 col-md-6 mb-4">
           <a class="navbar-brand d-flex align-items-center" href="/">
-            <img src="images/vmslogo.png" alt="N&N TVMS Logo" style="height:60px; width:auto; object-fit:contain;">
+            {{-- <img src="images/vmslogo.png" alt="N&N TVMS Logo" style="height:60px; width:auto; object-fit:contain;"> --}}
+            <img src="{{ asset('images/vmslogo.png') }}" alt="VMS Logo" class="logo-img" />
+
           </a>
 
           <p>Smart Visitor Management System for modern organizations. Secure, efficient, and reliable.</p>

@@ -1,5 +1,7 @@
 <!-- Navbar -->
-<link rel="stylesheet" href="sb-admin/css/global.css">
+{{-- <link rel="stylesheet" href="sb-admin/css/global.css"> --}}
+<link rel="stylesheet" href="{{ asset('sb-admin/css/global.css') }}">
+
 
 @php
   $solutionsActive = request()->is('industrial-manufacturing-unit')
@@ -17,7 +19,8 @@
   <div class="container">
     <!-- Logo -->
     <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-      <img src="images/vmslogo.png" alt="VMS Logo" class="logo-img" />
+      <img src="{{ asset('images/vmslogo.png') }}" alt="VMS Logo" class="logo-img" />
+
     </a>
 
     <!-- Mobile hamburger (custom, no offcanvas attributes) -->

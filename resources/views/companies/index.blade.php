@@ -56,6 +56,7 @@
                             <th>Auto Approve</th>
                             <th>Website</th>
                             <th>Working Hours</th>
+                            <th>Security Check</th>
                             <th style="width: 120px;">Actions</th>
                         </tr>
                     </thead>
@@ -93,6 +94,20 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            <td class="text-capitalize">
+                                @php
+                                    $securityCheck = $company->security_check ?? 'none';
+                                    $badgeClass = [
+                                        'none' => 'bg-secondary',
+                                        'checkin' => 'bg-info',
+                                        'checkout' => 'bg-warning',
+                                        'both' => 'bg-success'
+                                    ][$securityCheck];
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">
+                                    {{ str_replace('_', ' ', $securityCheck) }}
+                                </span>
+                            </td>
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('companies.branches', $company) }}" class="btn btn-sm btn-primary me-1" title="View Branches">
@@ -115,7 +130,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-muted py-4">No companies found.</td>
+                            <td colspan="9" class="text-muted py-4">No companies found.</td>
                         </tr>
                         @endforelse
                     </tbody>
