@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Visitor;
+use App\Models\VisitorCategory;
+use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class QRController extends Controller
@@ -269,99 +272,131 @@ public function storeVisit(Request $request, Company $company, $branch = null)
     return redirect()->route('qr.scan', ['company' => $company->id])->with('success', 'Visit details submitted successfully!');
 }
 
-/**
- * Show the public visit form (no auth required)
- */
-public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
-{
-    $request = $request ?? request(); // Get the request instance if not injected
-    
-    $branchModel = null;
-    if ($branch) {
-        $branchModel = $company->branches()->find($branch);
-    }
-    
-    // Get visitor ID from query parameter
-    $visitorId = $request->query('visitor');
-    
-    if (!$visitorId) {
-        return redirect()->back()->with('error', 'No visitor specified.');
-    }
-    
-    $visitor = Visitor::find($visitorId);
-    
-    if (!$visitor) {
-        return redirect()->back()->with('error', 'Visitor not found.');
-    }
-    
-    // Store visitor ID in session
-    session(['current_visitor_id' => $visitor->id]);
-    
-    // Get departments, branches and visitor categories
-    $departments = $company->departments()->get();
-    $branches = $company->branches()->get();
-    
-    // Get visitor categories for the company
-    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
-        ->orderBy('name')
-        ->get();
-    
-    return view('visitors.public-visit', [
-        'company' => $company,
-        'branch' => $branchModel,
-        'departments' => $departments,
-        'visitorCategories' => $visitorCategories,
-        'branches' => $branches,
-        'visitor' => $visitor
-    ]);
-}
-
-/**
- * Handle public visit form submission (no auth required)
- */
-public function storePublicVisit(Request $request, Company $company, $visitorId = null)
-{
-    // Get visitor ID from route parameter
-    $visitorId = $visitorId ?? $request->route('visitor');
-    
-    $validated = $request->validate([
-        'company_id' => 'required|exists:companies,id',
-        'department_id' => 'required|exists:departments,id',
-        'branch_id' => 'nullable|exists:branches,id',
-        'visitor_category_id' => 'required|exists:visitor_categories,id',
-        'person_to_visit' => 'required|string|max:255',
-        'purpose' => 'required|string',
-        'visitor_company' => 'nullable|string',
-        'visitor_website' => 'nullable|url',
-        'vehicle_type' => 'nullable|string',
-        'vehicle_number' => 'nullable|string',
-        'goods_in_car' => 'nullable|string',
-        'workman_policy' => 'nullable|in:Yes,No',
-        'workman_policy_photo' => 'nullable|image|max:2048',
-    ]);
-
-    try {
-        // Find the visitor
-        $visitor = \App\Models\Visitor::findOrFail($visitorId);
-        
-        // Handle file upload if present
-        if ($request->hasFile('workman_policy_photo')) {
-            $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-            $validated['workman_policy_photo'] = $path;
+        /**
+         * Show the public visit form (no auth required)
+         */
+        public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
+        {
+            $request = $request ?? request(); // Get the request instance if not injected
+            
+            $branchModel = null;
+            if ($branch) {
+                $branchModel = $company->branches()->find($branch);
+            }
+            
+            // Get visitor ID from query parameter
+            $visitorId = $request->query('visitor');
+            
+            if (!$visitorId) {
+                return redirect()->back()->with('error', 'No visitor specified.');
+            }
+            
+            $visitor = Visitor::find($visitorId);
+            
+            if (!$visitor) {
+                return redirect()->back()->with('error', 'Visitor not found.');
+            }
+            
+            // Store visitor ID in session
+            session(['current_visitor_id' => $visitor->id]);
+            
+            // Get departments, branches and visitor categories
+            $departments = $company->departments()->get();
+            $branches = $company->branches()->get();
+            
+            // Get visitor categories for the company
+            $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
+                ->orderBy('name')
+                ->get();
+            
+            return view('visitors.public-visit', [
+                'company' => $company,
+                'branch' => $branchModel,
+                'departments' => $departments,
+                'visitorCategories' => $visitorCategories,
+                'branches' => $branches,
+                'visitor' => $visitor
+            ]);
         }
         
-        // Update visitor details
-        $visitor->update($validated);
-
-        // Redirect to the public visitor index page with success message
-        return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
-            ->with('success', 'Visit details submitted successfully!');
+        /**
+         * Handle public visit form submission (no auth required)
+         */
+        public function storePublicVisit(Request $request, Company $company, $visitorId = null)
+        {
+            // Get visitor ID from route parameter
+            $visitorId = $visitorId ?? $request->route('visitor');
             
-    } catch (\Exception $e) {
-        \Log::error('Error in storePublicVisit: ' . $e->getMessage());
-        return redirect()->back()
-            ->withInput()
-            ->with('error', 'An error occurred while saving the visit details. Please try again.');
-    }
-}
+            $validated = $request->validate([
+                'company_id' => 'required|exists:companies,id',
+                'department_id' => 'required|exists:departments,id',
+                'branch_id' => 'nullable|exists:branches,id',
+                'visitor_category_id' => 'required|exists:visitor_categories,id',
+                'person_to_visit' => 'required|string|max:255',
+                'purpose' => 'required|string',
+                'visitor_company' => 'nullable|string',
+                'visitor_website' => 'nullable|url',
+                'vehicle_type' => 'nullable|string',
+                'vehicle_number' => 'nullable|string',
+                'goods_in_car' => 'nullable|string',
+                'workman_policy' => 'nullable|in:Yes,No',
+                'workman_policy_photo' => 'nullable|image|max:2048',
+            ]);
+
+            try {
+                // Find the visitor
+                $visitor = \App\Models\Visitor::findOrFail($visitorId);
+                
+                // Handle file upload if present
+                if ($request->hasFile('workman_policy_photo')) {
+                    $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+                    $validated['workman_policy_photo'] = $path;
+                }
+                
+                // Update visitor details
+                $visitor->update($validated);
+
+                // Redirect to the public visitor index page with success message
+                return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
+                    ->with('success', 'Visit details submitted successfully!');
+                    
+            } catch (\Exception $e) {
+                \Log::error('Error in storePublicVisit: ' . $e->getMessage());
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'An error occurred while saving the visit details. Please try again.');
+            }
+        }
+        /**
+         * Show the form for editing a visitor's details (public interface)
+         *
+         * @param  \App\Models\Company  $company
+         * @param  int  $visitor  Visitor ID
+         * @return \Illuminate\View\View
+         */
+        public function editPublicVisit(Company $company, $visitor)
+        {
+            // Find the visitor
+            $visitor = Visitor::findOrFail($visitor);
+            
+            // Verify the visitor belongs to the company
+            if ($visitor->company_id != $company->id) {
+                abort(403, 'This visitor does not belong to the specified company.');
+            }
+            
+            // Get necessary data for the form
+            $departments = $company->departments()->get();
+            $branches = $company->branches()->get();
+            $visitorCategories = VisitorCategory::where('company_id', $company->id)
+                ->orderBy('name')
+                ->get();
+            
+            return view('visitors.public-visit', [
+                'company' => $company,
+                'visitor' => $visitor,
+                'departments' => $departments,
+                'branches' => $branches,
+                'visitorCategories' => $visitorCategories,
+            ]);
+        }
 }

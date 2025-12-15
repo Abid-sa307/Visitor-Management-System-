@@ -21,9 +21,11 @@
             </div>
         @endif
 
-        <form id="visitorForm" method="POST" action="{{ route('qr.visitor.visit.store', ['company' => $company->id, 'visitor' => $visitor->id]) }}" enctype="multipart/form-data">
-            @csrf
-            <input type="hidden" name="status" value="Pending">
+<form id="visitorForm" method="POST" action="{{ route('qr.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
+    @csrf
+    @method('POST')
+    <input type="hidden" name="status" value="{{ $visitor->status ?? 'Pending' }}">
+    <!-- Rest of your form fields -->
 
             {{-- Company & Department --}}
             <div class="row mb-3">
@@ -245,23 +247,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.getElementById('submitButton');
     const buttonText = document.getElementById('buttonText');
     const spinner = document.getElementById('spinner');
-    
+
     if (form) {
         // Initialize form validation
         form.classList.add('needs-validation');
         
         // Handle form submission
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Check form validity
-            if (!form.checkValidity()) {
-                e.stopPropagation();
-                form.classList.add('was-validated');
-                return;
-            }
-            
+        form.addEventListener('submit', function() {
             // Show loading state
+            if (submitButton && buttonText && spinner) {
+                submitButton.disabled = true;
+                buttonText.textContent = 'Saving...';
+                spinner.classList.remove('d-none');
+            }
             submitButton.disabled = true;
             buttonText.textContent = 'Saving...';
             spinner.classList.remove('d-none');

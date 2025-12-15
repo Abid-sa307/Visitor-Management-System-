@@ -64,6 +64,14 @@
                                 </div>
                             @endif
                             
+                            <!-- Update Visit Button -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+                                <a href="{{ route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
+                                   class="btn btn-outline-primary px-4">
+                                    <i class="bi bi-pencil-square me-2"></i> Update Visit Information
+                                </a>
+                            </div>
+                            
                             <!-- Visitor Information Card -->
                             <div class="card border-0 shadow-sm mb-4">
                                 <div class="card-header bg-light py-3">

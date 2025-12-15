@@ -601,6 +601,29 @@ Route::get('/models/{filename}', function ($filename) {
     abort(404, 'Model file not found: ' . $filename);
 })->where('filename', '.*');
 
+// Public visit routes
+Route::prefix('public')->name('public.')->group(function () {
+    // Show public visit form (for new visits)
+    Route::get('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
+        ->name('visitor.visit.form');
+    
+    // Handle public visit form submission (for new visits)
+    Route::post('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
+        ->name('visitor.visit.store');
+    
+    // Show edit form for existing visits
+    Route::get('/companies/{company}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
+        ->name('visitor.visit.edit');
+    
+    // Handle update for existing visits
+    Route::put('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRController::class, 'updatePublicVisit'])
+        ->name('visitor.visit.update');
+    
+    // Show visitor details
+    Route::get('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRController::class, 'showPublicVisitor'])
+        ->name('visitor.show');
+});
+
 // Breeze/Auth Routes
 require __DIR__ . '/auth.php';
 ////////////////robot.txt////////////////////
