@@ -927,7 +927,7 @@
                         align-items:center;
                         justify-content:center;
                         border-radius:999px;
-                        background:#ffffff;
+                        
                         color:#ffff;
                         font-weight:800;
                         letter-spacing:0.04em;
