@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Rule;
+
 use App\Models\Company;
 use App\Models\Branch;
 use App\Models\Visitor;
@@ -10,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -30,22 +33,17 @@ class QRManagementController extends BaseController
      *
      * @return void
      */
-    public function __construct()
-    {
-        $this->middleware('auth');
-        
-        // Set the authenticated user
-        $this->middleware(function ($request, $next) {
-            $this->user = Auth::user();
-            
-            // Allow both super admins and company users
-            if (!$this->user) {
-                abort(403, 'Unauthorized access.');
-            }
-            
-            return $next($request);
-        });
-    }
+public function __construct()
+{
+    $this->middleware('auth')->except([
+        'scan', 
+        'createVisitor', 
+        'storeVisitor',
+        'showVisitForm',
+        'storePublicVisit'
+    ]);
+}
+
 
     /**
      * Display a listing of companies with their QR codes.
@@ -53,34 +51,300 @@ class QRManagementController extends BaseController
      * @return \Illuminate\View\View
      */
     public function index()
-{
-    $query = Company::with('branches')
-        ->when(auth()->user()->role !== 'superadmin', function($q) {
-            $q->where('id', auth()->user()->company_id);
-        })
-        ->orderBy('name');
+    {
+        $query = Company::with('branches')
+            ->when(auth()->user()->role !== 'superadmin', function($q) {
+                $q->where('id', auth()->user()->company_id);
+            })
+            ->orderBy('name');
 
-    if (request()->has('search')) {
-        $search = '%' . request('search') . '%';
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', $search)
-              ->orWhere('email', 'like', $search)
-              ->orWhere('phone', 'like', $search)
-              ->orWhereHas('branches', function($q) use ($search) {
-                  $q->where('name', 'like', $search)
-                    ->orWhere('email', 'like', $search)
-                    ->orWhere('phone', 'like', $search);
-              });
-        });
+        if (request()->has('search')) {
+            $search = '%' . request('search') . '%';
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', $search)
+                ->orWhere('email', 'like', $search)
+                ->orWhere('phone', 'like', $search)
+                ->orWhereHas('branches', function($q) use ($search) {
+                    $q->where('name', 'like', $search)
+                        ->orWhere('email', 'like', $search)
+                        ->orWhere('phone', 'like', $search);
+                });
+            });
+        }
+
+        $companies = $query->get();
+
+        return view('qr-management.index', compact('companies'));
     }
 
-    $companies = $query->get();
+    /**
+     * Display the QR code for a specific company or branch.
+     */
+    /**
+     * Display the QR code scanning page for public visitor registration.
+     *
+     * @param  \App\Models\Company  $company
+     * @param  \App\Models\Branch|null  $branch
+     * @return \Illuminate\View\View
+     */
+    /**
+     * Show the form for creating a new visitor.
+     *
+     * @param  \App\Models\Company  $company
+     * @return \Illuminate\View\View
+     */
+    public function createVisitor(Company $company)
+    {
+        // Get the necessary data for the form
+        $visitorCategories = $company->visitorCategories()->orderBy('name')->get();
+        $departments = $company->departments()->orderBy('name')->get();
+        $employees = $company->employees()->orderBy('name')->get();
 
-    return view('qr-management.index', compact('companies'));
+        return view('visitors.public-create', [
+            'company' => $company,
+            'visitorCategories' => $visitorCategories,
+            'departments' => $departments,
+            'employees' => $employees,
+            'pageTitle' => 'New Visitor Registration - ' . $company->name
+        ]);
+    }
+
+    public function storeVisitor(Company $company, Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'phone' => 'required|string|max:20',
+        'face_image' => 'required|string',
+        'face_encoding' => 'required|string',
+    ]);
+
+    try {
+        // Process the image data (remove data:image/jpeg;base64, prefix if present)
+        $imageData = $request->input('face_image');
+        if (strpos($imageData, ';base64,') !== false) {
+            $imageData = explode(';base64,', $imageData)[1];
+        }
+        
+        // Save the image
+        $imageName = 'visitor_photos/' . Str::random(40) . '.jpg';
+        Storage::disk('public')->put($imageName, base64_decode($imageData));
+
+        // Create visitor
+        $visitor = Visitor::create([
+            'company_id' => $company->id,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'photo' => $imageName,
+            'face_encoding' => $validated['face_encoding'],
+            'status' => 'Pending',
+        ]);
+
+        // Redirect to the next step
+        return redirect()->route('public.visitor.index', [
+            'company' => $company->id,
+            'visitor' => $visitor->id
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Error saving visitor: ' . $e->getMessage());
+        return back()->withInput()->with('error', 'Error saving visitor: ' . $e->getMessage());
+    }
+}
+
+
+
+
+/**
+ * Show the visit form to complete visitor registration.
+ *
+ * @param  \App\Models\Company  $company
+ * @param  \App\Models\Visitor  $visitor
+ * @return \Illuminate\View\View
+ */
+public function showVisitForm(Company $company, \App\Models\Visitor $visitor)
+{
+    // Get necessary data for the form
+    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)->get();
+    $departments = \App\Models\Department::where('company_id', $company->id)->get();
+    $employees = \App\Models\Employee::where('company_id', $company->id)->get();
+    $branches = $company->branches;
+
+    return view('visitors.public-visit', [
+        'company' => $company,
+        'visitor' => $visitor,
+        'visitorCategories' => $visitorCategories,
+        'departments' => $departments,
+        'employees' => $employees,
+        'branches' => $branches,
+        'pageTitle' => 'Complete Visit Details - ' . $company->name
+    ]);
+}
+
+/**
+ * Store the visit details for a visitor.
+ *
+ * @param  \App\Models\Company  $company
+ * @param  \App\Models\Visitor  $visitor
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\Http\RedirectResponse
+ */
+public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illuminate\Http\Request $request)
+{
+    // Debug: Log incoming request data
+    \Log::info('Store Visit Request:', [
+        'company_id' => $company->id,
+        'visitor_id' => $visitor->id,
+        'request_data' => $request->all(),
+        'is_ajax' => $request->ajax()
+    ]);
+
+    try {
+        // First, validate required fields
+        $validated = $request->validate([
+            'department_id' => 'required|exists:departments,id',
+            'purpose' => 'required|string',
+            'visitor_company' => 'nullable|string|max:255',
+            'branch_id' => 'nullable|exists:branches,id'
+        ]);
+        
+        // Update visitor with visit details
+        $visitor->fill([
+            'department_id' => $validated['department_id'],
+            'purpose' => $validated['purpose'],
+            'status' => 'Pending',
+            'visitor_company' => $validated['visitor_company'] ?? null,
+            'branch_id' => $validated['branch_id'] ?? null,
+            'visitor_category_id' => $request->input('visitor_category_id') ?: null,
+            'updated_at' => now()
+        ]);
+        
+        $visitor->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Visit details updated successfully!',
+                'redirect' => "/public/company/{$company->id}/visitor/{$visitor->id}"
+            ]);
+        }
+
+        return redirect("/public/company/{$company->id}/visitor/{$visitor->id}")
+            ->with('success', 'Visit details updated successfully!');
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        \Log::error('Validation error saving visit details: ' . $e->getMessage());
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        }
+        
+        return redirect()->back()
+            ->withErrors($e->errors())
+            ->withInput();
+            
+    } catch (\Exception $e) {
+        \Log::error('Error saving visit details: ' . $e->getMessage());
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while saving the visit details. Please try again.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+        
+        return redirect()->back()
+            ->with('error', 'An error occurred while saving the visit details. Please try again.')
+            ->withInput();
+    }
+}
+
+    /**
+ * Display the public visitor index page.
+ *
+ * @param  \App\Models\Company  $company
+ * @param  int|string  $visitor  Visitor ID or 'create' to show creation form
+ * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+ */
+public function publicVisitorIndex(Company $company, $visitor = null)
+{
+    try {
+        // If visitor is 'create', show the creation form
+        if ($visitor === 'create') {
+            return $this->createVisitor($company);
+        }
+
+        // Find the visitor
+        $visitor = \App\Models\Visitor::findOrFail($visitor);
+        
+        // Verify visitor belongs to company
+        if ($visitor->company_id != $company->id) {
+            throw new \Exception("Visitor does not belong to this company");
+        }
+
+        \Log::info("Displaying public visitor index for visitor ID: " . $visitor->id);
+        
+        // Get necessary data for the view
+        $visitorCategories = $company->visitorCategories()->orderBy('name')->get();
+        $departments = $company->departments()->orderBy('name')->get();
+        $employees = $company->employees()->orderBy('name')->get();
+        $branches = $company->branches;
+        
+        return view('visitors.public-index', [
+            'company' => $company,
+            'visitor' => $visitor,
+            'visitorCategories' => $visitorCategories,
+            'departments' => $departments,
+            'employees' => $employees,
+            'branches' => $branches,
+            'pageTitle' => 'Complete Your Visit - ' . $company->name
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Error in publicVisitorIndex: ' . $e->getMessage());
+        return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => 'create'])
+            ->with('error', 'Could not load visitor details. ' . $e->getMessage());
+    }
+}
+
+
+    /**
+     * Display the QR code scanning page for public visitor registration.
+     *
+     * @param  \App\Models\Company  $company
+     * @param  \App\Models\Branch|null  $branch
+     * @return \Illuminate\View\View
+     */
+    public function scan(Company $company, $visitor = null)
+{
+    $visitor = $visitor ? \App\Models\Visitor::find($visitor) : null;
+    
+    // Get necessary data for the form
+    $visitorCategories = $company->visitorCategories;
+    $departments = $company->departments;
+    $employees = $company->employees;
+
+    return view('visitors.public-index', compact(
+        'company',
+        'visitor',
+        'visitorCategories',
+        'departments',
+        'employees'
+    ));
 }
 
     /**
      * Display the QR code for a specific company or branch.
+     *
+     * @param  \App\Models\Company  $company
+     * @param  \App\Models\Branch|null  $branch
+     * @return \Illuminate\View\View
      */
     public function show(Company $company, Branch $branch = null)
     {

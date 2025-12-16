@@ -49,7 +49,9 @@
                     </select>
                 </div>
             </div>
+
             
+
             {{-- Branch Selection --}}
             @if($branches->isNotEmpty())
             <div class="row mb-3">
@@ -84,18 +86,27 @@
                 </div>
                 <div class="col">
                     <label class="form-label fw-semibold">Visitor Category</label>
-                    <select name="visitor_category_id" class="form-select" required>
+                    <select name="visitor_category_id" class="form-select @error('visitor_category_id') is-invalid @enderror">
                         <option value="">-- Select Category --</option>
-                        @foreach($visitorCategories as $category)
+                        @forelse($visitorCategories ?? [] as $category)
                             <option value="{{ $category->id }}" 
-                                {{ old('visitor_category_id', $visitor->visitor_category_id ?? '') == $category->id ? 'selected' : '' }}>
+                                {{ (string)old('visitor_category_id', $visitor->visitor_category_id ?? '') === (string)$category->id ? 'selected' : '' }}>
                                 {{ $category->name }}
                             </option>
-                        @endforeach
+                        @empty
+                            <option value="" disabled>No categories available</option>
+                        @endforelse
                     </select>
                     @error('visitor_category_id')
-                        <div class="text-danger small">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                        </div>
                     @enderror
+                    @if(empty($visitorCategories))
+                        <div class="alert alert-warning mt-2 small">
+                            <i class="fas fa-exclamation-triangle"></i> No visitor categories found. Please contact support.
+                        </div>
+                    @endif
                 </div>
             </div>
             @endif
@@ -167,7 +178,7 @@
                 </select>
             </div> -->
 
-            <button type="submit" class="btn btn-success w-100 fw-bold">Save Visit Info</button>
+            <button type="submit" class="btn btn-success w-100 fw-bold" id="submitBtn">Save Visit Info</button>
         </form>
     </div>
 </div>
@@ -175,6 +186,32 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Form submission handling
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Form submission started');
+            // Show loading state
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+            }
+        });
+    }
+    
+    // Log any form validation errors
+    @if($errors->any())
+        console.error('Form validation errors:', @json($errors->all()));
+        // Re-enable button if there are errors
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Save Visit Info';
+        }
+    @endif
+
+    // Department filtering
     const companySelect = document.getElementById('companySelect');
     const departmentSelect = document.getElementById('departmentSelect');
 

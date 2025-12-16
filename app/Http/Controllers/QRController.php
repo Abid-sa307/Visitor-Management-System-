@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Visitor;
+use App\Models\VisitorCategory;
+use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class QRController extends Controller
@@ -134,13 +137,14 @@ class QRController extends Controller
     {
         // Validate the request
         $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'purpose' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
-            'face_encoding' => 'nullable|json',
-            'face_image' => 'nullable|string',
+            'face_encoding' => 'nullable',
+            'face_image' => 'nullable',
+            'document' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
         ]);
         
         // Set default values for required fields if they're empty
@@ -149,16 +153,22 @@ class QRController extends Controller
         $validated['purpose'] = $validated['purpose'] ?? 'General Visit';
         
         try {
-            // Create the visitor
-            $visitor = new Visitor([
+            // Create the visitor with only the provided fields
+            $visitorData = [
                 'name' => $validated['name'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'phone' => $validated['phone'],
                 'purpose' => $validated['purpose'],
                 'company_id' => $company->id,
-                'face_encoding' => $validated['face_encoding'],
                 'is_approved' => $company->auto_approve_visitors,
-            ]);
+            ];
+            
+            // Only add face_encoding if it exists
+            if (!empty($validated['face_encoding'])) {
+                $visitorData['face_encoding'] = $validated['face_encoding'];
+            }
+            
+            $visitor = new Visitor($visitorData);
             
             // Handle face image
             if (!empty($validated['face_image'])) {
@@ -262,107 +272,131 @@ public function storeVisit(Request $request, Company $company, $branch = null)
     return redirect()->route('qr.scan', ['company' => $company->id])->with('success', 'Visit details submitted successfully!');
 }
 
-/**
- * Show the public visit form (no auth required)
- */
-public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
-{
-    $request = $request ?? request(); // Get the request instance if not injected
-    
-    $branchModel = null;
-    if ($branch) {
-        $branchModel = $company->branches()->find($branch);
-    }
-    
-    // Get visitor ID from query parameter
-    $visitorId = $request->query('visitor');
-    
-    if (!$visitorId) {
-        return redirect()->back()->with('error', 'No visitor specified.');
-    }
-    
-    $visitor = Visitor::find($visitorId);
-    
-    if (!$visitor) {
-        return redirect()->back()->with('error', 'Visitor not found.');
-    }
-    
-    // Store visitor ID in session
-    session(['current_visitor_id' => $visitor->id]);
-    
-    // Get departments, branches and visitor categories
-    $departments = $company->departments()->get();
-    $branches = $company->branches()->get();
-    
-    // Get active visitor categories for the company
-    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
-    
-    return view('visitors.public-visit', [
-        'company' => $company,
-        'branch' => $branchModel,
-        'departments' => $departments,
-        'visitorCategories' => $visitorCategories,
-        'branches' => $branches,
-        'visitor' => $visitor
-    ]);
-}
-
-/**
- * Handle public visit form submission (no auth required)
- */
-public function storePublicVisit(Request $request, Company $company, $branch = null)
-{
-    // Get visitor ID from form input or route parameter
-    $visitorId = $request->input('visitor_id') ?? $request->route('visitor');
-    
-    $validated = $request->validate([
-        'visitor_id' => 'required|exists:visitors,id',
-        'department_id' => 'required|exists:departments,id',
-        'person_to_visit' => 'required|string|max:255',
-        'purpose' => 'required|string',
-        'vehicle_number' => 'nullable|string|max:50',
-        'documents' => 'nullable|array',
-        'documents.*' => 'file|max:2048',
-    ], [
-        'visitor_id.required' => 'Visitor information is required.',
-        'visitor_id.exists' => 'Invalid visitor information provided.'
-    ]);
-
-    // Find the visitor
-    $visitor = Visitor::findOrFail($request->visitor_id);
-    
-    // Update visitor details
-    $visitor->update([
-        'department_id' => $validated['department_id'],
-        'person_to_visit' => $validated['person_to_visit'],
-        'purpose' => $validated['purpose'],
-        'vehicle_number' => $validated['vehicle_number'] ?? null,
-        'status' => 'checked_in',
-        'in_time' => now(),
-    ]);
-
-    // Handle document uploads if any
-    if ($request->hasFile('documents')) {
-        $documents = [];
-        foreach ($request->file('documents') as $file) {
-            $path = $file->store('visitor_documents', 'public');
-            $documents[] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'type' => $file->getClientMimeType()
-            ];
+        /**
+         * Show the public visit form (no auth required)
+         */
+        public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
+        {
+            $request = $request ?? request(); // Get the request instance if not injected
+            
+            $branchModel = null;
+            if ($branch) {
+                $branchModel = $company->branches()->find($branch);
+            }
+            
+            // Get visitor ID from query parameter
+            $visitorId = $request->query('visitor');
+            
+            if (!$visitorId) {
+                return redirect()->back()->with('error', 'No visitor specified.');
+            }
+            
+            $visitor = Visitor::find($visitorId);
+            
+            if (!$visitor) {
+                return redirect()->back()->with('error', 'Visitor not found.');
+            }
+            
+            // Store visitor ID in session
+            session(['current_visitor_id' => $visitor->id]);
+            
+            // Get departments, branches and visitor categories
+            $departments = $company->departments()->get();
+            $branches = $company->branches()->get();
+            
+            // Get visitor categories for the company
+            $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
+                ->orderBy('name')
+                ->get();
+            
+            return view('visitors.public-visit', [
+                'company' => $company,
+                'branch' => $branchModel,
+                'departments' => $departments,
+                'visitorCategories' => $visitorCategories,
+                'branches' => $branches,
+                'visitor' => $visitor
+            ]);
         }
-        $visitor->documents = $documents;
-        $visitor->save();
-    }
+        
+        /**
+         * Handle public visit form submission (no auth required)
+         */
+        public function storePublicVisit(Request $request, Company $company, $visitorId = null)
+        {
+            // Get visitor ID from route parameter
+            $visitorId = $visitorId ?? $request->route('visitor');
+            
+            $validated = $request->validate([
+                'company_id' => 'required|exists:companies,id',
+                'department_id' => 'required|exists:departments,id',
+                'branch_id' => 'nullable|exists:branches,id',
+                'visitor_category_id' => 'required|exists:visitor_categories,id',
+                'person_to_visit' => 'required|string|max:255',
+                'purpose' => 'required|string',
+                'visitor_company' => 'nullable|string',
+                'visitor_website' => 'nullable|url',
+                'vehicle_type' => 'nullable|string',
+                'vehicle_number' => 'nullable|string',
+                'goods_in_car' => 'nullable|string',
+                'workman_policy' => 'nullable|in:Yes,No',
+                'workman_policy_photo' => 'nullable|image|max:2048',
+            ]);
 
-    // Store visitor in session
-    session(['current_visitor_id' => $visitor->id]);
+            try {
+                // Find the visitor
+                $visitor = \App\Models\Visitor::findOrFail($visitorId);
+                
+                // Handle file upload if present
+                if ($request->hasFile('workman_policy_photo')) {
+                    $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+                    $validated['workman_policy_photo'] = $path;
+                }
+                
+                // Update visitor details
+                $visitor->update($validated);
 
-    // Redirect to the scan page with success message
-    return redirect()->route('qr.scan', ['company' => $company->id])->with('success', 'Visit details submitted successfully!');
-}
+                // Redirect to the public visitor index page with success message
+                return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
+                    ->with('success', 'Visit details submitted successfully!');
+                    
+            } catch (\Exception $e) {
+                \Log::error('Error in storePublicVisit: ' . $e->getMessage());
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'An error occurred while saving the visit details. Please try again.');
+            }
+        }
+        /**
+         * Show the form for editing a visitor's details (public interface)
+         *
+         * @param  \App\Models\Company  $company
+         * @param  int  $visitor  Visitor ID
+         * @return \Illuminate\View\View
+         */
+        public function editPublicVisit(Company $company, $visitor)
+        {
+            // Find the visitor
+            $visitor = Visitor::findOrFail($visitor);
+            
+            // Verify the visitor belongs to the company
+            if ($visitor->company_id != $company->id) {
+                abort(403, 'This visitor does not belong to the specified company.');
+            }
+            
+            // Get necessary data for the form
+            $departments = $company->departments()->get();
+            $branches = $company->branches()->get();
+            $visitorCategories = VisitorCategory::where('company_id', $company->id)
+                ->orderBy('name')
+                ->get();
+            
+            return view('visitors.public-visit', [
+                'company' => $company,
+                'visitor' => $visitor,
+                'departments' => $departments,
+                'branches' => $branches,
+                'visitorCategories' => $visitorCategories,
+            ]);
+        }
 }

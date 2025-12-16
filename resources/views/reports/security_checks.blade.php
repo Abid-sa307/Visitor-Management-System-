@@ -5,102 +5,106 @@
     .filter-section {
         background-color: #f8f9fc;
         padding: 1.5rem;
-        border-radius: 0.35rem;
+        border-radius: 0.5rem;
         margin-bottom: 1.5rem;
+        border: 1px solid #e3e6f0;
     }
     .table th {
         white-space: nowrap;
         font-size: 0.85rem;
         background-color: #f8f9fc;
+        padding: 0.75rem 1rem;
     }
     .table td {
         vertical-align: middle;
+        padding: 0.75rem 1rem;
     }
     .badge {
         font-size: 0.8em;
         font-weight: 600;
+        padding: 0.35em 0.65em;
     }
-    .btn-sm {
+    .action-buttons .btn {
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
     }
-    .form-select-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
+    .visitor-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
     }
-    .form-label {
-        font-size: 0.8rem;
+    .visitor-info {
+        margin-left: 0.75rem;
+    }
+    .visitor-name {
         font-weight: 600;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.1rem;
     }
-    .pagination {
-        margin-bottom: 0;
+    .visitor-phone {
+        font-size: 0.8rem;
+        color: #6c757d;
     }
     .status-badge {
-        font-size: 0.7rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
     }
-    .action-buttons {
-        white-space: nowrap;
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
     }
-    .filter-card {
-        margin-bottom: 1.5rem;
-        border: 1px solid #e3e6f0;
-        border-radius: 0.35rem;
-    }
-    .filter-card .card-header {
-        background-color: #f8f9fc;
-        border-bottom: 1px solid #e3e6f0;
-        padding: 0.75rem 1.25rem;
-    }
-    .filter-card .card-body {
-        padding: 1.25rem;
+    .export-btn {
+        min-width: 120px;
     }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-shield-alt text-primary me-2"></i>Security Check Reports
         </h1>
-        <div class="d-flex gap-2">
+        <div>
             <a href="{{ route('reports.security.export', request()->query()) }}" 
-               class="btn btn-success btn-sm" 
-               data-bs-toggle="tooltip" 
-               title="Export to Excel">
+               class="btn btn-success export-btn">
                 <i class="fas fa-file-excel me-1"></i> Export
             </a>
         </div>
     </div>
 
-    <!-- Filters Card -->
-    <div class="card shadow mb-4 filter-card">
-        <div class="card-header">
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
             <h6 class="m-0 font-weight-bold text-primary">
                 <i class="fas fa-filter me-2"></i>Filter Reports
             </h6>
         </div>
         <div class="card-body">
-            <form action="{{ route('reports.security') }}" method="GET" id="filterForm">
+            <form method="GET" id="filterForm">
                 <div class="row g-3">
                     @if(auth()->user()->role === 'superadmin')
-                    <div class="col-md-3">
-                        <label class="form-label">Company</label>
-                        <select name="company_id" id="company_id" class="form-select form-select-sm">
-                            <option value="">All Companies</option>
-                            @foreach($companies as $id => $name)
-                                <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        </select>
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Company</label>
+                                <select name="company_id" id="company_id" class="form-select form-select-sm">
+                                    <option value="">All Companies</option>
+                                    @foreach($companies as $id => $name)
+                                        <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
+                                            {{ $name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                @include('components.date_range')
+                            </div>
+                        </div>
                     </div>
                     @endif
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Department</label>
                         <select name="department_id" id="department_id" class="form-select form-select-sm" 
                             {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
@@ -113,7 +117,7 @@
                         </select>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Branch</label>
                         <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
                             {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
@@ -126,133 +130,101 @@
                         </select>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Date Range</label>
-                        <div class="input-group input-group-sm">
-                            <input type="date" 
-                                   name="from" 
-                                   id="from" 
-                                   class="form-control form-control-sm" 
-                                   value="{{ request('from') }}"
-                                   max="{{ date('Y-m-d') }}">
-                            <span class="input-group-text">to</span>
-                            <input type="date" 
-                                   name="to" 
-                                   id="to" 
-                                   class="form-control form-control-sm" 
-                                   value="{{ request('to') }}"
-                                   max="{{ date('Y-m-d') }}">
-                        </div>
-                    </div>
-
-                    <div class="col-12 mt-3">
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-filter me-1"></i> Apply Filters
-                            </button>
-                            <a href="{{ route('reports.security-checks') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-undo me-1"></i> Reset
-                            </a>
-                            @if(request()->hasAny(['company_id', 'department_id', 'branch_id', 'from', 'to']))
-                            <div class="ms-auto">
-                                <span class="badge bg-info text-dark">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    {{ $securityChecks->total() }} record(s) found
-                                </span>
-                            </div>
-                            @endif
-                        </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm me-2">
+                            <i class="fas fa-filter me-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-undo me-1"></i> Reset
+                        </a>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Results Card -->
-    <div class="card shadow border-0">
+    <!-- Results Table -->
+    <div class="card shadow-sm">
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Date & Time</th>
-                            <th>Visitor Details</th>
-                            <th>Company</th>
-                            <th>Department</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($securityChecks as $check)
-                        <tr>
-                            <td>
-                                <div class="small text-muted">{{ $check->created_at->format('d M Y') }}</div>
-                                <div class="text-primary">{{ $check->created_at->format('h:i A') }}</div>
-                            </td>
-                            <td>
-                                <div class="fw-bold">{{ $check->visitor->name ?? 'N/A' }}</div>
-                                <div class="small text-muted">
-                                    {{ $check->visitor->phone ?? 'N/A' }}<br>
-                                    {{ $check->visitor->email ?? 'N/A' }}
-                                </div>
-                            </td>
-                            <td>{{ $check->visitor->company->name ?? 'N/A' }}</td>
-                            <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
-                            <td class="text-center">
-                                @php
-                                    $responses = is_string($check->responses) ? json_decode($check->responses, true) : ($check->responses ?? []);
-                                    $responseCount = is_countable($responses) ? count($responses) : 0;
-                                    $statusClass = $responseCount > 0 ? 'bg-success' : 'bg-warning';
-                                    $statusText = $responseCount > 0 ? 'Completed' : 'Pending';
-                                @endphp
-                                <span class="badge {{ $statusClass }} status-badge">
-                                    {{ $statusText }}
-                                    @if($responseCount > 0)
-                                    <span class="badge bg-white text-dark ms-1">{{ $responseCount }}</span>
+            @if($securityChecks->count())
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Visitor</th>
+                                <th>Company</th>
+                                <th>Department</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($securityChecks as $check)
+                            <tr>
+                                <td>
+                                    <div class="text-nowrap">{{ $check->created_at->format('d M Y') }}</div>
+                                    <div class="text-muted small">{{ $check->created_at->format('h:i A') }}</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if($check->visitor->photo)
+                                            <img src="{{ asset('storage/' . $check->visitor->photo) }}" 
+                                                 class="visitor-avatar me-2" 
+                                                 alt="{{ $check->visitor->name }}">
+                                        @else
+                                            <div class="visitor-avatar bg-light text-center">
+                                                <i class="fas fa-user text-muted mt-2"></i>
+                                            </div>
+                                        @endif
+                                        <div class="visitor-info">
+                                            <div class="visitor-name">{{ $check->visitor->name }}</div>
+                                            <div class="visitor-phone">{{ $check->visitor->phone }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ $check->visitor->company->name ?? 'N/A' }}</td>
+                                <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
+                                <td class="text-center">
+                                    @if($check->status === 'approved')
+                                        <span class="badge bg-success">Approved</span>
+                                    @elseif($check->status === 'rejected')
+                                        <span class="badge bg-danger">Rejected</span>
+                                    @else
+                                        <span class="badge bg-warning">Pending</span>
                                     @endif
-                                </span>
-                            </td>
-                            <td class="text-center action-buttons">
-                                <div class="d-flex justify-content-center gap-1">
-                                    <a href="{{ route('security-checks.show', $check->id) }}" 
-                                       class="btn btn-sm btn-outline-primary"
-                                       data-bs-toggle="tooltip"
-                                       title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('security-checks.print', $check->id) }}"
-                                       target="_blank"
-                                       class="btn btn-sm btn-outline-secondary"
-                                       data-bs-toggle="tooltip"
-                                       title="Print Report">
-                                        <i class="fas fa-print"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fas fa-inbox fa-2x mb-2"></i>
-                                    <p class="mb-0">No security check records found</p>
-                                    @if(request()->hasAny(['company_id', 'department_id', 'branch_id', 'from', 'to']))
-                                    <small class="d-block mt-2">
-                                        Try adjusting your filters or
-                                        <a href="{{ route('reports.security-checks') }}" class="text-primary">clear all filters</a>
-                                    </small>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            
-            @if($securityChecks->hasPages())
-            <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top">
+                                </td>
+                                <td class="text-center action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#detailsModal{{ $check->id }}">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-inbox fa-3x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No security check records found</h5>
+                    @if(request()->hasAny(['company_id', 'department_id', 'branch_id', 'from', 'to']))
+                        <p class="text-muted mb-0">
+                            Try adjusting your filters or 
+                            <a href="{{ route('reports.security') }}" class="text-primary">clear all filters</a>
+                        </p>
+                    @endif
+                </div>
+            @endif
+        </div>
+
+        @if($securityChecks->hasPages())
+        <div class="card-footer bg-white">
+            <div class="d-flex justify-content-between align-items-center">
                 <div class="text-muted small">
                     Showing {{ $securityChecks->firstItem() }} to {{ $securityChecks->lastItem() }} of {{ $securityChecks->total() }} entries
                 </div>
@@ -260,10 +232,86 @@
                     {{ $securityChecks->withQueryString()->links() }}
                 </div>
             </div>
-            @endif
+        </div>
+        @endif
+    </div>
+</div>
+
+@foreach($securityChecks as $check)
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal{{ $check->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Security Check Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">Visitor Information</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <th class="w-25">Name:</th>
+                                <td>{{ $check->visitor->name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Phone:</th>
+                                <td>{{ $check->visitor->phone }}</td>
+                            </tr>
+                            <tr>
+                                <th>Email:</th>
+                                <td>{{ $check->visitor->email ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Company:</th>
+                                <td>{{ $check->visitor->company->name ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Department:</th>
+                                <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">Check Details</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <th class="w-25">Check Time:</th>
+                                <td>{{ $check->created_at->format('d M Y, h:i A') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    @if($check->status === 'approved')
+                                        <span class="badge bg-success">Approved</span>
+                                    @elseif($check->status === 'rejected')
+                                        <span class="badge bg-danger">Rejected</span>
+                                    @else
+                                        <span class="badge bg-warning">Pending</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Checked By:</th>
+                                <td>{{ $check->securityUser->name ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Notes:</th>
+                                <td>{{ $check->notes ?? 'No notes available' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
+@endforeach
+
 @endsection
 
 @push('scripts')
@@ -275,95 +323,129 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Get DOM elements
+    // Format date as YYYY-MM-DD
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Get the first day of the month
+    function getFirstDayOfMonth(date) {
+        return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    // Get the last day of the month
+    function getLastDayOfMonth(date) {
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    }
+
+    // Handle quick date buttons
+    document.querySelectorAll('.quick-date').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const range = this.dataset.range;
+            const today = new Date();
+            let from, to;
+
+            switch(range) {
+                case 'today':
+                    from = to = new Date();
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date();
+                    yesterday.setDate(today.getDate() - 1);
+                    from = to = yesterday;
+                    break;
+                case 'this-month':
+                    from = getFirstDayOfMonth(today);
+                    to = getLastDayOfMonth(today);
+                    break;
+                case 'last-month':
+                    const lastMonth = new Date(today);
+                    lastMonth.setMonth(today.getMonth() - 1);
+                    from = getFirstDayOfMonth(lastMonth);
+                    to = getLastDayOfMonth(lastMonth);
+                    break;
+                default:
+                    return;
+            }
+
+            // Update input fields
+            document.getElementById('from').value = formatDate(from);
+            document.getElementById('to').value = formatDate(to);
+            
+            // Submit the form
+            document.getElementById('filterForm').submit();
+        });
+    });
+
+    // Handle company change to load departments and branches
     const companySelect = document.getElementById('company_id');
     const departmentSelect = document.getElementById('department_id');
     const branchSelect = document.getElementById('branch_id');
-    const filterForm = document.getElementById('filterForm');
 
-    // Function to load departments based on company
-    async function loadDepartments(companyId) {
-        if (!companyId) {
-            departmentSelect.innerHTML = '<option value="">All Departments</option>';
-            departmentSelect.disabled = true;
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/companies/${companyId}/departments`);
-            const departments = await response.json();
-            
-            let options = '<option value="">All Departments</option>';
-            departments.forEach(dept => {
-                const selected = departmentSelect.dataset.selected == dept.id ? 'selected' : '';
-                options += `<option value="${dept.id}" ${selected}>${dept.name}</option>`;
-            });
-            
-            departmentSelect.innerHTML = options;
-            departmentSelect.disabled = false;
-        } catch (error) {
-            console.error('Error loading departments:', error);
-        }
-    }
-
-    // Function to load branches based on company
-    async function loadBranches(companyId) {
-        if (!companyId) {
-            branchSelect.innerHTML = '<option value="">All Branches</option>';
-            branchSelect.disabled = true;
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/companies/${companyId}/branches`);
-            const branches = await response.json();
-            
-            let options = '<option value="">All Branches</option>';
-            branches.forEach(branch => {
-                const selected = branchSelect.dataset.selected == branch.id ? 'selected' : '';
-                options += `<option value="${branch.id}" ${selected}>${branch.name}</option>`;
-            });
-            
-            branchSelect.innerHTML = options;
-            branchSelect.disabled = false;
-        } catch (error) {
-            console.error('Error loading branches:', error);
-        }
-    }
-
-    // Company change event
     if (companySelect) {
         companySelect.addEventListener('change', function() {
             const companyId = this.value;
-            loadDepartments(companyId);
-            loadBranches(companyId);
+            
+            // Reset and disable dependent selects
+            departmentSelect.innerHTML = '<option value="">Loading...</option>';
+            branchSelect.innerHTML = '<option value="">Loading...</option>';
+            departmentSelect.disabled = true;
+            branchSelect.disabled = true;
+
+            if (!companyId) {
+                departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                branchSelect.innerHTML = '<option value="">All Branches</option>';
+                departmentSelect.disabled = false;
+                branchSelect.disabled = false;
+                return;
+            }
+
+            // Load departments
+            fetch(`/api/companies/${companyId}/departments`)
+                .then(response => response.json())
+                .then(data => {
+                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                    data.forEach(dept => {
+                        departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                    });
+                    departmentSelect.disabled = false;
+                });
+
+            // Load branches
+            fetch(`/api/companies/${companyId}/branches`)
+                .then(response => response.json())
+                .then(data => {
+                    branchSelect.innerHTML = '<option value="">All Branches</option>';
+                    data.forEach(branch => {
+                        branchSelect.innerHTML += `<option value="${branch.id}">${branch.name}</option>`;
+                    });
+                    branchSelect.disabled = false;
+                });
         });
     }
 
-    // Date validation
+    // Validate date range
     const fromDateInput = document.getElementById('from');
     const toDateInput = document.getElementById('to');
 
     if (fromDateInput && toDateInput) {
         fromDateInput.addEventListener('change', function() {
-            if (this.value && toDateInput.value && new Date(this.value) > new Date(toDateInput.value)) {
-                alert('Start date cannot be after end date');
-                this.value = '';
+            if (this.value > toDateInput.value) {
+                toDateInput.value = this.value;
             }
         });
 
         toDateInput.addEventListener('change', function() {
-            if (this.value && fromDateInput.value && new Date(this.value) < new Date(fromDateInput.value)) {
-                alert('End date cannot be before start date');
-                this.value = '';
+            if (this.value < fromDateInput.value) {
+                fromDateInput.value = this.value;
             }
         });
-    }
-
-    // Set initial state if company is selected
-    if (companySelect && companySelect.value) {
-        loadDepartments(companySelect.value);
-        loadBranches(companySelect.value);
     }
 });
 </script>

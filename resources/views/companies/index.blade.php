@@ -16,6 +16,30 @@
         </div>
     @endif
 
+    <!-- Search Bar -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form action="{{ route('companies.index') }}" method="GET" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search by name, email, or contact..." value="{{ request('search') }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i> Search
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ route('companies.index') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-undo me-1"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white py-3">
             <h6 class="m-0 fw-bold text-primary"><i class="fas fa-building me-2"></i>Company List</h6>
@@ -32,6 +56,7 @@
                             <th>Auto Approve</th>
                             <th>Website</th>
                             <th>Working Hours</th>
+                            <th>Security Check</th>
                             <th style="width: 120px;">Actions</th>
                         </tr>
                     </thead>
@@ -69,6 +94,20 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            <td class="text-capitalize">
+                                @php
+                                    $securityCheck = $company->security_check ?? 'none';
+                                    $badgeClass = [
+                                        'none' => 'bg-secondary',
+                                        'checkin' => 'bg-info',
+                                        'checkout' => 'bg-warning',
+                                        'both' => 'bg-success'
+                                    ][$securityCheck];
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">
+                                    {{ str_replace('_', ' ', $securityCheck) }}
+                                </span>
+                            </td>
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('companies.branches', $company) }}" class="btn btn-sm btn-primary me-1" title="View Branches">
@@ -91,7 +130,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-muted py-4">No companies found.</td>
+                            <td colspan="9" class="text-muted py-4">No companies found.</td>
                         </tr>
                         @endforelse
                     </tbody>

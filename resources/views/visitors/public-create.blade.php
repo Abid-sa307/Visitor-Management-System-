@@ -29,7 +29,7 @@
           <div class="mb-3">
             <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
             <input type="text" name="phone" id="phoneInput" class="form-control @error('phone') is-invalid @enderror" required 
-                   value="{{ old('phone') }}" placeholder="Enter mobile number" autofocus>
+                   value="{{ old('phone') }}" placeholder="Enter mobile number" pattern="[0-9]+" title="Please enter numbers only" autofocus>
             @error('phone')
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
@@ -62,9 +62,21 @@
 
         <!-- Right Column -->
         <div class="col-md-6">
+          <!-- Document Upload -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Document (Optional)</label>
+            <div class="input-group">
+              <input type="file" class="form-control" id="documentUpload" name="document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+            </div>
+            <div class="form-text">Upload any document (PDF, DOC, JPG, PNG, max 5MB)</div>
+            @error('document')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </div>
+
           <!-- Photo Upload/Capture Section -->
           <div class="mb-3">
-            <label class="form-label fw-semibold">Visitor Photo <span class="text-danger">*</span></label>
+            <label class="form-label fw-semibold">Visitor Photo (Optional)</label>
             
             <!-- Toggle between capture and upload -->
             <ul class="nav nav-tabs mb-3" id="photoTab" role="tablist">
@@ -127,9 +139,9 @@
             </div>
             
             <!-- Hidden inputs for form submission -->
-            <input type="hidden" name="face_image" id="faceImageInput">
-            <input type="hidden" name="face_encoding" id="faceEncodingInput">
-            <input type="hidden" name="photo_upload" id="photoUploadInput">
+            <input type="hidden" name="face_image" id="faceImageInput" value="">
+            <input type="hidden" name="face_encoding" id="faceEncodingInput" value="">
+            <input type="hidden" name="photo_upload" id="photoUploadInput" value="">
             
             @error('face_image')
               <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -554,11 +566,16 @@ document.addEventListener('DOMContentLoaded', async function() {
   const form = document.getElementById('visitorForm');
   if (form) {
     form.addEventListener('submit', function(e) {
-      // Check if either face capture or photo upload is provided
-      if (!faceImageInput.value && !photoUploadInput.value) {
-        e.preventDefault();
-        alert('Please capture or upload a photo before submitting.');
-        return false;
+      // Remove empty face-related fields before submission
+      const faceImageInput = document.getElementById('faceImageInput');
+      const faceEncodingInput = document.getElementById('faceEncodingInput');
+      
+      if (faceImageInput && !faceImageInput.value) {
+        faceImageInput.disabled = true; // This will prevent the field from being submitted
+      }
+      
+      if (faceEncodingInput && !faceEncodingInput.value) {
+        faceEncodingInput.disabled = true; // This will prevent the field from being submitted
       }
       
       const submitButton = this.querySelector('button[type="submit"]');

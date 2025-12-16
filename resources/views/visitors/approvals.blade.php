@@ -21,11 +21,15 @@
                 <div class="col-lg-4 col-md-6">
                     <label class="form-label">Date Range</label>
                     <div class="input-group mb-2">
+                        @php
+                            $fromDate = request('from', now()->startOfMonth()->format('Y-m-d'));
+                            $toDate = request('to', now()->endOfMonth()->format('Y-m-d'));
+                        @endphp
                         <input type="date" name="from" id="from_date" class="form-control"
-                               value="{{ request('from', now()->subDays(30)->format('Y-m-d')) }}">
+                               value="{{ $fromDate }}">
                         <span class="input-group-text">to</span>
                         <input type="date" name="to" id="to_date" class="form-control"
-                               value="{{ request('to', now()->format('Y-m-d')) }}">
+                               value="{{ $toDate }}">
                     </div>
                     <div class="d-flex flex-wrap gap-1">
                         <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">
@@ -236,37 +240,66 @@
         const quickRangeButtons = document.querySelectorAll('.quick-range');
         const filterForm = document.getElementById('filterForm');
 
-        // Quick range buttons
+        // Format date as YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Get the first day of the month
+        function getFirstDayOfMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth(), 1);
+        }
+
+        // Get the last day of the month
+        function getLastDayOfMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        }
+
+        // Set initial dates if not set
+        if (fromDate && toDate && !fromDate.value && !toDate.value) {
+            const today = new Date();
+            fromDate.value = formatDate(getFirstDayOfMonth(today));
+            toDate.value = formatDate(getLastDayOfMonth(today));
+        }
+
+        // Handle quick range buttons
         if (quickRangeButtons && fromDate && toDate && filterForm) {
             quickRangeButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
                     const range = this.getAttribute('data-range');
                     const today = new Date();
-                    let from = new Date();
+                    let from, to;
 
                     switch (range) {
                         case 'today':
-                            // from = today
+                            from = to = new Date();
                             break;
                         case 'yesterday':
-                            from.setDate(today.getDate() - 1);
-                            toDate.valueAsDate = from;
+                            const yesterday = new Date();
+                            yesterday.setDate(today.getDate() - 1);
+                            from = to = yesterday;
                             break;
                         case 'this-month':
-                            from = new Date(today.getFullYear(), today.getMonth(), 1);
+                            from = getFirstDayOfMonth(today);
+                            to = getLastDayOfMonth(today);
                             break;
                         case 'last-month':
-                            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                            from = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
-                            toDate.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                            const lastMonth = new Date(today);
+                            lastMonth.setMonth(today.getMonth() - 1);
+                            from = getFirstDayOfMonth(lastMonth);
+                            to = getLastDayOfMonth(lastMonth);
                             break;
                     }
 
-                    fromDate.valueAsDate = from;
-                    if (range !== 'yesterday' && range !== 'last-month') {
-                        toDate.valueAsDate = today;
-                    }
-
+                    // Update input values with formatted dates
+                    fromDate.value = formatDate(from);
+                    toDate.value = formatDate(to);
+                    
+                    // Submit the form
                     filterForm.submit();
                 });
             });

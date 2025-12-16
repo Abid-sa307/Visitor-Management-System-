@@ -48,10 +48,17 @@ public function index(Request $request)
     $selectedBranch    = $request->input('branch_id');
     $selectedDepartment= $request->input('department_id');
 
-    $from = $request->input('from', now()->subDays(30)->format('Y-m-d'));
-    $to   = $request->input('to',   now()->format('Y-m-d'));
+    // Handle date range from request or set default to current month
+    $from = $request->input('from', now()->startOfMonth()->format('Y-m-d'));
+    $to = $request->input('to', now()->endOfMonth()->format('Y-m-d'));
+    
+    // If this is the initial load with no date parameters, force the current month
+    if (!$request->has('from') && !$request->has('to')) {
+        $from = now()->startOfMonth()->format('Y-m-d');
+        $to = now()->endOfMonth()->format('Y-m-d');
+    }
 
-    // Ensure from <= to
+    // Ensure from is not after to
     if (strtotime($from) > strtotime($to)) {
         [$from, $to] = [$to, $from];
     }
@@ -87,6 +94,18 @@ public function index(Request $request)
     $approvedCount = (clone $visitorQuery)->where('status', 'Approved')->count();
     $pendingCount  = (clone $visitorQuery)->where('status', 'Pending')->count();
     $rejectedCount = (clone $visitorQuery)->where('status', 'Rejected')->count();
+
+    // Store the date range in the session for the view
+    $request->session()->flash('date_range', [
+        'from' => $from,
+        'to' => $to
+    ]);
+
+    // Pass the date range to the view
+    $dateRange = [
+        'from' => $from,
+        'to' => $to
+    ];
 
     // ----- Latest visitors & table -----
     $latestVisitors = (clone $visitorQuery)->latest()->take(6)->get();

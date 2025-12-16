@@ -122,6 +122,101 @@
 <div class="container py-4">
     <h3 class="mb-4 fw-bold text-primary">Visitor Entry / Exit</h3>
 
+    {{-- =================== FILTERS CARD =================== --}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('visitors.entry.page') }}" id="entryFilterForm">
+                <div class="row g-3 align-items-end">
+                    {{-- Date Range --}}
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label">Date Range</label>
+                        <div class="input-group mb-2">
+                            @php
+                                $fromDate = request('from') ?? now()->format('Y-m-d');
+                                $toDate = request('to') ?? now()->format('Y-m-d');
+                            @endphp
+                            <input type="date" name="from" id="from_date" class="form-control"
+                                   value="{{ $fromDate }}">
+                            <span class="input-group-text">to</span>
+                            <input type="date" name="to" id="to_date" class="form-control"
+                                   value="{{ $toDate }}">
+                        </div>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">
+                                Today
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary quick-range" data-range="yesterday" type="button">
+                                Yesterday
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary quick-range" data-range="this-week" type="button">
+                                This Week
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Company (superadmin only) --}}
+                    @if(auth()->user()->role === 'superadmin')
+                        <div class="col-lg-3 col-md-6">
+                            <label for="company_id" class="form-label">Company</label>
+                            <select name="company_id" id="company_id" class="form-select">
+                                <option value="">All Companies</option>
+                                @foreach($companies as $id => $name)
+                                    <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    {{-- Branch --}}
+                    <div class="col-lg-3 col-md-6">
+                        <label for="branch_id" class="form-label">Branch</label>
+                        <select name="branch_id" id="branch_id"
+                                class="form-select"
+                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
+                            <option value="">All Branches</option>
+                            @if(auth()->user()->role === 'company' && isset($branches))
+                                @foreach($branches as $id => $name)
+                                    <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+
+                    {{-- Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label for="department_id" class="form-label">Department</label>
+                        <select name="department_id" id="department_id"
+                                class="form-select"
+                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
+                            <option value="">All Departments</option>
+                            @if(auth()->user()->role === 'company' && isset($departments))
+                                @foreach($departments as $id => $name)
+                                    <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+
+                    {{-- Buttons --}}
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('visitors.entry.page') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-sync-alt me-1"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -170,43 +265,38 @@
                             @endphp
                             @if(auth()->user()->role !== 'guard')
                                 @if(!$visitor->out_time)
-                                    <div class="d-flex gap-2">
-                                        @if($isCompany)
-                                            <a href="#" 
-                                               onclick="event.preventDefault(); document.getElementById('toggle-form-{{ $visitor->id }}').submit();" 
-                                               class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
-                                                {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
-                                            </a>
-                                            <form id="toggle-form-{{ $visitor->id }}" 
-                                                  action="{{ route($toggleRoute, $visitor->id) }}" 
-                                                  method="POST" 
-                                                  style="display: none;">
-                                                @csrf
-                                                @method('POST')
-                                            </form>
-                                        @else
-                                            <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('POST')
-                                                <button type="submit" class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
-                                                    {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
-                                                </button>
-                                            </form>
-                                        @endif
-                                        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]')
-                                            <button type="button" 
-                                                    class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
-                                                    data-visitor-id="{{ $visitor->id }}"
-                                                    data-face-encoding='{{ is_string($visitor->face_encoding) ? $visitor->face_encoding : json_encode($visitor->face_encoding) }}'
-                                                    data-action-url="{{ route($toggleRoute, $visitor->id) }}"
-                                                    title="Verify visitor using facial recognition">
-                                                <i class="fas fa-user-shield me-1"></i> Verify Face
-                                            </button>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-muted">Completed</span>
-                                @endif
+    <div class="d-flex gap-2 toggle-buttons" data-visitor-id="{{ $visitor->id }}">
+        @php
+            // Determine the correct route based on user type
+            $routeName = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
+            $action = !$visitor->in_time ? 'in' : 'out';
+            $buttonText = !$visitor->in_time ? 'Mark In' : 'Mark Out';
+            $buttonClass = !$visitor->in_time ? 'primary' : 'danger';
+            $buttonIcon = !$visitor->in_time ? 'sign-in-alt' : 'sign-out-alt';
+        @endphp
+        
+        <button type="button" 
+                class="btn btn-sm rounded-pill btn-{{ $buttonClass }} toggle-entry-btn" 
+                data-visitor-id="{{ $visitor->id }}" 
+                data-action="{{ $action }}"
+                data-url="{{ route($routeName, $visitor->id) }}">
+            <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+            {{ $buttonText }}
+        </button>
+        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]')
+            <button type="button" 
+                    class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
+                    data-visitor-id="{{ $visitor->id }}"
+                    data-face-encoding='{{ is_string($visitor->face_encoding) ? $visitor->face_encoding : json_encode($visitor->face_encoding) }}'
+                    data-action-url="{{ route($toggleRoute, $visitor->id) }}"
+                    title="Verify visitor using facial recognition">
+                <i class="fas fa-user-shield me-1"></i> Verify Face
+            </button>
+        @endif
+    </div>
+@else
+    <span class="text-muted">Completed</span>
+@endif
                             @else
                                 <span class="text-muted">Guard View Only</span>
                             @endif
@@ -266,6 +356,126 @@
 @push('scripts')
 <!-- Load face-api.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<script>
+// Handle toggle entry button clicks
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle toggle entry button clicks
+    document.addEventListener('click', function(e) {
+        const toggleBtn = e.target.closest('.toggle-entry-btn');
+        if (!toggleBtn) return;
+        
+        e.preventDefault();
+        
+        const visitorId = toggleBtn.dataset.visitorId;
+        const action = toggleBtn.dataset.action;
+        const url = toggleBtn.dataset.url;
+        const buttonText = toggleBtn.textContent.trim();
+        
+        if (!confirm(`Are you sure you want to ${buttonText.toLowerCase()} this visitor?`)) {
+            return;
+        }
+        
+        // Show loading state
+        const originalHtml = toggleBtn.innerHTML;
+        toggleBtn.disabled = true;
+        toggleBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        
+        // Get CSRF token
+        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('_token', token);
+        formData.append('_method', 'POST');
+        formData.append('visitor_id', visitorId);
+        formData.append('is_company', {{ $isCompany ? 'true' : 'false' }});
+
+        // Send AJAX request
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json, text/plain, */*'
+            },
+            body: formData
+        })
+        .then(async response => {
+            const contentType = response.headers.get('content-type');
+            
+            // Handle JSON response
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'An error occurred');
+                }
+                return data;
+            }
+            
+            // Handle HTML response (like redirects)
+            const text = await response.text();
+            if (response.redirected) {
+                window.location.href = response.url;
+                return { redirect: true };
+            }
+            
+            // If we get HTML, it might be a validation error or something else
+            throw new Error('Unexpected response from server');
+        })
+        .then(data => {
+            // If we have a redirect URL, use it
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+            
+            // Otherwise, show success message and reload
+            const successMessage = action === 'in' ? 'Visitor checked in successfully' : 'Visitor checked out successfully';
+            if (typeof showToast === 'function') {
+                showToast('success', successMessage);
+            } else {
+                alert(successMessage);
+            }
+            
+            // Reload after a short delay to show the success message
+            setTimeout(() => window.location.reload(), 1000);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            
+            // Re-enable button
+            toggleBtn.disabled = false;
+            toggleBtn.innerHTML = originalHtml;
+            
+            // Show error message
+            let errorMessage = 'An error occurred. Please try again.';
+            
+            if (error.message) {
+                errorMessage = error.message;
+                
+                // Handle common error cases
+                if (errorMessage.includes('419')) {
+                    errorMessage = 'Your session has expired. Please refresh the page and try again.';
+                } else if (errorMessage.includes('403')) {
+                    errorMessage = 'You do not have permission to perform this action.';
+                } else if (errorMessage.includes('404')) {
+                    errorMessage = 'The requested resource was not found.';
+                } else if (errorMessage.includes('500')) {
+                    errorMessage = 'A server error occurred. Please try again later.';
+                }
+            }
+            
+            // Use toast if available, otherwise use alert
+            if (typeof showToast === 'function') {
+                showToast('error', errorMessage);
+            } else {
+                alert(errorMessage);
+            }
+        });
+    });
+});
+</script>
 
 <script>
 // Global variables
@@ -665,6 +875,141 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modalElement) {
         modalElement.addEventListener('hidden.bs.modal', handleModalClose);
     }
+
+    // =================== Date Range Picker ===================
+    document.querySelectorAll('.quick-range').forEach(button => {
+        button.addEventListener('click', function() {
+            const range = this.dataset.range;
+            const fromInput = document.getElementById('from_date');
+            const toInput = document.getElementById('to_date');
+            const today = new Date();
+            
+            switch(range) {
+                case 'today':
+                    fromInput.value = today.toISOString().split('T')[0];
+                    toInput.value = today.toISOString().split('T')[0];
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    fromInput.value = yesterday.toISOString().split('T')[0];
+                    toInput.value = yesterday.toISOString().split('T')[0];
+                    break;
+                case 'this-week':
+                    const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
+                    const lastDay = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+                    fromInput.value = firstDay.toISOString().split('T')[0];
+                    toInput.value = lastDay.toISOString().split('T')[0];
+                    break;
+            }
+        });
+    });
+
+    // =================== Company-Branch-Department Relationship ===================
+    const companySelect = document.getElementById('company_id');
+    const branchSelect = document.getElementById('branch_id');
+    const departmentSelect = document.getElementById('department_id');
+    const selectedBranch = '{{ request('branch_id') }}';
+    const selectedDept = '{{ request('department_id') }}';
+
+    // Load branches when company changes (for superadmin)
+    if (companySelect) {
+        companySelect.addEventListener('change', function() {
+            const companyId = this.value || '';
+            loadBranches(companyId);
+            loadDepartments(companyId);
+        });
+    }
+
+    // Function to load branches via AJAX
+    function loadBranches(companyId) {
+        if (!branchSelect) return;
+        branchSelect.innerHTML = '<option value="">All Branches</option>';
+        if (!companyId) {
+            branchSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
+            return;
+        }
+        branchSelect.disabled = false;
+
+        // Show loading state
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Loading branches...';
+        branchSelect.appendChild(loadingOption);
+
+        fetch(`/api/companies/${companyId}/branches`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                branchSelect.innerHTML = '<option value="">All Branches</option>';
+                if (data && data.length > 0) {
+                    data.forEach(branch => {
+                        const option = document.createElement('option');
+                        option.value = branch.id;
+                        option.textContent = branch.name;
+                        if (String(selectedBranch) === String(branch.id)) {
+                            option.selected = true;
+                        }
+                        branchSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading branches:', error);
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+            });
+    }
+
+    // Function to load departments via AJAX
+    function loadDepartments(companyId) {
+        if (!departmentSelect) return;
+        departmentSelect.innerHTML = '<option value="">All Departments</option>';
+        if (!companyId) {
+            departmentSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
+            return;
+        }
+        departmentSelect.disabled = false;
+
+        // Show loading state
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Loading departments...';
+        departmentSelect.appendChild(loadingOption);
+
+        fetch(`/api/companies/${companyId}/departments`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                if (data && data.length > 0) {
+                    data.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        if (String(selectedDept) === String(dept.id)) {
+                            option.selected = true;
+                        }
+                        departmentSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading departments:', error);
+                departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+            });
+    }
+
+    // Initialize branches and departments if company is already selected
+    @if(auth()->user()->role === 'superadmin' && request('company_id'))
+        loadBranches('{{ request('company_id') }}');
+        loadDepartments('{{ request('company_id') }}');
+    @endif
 });
 </script>
 @endpush

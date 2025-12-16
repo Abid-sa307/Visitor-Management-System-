@@ -29,9 +29,12 @@ class VisitorCategoryController extends Controller
 
     public function create()
     {
-        $companies = auth()->user()->hasRole('superadmin') 
-            ? Company::orderBy('name')->pluck('name', 'id')
-            : null;
+        $companies = collect();
+        
+        if (auth()->user()->hasRole('superadmin')) {
+            // Remove the active() scope to show all companies
+            $companies = Company::orderBy('name')->pluck('name', 'id');
+        }
 
         return view('visitor-categories.create', compact('companies'));
     }

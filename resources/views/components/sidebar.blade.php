@@ -21,7 +21,13 @@
         : [];
 
     // Gate by page key: superadmins see all; company users must be permitted via master_pages
-    $canPage = fn (string $key) => $isSuper || in_array($key, $masterPages, true);
+    $canPage = function (string $key) use ($isSuper, $masterPages) {
+        // Super admins can see everything
+        if ($isSuper) return true;
+        
+        // For company users, check if the page is in their master_pages
+        return in_array($key, $masterPages, true);
+    };
 
     // UI helpers
     $active = function ($routes) {
@@ -153,14 +159,14 @@
         </li>
     @endif
 
-   @can('viewAny', \App\Models\VisitorCategory::class)
-    <li class="nav-item {{ $active('visitor-categories.*') }}">
-        <a class="nav-link" href="{{ route('visitor-categories.index') }}">
-            <i class="fas fa-tags me-2"></i>
-            <span>Visitor Categories</span>
-        </a>
-    </li>
-@endcan
+@if($isSuper || $canPage('visitor_categories'))
+<li class="nav-item {{ $active('visitor-categories.*') }}">
+    <a class="nav-link" href="{{ route('visitor-categories.index') }}">
+        <i class="fas fa-tags me-2"></i>
+        <span>Visitor Categories</span>
+    </a>
+</li>
+@endif
 
  <!-- Users (visible only if user has 'users' permission; superadmin always) -->
     @if(Route::has($usersRoute) && ($isSuper || $canPage('users')))

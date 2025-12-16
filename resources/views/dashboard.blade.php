@@ -15,11 +15,15 @@
                 <div class="col-lg-4 col-md-6">
                     <label class="form-label">Date Range</label>
                     <div class="input-group mb-2">
+                        @php
+                            $fromDate = session('date_range.from') ?? (request('from') ?? now()->startOfMonth()->format('Y-m-d'));
+                            $toDate = session('date_range.to') ?? (request('to') ?? now()->endOfMonth()->format('Y-m-d'));
+                        @endphp
                         <input type="date" name="from" id="from_date" class="form-control"
-                               value="{{ request('from', $from ?? now()->subDays(30)->format('Y-m-d')) }}">
+                               value="{{ $fromDate }}">
                         <span class="input-group-text">to</span>
                         <input type="date" name="to" id="to_date" class="form-control"
-                               value="{{ request('to', $to ?? now()->format('Y-m-d')) }}">
+                               value="{{ $toDate }}">
                     </div>
                     <div class="d-flex flex-wrap gap-1">
                         <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">
@@ -52,26 +56,23 @@
                     </div>
                 @endif
 
-                {{-- 3️⃣ Branch --}}
-<div class="col-lg-3 col-md-6">
-    <label for="branch_id" class="form-label">Branch</label>
-    <select name="branch_id" id="branch_id"
-            class="form-select"
-            @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
-        <option value="">All Branches</option>
+                {{-- Branch --}}
+                <div class="col-lg-2 col-md-6">
+                    <label for="branch_id" class="form-label">Branch</label>
+                    <select name="branch_id" id="branch_id" class="form-select"
+                            @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
+                        <option value="">All Branches</option>
+                        @if(isset($branches) && count($branches) > 0)
+                            @foreach($branches as $id => $name)
+                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
 
-        {{-- When logged-in user is company, fill from controller --}}
-        @if(auth()->user()->role === 'company' && isset($branches))
-            @foreach($branches as $id => $name)
-                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
-                    {{ $name }}
-                </option>
-            @endforeach
-        @endif
-    </select>
-</div>
-
-{{-- 4️⃣ Department --}}
+                {{-- Department --}}
 <div class="col-lg-2 col-md-6">
     <label for="department_id" class="form-label">Department</label>
     <select name="department_id" id="department_id"
@@ -285,127 +286,177 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const companySelect    = document.getElementById('company_id');
-    const branchSelect     = document.getElementById('branch_id');
-    const departmentSelect = document.getElementById('department_id');
+    let companySelect = document.getElementById('company_id');
+    let branchSelect = document.getElementById('branch_id');
+    let departmentSelect = document.getElementById('department_id');
+    let selectedDept = "{{ request('department_id') }}";
+    let selectedBranch = "{{ request('branch_id') }}";
+    const selectedCompany = "{{ request('company_id') }}";
 
-    const selectedBranch    = "{{ request('branch_id') }}";
-    const selectedDept      = "{{ request('department_id') }}";
-    const selectedCompany   = "{{ request('company_id') }}";
+    // ------- Load branches via AJAX --------
+    function loadBranches(companyId) {
+        if (!branchSelect) return;
+        branchSelect.innerHTML = '<option value="">All Branches</option>';
+        if (!companyId) {
+            branchSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
+            return;
+        }
+        branchSelect.disabled = false;
 
-    // In dashboard.blade.php, update the JavaScript section
+        // Show loading state
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Loading branches...';
+        branchSelect.appendChild(loadingOption);
 
-// ------- Load branches & departments via AJAX --------
-function loadBranches(companyId) {
-    if (!branchSelect) return;
-    branchSelect.innerHTML = '<option value="">All Branches</option>';
-    if (!companyId) {
-        branchSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
-        return;
-    }
-    branchSelect.disabled = false;
+        // Try both API and non-API endpoints
+        const endpoints = [
+            `/api/companies/${companyId}/branches`,
+            `/companies/${companyId}/branches`,
+            `/companies/${companyId}/branches/list`
+        ];
 
-    // Show loading state
-    const loadingOption = document.createElement('option');
-    loadingOption.textContent = 'Loading branches...';
-    branchSelect.appendChild(loadingOption);
-
-    fetch(`/companies/${companyId}/branches-json`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+        const tryEndpoint = (index) => {
+            if (index >= endpoints.length) {
+                console.error('All endpoints failed');
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                return;
             }
-            return response.json();
-        })
-        .then(list => {
-            branchSelect.innerHTML = '<option value="">All Branches</option>';
-            if (Array.isArray(list) && list.length > 0) {
-                list.forEach(branch => {
+
+            const endpoint = endpoints[index];
+            console.log(`Trying endpoint: ${endpoint}`);
+            
+            fetch(endpoint, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Branches data:', data);
+                branchSelect.innerHTML = '<option value="">All Branches</option>';
+                
+                const branches = Array.isArray(data) ? data : (data.data || []);
+                
+                if (branches.length > 0) {
+                    branches.forEach(branch => {
+                        const option = document.createElement('option');
+                        option.value = branch.id;
+                        option.textContent = branch.name || branch.branch_name || `Branch ${branch.id}`;
+                        if (String(selectedBranch) === String(branch.id)) {
+                            option.selected = true;
+                        }
+                        branchSelect.appendChild(option);
+                    });
+                } else {
                     const option = document.createElement('option');
-                    option.value = branch.id;
-                    option.textContent = branch.name;
-                    if (String(selectedBranch) === String(branch.id)) {
-                        option.selected = true;
-                    }
+                    option.textContent = 'No branches available';
+                    option.disabled = true;
                     branchSelect.appendChild(option);
-                });
-            } else {
-                const option = document.createElement('option');
-                option.textContent = 'No branches found';
-                option.disabled = true;
-                branchSelect.appendChild(option);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading branches:', error);
-            branchSelect.innerHTML = '<option value="">Error loading branches</option>';
-        });
-}
+                }
+            })
+            .catch(error => {
+                console.error(`Error with endpoint ${endpoint}:`, error);
+                tryEndpoint(index + 1); // Try next endpoint
+            });
+        };
 
-function loadDepartments(companyId) {
-    if (!departmentSelect) return;
-    departmentSelect.innerHTML = '<option value="">All Departments</option>';
-    if (!companyId) {
-        departmentSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
-        return;
+        // Start trying endpoints
+        tryEndpoint(0);
     }
-    departmentSelect.disabled = false;
 
-    // Show loading state
-    const loadingOption = document.createElement('option');
-    loadingOption.textContent = 'Loading departments...';
-    departmentSelect.appendChild(loadingOption);
+    // ------- Load departments via AJAX --------
+    function loadDepartments(companyId) {
+        if (!departmentSelect) return;
+        departmentSelect.innerHTML = '<option value="">All Departments</option>';
+        if (!companyId) {
+            departmentSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
+            return;
+        }
+        departmentSelect.disabled = false;
 
-    fetch(`/companies/${companyId}/departments-json`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(list => {
-            departmentSelect.innerHTML = '<option value="">All Departments</option>';
-            if (Array.isArray(list) && list.length > 0) {
-                list.forEach(dept => {
+        // Show loading state
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = 'Loading departments...';
+        departmentSelect.appendChild(loadingOption);
+
+        fetch(`/companies/${companyId}/departments`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(list => {
+                departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                if (Array.isArray(list) && list.length > 0) {
+                    list.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        if (String(selectedDept) === String(dept.id)) {
+                            option.selected = true;
+                        }
+                        departmentSelect.appendChild(option);
+                    });
+                } else {
                     const option = document.createElement('option');
-                    option.value = dept.id;
-                    option.textContent = dept.name;
-                    if (String(selectedDept) === String(dept.id)) {
-                        option.selected = true;
-                    }
+                    option.textContent = 'No departments found';
+                    option.disabled = true;
                     departmentSelect.appendChild(option);
-                });
-            } else {
-                const option = document.createElement('option');
-                option.textContent = 'No departments found';
-                option.disabled = true;
-                departmentSelect.appendChild(option);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading departments:', error);
-            departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
-        });
-}
+                }
+            })
+            .catch(error => {
+                console.error('Error loading departments:', error);
+                departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+            });
+    }
 
-    // After loadBranches() and loadDepartments() are defined:
-
+    // Handle company change
     if (companySelect) {
-        // When superadmin changes company
-        companySelect.addEventListener('change', function () {
-            const companyId = this.value || '';
-
-            loadBranches(companyId);
-            loadDepartments(companyId);
-        });
-
-        // If a company is already selected from query string, load its data on page load
+        // Load branches and departments if company is already selected
         if (selectedCompany) {
             loadBranches(selectedCompany);
             loadDepartments(selectedCompany);
         }
-    }
 
+        companySelect.addEventListener('change', function() {
+            const companyId = this.value;
+            console.log('Company changed to:', companyId);
+            
+            // Reset and disable dependent selects
+            if (branchSelect) {
+                branchSelect.innerHTML = '<option value="">Select company first</option>';
+                branchSelect.disabled = !companyId;
+            }
+            
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">Select company first</option>';
+                departmentSelect.disabled = !companyId;
+            }
+            
+            // Load branches and departments for the selected company
+            if (companyId) {
+                loadBranches(companyId);
+                loadDepartments(companyId);
+            }
+            
+            // Handle department select
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                departmentSelect.disabled = !companyId;
+                
+                if (companyId) {
+                    loadDepartments(companyId);
+                }
+            }
+        });
+    }
 
     // ------- Quick date range buttons --------
     const fromInput = document.getElementById('from_date');
@@ -413,36 +464,66 @@ function loadDepartments(companyId) {
     const rangeButtons = document.querySelectorAll('.quick-range');
 
     function formatDate(d) {
-        return d.toISOString().slice(0,10); // YYYY-MM-DD
+        // Ensure we have a valid date object
+        const date = new Date(d);
+        // Format as YYYY-MM-DD
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
+    function getFirstDayOfMonth(date) {
+        return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    function getLastDayOfMonth(date) {
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    }
+
+    // Set initial dates on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const firstDay = getFirstDayOfMonth(today);
+        const lastDay = getLastDayOfMonth(today);
+        
+        // Only set if inputs are empty
+        if (!fromInput.value) {
+            fromInput.value = formatDate(firstDay);
+        }
+        if (!toInput.value) {
+            toInput.value = formatDate(lastDay);
+        }
+    });
+
     rangeButtons.forEach(btn => {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
             const type = this.dataset.range;
             const today = new Date();
             let from, to;
 
             if (type === 'today') {
-                from = to = today;
+                from = to = new Date();
             } else if (type === 'yesterday') {
                 const y = new Date();
                 y.setDate(y.getDate() - 1);
                 from = to = y;
             } else if (type === 'this-month') {
-                const first = new Date(today.getFullYear(), today.getMonth(), 1);
-                const last  = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                from = first;
-                to   = last;
+                from = getFirstDayOfMonth(today);
+                to = getLastDayOfMonth(today);
             } else if (type === 'last-month') {
-                const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                const last  = new Date(today.getFullYear(), today.getMonth(), 0);
-                from = first;
-                to   = last;
+                const lastMonth = new Date(today);
+                lastMonth.setMonth(today.getMonth() - 1);
+                from = getFirstDayOfMonth(lastMonth);
+                to = getLastDayOfMonth(lastMonth);
             }
 
+            // Format dates and update inputs
             fromInput.value = formatDate(from);
-            toInput.value   = formatDate(to);
+            toInput.value = formatDate(to);
 
+            // Submit the form
             document.getElementById('dashboardFilterForm').submit();
         });
     });
@@ -520,6 +601,7 @@ function loadDepartments(companyId) {
             }
         });
     });
+    // All branch loading is now handled by the loadBranches function
 });
 </script>
 

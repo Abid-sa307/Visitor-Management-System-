@@ -1,175 +1,327 @@
 @extends('layouts.guest')
 
 @section('content')
-<div class="container py-4">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Welcome to {{ $company->name }}</h4>
-                    <p class="mb-0">Visitor Information</p>
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg overflow-hidden">
+                <!-- Header with Gradient Background -->
+                <div class="card-header bg-gradient-primary text-white py-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h3 mb-1">Welcome to {{ $company->name }}</h2>
+                            <p class="mb-0 opacity-75">Visitor Portal</p>
+                        </div>
+                        @if($visitor)
+                        <div class="status-badge">
+                            <span class="badge bg-white text-primary fw-normal p-2 rounded-pill">
+                                <i class="bi bi-person-circle me-1"></i> Visitor ID: {{ substr($visitor->id, 0, 8) }}
+                            </span>
+                        </div>
+                        @endif
+                    </div>
                 </div>
-                @if($visitor)
-    <div class="mt-4 visit">
-        @if($visitor->status === 'Approved')
-            <a href="{{ route('qr.visit', ['company' => $company, 'branch' => $branch ? $branch->id : null, 'visitor' => $visitor->id]) }}" 
-               class="btn btn-primary">
-                <i class="bi bi-pencil-square me-2"></i> Fill Visit Form
-            </a>
-        @else
-            <button class="btn btn-secondary " disabled>
-                <i class="bi bi-lock me-2 "></i> Visit Form
-            </button>
-            <div class="text-muted mt-2">
-                <small>Please wait for admin approval before filling the visit form.</small>
-            </div>
-        @endif
-    </div>
-@endif
-                <div class="card-body">
+                
+                <div class="card-body p-0">
                     @if($visitor)
-                        <div class="visitor-details">
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <h5 class="mb-3">Your Information</h5>
-                                    <div class="mb-3">
-                                        <strong>Name:</strong> {{ $visitor->name }}
-                                    </div>
-                                    <div class="mb-3">
-                                        <strong>Phone:</strong> {{ $visitor->phone }}
-                                    </div>
-                                    <div class="mb-3">
-                                        <strong>Email:</strong> {{ $visitor->email ?? '—' }}
-                                    </div>
-                                    <div class="mb-3">
-                                        <strong>Status:</strong>
-                                        <span class="badge bg-{{ $visitor->status === 'Approved' ? 'success' : 'warning' }}">
-                                            {{ $visitor->status }}
-                                        </span>
-                                        @if($visitor->status === 'Approved' && $visitor->status_changed_at)
-                                            <small class="text-muted ms-2">(Approved on {{ $visitor->status_changed_at->format('M d, Y h:i A') }})</small>
-                                        @endif
+                        <!-- Visitor Exists -->
+                        <div class="p-4">
+                            <!-- Status Alert -->
+                            @if($visitor->status === 'Approved')
+                                <div class="alert alert-success d-flex align-items-center" role="alert">
+                                    <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">Approved!</h5>
+                                        <p class="mb-0">Your visit has been approved. Please proceed to the reception.</p>
                                     </div>
                                 </div>
-                                @if($visitor->face_image)
-                                    <div class="col-md-6 text-center">
-                                        <h5 class="mb-3">Your Photo</h5>
-                                        <img src="{{ asset('storage/' . $visitor->face_image) }}" 
-                                             alt="Visitor Photo" 
-                                             class="img-thumbnail" 
-                                             style="max-width: 200px;">
+                                
+                                @if($visitor->visitor_pass)
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+                                    <a href="{{ route('visitor.pass', $visitor) }}" 
+                                       class="btn btn-success px-4" 
+                                       target="_blank">
+                                        <i class="bi bi-download me-2"></i> Download Visitor Pass
+                                    </a>
+                                </div>
+                                @endif
+                                
+                            @elseif($visitor->status === 'Rejected')
+                                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                    <i class="bi bi-x-circle-fill fs-4 me-3"></i>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">Request Rejected</h5>
+                                        <p class="mb-0">Your visit request has been rejected. Please contact support for assistance.</p>
                                     </div>
+                                </div>
+                            @else
+                                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                    <i class="bi bi-hourglass-split fs-4 me-3"></i>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">Pending Approval</h5>
+                                        <p class="mb-0">Your request is under review. We'll notify you once it's approved.</p>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <!-- Update Visit Button -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+                                @if($visitor->status === 'Approved')
+                                    <a href="{{ route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
+                                       class="btn btn-outline-primary px-4">
+                                        <i class="bi bi-pencil-square me-2"></i> Update Visit Information
+                                    </a>
+                                @else
+                                    <button type="button" class="btn btn-outline-secondary px-4" disabled 
+                                            title="Update available after approval">
+                                        <i class="bi bi-lock me-2"></i> Update Visit Information
+                                    </button>
                                 @endif
                             </div>
                             
-                           @if(isset($visitor->documents) && $visitor->documents->count() > 0)
-    <div class="mb-4">
-        <h5>Your Documents</h5>
-        <div class="list-group">
-            @foreach($visitor->documents as $document)
-                <a href="{{ asset('storage/' . $document->file_path) }}" 
-                   class="list-group-item list-group-item-action" 
-                   target="_blank">
-                    <i class="bi bi-file-earmark-text me-2"></i>
-                    {{ $document->file_name }}
-                    <span class="badge bg-secondary float-end">
-                        {{ $document->file_type }}
-                    </span>
-                </a>
-            @endforeach
-        </div>
-    </div>
-@endif
+                            <!-- Visitor Information Card -->
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-light py-3">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-person-badge me-2"></i>Your Information
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Full Name</div>
+                                                <div class="fw-medium">{{ $visitor->name }}</div>
+                                            </div>
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Email Address</div>
+                                                <div class="fw-medium">{{ $visitor->email ?? 'N/A' }}</div>
+                                            </div>
+                                            <div class="info-item">
+                                                <div class="text-muted small mb-1">Phone Number</div>
+                                                <div class="fw-medium">{{ $visitor->phone }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Status</div>
+                                                <div>
+                                                    <span class="badge bg-{{ $visitor->status === 'Approved' ? 'success' : ($visitor->status === 'Pending' ? 'warning' : 'danger') }} px-3 py-2 rounded-pill">
+                                                        {{ $visitor->status }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            @if($visitor->visitor_company)
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Company</div>
+                                                <div class="fw-medium">{{ $visitor->visitor_company }}</div>
+                                            </div>
+                                            @endif
+                                            @if($visitor->status_changed_at)
+                                            <div class="info-item">
+                                                <div class="text-muted small mb-1">Last Updated</div>
+                                                <div class="fw-medium">{{ \Carbon\Carbon::parse($visitor->status_changed_at)->format('M d, Y h:i A') }}</div>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle-fill me-2"></i>
-                                This is your personal visitor information. Only you can see this page.
+                            <!-- Vehicle Information (if available) -->
+                            @if($visitor->vehicle_number || $visitor->vehicle_type)
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-light py-3">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-truck me-2"></i>Vehicle Information
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        @if($visitor->vehicle_type)
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Vehicle Type</div>
+                                                <div class="fw-medium">{{ $visitor->vehicle_type }}</div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        @if($visitor->vehicle_number)
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Vehicle Number</div>
+                                                <div class="fw-medium">{{ $visitor->vehicle_number }}</div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            
+                            <!-- Workman Policy (if available) -->
+                            @if($visitor->workman_policy_photo)
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light py-3">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-file-earmark-text me-2"></i>Workman Policy
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" 
+                                       target="_blank" 
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-download me-2"></i> Download Policy Document
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
+                            
+                            <!-- Help Section -->
+                            <div class="alert alert-light border mt-4" role="alert">
+                                <div class="d-flex">
+                                    <i class="bi bi-info-circle-fill text-primary mt-1 me-3"></i>
+                                    <div>
+                                        <h6 class="alert-heading">Need Help?</h6>
+                                        <p class="mb-0 small">If you have any questions or need assistance, please contact our support team at <a href="mailto:visitormanagmentsystemsoftware@gmail.com">visitormanagmentsystemsoftware@gmail.com</a>.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @else
-
-                    <!-- Add this after the visitor information section, before the closing </div> of the visitor-details div -->
-<div class="mt-4 d-flex gap-2">
-    <!-- Visit Form Button (always visible if visitor exists) -->
-    <a href="{{ route('qr.visit', ['company' => $company, 'visitor' => $visitor->id]) }}" 
-       class="btn btn-primary">
-        <i class="bi bi-pencil-square me-2"></i> Fill Visit Form
-    </a>
-
-    <!-- Get Pass Button (only visible when approved) -->
-    @if($visitor->is_approved)
-        <a href="{{ route('visitor.pass', $visitor) }}" 
-           class="btn btn-success" 
-           target="_blank">
-            <i class="bi bi-pass me-2"></i> Get Your Pass
-        </a>
-    @endif
-</div><!-- Add this after the visitor information section, before the closing </div> of the visitor-details div -->
-<div class="mt-4 d-flex gap-2">
-    <!-- Visit Form Button (always visible if visitor exists) -->
-    <a href="{{ route('qr.visit', ['company' => $company, 'visitor' => $visitor->id]) }}" 
-       class="btn btn-primary">
-        <i class="bi bi-pencil-square me-2"></i> Fill Visit Form
-    </a>
-
-    <!-- Get Pass Button (only visible when approved) -->
-    @if($visitor->is_approved)
-        <a href="{{ route('visitor.pass', $visitor) }}" 
-           class="btn btn-success" 
-           target="_blank">
-            <i class="bi bi-pass me-2"></i> Get Your Pass
-        </a>
-    @endif
-</div>
-                        <div class="text-center py-5">
-                            <h4 class="mb-4">Welcome to {{ $company->name }}</h4>
-                            <p class="lead mb-4">Please check in or register as a visitor</p>
-                            
-                            <div class="row justify-content-center">
-                                <div class="col-md-6 mb-3">
-                                    <a href="{{ route('qr.visitor.create', $company) }}" class="btn btn-primary btn-lg w-100 py-3">
-                                        <i class="bi bi-person-plus-fill me-2"></i> New Visitor Registration
+                        <!-- New Visitor Registration -->
+                        <div class="text-center p-5">
+                            <div class="mb-5">
+                                <div class="icon-wrapper bg-soft-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
+                                </div>
+                                <h2 class="mb-3">Welcome to {{ $company->name }}</h2>
+                                <p class="lead text-muted mb-4">Please register as a visitor to continue your visit</p>
+                                
+                                <div class="d-grid gap-3 col-lg-6 mx-auto">
+                                    <a href="{{ route('qr.visitor.create', ['company' => $company->id]) }}" 
+                                       class="btn btn-primary btn-lg rounded-pill py-3">
+                                        <i class="bi bi-person-plus me-2"></i> Register as Visitor
                                     </a>
+                                    
+                                    <div class="position-relative my-4">
+                                        <hr>
+                                        <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">OR</span>
+                                    </div>
+                                    
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <h5 class="h6 mb-3">Already registered?</h5>
+                                            <button class="btn btn-outline-secondary w-100" disabled>
+                                                <i class="bi bi-box-arrow-in-right me-2"></i> Check In for Visit
+                                            </button>
+                                            <p class="small text-muted mt-2 mb-0">Check-in will be available after registration and approval.</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    @if(isset($branch) && $branch)
-                                        <a href="{{ route('qr.visit', ['company' => $company, 'branch' => $branch]) }}" class="btn btn-outline-primary btn-lg w-100 py-3">
-                                            <i class="bi bi-box-arrow-in-right me-2"></i> Check In for Visit
-                                        </a>
-                                    @else
-                                        <a href="{{ route('qr.visit', $company) }}" class="btn btn-outline-primary btn-lg w-100 py-3">
-                                            <i class="bi bi-box-arrow-in-right me-2"></i> Check In for Visit
-                                        </a>
-                                    @endif
+                                
+                                <div class="alert alert-light border mt-5" role="alert">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-shield-lock-fill text-primary me-3"></i>
+                                        <div class="text-start">
+                                            <p class="mb-0 small">Your information is secure and will only be used for visitor management purposes. <a href="#" class="text-decoration-none">Learn more</a></p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="alert alert-info mt-4 mb-0">
-                                <i class="bi bi-info-circle-fill me-2"></i>
-                                If you've already registered, please use the same device to view your information.
                             </div>
                         </div>
                     @endif
                 </div>
+                
+                <!-- Footer -->
+                <!-- <div class="card-footer bg-light py-3 text-center">
+                    <p class="mb-0 small text-muted">
+                        &copy; {{ date('Y') }} {{ $company->name }}. All rights reserved.
+                        @if($visitor)
+                        <span class="mx-2">•</span>
+                        <a href="#" class="text-decoration-none">Privacy Policy</a>
+                        <span class="mx-2">•</span>
+                        <a href="#" class="text-decoration-none">Terms of Service</a>
+                        @endif
+                    </p>
+                </div> -->
             </div>
         </div>
     </div>
 </div>
 
 <style>
+    body {
+        background-color: #f8f9fa;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+    
     .card {
         border: none;
-        border-radius: 10px;
+        border-radius: 12px;
         overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+    }
+    
     .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .info-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-item:last-child {
         border-bottom: none;
     }
-    .btn-lg {
-        font-size: 1.1rem;
+    
+    .btn {
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2e59d9;
+        border-color: #2653d4;
+    }
+    
+    .alert {
+        border: none;
         border-radius: 8px;
     }
-    .table th {
+    
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+    
+    .icon-wrapper {
+        background-color: rgba(78, 115, 223, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        .info-item {
+            padding: 0.5rem 0;
+        }
+    }
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.8rem;

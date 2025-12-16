@@ -15,8 +15,16 @@ class User extends Authenticatable implements AuthenticatableUserContract
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'role', 'company_id', 'branch_id',
         'department_id', // if you keep a single department, optional
-        'master_pages', 'otp', 'otp_expires_at', 'otp_verified_at', 'is_super_admin'
+        'master_pages', 'otp', 'otp_expires_at', 'otp_verified_at', 'is_super_admin',
+        'branch_ids' // For storing multiple branch IDs
     ];
+    
+    /**
+     * The relationships that should always be loaded.
+     *
+     * @var array
+     */
+    protected $with = ['branches', 'company'];
     
     protected $dates = [
         'otp_expires_at',
@@ -32,7 +40,8 @@ class User extends Authenticatable implements AuthenticatableUserContract
 
     /** Relationships */
     public function company()     { return $this->belongsTo(Company::class); }
-    public function branch()      { return $this->belongsTo(Branch::class); }
+    public function branch()      { return $this->belongsTo(Branch::class); } // Keeping for backward compatibility
+    public function branches()    { return $this->belongsToMany(Branch::class)->withTimestamps(); }
     public function departments() { return $this->belongsToMany(Department::class); }
     public function department()  { return $this->belongsTo(Department::class, 'department_id'); } // optional single
 

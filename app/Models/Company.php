@@ -27,6 +27,7 @@ class Company extends Authenticatable
         'auto_approve_visitors',
         'branch_start_date',
         'branch_end_date',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -41,7 +42,19 @@ class Company extends Authenticatable
         'auto_approve_visitors' => 'boolean',
         'branch_start_date' => 'date',
         'branch_end_date' => 'date',
+        'is_active' => 'boolean',
     ];
+
+    /**
+     * Scope a query to only include active companies.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
 
     /**
@@ -91,5 +104,13 @@ class Company extends Authenticatable
     public function branches()
     {
         return $this->hasMany(Branch::class);
+    }
+    
+    /**
+     * Get the employees for the company.
+     */
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
     }
 }

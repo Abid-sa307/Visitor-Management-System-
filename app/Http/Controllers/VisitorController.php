@@ -705,7 +705,6 @@ private function schema_has_column(string $table, string $column): bool
     
     // Get visitor categories for the company
     $visitorCategories = \App\Models\VisitorCategory::where('company_id', $companyId)
-        ->where('is_active', true)
         ->orderBy('name')
         ->get();
     
@@ -720,10 +719,19 @@ private function schema_has_column(string $table, string $column): bool
     ]);
 }
 
-
-
-   public function submitVisit(Request $request, $id)
-    {
+/**
+ * Submit visitor visit details
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @param  int  $id
+ * @return \Illuminate\Http\Response
+ */
+public function submitVisit(Request $request, $id)
+{
+    try {
+        // Log the incoming request data
+        \Log::info('Submit Visit Request Data:', $request->all());
+        
         $visitor = Visitor::findOrFail($id);
         $this->authorizeVisitor($visitor);
 
@@ -732,10 +740,18 @@ private function schema_has_column(string $table, string $column): bool
             $request->merge(['company_id' => $u->company_id]);
         }
 
-        $request->validate([
+        // Log before validation
+        \Log::info('Before validation:', [
+            'company_id' => $request->company_id,
+            'department_id' => $request->department_id,
+            'person_to_visit' => $request->person_to_visit
+        ]);
+
+        $validated = $request->validate([
             'company_id'          => 'required|exists:companies,id',
             'department_id'       => 'required|exists:departments,id',
-            'branch_id'           => 'nullable|exists:branches,id',
+            'branch_id'          => 'nullable|exists:branches,id',
+            'visitor_category_id' => 'nullable|exists:visitor_categories,id',
             'person_to_visit'     => 'required|string',
             'purpose'             => 'nullable|string',
             'visitor_company'     => 'nullable|string',
@@ -745,26 +761,119 @@ private function schema_has_column(string $table, string $column): bool
             'goods_in_car'        => 'nullable|string',
             'workman_policy'      => 'nullable|in:Yes,No',
             'workman_policy_photo'=> 'nullable|image|max:2048',
-            'status'              => 'required|in:Pending,Approved,Rejected',
+            'status'              => 'sometimes|in:Pending,Approved,Rejected',
         ]);
 
-        if ($request->hasFile('workman_policy_photo')) {
-            $visitor->workman_policy_photo = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+        // Start a database transaction
+        \DB::beginTransaction();
+
+        try {
+            // Handle file upload if present
+            if ($request->hasFile('workman_policy_photo')) {
+                $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+                $visitor->workman_policy_photo = $path;
+            }
+
+            // Get all input except the ones we don't want to update
+            $updateData = $request->except(['workman_policy_photo', '_token', '_method']);
+            
+            // Set default status if not provided
+            if (!isset($updateData['status'])) {
+                $updateData['status'] = 'Pending';
+            }
+            
+            // Log data before update
+            \Log::info('Updating visitor with data:', [
+                'visitor_id' => $visitor->id,
+                'data' => $updateData
+            ]);
+
+            // Update the visitor
+            $visitor->update($updateData);
+
+            // Commit the transaction
+            \DB::commit();
+
+            // Log successful update
+            \Log::info('Visitor updated successfully', ['visitor_id' => $visitor->id]);
+
+            // Determine the appropriate redirect route based on user type
+            if (auth()->guard('company')->check()) {
+                return redirect()->route('company.visitors.index')
+                    ->with('success', 'Visit submitted successfully.');
+            } else {
+                return redirect()->route('visitors.index')
+                    ->with('success', 'Visit submitted successfully.');
+            }
+
+        } catch (\Exception $e) {
+            // Log the detailed error
+            \Log::error('Error updating visitor: ' . $e->getMessage(), [
+                'visitor_id' => $visitor->id,
+                'exception' => $e->getTraceAsString(),
+                'input' => $request->except(['workman_policy_photo', '_token'])
+            ]);
+            
+            return back()->withInput()
+                ->with('error', 'Failed to update visitor: ' . $e->getMessage());
         }
 
-        $visitor->update($request->except('workman_policy_photo') + [
-            'workman_policy_photo' => $visitor->workman_policy_photo ?? null,
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // Log validation errors
+        \Log::error('Validation error in submitVisit:', [
+            'errors' => $e->errors(),
+            'input' => $request->all()
         ]);
-
-        return redirect()->route($this->panelRoute('visitors.index'))
-            ->with('success', 'Visit submitted successfully.');
+        
+        return back()->withErrors($e->errors())->withInput();
+        
+    } catch (\Exception $e) {
+        // Log the error with more context
+        \Log::error('Unexpected error in submitVisit: ' . $e->getMessage(), [
+            'visitor_id' => $id,
+            'exception' => $e->getTraceAsString(),
+            'request' => $request->all()
+        ]);
+        
+        return back()->withInput()
+            ->with('error', 'An error occurred while saving the visit: ' . $e->getMessage());
     }
+}
 
     public function entryPage()
     {
-        $visitors = $this->companyScope(Visitor::query()->with(['company','department'])->latest('created_at'))->paginate(10);
+        $visitors = $this->companyScope(Visitor::query()->with(['company', 'branch', 'department'])->latest('created_at'))->paginate(10);
         $isCompany = $this->isCompany();
-        return view('visitors.entry', compact('visitors', 'isCompany'));
+        
+        // Get companies for superadmin
+        $companies = [];
+        $branches = [];
+        $departments = [];
+        
+        $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        
+        if ($this->isSuper()) {
+            // For superadmin, get all companies
+            $companies = Company::pluck('name', 'id');
+            
+            // If company is selected, get its branches and departments
+            if (request('company_id')) {
+                $branches = Branch::where('company_id', request('company_id'))->pluck('name', 'id');
+                $departments = Department::where('company_id', request('company_id'))->pluck('name', 'id');
+            }
+        } else if ($this->isCompany()) {
+            // For company users, get their company's branches and departments
+            $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+            $departments = Department::where('company_id', $user->company_id)->pluck('name', 'id');
+        }
+        
+        return view('visitors.entry', compact(
+            'visitors', 
+            'isCompany', 
+            'companies',
+            'branches',
+            'departments'
+        ));
     }
 
     /**
@@ -830,147 +939,152 @@ private function schema_has_column(string $table, string $column): bool
     }
 
     /**
-     * Toggle visitor check-in/out status
-     *
-     * @param int $id Visitor ID
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function toggleEntry($id)
-    {
-        // Log the request details for debugging
-        \Log::info('Toggle Entry Request:', [
-            'visitor_id' => $id,
-            'url' => request()->fullUrl(),
-            'method' => request()->method(),
-            'ajax' => request()->ajax(),
-            'input' => request()->all(),
-            'user' => auth()->user() ? auth()->user()->toArray() : null,
-            'company_user' => auth('company')->user() ? auth('company')->user()->toArray() : null,
-            'headers' => request()->header(),
-            'previous_url' => url()->previous(),
-            'current_url' => url()->current()
-        ]);
+ * Toggle visitor check-in/out status
+ *
+ * @param int $id Visitor ID
+ * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+ */
+public function toggleEntry($id)
+{
+    // Log the request details for debugging
+    \Log::info('Toggle Entry Request:', [
+        'visitor_id' => $id,
+        'url' => request()->fullUrl(),
+        'method' => request()->method(),
+        'ajax' => request()->ajax(),
+        'input' => request()->all(),
+        'user' => auth()->user() ? auth()->user()->toArray() : null,
+        'company_user' => auth('company')->user() ? auth('company')->user()->toArray() : null,
+        'headers' => request()->header(),
+        'previous_url' => url()->previous(),
+        'current_url' => url()->current()
+    ]);
 
-        // If you later add guard role, leave this check; otherwise remove.
-        if ((auth()->user()->role ?? null) === 'guard') {
-            abort(403, 'Unauthorized action.');
+    // If you later add guard role, leave this check; otherwise remove.
+    if ((auth()->user()->role ?? null) === 'guard') {
+        if (request()->ajax()) {
+            return response()->json(['error' => 'Unauthorized action.'], 403);
         }
-
-        $visitor = Visitor::findOrFail($id);
-        $this->authorizeVisitor($visitor);
-
-        // Check if this is a face verification request
-        $isFaceVerification = request()->has('face_verification') && request()->input('face_verification') === '1';
-        $skipFaceVerification = request()->has('skip_face_verification') && request()->input('skip_face_verification') === '1';
-        $faceVerified = request()->input('face_verified') === '1';
-
-        // If face verification is required but not completed
-        if ($visitor->face_encoding && !$skipFaceVerification && !$faceVerified) {
-            return redirect()->route('visitors.entry.page')
-                ->with('warning', 'Face verification is required for this visitor. Please use the "Check In/Out with Face" button.');
-        }
-
-        $originalStatus = $visitor->status;
-        $isCheckingIn = !$visitor->in_time;
-        
-        try {
-            DB::beginTransaction();
-
-            if ($isCheckingIn) {
-                // Only allow Check In if already Approved OR company has auto-approve enabled
-                $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
-                if (!$companyAuto && $visitor->status !== 'Approved') {
-                    return back()->with('error', 'Visitor must be approved before checking in.');
-                }
-                
-                $visitor->in_time = now();
-                $visitor->status = $visitor->status === 'Pending' && $companyAuto ? 'Approved' : $visitor->status;
-                
-                // Log the check-in
-                activity()
-                    ->performedOn($visitor)
-                    ->withProperties([
-                        'face_verified' => $faceVerified,
-                        'ip_address' => request()->ip(),
-                        'user_agent' => request()->userAgent()
-                    ])
-                    ->log('checked in' . ($faceVerified ? ' with face verification' : ''));
-                
-                $message = 'Visitor checked in successfully' . ($faceVerified ? ' with face verification' : '') . '.';
-            } else {
-                // Check if already checked out
-                if ($visitor->out_time) {
-                    return back()->with('error', 'Visitor has already been checked out.');
-                }
-                
-                $visitor->out_time = now();
-                $visitor->status = 'Completed';
-                
-                // Log the check-out
-                activity()
-                    ->performedOn($visitor)
-                    ->withProperties([
-                        'face_verified' => $faceVerified,
-                        'ip_address' => request()->ip(),
-                        'user_agent' => request()->userAgent()
-                    ])
-                    ->log('checked out' . ($faceVerified ? ' with face verification' : ''));
-                
-                $message = 'Visitor checked out successfully' . ($faceVerified ? ' with face verification' : '') . '.';
-            }
-
-            // Update status history if status changed
-            if ($visitor->isDirty('status')) {
-                $visitor->last_status = $originalStatus;
-                $visitor->status_changed_at = now();
-                
-                // Log status change
-                activity()
-                    ->performedOn($visitor)
-                    ->withProperties([
-                        'old_status' => $originalStatus,
-                        'new_status' => $visitor->status
-                    ])
-                    ->log('status changed');
-            }
-            
-            // Save the changes
-            $visitor->save();
-            
-            // Commit the transaction
-            DB::commit();
-            
-            // Always redirect back to the previous URL with the success message
-            return redirect()->back()->with('success', $message);
-            
-        } catch (\Exception $e) {
-            // Rollback the transaction on error
-            DB::rollBack();
-            
-            // Log the error
-            \Log::error('Error toggling visitor entry: ' . $e->getMessage(), [
-                'visitor_id' => $id,
-                'exception' => $e
-            ]);
-            
-            return back()->with('error', 'An error occurred while updating the visitor. Please try again.');
-        }
+        abort(403, 'Unauthorized action.');
     }
 
-    public function printPass($id)
+    $visitor = Visitor::findOrFail($id);
+    $this->authorizeVisitor($visitor);
+
+    // Check if this is a face verification request
+    $isFaceVerification = request()->has('face_verification') && request()->input('face_verification') === '1';
+    $skipFaceVerification = request()->has('skip_face_verification') && request()->input('skip_face_verification') === '1';
+    $faceVerified = request()->input('face_verified') === '1';
+
+    // Only require face verification if this is specifically a face verification request
+    if ($isFaceVerification && $visitor->face_encoding && !$faceVerified) {
+        if (request()->ajax()) {
+            return response()->json([
+                'error' => 'Face verification failed or was not completed',
+                'requires_face_verification' => true
+            ], 400);
+        }
+        return redirect()->route('visitors.entry.page')
+            ->with('error', 'Face verification is required when using face verification. Please try again or use the standard check-in.');
+    }
+
+    $originalStatus = $visitor->status;
+    $isCheckingIn = !$visitor->in_time;
+    
+    try {
+        DB::beginTransaction();
+
+        if ($isCheckingIn) {
+            // Only allow Check In if already Approved OR company has auto-approve enabled
+            $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
+            if (!$companyAuto && $visitor->status !== 'Approved') {
+                $message = 'Visitor must be approved before checking in.';
+                if (request()->ajax()) {
+                    return response()->json(['error' => $message], 400);
+                }
+                return back()->with('error', $message);
+            }
+            
+            $visitor->in_time = now();
+            $visitor->status = $visitor->status === 'Pending' && $companyAuto ? 'Approved' : $visitor->status;
+            $message = 'Visitor checked in successfully.';
+        } else {
+            // Check if already checked out
+            if ($visitor->out_time) {
+                $message = 'Visitor has already been checked out.';
+                if (request()->ajax()) {
+                    return response()->json(['error' => $message], 400);
+                }
+                return back()->with('error', $message);
+            }
+            
+            $visitor->out_time = now();
+            $visitor->status = 'Completed';
+            $message = 'Visitor checked out successfully.';
+        }
+
+        // Update status history if status changed
+        if ($visitor->isDirty('status')) {
+            $visitor->last_status = $originalStatus;
+            $visitor->status_changed_at = now();
+        }
+        
+        $visitor->save();
+        DB::commit();
+
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'visitor' => [
+                    'id' => $visitor->id,
+                    'in_time' => $visitor->in_time,
+                    'out_time' => $visitor->out_time,
+                    'status' => $visitor->status
+                ]
+            ]);
+        }
+
+        return redirect()->route('visitors.entry.page')
+            ->with('success', $message);
+            
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Toggle Entry Error: ' . $e->getMessage(), [
+            'visitor_id' => $id,
+            'exception' => $e
+        ]);
+        
+        $errorMessage = 'An error occurred. Please try again.';
+        if (request()->ajax()) {
+            return response()->json(['error' => $errorMessage], 500);
+        }
+        return back()->with('error', $errorMessage);
+    }
+}
+
+public function printPass($id)
 {
     $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
     $this->authorizeVisitor($visitor);
-    
+
+    // Debugging company data before checking status
+    if (!$visitor->company) {
+        // Log if the company is missing or null
+        \Log::warning('Visitor does not have a company', ['visitor_id' => $visitor->id]);
+    }
+
     if ($visitor->status !== 'Approved') {
         return redirect()->back()->with('error', 'Pass is available only after the visitor is approved.');
     }
-    
+
     return view('visitors.pass', [
         'visitor' => $visitor,
         'company' => $visitor->company
     ]);
 }
+
+
 
     // --------------------------- AJAX: Lookup by phone ---------------------------
     public function lookupByPhone(Request $request)

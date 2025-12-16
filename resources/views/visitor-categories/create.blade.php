@@ -15,22 +15,31 @@
                         <form action="{{ route('visitor-categories.store') }}" method="POST">
                             @csrf
                             
-                            @if(auth()->user()->hasRole('superadmin'))
-                                <div class="mb-3">
-                                    <label for="company_id" class="form-label">Company</label>
-                                    <select name="company_id" id="company_id" class="form-select @error('company_id') is-invalid @enderror">
-                                        <option value="">Select Company</option>
-                                        @foreach($companies as $id => $name)
-                                            <option value="{{ $id }}" {{ old('company_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('company_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            @else
-                                <input type="hidden" name="company_id" value="{{ auth()->user()->company_id }}">
-                            @endif
+                            <div class="mb-3">
+                                <label for="company_id" class="form-label">Company</label>
+                                @if(auth()->user()->hasRole('superadmin'))
+                                    @if(isset($companies) && $companies->count() > 0)
+                                        <select name="company_id" id="company_id" class="form-select @error('company_id') is-invalid @enderror" required>
+                                            <option value="">Select Company</option>
+                                            @foreach($companies as $id => $name)
+                                                <option value="{{ $id }}" {{ old('company_id') == $id ? 'selected' : '' }}>
+                                                    {{ $name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('company_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="text-muted">Select the company this category belongs to.</small>
+                                    @else
+                                        <div class="alert alert-warning">No active companies found. Please create a company first.</div>
+                                    @endif
+                                @else
+                                    <input type="text" class="form-control" value="{{ auth()->user()->company->name ?? 'N/A' }}" readonly>
+                                    <input type="hidden" name="company_id" value="{{ auth()->user()->company_id }}">
+                                    <small class="text-muted">Your company is automatically assigned.</small>
+                                @endif
+                            </div>
 
                             <div class="mb-3">
                                 <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
