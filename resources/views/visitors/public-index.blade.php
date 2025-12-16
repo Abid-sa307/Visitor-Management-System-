@@ -66,10 +66,17 @@
                             
                             <!-- Update Visit Button -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
-                                <a href="{{ route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
-                                   class="btn btn-outline-primary px-4">
-                                    <i class="bi bi-pencil-square me-2"></i> Update Visit Information
-                                </a>
+                                @if($visitor->status === 'Approved')
+                                    <a href="{{ route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
+                                       class="btn btn-outline-primary px-4">
+                                        <i class="bi bi-pencil-square me-2"></i> Update Visit Information
+                                    </a>
+                                @else
+                                    <button type="button" class="btn btn-outline-secondary px-4" disabled 
+                                            title="Update available after approval">
+                                        <i class="bi bi-lock me-2"></i> Update Visit Information
+                                    </button>
+                                @endif
                             </div>
                             
                             <!-- Visitor Information Card -->

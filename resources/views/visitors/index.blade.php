@@ -190,14 +190,14 @@
                     @endif
                   @endif
 
-                  {{-- Pass (only when Approved) --}}
+                  {{-- Pass (available after check-in) --}}
                   @if($passRoute)
-                    @if($visitor->status === 'Approved')
+                    @if($visitor->in_time)
                       <a href="{{ route($passRoute, $visitor->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Pass">
                         <i class="fas fa-print"></i>
                       </a>
                     @else
-                      <button type="button" class="btn btn-sm btn-outline-secondary" title="Available after approval" disabled>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" title="Available after check-in" disabled>
                         <i class="fas fa-print"></i>
                       </button>
                     @endif

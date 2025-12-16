@@ -201,37 +201,24 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
     ]);
 
     try {
-        // Validate the request
+        // First, validate required fields
         $validated = $request->validate([
-            'visitor_category_id' => [
-                'required',
-                'exists:v_categories,id,company_id,' . $company->id
-            ],
             'department_id' => 'required|exists:departments,id',
             'purpose' => 'required|string',
             'visitor_company' => 'nullable|string|max:255',
-            'branch_id' => 'nullable|exists:branches,id',
+            'branch_id' => 'nullable|exists:branches,id'
         ]);
-
+        
         // Update visitor with visit details
-        $visitor->visitor_category_id = $validated['visitor_category_id'];
-        $visitor->department_id = $validated['department_id'];
-        $visitor->purpose = $validated['purpose'];
-        $visitor->status = 'Pending';
-        
-        // Set additional fields if provided
-        if (isset($validated['visitor_company'])) {
-            $visitor->visitor_company = $validated['visitor_company'];
-        }
-        
-        if (isset($validated['branch_id'])) {
-            $visitor->branch_id = $validated['branch_id'];
-        }
-        
-        // Set default values for removed fields
-        $visitor->employee_id = null;
-        $visitor->visit_date = now();
-        $visitor->id_proof = null;
+        $visitor->fill([
+            'department_id' => $validated['department_id'],
+            'purpose' => $validated['purpose'],
+            'status' => 'Pending',
+            'visitor_company' => $validated['visitor_company'] ?? null,
+            'branch_id' => $validated['branch_id'] ?? null,
+            'visitor_category_id' => $request->input('visitor_category_id') ?: null,
+            'updated_at' => now()
+        ]);
         
         $visitor->save();
 

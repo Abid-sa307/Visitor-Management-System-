@@ -349,15 +349,23 @@ Route::prefix('public')->name('public.')->group(function () {
 // API Routes for AJAX requests
 // QR Code Routes
 Route::prefix('companies/{company}')->name('companies.')->group(function () {
-    // Show QR code page
-    Route::get('/qr', [CompanyController::class, 'showQrPage'])
-        ->name('qr')
-        ->middleware(['auth', 'role:superadmin']);
+    // Public QR code page (with optional branch)
+    Route::get('/public-qr', [CompanyController::class, 'showPublicQrPage'])
+        ->name('public.qr');
         
-    // Download QR code
-    Route::get('/qr/download', [CompanyController::class, 'downloadQrCode'])
-        ->name('qr.download')
-        ->middleware(['auth', 'role:superadmin']);
+    // Public branch-specific QR code page
+    Route::get('/branches/{branchId}/public-qr', [CompanyController::class, 'showPublicBranchQrPage'])
+        ->name('branches.public.qr');
+        
+    // Admin QR code page
+    Route::middleware(['auth', 'role:superadmin'])->group(function () {
+        Route::get('/qr', [CompanyController::class, 'showQrPage'])
+            ->name('qr');
+            
+        // Download QR code
+        Route::get('/qr/download', [CompanyController::class, 'downloadQrCode'])
+            ->name('qr.download');
+    });
         
     // Branch QR code download
     Route::get('/branches/{branch}/qr/download', [CompanyController::class, 'downloadQrCode'])

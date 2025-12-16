@@ -147,29 +147,50 @@
                                 <td class="d-flex gap-2">
                                     @if($createRoute)
                                         @php
-                                            // Get the company's security check type
-                                            $securityCheckType = $visitor->company->security_checkin_type ?? '';
+                                            // Get the current user (could be guard or company user)
+                                            $user = auth('company')->user() ?? auth()->user();
+                                            $userCompanyId = $user->company_id ?? null;
+                                            $visitorCompanyId = $visitor->company_id ?? null;
                                             
-                                            // Show buttons based on the security check type
-                                            $showCheckIn = in_array($securityCheckType, ['checkin', 'both']);
-                                            $showCheckOut = in_array($securityCheckType, ['checkout', 'both']);
+                                            // Check if user is authorized (same company or super admin)
+                                            $isAuthorized = $isSuper || ($userCompanyId && $visitorCompanyId && $userCompanyId == $visitorCompanyId);
+                                            
+                                            if ($isAuthorized) {
+                                                // Get the company's security check type
+                                                $securityCheckType = $visitor->company->security_checkin_type ?? '';
+                                                
+                                                // Determine if visitor is checked in
+                                                $isCheckedIn = $visitor->in_time && !$visitor->out_time;
+                                                
+                                                // Show buttons based on the security check type and current status
+                                                $showCheckIn = !$isCheckedIn && in_array($securityCheckType, ['checkin', 'both']);
+                                                $showCheckOut = $isCheckedIn && in_array($securityCheckType, ['checkout', 'both']);
+                                                
+                                                if ($showCheckIn || $showCheckOut) {
+                                                    if ($showCheckIn) {
+                                                        echo '<a href="' . route($createRoute, ['visitorId' => $visitor->id]) . '" class="btn btn-outline-success btn-sm">
+                                                            <i class="fas fa-sign-in-alt me-1"></i> Check In
+                                                        </a>';
+                                                    }
+                                                    
+                                                    if ($showCheckOut) {
+                                                        echo '<a href="' . route($createRoute, ['visitorId' => $visitor->id, 'action' => 'checkout']) . '" class="btn btn-outline-warning btn-sm">
+                                                            <i class="fas fa-sign-out-alt me-1"></i> Check Out
+                                                        </a>';
+                                                    }
+                                                } else {
+                                                    if ($isCheckedIn && !in_array($securityCheckType, ['checkout', 'both'])) {
+                                                        echo '<span class="text-muted">Already checked in</span>';
+                                                    } elseif (!$isCheckedIn && !in_array($securityCheckType, ['checkin', 'both'])) {
+                                                        echo '<span class="text-muted">Not checked in</span>';
+                                                    } else {
+                                                        echo '<span class="text-muted">No actions available</span>';
+                                                    }
+                                                }
+                                            } else {
+                                                echo '<span class="text-muted">Not authorized</span>';
+                                            }
                                         @endphp
-                                        
-                                        @if($showCheckIn)
-                                            <a href="{{ route($createRoute, ['visitorId' => $visitor->id]) }}" class="btn btn-outline-success btn-sm">
-                                                <i class="fas fa-sign-in-alt me-1"></i> Check In
-                                            </a>
-                                        @endif
-                                        
-                                        @if($showCheckOut)
-                                            <a href="{{ route($createRoute, ['visitorId' => $visitor->id, 'action' => 'checkout']) }}" class="btn btn-outline-warning btn-sm">
-                                                <i class="fas fa-sign-out-alt me-1"></i> Check Out
-                                            </a>
-                                        @endif
-                                        
-                                        @if(!$showCheckIn && !$showCheckOut)
-                                            <span class="text-muted">No actions available</span>
-                                        @endif
                                     @else
                                         <span class="text-muted">Routes unavailable</span>
                                     @endif

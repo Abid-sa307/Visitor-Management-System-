@@ -50,6 +50,78 @@ class CompanyController extends Controller
      * @param Company $company
      * @return \Illuminate\View\View
      */
+    /**
+     * Show the public QR code page (no authentication required)
+     *
+     * @param Company $company
+     * @return \Illuminate\View\View
+     */
+    public function showPublicQrPage($companyId)
+    {
+        // Manually find the company or return 404
+        $company = Company::findOrFail($companyId);
+        
+        // Get branch if branch_id is provided
+        $branch = null;
+        if (request()->has('branch_id')) {
+            $branch = Branch::where('company_id', $company->id)
+                          ->findOrFail(request('branch_id'));
+        }
+        
+        // Generate QR code URL
+        $url = route('qr.scan', [
+            'company' => $company->id,
+            'branch' => $branch ? $branch->id : null
+        ]);
+        
+        // Generate QR code
+        $qrCode = QrCode::size(300)
+            ->format('svg')
+            ->generate($url);
+            
+        // Include branch name in the view if branch exists
+        $branchName = $branch ? $branch->name : null;
+        
+        return view('companies.public-qr', compact('company', 'branch', 'qrCode', 'url', 'branchName'));
+    }
+    
+    /**
+     * Show the public branch QR code page (no authentication required)
+     *
+     * @param Company $company
+     * @param Branch $branch
+     * @return \Illuminate\View\View
+     */
+    public function showPublicBranchQrPage($companyId, $branchId)
+    {
+        // Manually find the company and branch
+        $company = Company::findOrFail($companyId);
+        $branch = Branch::where('company_id', $company->id)
+                      ->findOrFail($branchId);
+        
+        // Generate QR code URL
+        $url = route('qr.scan', [
+            'company' => $company->id,
+            'branch' => $branch->id
+        ]);
+        
+        // Generate QR code
+        $qrCode = QrCode::size(300)
+            ->format('svg')
+            ->generate($url);
+            
+        // Include branch name in the view
+        $branchName = $branch->name;
+        
+        return view('companies.public-qr', compact('company', 'branch', 'qrCode', 'url', 'branchName'));
+    }
+
+    /**
+     * Show the QR code page (admin only)
+     *
+     * @param Company $company
+     * @return \Illuminate\View\View
+     */
     public function showQrPage(Company $company)
     {
         $this->authorize('view', $company);

@@ -84,9 +84,10 @@
                                     <td>{{ $item->email ?? '—' }}</td>
                                     <td>{{ $item->phone ?? '—' }}</td>
                                     <td>
-                                    <a href="{{ route('companies.qr', $item->company_id) }}?branch_id={{ $item->id }}" 
-                                        class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-qrcode me-1"></i> View QR
+                                    <a href="{{ route('companies.public.qr', $item->company_id) }}?branch_id={{ $item->id }}" 
+                                        class="btn btn-sm btn-outline-primary"
+                                        target="_blank">
+                                        <i class="fas fa-qrcode me-1"></i> View QR
                                     </a>
                                     </td>
                                 </tr>
@@ -100,8 +101,9 @@
                                     <td>{{ $item->email ?? '—' }}</td>
                                     <td>{{ $item->phone ?? '—' }}</td>
                                     <td>
-                                        <a href="{{ route('companies.qr', $item) }}" 
-                                            class="btn btn-sm btn-outline-primary">
+                                        <a href="{{ route('companies.public.qr', $item) }}" 
+                                            class="btn btn-sm btn-outline-primary"
+                                            target="_blank">
                                             <i class="fas fa-qrcode me-1"></i> View QR
                                         </a>
                                     </td>

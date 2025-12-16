@@ -1,19 +1,21 @@
 @extends('layouts.guest')
 
 @section('content')
-<div class="container mt-5">
-    <div class="card shadow-lg p-4 w-100 mx-auto" style="max-width: 800px;">
-        <h4 class="mb-4 text-center text-primary fw-bold">Visitor Action Details</h4>
-
-        @if(session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
+<div class="container d-flex justify-content-center mt-5">
+    <div class="card shadow-lg p-4 w-100" style="max-width: 800px;">
+        <h3 class="mb-4 text-center fw-bold text-primary">
+            @if(isset($visitor) && $visitor->exists)
+                Update Visit Details
+            @else
+                New Visit Registration
+            @endif
+        </h3>
+        <p class="text-center">{{ $company->name }}</p>
 
         @if($errors->any())
             <div class="alert alert-danger">
-                <ul class="mb-0">
+                <strong>Please fix the errors below.</strong>
+                <ul class="mb-0 mt-2 small">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -52,8 +54,8 @@
             </div>
 
             {{-- Branch & Visitor Category --}}
-            @if($branches->isNotEmpty())
             <div class="row mb-3">
+                @if($branches->isNotEmpty())
                 <div class="col">
                     <label class="form-label fw-semibold">Branch</label>
                     @if($branches->count() === 1)
@@ -70,14 +72,16 @@
                             @endforeach
                         </select>
                         @error('branch_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     @endif
                 </div>
+                @endif
+                
                 <div class="col">
-                    <label class="form-label fw-semibold">Visitor Category <span class="text-danger">*</span></label>
-                    <select name="visitor_category_id" class="form-select @error('visitor_category_id') is-invalid @enderror" required>
-                        <option value="">-- Select Category --</option>
+                    <label class="form-label fw-semibold">Visitor Category</label>
+                    <select name="visitor_category_id" class="form-select @error('visitor_category_id') is-invalid @enderror">
+                        <option value="">-- Select Category (Optional) --</option>
                         @foreach($visitorCategories as $category)
                             <option value="{{ $category->id }}" 
                                 {{ old('visitor_category_id', $visitor->visitor_category_id ?? '') == $category->id ? 'selected' : '' }}>
@@ -86,11 +90,10 @@
                         @endforeach
                     </select>
                     @error('visitor_category_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
-            @endif
 
             {{-- Person to Visit --}}
             <div class="mb-3">
@@ -188,12 +191,14 @@
             {{-- ID Proof field has been removed as per requirements --}}
 
             {{-- Submit Button --}}
-            <div class="d-grid">
-                <button type="submit" class="btn btn-success w-100 fw-bold" id="submitButton">
-                    <i class="bi bi-check-circle me-2"></i><span id="buttonText">Save Visit Info</span>
+            <div class="d-grid gap-2 mt-4">
+                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary" id="submitButton">
+                    <i class="fas fa-save me-2"></i> <span id="buttonText">Save Visit Details</span>
                     <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                 </button>
-            </div>
             </div>
         </form>
     </div>
@@ -260,12 +265,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 buttonText.textContent = 'Saving...';
                 spinner.classList.remove('d-none');
             }
-            submitButton.disabled = true;
-            buttonText.textContent = 'Saving...';
-            spinner.classList.remove('d-none');
             
-            // Create FormData object
+            // Create FormData object and ensure all fields are included
             const formData = new FormData(form);
+            
+            // Explicitly add visitor_category_id to formData if it exists in the form
+            const visitorCategory = form.querySelector('select[name="visitor_category_id"]');
+            if (visitorCategory) {
+                formData.set('visitor_category_id', visitorCategory.value || '');
+            }
             
             // Submit form via AJAX
             fetch(form.action, {
@@ -400,12 +408,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 spinner.classList.add('d-none');
             })
             .finally(() => {
-                // Reset button state
-                submitButton.disabled = false;
-                buttonText.textContent = 'Save Visit Info';
-                spinner.classList.add('d-none');
+                // Only reset button state if not in error case (error handling already resets it)
+                if (submitButton.disabled && !form.querySelector('.alert-danger')) {
+                    submitButton.disabled = false;
+                    buttonText.textContent = 'Save Visit Info';
+                    spinner.classList.add('d-none');
+                }
             });
         });
+        
+        // Ensure all form fields are included in FormData
+        form.addEventListener('submit', function(e) {
+            // This ensures all fields are included in the FormData
+        }, true);
         
         // Real-time validation
         const formInputs = form.querySelectorAll('input, select, textarea');

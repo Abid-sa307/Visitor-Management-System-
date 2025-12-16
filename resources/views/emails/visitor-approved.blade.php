@@ -1,10 +1,5 @@
 @component('mail::layout')
-    {{-- Header --}}
-    @slot('header')
-        @component('mail::header', ['url' => config('app.url')])
-            {{ config('app.name') }}
-        @endcomponent
-    @endslot
+    @include('components.email-header')
 
     # Visitor Approved
 
@@ -31,6 +26,9 @@
     @component('mail::button', ['url' => url('/visitor/pass/' . $visitor->id)])
         View Visitor Pass
     @endcomponent
+
+    {{-- Email Signature --}}
+    <x-email-signature />
 
     {{-- Footer --}}
     @slot('footer')

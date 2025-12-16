@@ -265,27 +265,24 @@
                             @endphp
                             @if(auth()->user()->role !== 'guard')
                                 @if(!$visitor->out_time)
-    <div class="d-flex gap-2">
-        @if($isCompany)
-            <form id="toggle-form-{{ $visitor->id }}" 
-                  action="{{ route($toggleRoute, $visitor->id) }}" 
-                  method="POST" 
-                  class="d-inline">
-                @csrf
-                @method('POST')
-                <button type="submit" class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
-                    {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
-                </button>
-            </form>
-        @else
-            <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
-                @csrf
-                @method('POST')
-                <button type="submit" class="btn btn-sm rounded-pill btn-{{ !$visitor->in_time ? 'primary' : 'danger' }}">
-                    {{ !$visitor->in_time ? 'Mark In' : 'Mark Out' }}
-                </button>
-            </form>
-        @endif
+    <div class="d-flex gap-2 toggle-buttons" data-visitor-id="{{ $visitor->id }}">
+        @php
+            // Determine the correct route based on user type
+            $routeName = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
+            $action = !$visitor->in_time ? 'in' : 'out';
+            $buttonText = !$visitor->in_time ? 'Mark In' : 'Mark Out';
+            $buttonClass = !$visitor->in_time ? 'primary' : 'danger';
+            $buttonIcon = !$visitor->in_time ? 'sign-in-alt' : 'sign-out-alt';
+        @endphp
+        
+        <button type="button" 
+                class="btn btn-sm rounded-pill btn-{{ $buttonClass }} toggle-entry-btn" 
+                data-visitor-id="{{ $visitor->id }}" 
+                data-action="{{ $action }}"
+                data-url="{{ route($routeName, $visitor->id) }}">
+            <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+            {{ $buttonText }}
+        </button>
         @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]')
             <button type="button" 
                     class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
@@ -359,6 +356,126 @@
 @push('scripts')
 <!-- Load face-api.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<script>
+// Handle toggle entry button clicks
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle toggle entry button clicks
+    document.addEventListener('click', function(e) {
+        const toggleBtn = e.target.closest('.toggle-entry-btn');
+        if (!toggleBtn) return;
+        
+        e.preventDefault();
+        
+        const visitorId = toggleBtn.dataset.visitorId;
+        const action = toggleBtn.dataset.action;
+        const url = toggleBtn.dataset.url;
+        const buttonText = toggleBtn.textContent.trim();
+        
+        if (!confirm(`Are you sure you want to ${buttonText.toLowerCase()} this visitor?`)) {
+            return;
+        }
+        
+        // Show loading state
+        const originalHtml = toggleBtn.innerHTML;
+        toggleBtn.disabled = true;
+        toggleBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        
+        // Get CSRF token
+        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('_token', token);
+        formData.append('_method', 'POST');
+        formData.append('visitor_id', visitorId);
+        formData.append('is_company', {{ $isCompany ? 'true' : 'false' }});
+
+        // Send AJAX request
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json, text/plain, */*'
+            },
+            body: formData
+        })
+        .then(async response => {
+            const contentType = response.headers.get('content-type');
+            
+            // Handle JSON response
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'An error occurred');
+                }
+                return data;
+            }
+            
+            // Handle HTML response (like redirects)
+            const text = await response.text();
+            if (response.redirected) {
+                window.location.href = response.url;
+                return { redirect: true };
+            }
+            
+            // If we get HTML, it might be a validation error or something else
+            throw new Error('Unexpected response from server');
+        })
+        .then(data => {
+            // If we have a redirect URL, use it
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+            
+            // Otherwise, show success message and reload
+            const successMessage = action === 'in' ? 'Visitor checked in successfully' : 'Visitor checked out successfully';
+            if (typeof showToast === 'function') {
+                showToast('success', successMessage);
+            } else {
+                alert(successMessage);
+            }
+            
+            // Reload after a short delay to show the success message
+            setTimeout(() => window.location.reload(), 1000);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            
+            // Re-enable button
+            toggleBtn.disabled = false;
+            toggleBtn.innerHTML = originalHtml;
+            
+            // Show error message
+            let errorMessage = 'An error occurred. Please try again.';
+            
+            if (error.message) {
+                errorMessage = error.message;
+                
+                // Handle common error cases
+                if (errorMessage.includes('419')) {
+                    errorMessage = 'Your session has expired. Please refresh the page and try again.';
+                } else if (errorMessage.includes('403')) {
+                    errorMessage = 'You do not have permission to perform this action.';
+                } else if (errorMessage.includes('404')) {
+                    errorMessage = 'The requested resource was not found.';
+                } else if (errorMessage.includes('500')) {
+                    errorMessage = 'A server error occurred. Please try again later.';
+                }
+            }
+            
+            // Use toast if available, otherwise use alert
+            if (typeof showToast === 'function') {
+                showToast('error', errorMessage);
+            } else {
+                alert(errorMessage);
+            }
+        });
+    });
+});
+</script>
 
 <script>
 // Global variables

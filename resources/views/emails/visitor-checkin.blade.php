@@ -1,28 +1,24 @@
 @component('mail::layout')
 {{-- Header --}}
 @slot('header')
-@component('mail::header', ['url' => config('app.url')])
-{{ config('app.name') }}
-@endcomponent
+@include('components.email-header')
 @endslot
 
-# New Visitor Check-in
+# Visitor Checked In
 
-Hello,
+Hello {{ $host->name }},
 
-A new visitor has checked in to your facility. Here are the details:
+{{ $visitor->name }} has checked in for their scheduled visit.
 
-**Visitor Information:**  
-Name: {{ $visitor->name }}  
-Email: {{ $visitor->email }}  
-Phone: {{ $visitor->phone }}  
+**Visitor Details:**
+- Name: {{ $visitor->name }}
+- Company: {{ $visitor->company }}
+- Email: {{ $visitor->email }}
+- Phone: {{ $visitor->phone }}
+- Check-in Time: {{ now()->format('F j, Y g:i A') }}
+- Purpose: {{ $visitor->purpose }}
 
-**Visit Details:**  
-Company: {{ $visitor->company->name }}  
-Department: {{ $visitor->department->name ?? 'N/A' }}  
-Person to Visit: {{ $visitor->person_to_visit }}  
-Purpose: {{ $visitor->purpose }}  
-Check-in Time: {{ $visitor->in_time->format('F j, Y g:i A') }}
+Please come to the reception to meet your visitor.
 
 @component('mail::button', ['url' => url('/visitors/' . $visitor->id)])
 View Visitor Details
@@ -30,6 +26,9 @@ View Visitor Details
 
 Thanks,  
 {{ config('app.name') }}
+
+{{-- Email Signature --}}
+<x-email-signature />
 
 {{-- Footer --}}
 @slot('footer')

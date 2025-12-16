@@ -134,7 +134,9 @@ class UserController extends Controller
             'departments.*'   => ['exists:departments,id'],
             'department_ids'  => ['array'],
             'department_ids.*'=> ['exists:departments,id'],
-            'branch_id'       => ['nullable','exists:branches,id'],
+            'branch_ids'      => ['nullable', 'array'],
+            'branch_ids.*'    => ['exists:branches,id'],
+            'branch_id'       => ['nullable','exists:branches,id'], // Keeping for backward compatibility
         ];
 
         // Only super admins can set company_id
@@ -168,8 +170,15 @@ class UserController extends Controller
             $user->company_id = $authUser->company_id;
         }
 
-        // branch (optional)
-        $user->branch_id = $request->input('branch_id');
+        // Handle branch assignments (support both single and multiple branches)
+        $branchIds = $request->input('branch_ids', []);
+        if (empty($branchIds) && $request->has('branch_id')) {
+            // If no branch_ids but has branch_id (for backward compatibility)
+            $branchIds = [$request->input('branch_id')];
+        }
+        
+        // Set the first branch as the primary branch (for backward compatibility)
+        $user->branch_id = !empty($branchIds) ? $branchIds[0] : null;
 
         // page access (array cast on model)
         $user->master_pages = $data['master_pages'] ?? [];
@@ -217,6 +226,11 @@ class UserController extends Controller
         
         // Sync departments
         $user->departments()->sync($deptIds);
+        
+        // Sync branches
+        if (isset($branchIds)) {
+            $user->branches()->sync($branchIds);
+        }
 
         return redirect()->route('users.index')->with('success','User created successfully.');
     }
@@ -257,7 +271,9 @@ class UserController extends Controller
             'departments.*'   => ['exists:departments,id'],
             'department_ids'  => ['array'],
             'department_ids.*'=> ['exists:departments,id'],
-            'branch_id'       => ['nullable','exists:branches,id'],
+            'branch_ids'      => ['nullable', 'array'],
+            'branch_ids.*'    => ['exists:branches,id'],
+            'branch_id'       => ['nullable','exists:branches,id'], // Keeping for backward compatibility
             // 'company_id' => $isSuper ? ['required','exists:companies,id'] : ['nullable'],
         ];
 
@@ -282,9 +298,18 @@ class UserController extends Controller
             $user->master_pages = $data['master_pages'] ?? [];
         }
 
-        // update branch if provided
-        if ($request->has('branch_id')) {
-            $user->branch_id = $request->input('branch_id') ?: null;
+        // Handle branch assignments (support both single and multiple branches)
+        $branchIds = $request->input('branch_ids', []);
+        if (empty($branchIds) && $request->has('branch_id')) {
+            // If no branch_ids but has branch_id (for backward compatibility)
+            $branchIds = [$request->input('branch_id')];
+        }
+        
+        // Set the first branch as the primary branch (for backward compatibility)
+        if (!empty($branchIds)) {
+            $user->branch_id = $branchIds[0];
+        } else {
+            $user->branch_id = null;
         }
 
         // if ($isSuper && array_key_exists('company_id', $data)) {
@@ -292,6 +317,11 @@ class UserController extends Controller
         // }
 
         $user->save();
+
+        // Sync branches if branch_ids are provided
+        if (isset($branchIds)) {
+            $user->branches()->sync($branchIds);
+        }
 
         // Handle department assignments
         $deptIds = $request->input('department_ids', $request->input('departments', ''));

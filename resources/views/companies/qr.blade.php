@@ -25,6 +25,26 @@
                        class="btn btn-sm btn-primary ms-2">
                         <i class="fas fa-download me-1"></i> Download QR
                     </a>
+                    @php
+                        $publicRoute = isset($branch) && $branch 
+                            ? route('companies.branches.public.qr', ['company' => $company, 'branch' => $branch])
+                            : route('companies.public.qr', $company);
+                    @endphp
+                    <button class="btn btn-sm btn-success ms-2" 
+                            onclick="copyToClipboard('{{ $publicRoute }}')"
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="Copy public link to clipboard">
+                        <i class="fas fa-link me-1"></i> Copy Public Link
+                    </button>
+                    <a href="{{ $publicRoute }}" 
+                       class="btn btn-sm btn-outline-secondary ms-2"
+                       target="_blank"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="top"
+                       title="Open public QR code page in new tab">
+                        <i class="fas fa-external-link-alt me-1"></i> View Public
+                    </a>
                 </div>
             </div>
         </div>
@@ -65,6 +85,36 @@ function copyToClipboard(event) {
     setTimeout(() => {
         button.innerHTML = originalText;
     }, 2000);
+}
+</script>
+@endpush
+@push('scripts')
+<script>
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success tooltip
+        const tooltip = bootstrap.Tooltip.getInstance(event.target);
+        if (tooltip) {
+            const originalTitle = event.target.getAttribute('data-bs-original-title');
+            event.target.setAttribute('data-bs-original-title', 'Copied to clipboard!');
+            tooltip.show();
+            
+            // Reset tooltip after 2 seconds
+            setTimeout(() => {
+                event.target.setAttribute('data-bs-original-title', originalTitle);
+                tooltip.hide();
+            }, 2000);
+        }
+    }).catch(function(error) {
+        console.error('Error copying to clipboard: ', error);
+        alert('Failed to copy to clipboard. Please copy the URL manually.');
+    });
 }
 </script>
 @endpush
