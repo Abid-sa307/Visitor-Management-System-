@@ -5,11 +5,12 @@
     $isCompany = $isCompanyGuard;
 
     // Superadmins see everything
-    $isSuper = $authUser && in_array($authUser->role, ['super_admin','superadmin'], true);
+    $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
     // Normalize master_pages to an array (supports casted array or legacy JSON string)
     $normalizeToArray = function ($value) {
-        if (is_array($value)) return $value;
+        if (is_array($value))
+            return $value;
         if (is_string($value) && $value !== '') {
             $decoded = json_decode($value, true);
             return is_array($decoded) ? $decoded : [];
@@ -23,16 +24,18 @@
     // Gate by page key: superadmins see all; company users must be permitted via master_pages
     $canPage = function (string $key) use ($isSuper, $masterPages) {
         // Super admins can see everything
-        if ($isSuper) return true;
-        
+        if ($isSuper)
+            return true;
+
         // For company users, check if the page is in their master_pages
         return in_array($key, $masterPages, true);
     };
 
     // UI helpers
     $active = function ($routes) {
-        foreach ((array)$routes as $route) {
-            if (request()->routeIs($route)) return 'active';
+        foreach ((array) $routes as $route) {
+            if (request()->routeIs($route))
+                return 'active';
         }
         return '';
     };
@@ -43,83 +46,83 @@
     $menuItems = [
         [
             'title' => 'Dashboard',
-            'icon'  => 'bi-speedometer2',
+            'icon' => 'bi-speedometer2',
             'route' => $isCompany ? 'company.dashboard' : 'dashboard',
-            'page'  => 'dashboard',
+            'page' => 'dashboard',
         ],
 
-         [
+        [
             'title' => 'Companies',
-            'icon'  => 'bi-buildings',
+            'icon' => 'bi-buildings',
             'route' => 'companies.index',
-            'page'  => 'companies',
+            'page' => 'companies',
             'super_only' => true,
         ],
 
-        
+
         [
             'title' => 'Departments',
-            'icon'  => 'bi-building',
+            'icon' => 'bi-building',
             'route' => $isCompany ? 'company.departments.index' : 'departments.index',
-            'page'  => 'departments',
+            'page' => 'departments',
         ],
 
         [
             'title' => 'Visitors',
-            'icon'  => 'bi-person-lines-fill',
+            'icon' => 'bi-person-lines-fill',
             'route' => $isCompany ? 'company.visitors.index' : 'visitors.index',
-            'page'  => 'visitors',
+            'page' => 'visitors',
         ],
 
         [
             'title' => 'Security Checks',
-            'icon'  => 'bi-shield-check',
+            'icon' => 'bi-shield-check',
             'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
-            'page'  => 'security_checks',
+            'page' => 'security_checks',
         ],
 
         [
             'title' => 'Visitor Approvals',
-            'icon'  => 'bi-check2-circle',
+            'icon' => 'bi-check2-circle',
             'route' => $isCompany ? 'company.approvals.index' : 'visitors.approvals',
-            'page'  => 'approvals',
+            'page' => 'approvals',
         ],
         [
             'title' => 'Visitor In & Out',
-            'icon'  => 'bi-door-open',
+            'icon' => 'bi-door-open',
             'route' => $isCompany ? 'company.visitors.entry.page' : 'visitors.entry.page',
-            'page'  => 'visitor_inout',
+            'page' => 'visitor_inout',
         ],
-        
+
         [
             'title' => 'Visitor History',
-            'icon'  => 'bi-clock-history',
+            'icon' => 'bi-clock-history',
             'route' => $isCompany ? 'company.visitors.history' : 'visitors.history',
-            'page'  => 'visitor_history',
+            'page' => 'visitor_history',
         ],
         [
             'title' => 'QR Scanner',
-            'icon'  => 'bi-qr-code-scan',
+            'icon' => 'bi-qr-code-scan',
             'route' => $isCompany ? 'company.qr.scanner' : 'qr.scanner',
-            'page'  => 'qr_scanner',
+            'page' => 'qr_scanner',
         ],
-        
+
         // Companies (superadmin only; never visible to company users)
-       
+
         [
             'title' => 'Employees',
-            'icon'  => 'bi-person-workspace',
+            'icon' => 'bi-person-workspace',
             'route' => $isCompany ? 'company.employees.index' : 'employees.index',
-            'page'  => 'employees',
+            'page' => 'employees',
         ],
     ];
 
     $reportItems = [
-        ['title' => 'Visitor Report',          'route' => 'reports.visitors', 'page' => 'reports'],
-        ['title' => 'In/Out Report',           'route' => 'reports.inout', 'page' => 'reports'],
-        ['title' => 'Security Checkpoints',    'route' => 'reports.security', 'page' => 'reports'],
-        ['title' => 'Approval Status',         'route' => 'reports.approval', 'page' => 'reports'],
-        ['title' => 'Hourly Report',           'route' => 'reports.hourly', 'page' => 'reports']
+        ['title' => '👥 Visitor Report', 'route' => 'reports.visitors', 'page' => 'reports'],
+        ['title' => '🚪 In/Out Report', 'route' => 'reports.inout', 'page' => 'reports'],
+        ['title' => '🛡️ Security Checkpoints', 'route' => 'reports.security', 'page' => 'reports'],
+        ['title' => '✅ Approval Status', 'route' => 'reports.approval', 'page' => 'reports'],
+        ['title' => '⏰ Hourly Report', 'route' => 'reports.hourly', 'page' => 'reports']
     ];
     $reportActive = collect($reportItems)->contains(fn($i) => request()->routeIs($i['route']));
 
@@ -129,7 +132,8 @@
 
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
     <!-- Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ $isCompany ? route('company.dashboard') : route('dashboard') }}">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center"
+        href="{{ $isCompany ? route('company.dashboard') : route('dashboard') }}">
         <div class="sidebar-brand-icon"><i class="bi bi-columns-gap fs-4"></i></div>
         <div class="sidebar-brand-text mx-2">VMS Panel</div>
     </a>
@@ -159,16 +163,16 @@
         </li>
     @endif
 
-@if($isSuper || $canPage('visitor_categories'))
-<li class="nav-item {{ $active('visitor-categories.*') }}">
-    <a class="nav-link" href="{{ route('visitor-categories.index') }}">
-        <i class="fas fa-tags me-2"></i>
-        <span>Visitor Categories</span>
-    </a>
-</li>
-@endif
+    @if($isSuper || $canPage('visitor_categories'))
+        <li class="nav-item {{ $active('visitor-categories.*') }}">
+            <a class="nav-link" href="{{ route('visitor-categories.index') }}">
+                <i class="fas fa-tags me-2"></i>
+                <span>Visitor Categories</span>
+            </a>
+        </li>
+    @endif
 
- <!-- Users (visible only if user has 'users' permission; superadmin always) -->
+    <!-- Users (visible only if user has 'users' permission; superadmin always) -->
     @if(Route::has($usersRoute) && ($isSuper || $canPage('users')))
         <li class="nav-item {{ $active($usersRoute) }}">
             <a class="nav-link" href="{{ route($usersRoute) }}">
@@ -179,7 +183,7 @@
     @endif
 
     <!-- Reports (group visible only if user has "reports") -->
-    @if($canPage('reports'))
+     @if($canPage('reports'))
         <li class="nav-item {{ $reportActive ? 'active' : '' }}">
             <a class="nav-link {{ $reportActive ? '' : 'collapsed' }}"
                href="#"
@@ -195,47 +199,123 @@
             <div id="collapseReports" class="collapse {{ $reportActive ? 'show' : '' }}" data-bs-parent="#accordionSidebar">
                 <div class="collapse-inner px-2">
                     @foreach($reportItems as $report)
-                        @if(Route::has($report['route'])) {{-- child links share "reports" key --}}
-                            <a class="collapse-item {{ $active($report['route']) }} text-white"
-                               href="{{ route($report['route']) }}">
-                               {{ $report['title'] }}
-                            </a>
-                        @endif
+                        <a class="collapse-item {{ $active($report['route']) }} text-white"
+                           href="{{ route($report['route']) }}">
+                           {{ $report['title'] }}
+                        </a>
                     @endforeach
                 </div>
             </div>
         </li>
     @endif
 
-   
+
 
     <hr class="sidebar-divider d-none d-md-block">
-    
+
 </ul>
 
 <style>
-/* Reports dropdown styling: keep white text and add dark translucent hover */
-#accordionSidebar #collapseReports .collapse-inner .collapse-item {
-  color: #fff !important;
-}
-#accordionSidebar #collapseReports .collapse-inner .collapse-item:hover,
-#accordionSidebar #collapseReports .collapse-inner .collapse-item:focus {
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #fff !important;
+    /* Reports dropdown styling: keep white text and add dark translucent hover */
+    #accordionSidebar #collapseReports .collapse-inner .collapse-item {
+       
+        color: #fff !important;
+    }
+
+    #accordionSidebar #collapseReports .collapse-inner .collapse-item:hover,
+    #accordionSidebar #collapseReports .collapse-inner .collapse-item:focus {
+        background-color: rgba(255, 255, 255, 0.12);
+        color: #fff !important;
+    }
+
+    /* Hide the SB Admin footer */
+    .sidebar .text-center {
+        display: none !important;
+    }
+
+    /* More specific selector if needed */
+    #accordionSidebar>.text-center:last-child {
+        display: none !important;
+    }
+
+    /* Target the specific text if needed */
+    #accordionSidebar>div:contains('SB Admin v7.0.7') {
+        display: none !important;
+    }
+
+    /* Mobile styles handled by parent layout */
+    #accordionSidebar {
+         
+        height: 100vh;
+        overflow-y: auto;
+    }
+@media (max-width: 768px) {
+  #accordionSidebar {
+    width: 135px !important;
+  }
+  
+  .nav-link span:not(.chev) {
+    display: none;
+  }
+  
+  #collapseReports {
+    position: fixed !important;
+    left: 135px !important;
+    background: #5a5c69 !important;
+    min-width: 220px !important;
+    border-radius: 0.35rem !important;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+    z-index: 99999 !important;
+  }
+  
+  #collapseReports .collapse-item {
+    padding: 0.75rem 1rem !important;
+    color: #fff !important;
+    font-size: 0.875rem !important;
+    display: block !important;
+    white-space: nowrap !important;
+  }
 }
 
-/* Hide the SB Admin footer */
-.sidebar .text-center {
-  display: none !important;
-}
 
-/* More specific selector if needed */
-#accordionSidebar > .text-center:last-child {
-  display: none !important;
-}
 
-/* Target the specific text if needed */
-#accordionSidebar > div:contains('SB Admin v7.0.7') {
-  display: none !important;
-}
+    
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle Reports dropdown toggle
+    const reportsToggle = document.querySelector('[data-bs-target="#collapseReports"]');
+    const reportsCollapse = document.getElementById('collapseReports');
+    
+    if (reportsToggle && reportsCollapse) {
+        reportsToggle.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                
+                const isExpanded = reportsCollapse.classList.contains('show');
+                
+                if (isExpanded) {
+                    reportsCollapse.classList.remove('show');
+                    this.classList.add('collapsed');
+                    this.setAttribute('aria-expanded', 'false');
+                } else {
+                    const rect = this.getBoundingClientRect();
+                    reportsCollapse.style.top = rect.top + 'px';
+                    reportsCollapse.classList.add('show');
+                    this.classList.remove('collapsed');
+                    this.setAttribute('aria-expanded', 'true');
+                }
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!reportsToggle.contains(e.target) && !reportsCollapse.contains(e.target)) {
+                reportsCollapse.classList.remove('show');
+                reportsToggle.classList.add('collapsed');
+                reportsToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+});
+</script>

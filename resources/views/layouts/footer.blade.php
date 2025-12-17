@@ -121,7 +121,7 @@
         </div>
 
         <div class="col-md-6 text-center text-md-end">
-          <div class="d-flex justify-content-center justify-content-md-end gap-3">
+          <div class="d-flex justify-content-center justify-content-md-end gap-2 flex-wrap">
             <a href="/privacy-policy" class="text-decoration-none text-light">Privacy Policy</a>
             <span class="text-light">|</span>
             <a href="/terms-of-use" class="text-decoration-none text-light">Terms of Use</a>
