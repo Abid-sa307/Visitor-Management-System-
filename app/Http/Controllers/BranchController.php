@@ -9,6 +9,16 @@ class BranchController extends Controller
 {
     public function getByCompany(Company $company)
     {
-        return response()->json($company->branches);
+        \Log::info('BranchController - getByCompany called', [
+            'company_id' => $company->id,
+            'branches_count' => $company->branches()->count()
+        ]);
+        
+        return response()->json(
+            $company->branches()
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray()
+        );
     }
 }

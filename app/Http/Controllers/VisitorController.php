@@ -129,13 +129,13 @@ class VisitorController extends Controller
     /* --------------------------- CRUD --------------------------- */
 
     public function index()
-{
-    $query = $this->companyScope(Visitor::with(['company', 'branch', 'department'])->latest());
-    // Show all statuses in company list so nothing is hidden from operators
-    // (Dashboard will still hide Pending/Rejected when auto-approve is on)
-    $visitors = $query->paginate(10);
-    return view('visitors.index', compact('visitors'));
-}
+    {
+        $query = $this->companyScope(Visitor::with(['company', 'branch', 'department'])->latest());
+        // Show all statuses in company list so nothing is hidden from operators
+        // (Dashboard will still hide Pending/Rejected when auto-approve is on)
+        $visitors = $query->paginate(10);
+        return view('visitors.index', compact('visitors'));
+    }
 
     public function create()
     {
@@ -145,289 +145,285 @@ class VisitorController extends Controller
 
         return view('visitors.create', compact('companies', 'departments', 'categories'));
     }
-
     
-public function store(Request $request)
-{
-    return DB::transaction(function () use ($request) {
-        // ---------------------------
-        // Validation rules
-        // ---------------------------
-        $messages = [
-            'name.regex'  => 'Name may only contain letters, spaces, apostrophes, periods, and hyphens.',
-            'phone.regex' => 'Phone must be digits only and can include an optional leading + (7-15 digits).',
-            'face_encoding.json' => 'Invalid face data format. Please try capturing your face again.',
-        ];
+    public function store(Request $request)
+    {
+        return DB::transaction(function () use ($request) {
+            // ---------------------------
+            // Validation rules
+            // ---------------------------
+            $messages = [
+                'name.regex'  => 'Name may only contain letters, spaces, apostrophes, periods, and hyphens.',
+                'phone.regex' => 'Phone must be digits only and can include an optional leading + (7-15 digits).',
+                'face_encoding.json' => 'Invalid face data format. Please try capturing your face again.',
+            ];
 
-        $validated = $request->validate([
-            'company_id'          => 'nullable|exists:companies,id',
-            'name'                => 'required|string|max:255|regex:' . self::NAME_REGEX,
-            'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-            'email'               => 'nullable|email:rfc,dns',
-            'phone'               => 'required|regex:' . self::PHONE_REGEX,
-            'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'face_image'          => 'nullable|string', // base64 webcam photo
-            'face_encoding'       => 'nullable|json',   // Face descriptor array
-            'department_id'       => 'nullable|exists:departments,id',
-            'purpose'             => 'nullable|string|max:255',
-            'person_to_visit'     => 'nullable|string|max:255',
-            'documents'           => 'nullable|array',
-            'documents.*'         => 'file|max:5120',
-            'visitor_company'     => 'nullable|string|max:255',
-            'visitor_website'     => 'nullable|string|max:255',
-            'vehicle_type'        => 'nullable|string|max:20',
-            'vehicle_number'      => 'nullable|string|max:50',
-            'goods_in_car'        => 'nullable|string|max:255',
-            'workman_policy'      => 'nullable|in:Yes,No',
-            'workman_policy_photo'=> 'nullable|image|max:2048',
-            'photo' => 'sometimes|image|mimes:jpeg,png,jpg|max:2048',
-            'document' => 'sometimes|file|mimes:pdf,doc,docx,jpeg,png|max:5120', // 5MB max
-        ], $messages);
+            $validated = $request->validate([
+                'company_id'          => 'nullable|exists:companies,id',
+                'name'                => 'required|string|max:255|regex:' . self::NAME_REGEX,
+                'visitor_category_id' => 'nullable|exists:visitor_categories,id',
+                'email'               => 'nullable|email:rfc,dns',
+                'phone'               => 'required|regex:' . self::PHONE_REGEX,
+                'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'face_image'          => 'nullable|string', // base64 webcam photo
+                'face_encoding'       => 'nullable|json',   // Face descriptor array
+                'department_id'       => 'nullable|exists:departments,id',
+                'purpose'             => 'nullable|string|max:255',
+                'person_to_visit'     => 'nullable|string|max:255',
+                'documents'           => 'nullable|array',
+                'documents.*'         => 'file|max:5120',
+                'visitor_company'     => 'nullable|string|max:255',
+                'visitor_website'     => 'nullable|string|max:255',
+                'vehicle_type'        => 'nullable|string|max:20',
+                'vehicle_number'      => 'nullable|string|max:50',
+                'goods_in_car'        => 'nullable|string|max:255',
+                'workman_policy'      => 'nullable|in:Yes,No',
+                'workman_policy_photo'=> 'nullable|image|max:2048',
+                'photo' => 'sometimes|image|mimes:jpeg,png,jpg|max:2048',
+                'document' => 'sometimes|file|mimes:pdf,doc,docx,jpeg,png|max:5120', // 5MB max
+            ], $messages);
 
-        $validated['name'] = Str::squish($validated['name']);
-        if (!empty($validated['email'])) {
-            $validated['email'] = strtolower($validated['email']);
-        }
-
-        // ---------------------------
-        // Force company for non-superadmin
-        // ---------------------------
-        if (!$this->isSuper()) {
-            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-            $validated['company_id'] = $u->company_id;
-            if (!empty($u->branch_id)) {
-                $validated['branch_id'] = $u->branch_id;
+            $validated['name'] = Str::squish($validated['name']);
+            if (!empty($validated['email'])) {
+                $validated['email'] = strtolower($validated['email']);
             }
-        }
 
-        // ---------------------------
-        // Handle photo / face image
-        // ---------------------------
-        $faceData = null;
-        
-        // Log all request data for debugging
-        \Log::info('Request data:', [
-            'all' => $request->all(),
-            'has_face_encoding' => $request->has('face_encoding'),
-            'has_face_image' => $request->has('face_image'),
-            'files' => $request->allFiles()
-        ]);
-
-        // Process face encoding if provided
-        $faceData = null;
-        if ($request->has('face_encoding') && !empty($request->face_encoding)) {
-            \Log::info('Raw face_encoding from request:', [
-                'face_encoding' => $request->face_encoding,
-                'type' => gettype($request->face_encoding),
-                'length' => is_string($request->face_encoding) ? strlen($request->face_encoding) : 'N/A'
-            ]);
-            
-            // Try to decode the JSON
-            $faceData = json_decode($request->face_encoding, true);
-            $jsonError = json_last_error();
-            
-            if ($jsonError !== JSON_ERROR_NONE) {
-                $errorMsg = 'JSON decode error: ' . json_last_error_msg() . ' (code: ' . $jsonError . ')';
-                \Log::error($errorMsg, [
-                    'input' => substr($request->face_encoding, 0, 100) . (strlen($request->face_encoding) > 100 ? '...' : '')
-                ]);
-                
-                throw ValidationException::withMessages([
-                    'face_encoding' => ['Invalid face data format. Please try capturing your face again.']
-                ]);
-            }
-            
-            \Log::info('Decoded face_encoding:', [
-                'is_array' => is_array($faceData),
-                'count' => is_array($faceData) ? count($faceData) : 'N/A',
-                'sample' => is_array($faceData) ? array_slice($faceData, 0, 5) : 'N/A'
-            ]);
-            
-            // Add to validated data to be saved - store as JSON string
-            $validated['face_encoding'] = json_encode($faceData);
-            \Log::info('Face encoding added to validated data', [
-                'first_5_values' => array_slice($faceData, 0, 5),
-                'validated_keys' => array_keys($validated),
-                'stored_value' => $validated['face_encoding']
-            ]);
-        } else {
-            \Log::warning('No face_encoding found in request', [
-                'request_keys' => array_keys($request->all()),
-                'request_has_face_encoding' => $request->has('face_encoding'),
-                'face_encoding_empty' => $request->has('face_encoding') ? 'empty' : 'not present'
-            ]);
-        }
-
-
-        if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('visitor_photos', 'public');
-            $visitor->photo_path = $path;
-        }
-
-        if ($request->hasFile('document')) {
-            $documentPath = $request->file('document')->store('visitor_documents', 'public');
-            $visitor->document_path = $documentPath;
-        }
-
-
-        // Handle document upload
-        if ($request->hasFile('document')) {
-            $document = $request->file('document');
-            $documentPath = $document->store('documents', 'public');
-            $validated['document_path'] = $documentPath;
-        }
-        // Handle face image (base64)
-        if ($request->filled('face_image')) {
-            $dataUrl = $request->input('face_image');
-            if (preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $dataUrl, $m)) {
-                $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
-                $data = substr($dataUrl, strpos($dataUrl, ',') + 1);
-                $imageData = base64_decode($data);
-                
-                if ($imageData === false) {
-                    throw new \Exception('Invalid base64 image data');
-                }
-                
-                // Generate a unique filename with timestamp
-                $filename = 'visitor_faces/visitor_face_' . time() . '_' . uniqid() . '.' . $ext;
-                
-                // Ensure the directory exists
-                Storage::disk('public')->makeDirectory('visitor_faces');
-                
-                // Save the file to storage
-                Storage::disk('public')->put($filename, $imageData);
-                
-                // Store the path in the database (not the base64 data)
-                $validated['face_image'] = $filename;  // Store the path, not the base64 data
-                
-                // Also set as the main photo if no other photo was uploaded
-                if (empty($validated['photo'])) {
-                    $validated['photo'] = $filename;
-                }
-                
-                // If we have face encoding, it's already JSON encoded and added to $validated
-                // No need to set it again as it would overwrite the JSON with an array
-                
-                \Log::info('Face image saved successfully', [
-                    'filename' => $filename,
-                    'path' => $filename,
-                    'size' => strlen($imageData) . ' bytes'
-                ]);
-            }
-        }
-        // Handle regular photo upload
-        elseif ($request->hasFile('photo')) {
-            $validated['photo'] = $request->file('photo')->store('photos', 'public');
-        }
-
-        // Handle documents upload
-        if ($request->hasFile('documents')) {
-            $paths = [];
-            foreach ($request->file('documents') as $doc) {
-                $paths[] = $doc->store('documents', 'public');
-            }
-            $validated['documents'] = $paths;
-        }
-
-        // Workman policy photo
-        if ($request->hasFile('workman_policy_photo')) {
-            $validated['workman_policy_photo'] = $request->file('workman_policy_photo')
-                ->store('wpc_photos', 'public');
-        }
-
-        // Auto-approval logic
-        $status = 'Pending';
-        $approvedAt = null;
-
-        if (!empty($validated['company_id'])) {
-            $company = Company::find($validated['company_id']);
-            if ($company && (int) $company->auto_approve_visitors === 1) {
-                $status = 'Approved';
-                $approvedAt = now();
-            }
-        }
-
-        $validated['status'] = $status;
-        if (\Schema::hasColumn('visitors', 'approved_at')) {
-            $validated['approved_at'] = $approvedAt;
-        }
-
-        // Create visitor
-        $visitor = Visitor::create($validated);
-
-        // Attach documents if any
-        if (isset($validated['documents'])) {
-            foreach ($validated['documents'] as $documentPath) {
-                $visitor->documents()->create([
-                    'file_path' => $documentPath,
-                    'file_name' => basename($documentPath)
-                ]);
-            }
-        }
-
-        // Email notifications
-        try {
-            if (!empty($visitor->email)) {
-                \Mail::to($visitor->email)->send(new \App\Mail\VisitorCreatedMail($visitor));
-                if ($visitor->status === 'Approved') {
-                    \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
+            // ---------------------------
+            // Force company for non-superadmin
+            // ---------------------------
+            if (!$this->isSuper()) {
+                $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+                $validated['company_id'] = $u->company_id;
+                if (!empty($u->branch_id)) {
+                    $validated['branch_id'] = $u->branch_id;
                 }
             }
-        } catch (\Throwable $e) {
-            \Log::warning('VisitorCreated mail failed: '.$e->getMessage());
-        }
 
-        // Notify company users
-        try {
-            if (!empty($visitor->company_id)) {
-                $recipients = User::query()
-                    ->where('company_id', $visitor->company_id)
-                    ->when(!empty($visitor->branch_id), function ($q) use ($visitor) {
-                        $q->where(function ($qq) use ($visitor) {
-                            $qq->whereNull('branch_id')->orWhere('branch_id', $visitor->branch_id);
-                        });
-                    })
-                    ->get();
-                foreach ($recipients as $user) {
-                    $user->notify(new VisitorCreated($visitor));
+            // ---------------------------
+            // Handle photo / face image
+            // ---------------------------
+            $faceData = null;
+            
+            // Log all request data for debugging
+            \Log::info('Request data:', [
+                'all' => $request->all(),
+                'has_face_encoding' => $request->has('face_encoding'),
+                'has_face_image' => $request->has('face_image'),
+                'files' => $request->allFiles()
+            ]);
+
+            // Process face encoding if provided
+            $faceData = null;
+            if ($request->has('face_encoding') && !empty($request->face_encoding)) {
+                \Log::info('Raw face_encoding from request:', [
+                    'face_encoding' => $request->face_encoding,
+                    'type' => gettype($request->face_encoding),
+                    'length' => is_string($request->face_encoding) ? strlen($request->face_encoding) : 'N/A'
+                ]);
+                
+                // Try to decode the JSON
+                $faceData = json_decode($request->face_encoding, true);
+                $jsonError = json_last_error();
+                
+                if ($jsonError !== JSON_ERROR_NONE) {
+                    $errorMsg = 'JSON decode error: ' . json_last_error_msg() . ' (code: ' . $jsonError . ')';
+                    \Log::error($errorMsg, [
+                        'input' => substr($request->face_encoding, 0, 100) . (strlen($request->face_encoding) > 100 ? '...' : '')
+                    ]);
+                    
+                    throw ValidationException::withMessages([
+                        'face_encoding' => ['Invalid face data format. Please try capturing your face again.']
+                    ]);
+                }
+                
+                \Log::info('Decoded face_encoding:', [
+                    'is_array' => is_array($faceData),
+                    'count' => is_array($faceData) ? count($faceData) : 'N/A',
+                    'sample' => is_array($faceData) ? array_slice($faceData, 0, 5) : 'N/A'
+                ]);
+                
+                // Add to validated data to be saved - store as JSON string
+                $validated['face_encoding'] = json_encode($faceData);
+                \Log::info('Face encoding added to validated data', [
+                    'first_5_values' => array_slice($faceData, 0, 5),
+                    'validated_keys' => array_keys($validated),
+                    'stored_value' => $validated['face_encoding']
+                ]);
+            } else {
+                \Log::warning('No face_encoding found in request', [
+                    'request_keys' => array_keys($request->all()),
+                    'request_has_face_encoding' => $request->has('face_encoding'),
+                    'face_encoding_empty' => $request->has('face_encoding') ? 'empty' : 'not present'
+                ]);
+            }
+
+
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('visitor_photos', 'public');
+                $visitor->photo_path = $path;
+            }
+
+            if ($request->hasFile('document')) {
+                $documentPath = $request->file('document')->store('visitor_documents', 'public');
+                $visitor->document_path = $documentPath;
+            }
+
+
+            // Handle document upload
+            if ($request->hasFile('document')) {
+                $document = $request->file('document');
+                $documentPath = $document->store('documents', 'public');
+                $validated['document_path'] = $documentPath;
+            }
+            // Handle face image (base64)
+            if ($request->filled('face_image')) {
+                $dataUrl = $request->input('face_image');
+                if (preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $dataUrl, $m)) {
+                    $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
+                    $data = substr($dataUrl, strpos($dataUrl, ',') + 1);
+                    $imageData = base64_decode($data);
+                    
+                    if ($imageData === false) {
+                        throw new \Exception('Invalid base64 image data');
+                    }
+                    
+                    // Generate a unique filename with timestamp
+                    $filename = 'visitor_faces/visitor_face_' . time() . '_' . uniqid() . '.' . $ext;
+                    
+                    // Ensure the directory exists
+                    Storage::disk('public')->makeDirectory('visitor_faces');
+                    
+                    // Save the file to storage
+                    Storage::disk('public')->put($filename, $imageData);
+                    
+                    // Store the path in the database (not the base64 data)
+                    $validated['face_image'] = $filename;  // Store the path, not the base64 data
+                    
+                    // Also set as the main photo if no other photo was uploaded
+                    if (empty($validated['photo'])) {
+                        $validated['photo'] = $filename;
+                    }
+                    
+                    // If we have face encoding, it's already JSON encoded and added to $validated
+                    // No need to set it again as it would overwrite the JSON with an array
+                    
+                    \Log::info('Face image saved successfully', [
+                        'filename' => $filename,
+                        'path' => $filename,
+                        'size' => strlen($imageData) . ' bytes'
+                    ]);
                 }
             }
-        } catch (\Throwable $e) {
-            \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
-        }
+            // Handle regular photo upload
+            elseif ($request->hasFile('photo')) {
+                $validated['photo'] = $request->file('photo')->store('photos', 'public');
+            }
 
-        // Redirect based on user type
-        $route = $this->isSuper() ? 'visitors.index' : 'company.visitors.index';
-        $message = $status === 'Approved' 
-            ? 'Visitor registered and auto-approved successfully.' 
-            : 'Visitor registered successfully. Pending approval.';
+            // Handle documents upload
+            if ($request->hasFile('documents')) {
+                $paths = [];
+                foreach ($request->file('documents') as $doc) {
+                    $paths[] = $doc->store('documents', 'public');
+                }
+                $validated['documents'] = $paths;
+            }
 
-        return redirect()->route($route)->with('success', $message);
-    });
-}
+            // Workman policy photo
+            if ($request->hasFile('workman_policy_photo')) {
+                $validated['workman_policy_photo'] = $request->file('workman_policy_photo')
+                    ->store('wpc_photos', 'public');
+            }
 
+            // Auto-approval logic
+            $status = 'Pending';
+            $approvedAt = null;
 
+            if (!empty($validated['company_id'])) {
+                $company = Company::find($validated['company_id']);
+                if ($company && (int) $company->auto_approve_visitors === 1) {
+                    $status = 'Approved';
+                    $approvedAt = now();
+                }
+            }
 
+            $validated['status'] = $status;
+            if (\Schema::hasColumn('visitors', 'approved_at')) {
+                $validated['approved_at'] = $approvedAt;
+            }
 
-/**
- * Tiny helper to avoid errors if your table doesn’t have approved_at.
- * You can place this at the bottom of the controller or a base controller.
- */
-// Inside the VisitorController
-// Inside the VisitorController
-private function schema_has_column(string $table, string $column): bool
-{
-    static $cache = [];
-    $key = $table.':'.$column;
-    if (!array_key_exists($key, $cache)) {
-        try {
-            $cache[$key] = \Schema::hasColumn($table, $column);  // Using the Schema facade
-        } catch (\Throwable $e) {
-            $cache[$key] = false;
-        }
+            // Create visitor
+            $visitor = Visitor::create($validated);
+
+            // Attach documents if any
+            if (isset($validated['documents'])) {
+                foreach ($validated['documents'] as $documentPath) {
+                    $visitor->documents()->create([
+                        'file_path' => $documentPath,
+                        'file_name' => basename($documentPath)
+                    ]);
+                }
+            }
+
+            // Email notifications
+            try {
+                if (!empty($visitor->email)) {
+                    \Mail::to($visitor->email)->send(new \App\Mail\VisitorCreatedMail($visitor));
+                    if ($visitor->status === 'Approved') {
+                        \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('VisitorCreated mail failed: '.$e->getMessage());
+            }
+
+            // Notify company users
+            try {
+                if (!empty($visitor->company_id)) {
+                    $recipients = User::query()
+                        ->where('company_id', $visitor->company_id)
+                        ->when(!empty($visitor->branch_id), function ($q) use ($visitor) {
+                            $q->where(function ($qq) use ($visitor) {
+                                $qq->whereNull('branch_id')->orWhere('branch_id', $visitor->branch_id);
+                            });
+                        })
+                        ->get();
+                    foreach ($recipients as $user) {
+                        $user->notify(new VisitorCreated($visitor));
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
+            }
+
+            // Redirect based on user type
+            $route = $this->isSuper() ? 'visitors.index' : 'company.visitors.index';
+            $message = $status === 'Approved' 
+                ? 'Visitor registered and auto-approved successfully.' 
+                : 'Visitor registered successfully. Pending approval.';
+
+            return redirect()->route($route)->with('success', $message);
+        });
     }
-    return $cache[$key];
-}
+
+    /**
+     * Tiny helper to avoid errors if your table doesn’t have approved_at.
+     * You can place this at the bottom of the controller or a base controller.
+     */
+    // Inside the VisitorController
+    // Inside the VisitorController
+    private function schema_has_column(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table.':'.$column;
+        if (!array_key_exists($key, $cache)) {
+            try {
+                $cache[$key] = \Schema::hasColumn($table, $column);  // Using the Schema facade
+            } catch (\Throwable $e) {
+                $cache[$key] = false;
+            }
+        }
+        return $cache[$key];
+    }
 
     public function edit(Visitor $visitor)
     {
@@ -484,7 +480,6 @@ private function schema_has_column(string $table, string $column): bool
                 ]);
             }
 
-
             if ($request->hasFile('photo')) {
                 $path = $request->file('photo')->store('visitor_photos', 'public');
                 $visitor->photo_path = $path;
@@ -497,8 +492,6 @@ private function schema_has_column(string $table, string $column): bool
 
             return redirect()->back()->with('success', $message);
         }
-
-        // If only status is being updated (Approve/Reject buttons)
         $nonBusiness = ['_token','_method'];
         $payloadCount = count($request->except($nonBusiness));
         $isAjax = $request->ajax() || $request->wantsJson();
@@ -508,17 +501,32 @@ private function schema_has_column(string $table, string $column): bool
             ]);
 
             $previousStatus = $visitor->status;
+            $newStatus = $request->input('status');
+            
+            // Update visitor status and track changes
             $visitor->last_status = $previousStatus;
             $visitor->status_changed_at = now();
-            $visitor->status = $request->input('status');
+            $visitor->status = $newStatus;
+            
+            // Set approved_by and approved_at when status changes to Approved
+            if ($newStatus === 'Approved') {
+                $visitor->approved_by = auth()->id();
+                $visitor->approved_at = now();
+            } 
+            // Clear approval data when status changes from Approved
+            elseif ($previousStatus === 'Approved') {
+                $visitor->approved_by = null;
+                $visitor->approved_at = null;
+            }
+            
             $visitor->save();
 
             // If transitioned to Approved, send mail to visitor
-            if ($previousStatus !== 'Approved' && $visitor->status === 'Approved' && !empty($visitor->email)) {
+            if ($previousStatus !== 'Approved' && $newStatus === 'Approved' && !empty($visitor->email)) {
                 try {
                     \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
                 } catch (\Throwable $e) {
-                    // swallow error
+                    \Log::error('Failed to send approval email: ' . $e->getMessage());
                 }
             }
 
@@ -604,18 +612,34 @@ private function schema_has_column(string $table, string $column): bool
         }
 
         $previousStatus = $visitor->status;
+        $isStatusChanging = array_key_exists('status', $validated) && $validated['status'] !== $previousStatus;
+        $isBeingApproved = $isStatusChanging && $validated['status'] === 'Approved';
+        
         $visitor->fill($validated);
-        if (array_key_exists('status', $validated) && $validated['status'] !== $previousStatus) {
+        
+        if ($isStatusChanging) {
             $visitor->last_status = $previousStatus;
             $visitor->status_changed_at = now();
+            
+            // Handle approval specific fields
+            if ($isBeingApproved) {
+                $visitor->approved_by = auth()->id();
+                $visitor->approved_at = now();
+            } elseif ($previousStatus === 'Approved') {
+                // If changing from Approved to another status, clear approval data
+                $visitor->approved_by = null;
+                $visitor->approved_at = null;
+            }
         }
+        
         $visitor->save();
 
-        if ($previousStatus !== 'Approved' && ($visitor->status === 'Approved') && !empty($visitor->email)) {
+        // Send approval email if status changed to Approved
+        if ($isBeingApproved && !empty($visitor->email)) {
             try {
                 \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
             } catch (\Throwable $e) {
-                // swallow error
+                \Log::error('Failed to send approval email: ' . $e->getMessage());
             }
         }
 
@@ -626,98 +650,110 @@ private function schema_has_column(string $table, string $column): bool
     /* --------------------------- Other flows --------------------------- */
 
     public function history(Request $request)
-{
-    // Get the base query
-    $query = $this->companyScope(Visitor::query())
-        ->with(['company', 'branch', 'department'])
-        ->when($request->filled('status'), function($q) use ($request) {
-            $q->where('status', $request->status);
-        })
-        ->when($request->filled('company_id'), function($q) use ($request) {
-            $q->where('company_id', $request->company_id);
-        })
-        ->when($request->filled('branch_id'), function($q) use ($request) {
-            $q->where('branch_id', $request->branch_id);
-        })
-        ->when($request->filled('department_id'), function($q) use ($request) {
-            $q->where('department_id', $request->department_id);
-        });
+    {
+        // Get the base query
+        $query = $this->companyScope(Visitor::query())
+            ->with(['company', 'branch', 'department'])
+            ->when($request->filled('status'), function($q) use ($request) {
+                $q->where('status', $request->status);
+            })
+            ->when($request->filled('company_id'), function($q) use ($request) {
+                $q->where('company_id', $request->company_id);
+            })
+            ->when($request->filled('branch_id'), function($q) use ($request) {
+                $q->where('branch_id', $request->branch_id);
+            })
+            ->when($request->filled('department_id'), function($q) use ($request) {
+                $q->where('department_id', $request->department_id);
+            });
 
-    // Apply date range filter
-    $from = $request->input('from', now()->subDays(30)->format('Y-m-d'));
-    $to = $request->input('to', now()->format('Y-m-d'));
-    
-    $query->whereBetween('in_time', [
-        Carbon::parse($from)->startOfDay(),
-        Carbon::parse($to)->endOfDay()
-    ]);
+        // Apply date range filter
+        $from = $request->input('from', now()->subDays(30)->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        
+        $query->whereBetween('in_time', [
+            Carbon::parse($from)->startOfDay(),
+            Carbon::parse($to)->endOfDay()
+        ]);
 
-    // Get the data
-    $visitors = $query->latest()->paginate(20);
+        // Get the data
+        $visitors = $query->latest()->paginate(20);
 
-    // Get filter data
-    $companies = $this->isSuper() 
-        ? Company::orderBy('name')->get()
-        : Company::where('id', auth()->user()->company_id)->get();
+        // Get filter data
+        $companies = $this->isSuper() 
+            ? Company::orderBy('name')->get()
+            : Company::where('id', auth()->user()->company_id)->get();
 
-    $branches = collect();
-    $departments = collect();
+        $branches = collect();
+        $departments = collect();
 
-    if ($request->filled('company_id')) {
-        $branches = Branch::where('company_id', $request->company_id)
-            ->orderBy('name')
-            ->get();
+        if ($request->filled('company_id')) {
+            $branches = Branch::where('company_id', $request->company_id)
+                ->orderBy('name')
+                ->get();
 
-        $departments = Department::where('company_id', $request->company_id)
-            ->orderBy('name')
-            ->get();
+            $departments = Department::where('company_id', $request->company_id)
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('visitors.history', compact(
+            'visitors',
+            'companies',
+            'branches',
+            'departments'
+        ));
     }
 
-    return view('visitors.history', compact(
-        'visitors',
-        'companies',
-        'branches',
-        'departments'
-    ));
-}
+    public function visitForm($id)
+    {
+        $visitor = Visitor::findOrFail($id);
+        $this->authorizeVisitor($visitor);
 
- public function visitForm($id)
-{
-    $visitor = Visitor::findOrFail($id);
-    $this->authorizeVisitor($visitor);
+        $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $isSuper = $this->isSuper();
+        
+        // Get companies - all for super admin, only user's company for others
+        $companies = $isSuper ? $this->getCompanies() : collect([$user->company]);
+        
+        // Get departments for the visitor's company or the first company if not set
+        $companyId = $visitor->company_id ?? ($companies->first()->id ?? null);
+        $departments = $companyId ? $this->getDepartments($companyId) : collect();
+        
+        // In VisitorController.php, update the branches query and add visitor categories
+$branches = \App\Models\Branch::when($companyId, function($query) use ($companyId) {
+    return $query->where('company_id', $companyId);
+})
+->orderBy('name')
+->pluck('name', 'id');  // Keep as Collection
 
-    $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-    $isSuper = $this->isSuper();
-    
-    // Get companies - all for super admin, only user's company for others
-    $companies = $isSuper ? $this->getCompanies() : collect([$user->company]);
-    
-    // Get departments for the visitor's company or the first company if not set
-    $companyId = $visitor->company_id ?? ($companies->first()->id ?? null);
-    $departments = $companyId ? $this->getDepartments($companyId) : collect();
-    
-    // Get branches for the company
-    $branchesQuery = Branch::query();
-    if ($companyId) {
-        $branchesQuery->where('company_id', $companyId);
+// Get visitor categories for the company
+$visitorCategories = \App\Models\VisitorCategory::when($companyId, function($query) use ($companyId) {
+    return $query->where('company_id', $companyId);
+})
+->orderBy('name')
+->pluck('name', 'id');
+
+// Debug logging
+\Log::info('Branches being passed to visit form:', [
+    'company_id' => $companyId,
+    'branches_count' => $branches->count(),
+    'branches' => $branches->toArray(),
+    'visitor_categories_count' => $visitorCategories->count(),
+    'is_super' => $isSuper,
+    'user_company_id' => $user->company_id ?? null
+]);
+
+return view('visitors.visit', [
+    'visitor' => $visitor,
+    'departments' => $departments,
+    'companies' => $companies,
+    'branches' => $branches,
+    'visitorCategories' => $visitorCategories,
+    'isSuper' => $isSuper,
+    'user' => $user
+]);
     }
-    $branches = $branchesQuery->orderBy('name')->get();
-    
-    // Get visitor categories for the company
-    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $companyId)
-        ->orderBy('name')
-        ->get();
-    
-    return view('visitors.visit', [
-        'visitor' => $visitor,
-        'departments' => $departments,
-        'companies' => $companies,
-        'branches' => $branches,
-        'visitorCategories' => $visitorCategories,
-        'isSuper' => $isSuper,
-        'user' => $user
-    ]);
-}
 
 /**
  * Submit visitor visit details
@@ -726,119 +762,140 @@ private function schema_has_column(string $table, string $column): bool
  * @param  int  $id
  * @return \Illuminate\Http\Response
  */
-public function submitVisit(Request $request, $id)
-{
-    try {
-        // Log the incoming request data
-        \Log::info('Submit Visit Request Data:', $request->all());
-        
-        $visitor = Visitor::findOrFail($id);
-        $this->authorizeVisitor($visitor);
-
-        if (!$this->isSuper()) {
-            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-            $request->merge(['company_id' => $u->company_id]);
-        }
-
-        // Log before validation
-        \Log::info('Before validation:', [
-            'company_id' => $request->company_id,
-            'department_id' => $request->department_id,
-            'person_to_visit' => $request->person_to_visit
-        ]);
-
-        $validated = $request->validate([
-            'company_id'          => 'required|exists:companies,id',
-            'department_id'       => 'required|exists:departments,id',
-            'branch_id'          => 'nullable|exists:branches,id',
-            'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-            'person_to_visit'     => 'required|string',
-            'purpose'             => 'nullable|string',
-            'visitor_company'     => 'nullable|string',
-            'visitor_website'     => 'nullable|url',
-            'vehicle_type'        => 'nullable|string',
-            'vehicle_number'      => 'nullable|string',
-            'goods_in_car'        => 'nullable|string',
-            'workman_policy'      => 'nullable|in:Yes,No',
-            'workman_policy_photo'=> 'nullable|image|max:2048',
-            'status'              => 'sometimes|in:Pending,Approved,Rejected',
-        ]);
-
-        // Start a database transaction
-        \DB::beginTransaction();
-
+    public function submitVisit(Request $request, $id)
+    {
         try {
-            // Handle file upload if present
-            if ($request->hasFile('workman_policy_photo')) {
-                $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-                $visitor->workman_policy_photo = $path;
+            // Log the incoming request data
+            \Log::info('Submit Visit Request Data:', $request->all());
+            
+            $visitor = Visitor::findOrFail($id);
+            $this->authorizeVisitor($visitor);
+
+            if (!$this->isSuper()) {
+                $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+                $request->merge(['company_id' => $u->company_id]);
             }
 
-            // Get all input except the ones we don't want to update
-            $updateData = $request->except(['workman_policy_photo', '_token', '_method']);
-            
-            // Set default status if not provided
-            if (!isset($updateData['status'])) {
-                $updateData['status'] = 'Pending';
-            }
-            
-            // Log data before update
-            \Log::info('Updating visitor with data:', [
-                'visitor_id' => $visitor->id,
-                'data' => $updateData
+            // Log before validation
+            \Log::info('Before validation:', [
+                'company_id' => $request->company_id,
+                'department_id' => $request->department_id,
+                'person_to_visit' => $request->person_to_visit,
+                'current_status' => $visitor->status
             ]);
 
-            // Update the visitor
-            $visitor->update($updateData);
+            $validated = $request->validate([
+                'company_id'          => 'required|exists:companies,id',
+                'department_id'       => 'required|exists:departments,id',
+                'branch_id'           => 'nullable|exists:branches,id',
+                'visitor_category_id' => 'nullable|exists:visitor_categories,id',
+                'person_to_visit'     => 'required|string',
+                'purpose'             => 'nullable|string',
+                'visitor_company'     => 'nullable|string',
+                'visitor_website'     => 'nullable|url',
+                'vehicle_type'        => 'nullable|string',
+                'vehicle_number'      => 'nullable|string',
+                'goods_in_car'        => 'nullable|string',
+                'workman_policy'      => 'nullable|in:Yes,No',
+                'workman_policy_photo'=> 'nullable|image|max:2048',
+                'status'              => 'sometimes|in:Pending,Approved,Rejected',
+            ]);
 
-            // Commit the transaction
-            \DB::commit();
+            // Start a database transaction
+            \DB::beginTransaction();
 
-            // Log successful update
-            \Log::info('Visitor updated successfully', ['visitor_id' => $visitor->id]);
+            try {
+                // Handle file upload if present
+                if ($request->hasFile('workman_policy_photo')) {
+                    // Delete old photo if exists
+                    if ($visitor->workman_policy_photo) {
+                        \Storage::disk('public')->delete($visitor->workman_policy_photo);
+                    }
+                    $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+                    $visitor->workman_policy_photo = $path;
+                }
 
-            // Determine the appropriate redirect route based on user type
-            if (auth()->guard('company')->check()) {
-                return redirect()->route('company.visitors.index')
-                    ->with('success', 'Visit submitted successfully.');
-            } else {
-                return redirect()->route('visitors.index')
-                    ->with('success', 'Visit submitted successfully.');
+                // Get all input except the ones we don't want to update
+                $updateData = $request->except(['workman_policy_photo', '_token', '_method', 'status']);
+                
+                // Only update status if it's explicitly provided in the request
+                if ($request->has('status')) {
+                    $updateData['status'] = $request->status;
+                    
+                    // Handle approval specific fields
+                    if ($request->status === 'Approved' && $visitor->status !== 'Approved') {
+                        $updateData['approved_by'] = auth()->id();
+                        $updateData['approved_at'] = now();
+                    } elseif ($visitor->status === 'Approved' && $request->status !== 'Approved') {
+                        // If changing from Approved to another status, clear approval data
+                        $updateData['approved_by'] = null;
+                        $updateData['approved_at'] = null;
+                    }
+                }
+                
+                // Log data before update
+                \Log::info('Updating visitor with data:', [
+                    'visitor_id' => $visitor->id,
+                    'current_status' => $visitor->status,
+                    'new_status' => $request->status ?? 'not_changed',
+                    'data' => $updateData
+                ]);
+
+                // Update the visitor
+                $visitor->update($updateData);
+
+                // Commit the transaction
+                \DB::commit();
+
+                // Log successful update
+                \Log::info('Visitor updated successfully', [
+                    'visitor_id' => $visitor->id,
+                    'new_status' => $visitor->fresh()->status
+                ]);
+
+                // Determine the appropriate redirect route based on user type
+                if (auth()->guard('company')->check()) {
+                    return redirect()->route('company.visitors.index')
+                        ->with('success', 'Visit submitted successfully.');
+                } else {
+                    return redirect()->route('visitors.index')
+                        ->with('success', 'Visit submitted successfully.');
+                }
+
+            } catch (\Exception $e) {
+                \DB::rollBack();
+                // Log the detailed error
+                \Log::error('Error updating visitor: ' . $e->getMessage(), [
+                    'visitor_id' => $visitor->id,
+                    'exception' => $e->getTraceAsString(),
+                    'input' => $request->except(['workman_policy_photo', '_token'])
+                ]);
+                
+                return back()->withInput()
+                    ->with('error', 'Failed to update visitor: ' . $e->getMessage());
             }
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Log validation errors
+            \Log::error('Validation error in submitVisit:', [
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
+            
+            return back()->withErrors($e->errors())->withInput();
+            
         } catch (\Exception $e) {
-            // Log the detailed error
-            \Log::error('Error updating visitor: ' . $e->getMessage(), [
-                'visitor_id' => $visitor->id,
+            // Log the error with more context
+            \Log::error('Unexpected error in submitVisit: ' . $e->getMessage(), [
+                'visitor_id' => $id,
                 'exception' => $e->getTraceAsString(),
-                'input' => $request->except(['workman_policy_photo', '_token'])
+                'request' => $request->all()
             ]);
             
             return back()->withInput()
-                ->with('error', 'Failed to update visitor: ' . $e->getMessage());
+                ->with('error', 'An error occurred while saving the visit: ' . $e->getMessage());
         }
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        // Log validation errors
-        \Log::error('Validation error in submitVisit:', [
-            'errors' => $e->errors(),
-            'input' => $request->all()
-        ]);
-        
-        return back()->withErrors($e->errors())->withInput();
-        
-    } catch (\Exception $e) {
-        // Log the error with more context
-        \Log::error('Unexpected error in submitVisit: ' . $e->getMessage(), [
-            'visitor_id' => $id,
-            'exception' => $e->getTraceAsString(),
-            'request' => $request->all()
-        ]);
-        
-        return back()->withInput()
-            ->with('error', 'An error occurred while saving the visit: ' . $e->getMessage());
     }
-}
 
     public function entryPage()
     {
@@ -899,14 +956,23 @@ public function submitVisit(Request $request, $id)
                         ->with('error', 'Visitor is already checked in.');
                 }
                 
+                // Check if visitor is approved or if auto-approval is enabled
                 $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
                 if (!$companyAuto && $visitor->status !== 'Approved') {
                     return redirect()->route('company.visitors.entry.page')
                         ->with('error', 'Visitor must be approved before checking in.');
                 }
                 
+                // Only update check-in time, don't modify the status
                 $visitor->in_time = now();
-                $visitor->status = $visitor->status === 'Pending' && $companyAuto ? 'Approved' : $visitor->status;
+                
+                // If auto-approval is enabled and status is Pending, update to Approved
+                if ($companyAuto && $visitor->status === 'Pending') {
+                    $visitor->status = 'Approved';
+                    $visitor->approved_by = auth()->id();
+                    $visitor->approved_at = now();
+                }
+                
                 $message = 'Visitor checked in successfully.';
             } else {
                 // Check if already checked out
@@ -916,7 +982,10 @@ public function submitVisit(Request $request, $id)
                 }
                 
                 $visitor->out_time = now();
-                $visitor->status = 'Completed';
+                // Only update status to Completed if it's currently Approved
+                if ($visitor->status === 'Approved') {
+                    $visitor->status = 'Completed';
+                }
                 $message = 'Visitor checked out successfully.';
             }
             
@@ -939,152 +1008,161 @@ public function submitVisit(Request $request, $id)
     }
 
     /**
- * Toggle visitor check-in/out status
- *
- * @param int $id Visitor ID
- * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
- */
-public function toggleEntry($id)
-{
-    // Log the request details for debugging
-    \Log::info('Toggle Entry Request:', [
-        'visitor_id' => $id,
-        'url' => request()->fullUrl(),
-        'method' => request()->method(),
-        'ajax' => request()->ajax(),
-        'input' => request()->all(),
-        'user' => auth()->user() ? auth()->user()->toArray() : null,
-        'company_user' => auth('company')->user() ? auth('company')->user()->toArray() : null,
-        'headers' => request()->header(),
-        'previous_url' => url()->previous(),
-        'current_url' => url()->current()
-    ]);
-
-    // If you later add guard role, leave this check; otherwise remove.
-    if ((auth()->user()->role ?? null) === 'guard') {
-        if (request()->ajax()) {
-            return response()->json(['error' => 'Unauthorized action.'], 403);
-        }
-        abort(403, 'Unauthorized action.');
-    }
-
-    $visitor = Visitor::findOrFail($id);
-    $this->authorizeVisitor($visitor);
-
-    // Check if this is a face verification request
-    $isFaceVerification = request()->has('face_verification') && request()->input('face_verification') === '1';
-    $skipFaceVerification = request()->has('skip_face_verification') && request()->input('skip_face_verification') === '1';
-    $faceVerified = request()->input('face_verified') === '1';
-
-    // Only require face verification if this is specifically a face verification request
-    if ($isFaceVerification && $visitor->face_encoding && !$faceVerified) {
-        if (request()->ajax()) {
-            return response()->json([
-                'error' => 'Face verification failed or was not completed',
-                'requires_face_verification' => true
-            ], 400);
-        }
-        return redirect()->route('visitors.entry.page')
-            ->with('error', 'Face verification is required when using face verification. Please try again or use the standard check-in.');
-    }
-
-    $originalStatus = $visitor->status;
-    $isCheckingIn = !$visitor->in_time;
-    
-    try {
-        DB::beginTransaction();
-
-        if ($isCheckingIn) {
-            // Only allow Check In if already Approved OR company has auto-approve enabled
-            $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
-            if (!$companyAuto && $visitor->status !== 'Approved') {
-                $message = 'Visitor must be approved before checking in.';
-                if (request()->ajax()) {
-                    return response()->json(['error' => $message], 400);
-                }
-                return back()->with('error', $message);
-            }
-            
-            $visitor->in_time = now();
-            $visitor->status = $visitor->status === 'Pending' && $companyAuto ? 'Approved' : $visitor->status;
-            $message = 'Visitor checked in successfully.';
-        } else {
-            // Check if already checked out
-            if ($visitor->out_time) {
-                $message = 'Visitor has already been checked out.';
-                if (request()->ajax()) {
-                    return response()->json(['error' => $message], 400);
-                }
-                return back()->with('error', $message);
-            }
-            
-            $visitor->out_time = now();
-            $visitor->status = 'Completed';
-            $message = 'Visitor checked out successfully.';
-        }
-
-        // Update status history if status changed
-        if ($visitor->isDirty('status')) {
-            $visitor->last_status = $originalStatus;
-            $visitor->status_changed_at = now();
-        }
-        
-        $visitor->save();
-        DB::commit();
-
-        if (request()->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'visitor' => [
-                    'id' => $visitor->id,
-                    'in_time' => $visitor->in_time,
-                    'out_time' => $visitor->out_time,
-                    'status' => $visitor->status
-                ]
-            ]);
-        }
-
-        return redirect()->route('visitors.entry.page')
-            ->with('success', $message);
-            
-    } catch (\Exception $e) {
-        DB::rollBack();
-        \Log::error('Toggle Entry Error: ' . $e->getMessage(), [
+     * Toggle visitor check-in/out status
+     *
+     * @param int $id Visitor ID
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function toggleEntry($id)
+    {
+        // Log the request details for debugging
+        \Log::info('Toggle Entry Request:', [
             'visitor_id' => $id,
-            'exception' => $e
+            'url' => request()->fullUrl(),
+            'method' => request()->method(),
+            'ajax' => request()->ajax(),
+            'input' => request()->all(),
+            'user' => auth()->user() ? auth()->user()->toArray() : null,
+            'company_user' => auth('company')->user() ? auth('company')->user()->toArray() : null,
+            'headers' => request()->header(),
+            'previous_url' => url()->previous(),
+            'current_url' => url()->current()
         ]);
-        
-        $errorMessage = 'An error occurred. Please try again.';
-        if (request()->ajax()) {
-            return response()->json(['error' => $errorMessage], 500);
+
+        // If you later add guard role, leave this check; otherwise remove.
+        if ((auth()->user()->role ?? null) === 'guard') {
+            if (request()->ajax()) {
+                return response()->json(['error' => 'Unauthorized action.'], 403);
+            }
+            abort(403, 'Unauthorized action.');
         }
-        return back()->with('error', $errorMessage);
+
+        $visitor = Visitor::findOrFail($id);
+        $this->authorizeVisitor($visitor);
+
+        // Check if this is a face verification request
+        $isFaceVerification = request()->has('face_verification') && request()->input('face_verification') === '1';
+        $skipFaceVerification = request()->has('skip_face_verification') && request()->input('skip_face_verification') === '1';
+        $faceVerified = request()->input('face_verified') === '1';
+
+        // Only require face verification if this is specifically a face verification request
+        if ($isFaceVerification && $visitor->face_encoding && !$faceVerified) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'error' => 'Face verification failed or was not completed',
+                    'requires_face_verification' => true
+                ], 400);
+            }
+            return redirect()->route('visitors.entry.page')
+                ->with('error', 'Face verification is required when using face verification. Please try again or use the standard check-in.');
+        }
+
+        $originalStatus = $visitor->status;
+        $isCheckingIn = !$visitor->in_time;
+        
+        try {
+            DB::beginTransaction();
+
+            if ($isCheckingIn) {
+                // Check if visitor is approved or if auto-approval is enabled
+                $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
+                if (!$companyAuto && $visitor->status !== 'Approved') {
+                    $message = 'Visitor must be approved before checking in.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                
+                // Only update check-in time, don't modify the status
+                $visitor->in_time = now();
+                
+                // If auto-approval is enabled and status is Pending, update to Approved
+                if ($companyAuto && $visitor->status === 'Pending') {
+                    $visitor->status = 'Approved';
+                    $visitor->approved_by = auth()->id();
+                    $visitor->approved_at = now();
+                }
+                
+                $message = 'Visitor checked in successfully.';
+            } else {
+                // Check if already checked out
+                if ($visitor->out_time) {
+                    $message = 'Visitor has already been checked out.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                
+                $visitor->out_time = now();
+                // Only update status to Completed if it's currently Approved
+                if ($visitor->status === 'Approved') {
+                    $visitor->status = 'Completed';
+                }
+                $message = 'Visitor checked out successfully.';
+            }
+
+            // Update status history if status changed
+            if ($visitor->isDirty('status')) {
+                $visitor->last_status = $originalStatus;
+                $visitor->status_changed_at = now();
+            }
+            
+            $visitor->save();
+            DB::commit();
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'visitor' => [
+                        'id' => $visitor->id,
+                        'in_time' => $visitor->in_time,
+                        'out_time' => $visitor->out_time,
+                        'status' => $visitor->status
+                    ]
+                ]);
+            }
+
+            return redirect()->route('visitors.entry.page')
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Toggle Entry Error: ' . $e->getMessage(), [
+                'visitor_id' => $id,
+                'exception' => $e
+            ]);
+            
+            $errorMessage = 'An error occurred. Please try again.';
+            if (request()->ajax()) {
+                return response()->json(['error' => $errorMessage], 500);
+            }
+            return back()->with('error', $errorMessage);
+        }
     }
-}
 
-public function printPass($id)
-{
-    $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
-    $this->authorizeVisitor($visitor);
+    public function printPass($id)
+    {
+        $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
+        $this->authorizeVisitor($visitor);
 
-    // Debugging company data before checking status
-    if (!$visitor->company) {
-        // Log if the company is missing or null
-        \Log::warning('Visitor does not have a company', ['visitor_id' => $visitor->id]);
+        // Debugging company data before checking status
+        if (!$visitor->company) {
+            // Log if the company is missing or null
+            \Log::warning('Visitor does not have a company', ['visitor_id' => $visitor->id]);
+        }
+
+        if ($visitor->status !== 'Approved') {
+            return redirect()->back()->with('error', 'Pass is available only after the visitor is approved.');
+        }
+
+        return view('visitors.pass', [
+            'visitor' => $visitor,
+            'company' => $visitor->company
+        ]);
     }
-
-    if ($visitor->status !== 'Approved') {
-        return redirect()->back()->with('error', 'Pass is available only after the visitor is approved.');
-    }
-
-    return view('visitors.pass', [
-        'visitor' => $visitor,
-        'company' => $visitor->company
-    ]);
-}
-
-
 
     // --------------------------- AJAX: Lookup by phone ---------------------------
     public function lookupByPhone(Request $request)
@@ -1206,112 +1284,112 @@ public function report(Request $request)
     ));
 }
     public function inOutReport(Request $request)
-{
-    $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch']);
+    {
+        $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch']);
 
-    if ($request->filled('from') || $request->filled('to')) {
-        $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
-        $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
+        if ($request->filled('from') || $request->filled('to')) {
+            $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
+            $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
 
-        $query->where(function ($q) use ($from, $to) {
-            $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
-              ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
-        })->orWhere(function ($q) use ($from, $to) {
-            $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
-              ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
-        });
+            $query->where(function ($q) use ($from, $to) {
+                $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
+                ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
+            })->orWhere(function ($q) use ($from, $to) {
+                $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
+                ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
+            });
+        }
+
+        // Apply company filter
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        // Apply department filter
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        // Apply branch filter
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        $visits = $query->latest('in_time')->paginate(20);
+        
+        // Get filter data
+        $companies = $this->getCompanies();
+        $departments = $request->filled('company_id') 
+            ? Department::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
+            : [];
+        $branches = $request->filled('company_id')
+            ? Branch::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
+            : [];
+
+        return view('visitors.visitor_inout', compact(
+            'visits', 
+            'companies', 
+            'departments', 
+            'branches'
+        ));
     }
-
-    // Apply company filter
-    if ($request->filled('company_id')) {
-        $query->where('company_id', $request->company_id);
-    }
-
-    // Apply department filter
-    if ($request->filled('department_id')) {
-        $query->where('department_id', $request->department_id);
-    }
-
-    // Apply branch filter
-    if ($request->filled('branch_id')) {
-        $query->where('branch_id', $request->branch_id);
-    }
-
-    $visits = $query->latest('in_time')->paginate(20);
-    
-    // Get filter data
-    $companies = $this->getCompanies();
-    $departments = $request->filled('company_id') 
-        ? Department::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
-        : [];
-    $branches = $request->filled('company_id')
-        ? Branch::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
-        : [];
-
-    return view('visitors.visitor_inout', compact(
-        'visits', 
-        'companies', 
-        'departments', 
-        'branches'
-    ));
-}
 
     /**
- * Approval Status Report (filter by company, department, branch + date range)
- */
-public function approvalReport(Request $request)
-{
-    $query = $this->companyScope(Visitor::query())
-        ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
-        ->whereIn('status', ['approved', 'rejected'])
-        ->latest('updated_at');
+    * Approval Status Report (filter by company, department, branch + date range)
+    */
+    public function approvalReport(Request $request)
+    {
+        $query = $this->companyScope(Visitor::query())
+            ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
+            ->whereIn('status', ['approved', 'rejected'])
+            ->latest('updated_at');
 
-    // Apply date range filter
-    $this->applyDateRange($query, 'updated_at', $request);
+        // Apply date range filter
+        $this->applyDateRange($query, 'updated_at', $request);
 
-    // Apply company filter if provided and user is superadmin
-    if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
-        $query->where('company_id', $request->company_id);
+        // Apply company filter if provided and user is superadmin
+        if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
+            $query->where('company_id', $request->company_id);
+        }
+
+        // Apply department filter if provided
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+        
+        // Apply branch filter if provided
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        // Get companies for filter dropdown
+        $companies = $this->getCompanies()->pluck('name', 'id');
+        
+        // Get departments based on selected company
+        $departmentsQuery = $this->getDepartments();
+        if ($request->filled('company_id')) {
+            $departmentsQuery->where('company_id', $request->company_id);
+        }
+        $departments = $departmentsQuery->pluck('name', 'id');
+        
+        // Get branches based on selected company
+        $branchesQuery = Branch::query();
+        if (auth()->user()->role !== 'superadmin') {
+            $branchesQuery->where('company_id', auth()->user()->company_id);
+        } elseif ($request->filled('company_id')) {
+            $branchesQuery->where('company_id', $request->company_id);
+        }
+        $branches = $branchesQuery->pluck('name', 'id');
+
+        $visitors = $query->paginate(10)->appends($request->query());
+
+        return view('visitors.approval_status', compact(
+            'visitors',
+            'companies',
+            'departments',
+            'branches'
+        ));
     }
-
-    // Apply department filter if provided
-    if ($request->filled('department_id')) {
-        $query->where('department_id', $request->department_id);
-    }
-    
-    // Apply branch filter if provided
-    if ($request->filled('branch_id')) {
-        $query->where('branch_id', $request->branch_id);
-    }
-
-    // Get companies for filter dropdown
-    $companies = $this->getCompanies()->pluck('name', 'id');
-    
-    // Get departments based on selected company
-    $departmentsQuery = $this->getDepartments();
-    if ($request->filled('company_id')) {
-        $departmentsQuery->where('company_id', $request->company_id);
-    }
-    $departments = $departmentsQuery->pluck('name', 'id');
-    
-    // Get branches based on selected company
-    $branchesQuery = Branch::query();
-    if (auth()->user()->role !== 'superadmin') {
-        $branchesQuery->where('company_id', auth()->user()->company_id);
-    } elseif ($request->filled('company_id')) {
-        $branchesQuery->where('company_id', $request->company_id);
-    }
-    $branches = $branchesQuery->pluck('name', 'id');
-
-    $visitors = $query->paginate(10)->appends($request->query());
-
-    return view('visitors.approval_status', compact(
-        'visitors',
-        'companies',
-        'departments',
-        'branches'
-    ));
-}
 
     // Security Checkpoints Report (filter by creation timestamp; acts as verification time)
     public function securityReport(Request $request)

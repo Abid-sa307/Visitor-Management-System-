@@ -15,22 +15,35 @@ class VisitorCategory extends Model
      *
      * @var string
      */
+    // app/Models/VisitorCategory.php
     protected $table = 'visitor_categories';
 
     protected $fillable = [
         'name',
-        'company_id'
+        'company_id',
+        'branch_id',
+        'description',
+        'is_active'
+    ];
+    
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
-    // Active scope returns all categories since we don't have an is_active column
-    public function scopeActive($query)
-    {
-        return $query;
-    }
+    protected $dates = [
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
 
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+    
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function visitors()

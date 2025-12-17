@@ -344,24 +344,50 @@ public function storeVisit(Request $request, Company $company, $branch = null)
             ]);
 
             try {
-                // Find the visitor
-                $visitor = \App\Models\Visitor::findOrFail($visitorId);
-                
-                // Handle file upload if present
-                if ($request->hasFile('workman_policy_photo')) {
-                    $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-                    $validated['workman_policy_photo'] = $path;
-                }
-                
-                // Update visitor details
-                $visitor->update($validated);
+                // Start a database transaction
+                return DB::transaction(function () use ($request, $company, $visitorId, $validated) {
+                    // Find the visitor with a lock to prevent race conditions
+                    $visitor = \App\Models\Visitor::findOrFail($visitorId);
+                    
+                    // Store the current status before updating
+                    $currentStatus = $visitor->status;
+                    
+                    // Handle file upload if present
+                    if ($request->hasFile('workman_policy_photo')) {
+                        // Delete old photo if exists
+                        if ($visitor->workman_policy_photo) {
+                            Storage::disk('public')->delete($visitor->workman_policy_photo);
+                        }
+                        $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+                        $validated['workman_policy_photo'] = $path;
+                    }
+                    
+                    // Update only the allowed fields
+                    $visitor->update([
+                        'department_id' => $validated['department_id'],
+                        'branch_id' => $validated['branch_id'] ?? null,
+                        'visitor_category_id' => $validated['visitor_category_id'],
+                        'person_to_visit' => $validated['person_to_visit'],
+                        'purpose' => $validated['purpose'],
+                        'visitor_company' => $validated['visitor_company'] ?? null,
+                        'visitor_website' => $validated['visitor_website'] ?? null,
+                        'vehicle_type' => $validated['vehicle_type'] ?? null,
+                        'vehicle_number' => $validated['vehicle_number'] ?? null,
+                        'goods_in_car' => $validated['goods_in_car'] ?? null,
+                        'workman_policy' => $validated['workman_policy'] ?? null,
+                        'workman_policy_photo' => $validated['workman_policy_photo'] ?? $visitor->workman_policy_photo,
+                        // Status is not included here to preserve the existing value
+                    ]);
 
-                // Redirect to the public visitor index page with success message
-                return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
-                    ->with('success', 'Visit details submitted successfully!');
+                    // Redirect to the public visitor index page with success message
+                    return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
+                        ->with('success', 'Visit details updated successfully!');
+                });
                     
             } catch (\Exception $e) {
                 \Log::error('Error in storePublicVisit: ' . $e->getMessage());
+                \Log::error($e->getTraceAsString());
+                
                 return redirect()->back()
                     ->withInput()
                     ->with('error', 'An error occurred while saving the visit details. Please try again.');
