@@ -26,9 +26,11 @@
 <form id="visitorForm" method="POST" action="{{ route('qr.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
     @csrf
     @method('POST')
-    <input type="hidden" name="status" value="{{ $visitor->status ?? 'Pending' }}">
-    <!-- Rest of your form fields -->
-
+    @if(isset($visitor) && $visitor->exists)
+        <input type="hidden" name="status" value="{{ $visitor->status ?? 'Pending' }}">
+    @else
+        <input type="hidden" name="status" value="Pending">
+    @endif
             {{-- Company & Department --}}
             <div class="row mb-3">
                 <div class="col">

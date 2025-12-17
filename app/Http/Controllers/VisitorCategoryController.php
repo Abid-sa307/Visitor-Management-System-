@@ -3,88 +3,144 @@
 namespace App\Http\Controllers;
 
 use App\Models\VisitorCategory;
-use App\Http\Requests\VisitorCategoryRequest;
 use App\Models\Company;
+use App\Models\Branch;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class VisitorCategoryController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $categories = VisitorCategory::query()
-            ->when($request->has('company_id'), function($query) use ($request) {
-                return $query->where('company_id', $request->company_id);
+        $categories = VisitorCategory::with('company')
+            ->when(!auth()->user()->hasRole('superadmin'), function($q) {
+                return $q->where('company_id', auth()->user()->company_id);
             })
-            ->with('company')
             ->latest()
             ->paginate(10);
 
-        $companies = auth()->user()->hasRole('superadmin') 
-            ? Company::orderBy('name')->pluck('name', 'id')
-            : collect();
-
-        return view('visitor-categories.index', compact('categories', 'companies'));
+        return view('visitor-categories.index', compact('categories'));
     }
 
     public function create()
-    {
-        $companies = collect();
-        
-        if (auth()->user()->hasRole('superadmin')) {
-            // Remove the active() scope to show all companies
-            $companies = Company::orderBy('name')->pluck('name', 'id');
-        }
-
-        return view('visitor-categories.create', compact('companies'));
+{
+    $user = auth()->user();
+    \Log::info('User roles:', ['roles' => $user->roles->pluck('name')]);
+    
+    $companies = Company::pluck('name', 'id');
+    $branches = [];
+    
+    if ($user->hasRole('superadmin')) {
+        \Log::info('Loading all companies and branches for superadmin');
+        $branches = Branch::pluck('name', 'id');
+    } else {
+        \Log::info('Loading company and branches for user', ['company_id' => $user->company_id]);
+        $companies = [$user->company_id => $user->company->name];
+        $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
     }
 
-    public function store(VisitorCategoryRequest $request)
+    \Log::info('Companies data:', ['companies' => $companies]);
+    \Log::info('Branches data:', ['branches' => $branches]);
+
+    return view('visitor-categories.create', [
+        'companies' => $companies,
+        'branches' => $branches,
+        'isSuperAdmin' => $user->hasRole('superadmin')
+    ]);
+}
+
+    public function store(Request $request)
     {
-        $data = $request->validated();
-        
-        // For company users, set their company_id
-        if (auth()->guard('company')->check()) {
-            $data['company_id'] = auth()->guard('company')->id();
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'company_id' => auth()->user()->hasRole('superadmin') ? 'required|exists:companies,id' : '',
+            'branch_id' => 'nullable|exists:branches,id',
+            'is_active' => 'boolean'
+        ]);
+
+        if (!auth()->user()->hasRole('superadmin')) {
+            $data['company_id'] = auth()->user()->company_id;
+            // Ensure the branch belongs to the user's company
+            if (isset($data['branch_id'])) {
+                $branch = Branch::where('id', $data['branch_id'])
+                    ->where('company_id', $data['company_id'])
+                    ->firstOrFail();
+            }
+        } else if (isset($data['branch_id'])) {
+            // For superadmin, ensure the branch belongs to the selected company
+            $branch = Branch::where('id', $data['branch_id'])
+                ->where('company_id', $data['company_id'])
+                ->firstOrFail();
         }
 
+        $data['is_active'] = $request->has('is_active');
+        
         VisitorCategory::create($data);
 
         return redirect()->route('visitor-categories.index')
             ->with('success', 'Visitor category created successfully.');
     }
 
-    public function show(VisitorCategory $visitorCategory)
-    {
-        $this->authorize('view', $visitorCategory);
-        return view('visitor-categories.show', compact('visitorCategory'));
-    }
-
     public function edit(VisitorCategory $visitorCategory)
     {
-        $this->authorize('update', $visitorCategory);
+        $companies = [];
+        $branches = [];
         
-        $companies = auth()->user()->hasRole('superadmin') 
-            ? Company::orderBy('name')->pluck('name', 'id')
-            : null;
+        if (auth()->user()->hasRole('superadmin')) {
+            $companies = Company::pluck('name', 'id');
+            $branches = Branch::where('company_id', $visitorCategory->company_id)->pluck('name', 'id');
+        } else {
+            // Non-superadmin can only edit their own company's categories
+            if ($visitorCategory->company_id !== auth()->user()->company_id) {
+                abort(403);
+            }
+            $companies = [$visitorCategory->company_id => $visitorCategory->company->name];
+            $branches = Branch::where('company_id', $visitorCategory->company_id)->pluck('name', 'id');
+        }
 
-        return view('visitor-categories.edit', compact('visitorCategory', 'companies'));
+        return view('visitor-categories.edit', compact('visitorCategory', 'companies', 'branches'));
     }
 
-    public function update(VisitorCategoryRequest $request, VisitorCategory $visitorCategory)
+    public function update(Request $request, VisitorCategory $visitorCategory)
     {
-        $this->authorize('update', $visitorCategory);
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'company_id' => auth()->user()->hasRole('superadmin') ? 'required|exists:companies,id' : '',
+            'branch_id' => 'nullable|exists:branches,id',
+            'is_active' => 'boolean'
+        ]);
+
+        if (!auth()->user()->hasRole('superadmin')) {
+            // Non-superadmin can only update their own company's categories
+            if ($visitorCategory->company_id !== auth()->user()->company_id) {
+                abort(403);
+            }
+            $data['company_id'] = auth()->user()->company_id;
+            
+            // Ensure the branch belongs to the user's company
+            if (isset($data['branch_id'])) {
+                $branch = Branch::where('id', $data['branch_id'])
+                    ->where('company_id', $data['company_id'])
+                    ->firstOrFail();
+            }
+        } else if (isset($data['branch_id'])) {
+            // For superadmin, ensure the branch belongs to the selected company
+            $branch = Branch::where('id', $data['branch_id'])
+                ->where('company_id', $data['company_id'])
+                ->firstOrFail();
+        }
+
+        $data['is_active'] = $request->has('is_active');
         
-        $visitorCategory->update($request->validated());
+        $visitorCategory->update($data);
 
         return redirect()->route('visitor-categories.index')
-            ->with('success', 'Visitor category updated successfully');
+            ->with('success', 'Visitor category updated successfully.');
     }
 
     public function destroy(VisitorCategory $visitorCategory)
     {
-        $this->authorize('delete', $visitorCategory);
-        
         if ($visitorCategory->visitors()->exists()) {
             return back()->with('error', 'Cannot delete category with associated visitors.');
         }
@@ -92,6 +148,6 @@ class VisitorCategoryController extends Controller
         $visitorCategory->delete();
 
         return redirect()->route('visitor-categories.index')
-            ->with('success', 'Visitor category deleted successfully');
+            ->with('success', 'Visitor category deleted successfully.');
     }
 }

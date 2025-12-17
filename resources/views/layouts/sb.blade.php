@@ -37,7 +37,11 @@
     </script>
 
     <style>
-    /* Make sidebar sticky and scrollable */
+    body {
+        overflow-x: hidden;
+    }
+    
+    /* Desktop sidebar */
     .sidebar {
         position: fixed;
         top: 0;
@@ -45,32 +49,67 @@
         bottom: 0;
         height: 100vh;
         overflow-y: auto;
-        z-index: 1030;
-        width: 250px; /* keep in sync with content margin-left */
+        z-index: 1050;
+        width: 250px;
+        transition: transform 0.3s ease;
     }
 
-    /* Shift content wrapper to the right */
+    /* Content wrapper */
     #content-wrapper {
-        margin-left: 250px; /* width of the sidebar */
+        margin-left: 250px;
         min-height: 100vh;
+        transition: margin-left 0.3s ease;
     }
 
-    /* Prevent content from overlapping under topbar */
     #content {
         padding-top: 1rem;
     }
 
-    @media (max-width: 768px) {
-        .sidebar {
-            position: relative;
-            height: auto;
-            margin-bottom: 1rem;
-            width: 100%;
+    /* Mobile overlay - hidden by default */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+        transition: all 0.3s ease;
+    }
+
+    /* Desktop - overlay never shows */
+    @media (min-width: 992px) {
+        .sidebar-overlay {
+            display: none !important;
+        }
+    }
+
+    /* Mobile styles - Override SB Admin */
+    @media (max-width: 991.98px) {
+        #accordionSidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 250px !important;
+            height: 100vh !important;
+            z-index: 1050 !important;
+            transform: translateX(0) !important;
+        }
+
+        #accordionSidebar.mobile-hidden {
+            transform: translateX(-100%) !important;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
         }
 
         #content-wrapper {
             margin-left: 0;
         }
+
+        /* Allow normal scrolling */
     }
     </style>
 </head>
@@ -106,6 +145,9 @@
     // Tiny helper for sidebar/topbar/anywhere:
     $can = fn (string $key) => $isSuper || in_array($key, $masterPages, true);
 @endphp
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay"></div>
 
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -168,18 +210,59 @@
     <script src="{{ asset('sb-admin/js/sb-admin-2.min.js') }}"></script>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const invalidInputs = document.querySelectorAll('form .is-invalid');
-        if (invalidInputs.length > 0) {
-            const first = invalidInputs[0];
-            if (first.scrollIntoView) {
-                first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            const parent = first.closest('.form-group, .mb-3');
-            if (parent) {
-                parent.classList.add('was-validated');
+    document.addEventListener('DOMContentLoaded', function() {
+        let sidebarOpen = false;
+        
+        // Hide sidebar initially on mobile
+        if (window.innerWidth <= 991.98) {
+            const sidebar = document.querySelector('#accordionSidebar');
+            if (sidebar) {
+                sidebar.classList.add('mobile-hidden');
             }
         }
+        
+        // Mobile sidebar toggle
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#sidebarToggle')) {
+                e.preventDefault();
+                
+                if (window.innerWidth <= 991.98) {
+                    const sidebar = document.querySelector('#accordionSidebar');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    
+                    if (sidebarOpen) {
+                        // Hide sidebar
+                        sidebar.classList.add('mobile-hidden');
+                        overlay.classList.remove('show');
+                        sidebarOpen = false;
+                    } else {
+                        // Show sidebar
+                        sidebar.classList.remove('mobile-hidden');
+                        overlay.classList.add('show');
+                        sidebarOpen = true;
+                    }
+                }
+            }
+            
+            // Close on overlay click
+            if (e.target.classList.contains('sidebar-overlay')) {
+                const sidebar = document.querySelector('#accordionSidebar');
+                const overlay = document.querySelector('.sidebar-overlay');
+                sidebar.classList.add('mobile-hidden');
+                overlay.classList.remove('show');
+                sidebarOpen = false;
+            }
+            
+            // Close sidebar when clicking on sidebar links (but not Reports dropdown)
+            const sidebarLink = e.target.closest('#accordionSidebar a[href]');
+            if (sidebarLink && !sidebarLink.hasAttribute('data-bs-toggle')) {
+                const sidebar = document.querySelector('#accordionSidebar');
+                const overlay = document.querySelector('.sidebar-overlay');
+                sidebar.classList.add('mobile-hidden');
+                overlay.classList.remove('show');
+                sidebarOpen = false;
+            }
+        });
     });
     </script>
 

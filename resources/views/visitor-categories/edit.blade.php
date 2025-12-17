@@ -1,84 +1,123 @@
 @extends('layouts.sb')
 
-@section('title', 'Edit Visitor Category')
-
 @section('content')
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="mb-0">Edit Visitor Category</h4>
-                    </div>
+<div class="container">
+    <div class="card">
+        <div class="card-header">Edit Visitor Category</div>
 
-                    <div class="card-body">
-                        <form action="{{ route('visitor-categories.update', $category) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            
-                            <div class="mb-3">
-                                <label for="company_id" class="form-label">Company</label>
-                                @if(auth()->user()->hasRole('superadmin'))
-                                    <select name="company_id" id="company_id" class="form-select @error('company_id') is-invalid @enderror" required>
-                                        <option value="">Select Company</option>
-                                        @foreach($companies as $id => $name)
-                                            <option value="{{ $id }}" {{ old('company_id', $category->company_id) == $id ? 'selected' : '' }} {{ $category->visitors()->count() > 0 ? 'disabled' : '' }}>
-                                                {{ $name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @if($category->visitors()->count() > 0)
-                                        <input type="hidden" name="company_id" value="{{ $category->company_id }}">
-                                        <small class="text-muted">Note: Company cannot be changed as there are visitors associated with this category.</small>
-                                    @endif
-                                    @error('company_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                @else
-                                    <input type="text" class="form-control" value="{{ $category->company->name }}" readonly>
-                                    <input type="hidden" name="company_id" value="{{ $category->company_id }}">
-                                    <small class="text-muted">Your company is automatically assigned.</small>
-                                @endif
-                            </div>
+        <div class="card-body">
+            <form method="POST" action="{{ route('visitor-categories.update', $visitorCategory) }}">
+                @csrf
+                @method('PUT')
 
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" name="name" value="{{ old('name', $category->name) }}" required>
-                                @error('name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" 
-                                          id="description" name="description" rows="3">{{ old('description', $category->description) }}</textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" value="1" 
-                                       id="is_active" name="is_active" {{ old('is_active', $category->is_active) ? 'checked' : '' }}>
-                                <label class="form-check-label" for="is_active">
-                                    Active
-                                </label>
-                            </div>
-
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a href="{{ route('visitor-categories.index') }}" class="btn btn-secondary me-md-2">
-                                    <i class="fas fa-arrow-left"></i> Back to List
-                                </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Update Category
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                <div class="mb-3">
+                    <label for="company_id" class="form-label">Company <span class="text-danger">*</span></label>
+                    <select name="company_id" id="company_id" class="form-select @error('company_id') is-invalid @enderror" required>
+                        <option value="">Select Company</option>
+                        @foreach($companies as $id => $name)
+                            <option value="{{ $id }}" {{ $visitorCategory->company_id == $id ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('company_id')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
                 </div>
-            </div>
+
+                <div class="mb-3">
+                    <label for="branch_id" class="form-label">Branch</label>
+                    <select name="branch_id" id="branch_id" class="form-select">
+                        <option value="">Select Branch (Optional)</option>
+                        @foreach($branches as $id => $name)
+                            <option value="{{ $id }}" 
+                                {{ $visitorCategory->branch_id == $id ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="form-text text-muted">Leave blank if this category applies to all branches</small>
+                    @error('branch_id')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control @error('name') is-invalid @enderror" 
+                           id="name" name="name" value="{{ old('name', $visitorCategory->name) }}" required>
+                    @error('name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control @error('description') is-invalid @enderror" 
+                              id="description" name="description" rows="3">{{ old('description', $visitorCategory->description) }}</textarea>
+                    @error('description')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3 form-check form-switch">
+                    <input type="checkbox" class="form-check-input" id="is_active" 
+                           name="is_active" value="1" 
+                           {{ old('is_active', $visitorCategory->is_active) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="is_active">Active</label>
+                    @error('is_active')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Update
+                    </button>
+                    <a href="{{ route('visitor-categories.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
+</div>
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        @if(auth()->user()->hasRole('superadmin'))
+        // Load branches when company changes
+        $('#company_id').on('change', function() {
+            var companyId = $(this).val();
+            var selectedBranchId = '{{ $visitorCategory->branch_id }}';
+            
+            if (companyId) {
+                $.ajax({
+                    url: '{{ route("branches.by_company") }}',
+                    type: 'GET',
+                    data: { company_id: companyId },
+                    success: function(data) {
+                        var $branchSelect = $('#branch_id');
+                        $branchSelect.empty();
+                        $branchSelect.append('<option value="">Select Branch (Optional)</option>');
+                        
+                        $.each(data, function(key, value) {
+                            $branchSelect.append($('<option>', {
+                                value: key,
+                                text: value,
+                                selected: (key == selectedBranchId)
+                            }));
+                        });
+                    }
+                });
+            } else {
+                $('#branch_id').empty();
+                $('#branch_id').append('<option value="">Select Branch (Optional)</option>');
+            }
+        });
+        @endif
+    });
+</script>
+@endpush
 @endsection

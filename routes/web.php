@@ -581,6 +581,9 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::get('/companies/{company}/departments', [App\Http\Controllers\DepartmentController::class, 'getByCompany'])->name('departments.by_company');
     
     // Get branches for a company
+    Route::get('/companies/{company}/branches', [App\Http\Controllers\BranchController::class, 'getByCompany'])->name('branches.by_company');
+    
+    // Get branches for a company
     Route::get('/companies/{company}/branches', [App\Http\Controllers\CompanyController::class, 'getBranches'])
         ->name('branches.by_company')
         ->middleware('auth:web,company');

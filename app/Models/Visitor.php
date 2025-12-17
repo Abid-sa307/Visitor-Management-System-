@@ -44,9 +44,31 @@ class Visitor extends Model
         'last_status',
         'status_changed_at',
         'approved_by',
+        'approved_at',
         'rejected_by',
         'reject_reason'
     ];
+    
+    /**
+     * Scope a query to only include approved visitors.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'Approved');
+    }
+    
+    /**
+     * Check if the visitor is approved.
+     *
+     * @return bool
+     */
+    public function isApproved()
+    {
+        return $this->status === 'Approved';
+    }
 
     /**
      * The attributes that should be cast.
@@ -58,7 +80,23 @@ class Visitor extends Model
         'in_time' => 'datetime',
         'out_time' => 'datetime',
         'status_changed_at' => 'datetime',
+        'approved_at' => 'datetime',
         'face_encoding' => 'array',
+    ];
+    
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
+    protected $dates = [
+        'in_time',
+        'out_time',
+        'status_changed_at',
+        'approved_at',
+        'created_at',
+        'updated_at',
+        'deleted_at'
     ];
 
     /**

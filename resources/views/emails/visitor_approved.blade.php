@@ -93,47 +93,8 @@
 
                 <div class="divider"></div>
 
-                <!-- N&T Software Signature -->
-                <div style="margin-top: 24px;">
-                    <div style="display: flex; align-items: center; margin-bottom: 16px;">
-                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #1e40af, #1e3a8a); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 12px;">NT</div>
-                        <div>
-                            <div style="font-weight: 600; color: #111827;">N & T Software Pvt. Ltd.</div>
-                            <div style="font-size: 12px; color: #4b5563;">We Build Digital Products For Next-Gen Businesses</div>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
-                        <div>
-                            <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                <div class="icon-box" style="background-color: #dbeafe; color: #1e40af;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                                </div>
-                                <span style="font-size: 13px;">+91 84870 80659</span>
-                            </div>
-                            <div style="display: flex; align-items: center;">
-                                <div class="icon-box" style="background-color: #fef2f2; color: #dc2626;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                </div>
-                                <span style="font-size: 13px;">visitormanagmentsystemsoftware@gmail.com</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                <div class="icon-box" style="background-color: #eef2ff; color: #4338ca;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><line x1="2.1" y1="12" x2="21.9" y2="12"></line></svg>
-                                </div>
-                                <span style="font-size: 13px;">www.nntsoftware.com</span>
-                            </div>
-                            <div style="display: flex; align-items: center;">
-                                <div class="icon-box" style="background-color: #f3f4f6; color: #4b5563;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                </div>
-                                <span style="font-size: 13px;">3rd Floor, Diamond Complex, Chhapi</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Email Signature -->
+                <x-email-signature />
             </div>
 
             <!-- Email Footer -->

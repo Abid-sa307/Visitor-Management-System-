@@ -53,34 +53,46 @@
             
 
             {{-- Branch Selection --}}
-            @if($branches->isNotEmpty())
             <div class="row mb-3">
                 <div class="col">
                     <label class="form-label fw-semibold">Branch</label>
                     @if($isSuper)
-                        <select name="branch_id" id="branchSelect" class="form-select">
+                        <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
                             <option value="">-- Select Branch --</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" 
-                                    {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
-                                    {{ $branch->name }}
+                            @foreach($branches as $id => $name)
+                                <option value="{{ $id }}" 
+                                    {{ old('branch_id', $visitor->branch_id ?? '') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
                                 </option>
                             @endforeach
                         </select>
+                        @error('branch_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     @else
                         @if($branches->count() === 1)
-                            <input type="hidden" name="branch_id" value="{{ $branches[0]->id }}">
-                            <input type="text" class="form-control" value="{{ $branches[0]->name }}" readonly>
+                            <input type="hidden" name="branch_id" value="{{ $branches->keys()->first() }}">
+                            <input type="text" class="form-control" value="{{ $branches->first() }}" readonly>
                         @else
-                            <select name="branch_id" id="branchSelect" class="form-select" required>
+                           <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror" {{ empty($branches) ? 'disabled' : '' }}>
                                 <option value="">-- Select Branch --</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" 
-                                        {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->name }}
-                                    </option>
-                                @endforeach
+                                @if(!empty($branches))
+                                    @foreach($branches as $id => $name)
+                                        <option value="{{ $id }}" 
+                                            {{ old('branch_id', $visitor->branch_id ?? '') == $id ? 'selected' : '' }}>
+                                            {{ $name }}
+                                        </option>
+                                    @endforeach
+                                @endif
                             </select>
+                            @if(empty($branches))
+                                <div class="alert alert-warning mt-2">
+                                    No branches found for the selected company.
+                                </div>
+                            @endif
+                            @error('branch_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         @endif
                     @endif
                 </div>
@@ -109,7 +121,6 @@
                     @endif
                 </div>
             </div>
-            @endif
 
             {{-- Person to Visit --}}
             <div class="mb-3">
@@ -214,6 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Department filtering
     const companySelect = document.getElementById('companySelect');
     const departmentSelect = document.getElementById('departmentSelect');
+    const branchSelect = document.getElementById('branchSelect');
 
     function filterDepartments() {
         const selectedCompanyId = companySelect.value;
@@ -231,10 +243,80 @@ document.addEventListener('DOMContentLoaded', function () {
         if (departmentSelect.selectedOptions[0]?.hidden) {
             departmentSelect.value = "";
         }
+        
+        // Load branches for the selected company
+        loadBranches(selectedCompanyId);
     }
 
-    companySelect.addEventListener('change', filterDepartments);
-    filterDepartments(); // Run once on page load
+    // Function to load branches via AJAX
+    function loadBranches(companyId) {
+        if (!companyId) {
+            // Clear branches if no company selected
+            if (branchSelect) {
+                branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+            }
+            return;
+        }
+        
+        // Show loading state
+        if (branchSelect) {
+            const currentValue = branchSelect.value;
+            branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+            branchSelect.disabled = true;
+        }
+        
+        // Fetch branches for the selected company
+        fetch(`/api/companies/${companyId}/branches`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(branches => {
+                console.log('Branches API response:', branches);
+                
+                if (branchSelect) {
+                    // Clear existing options
+                    branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+                    branchSelect.disabled = false;
+                    
+                    if (Object.keys(branches).length > 0) {
+                        // Add new options
+                        for (const [id, name] of Object.entries(branches)) {
+                            const option = document.createElement('option');
+                            option.value = id;
+                            option.textContent = name;
+                            branchSelect.appendChild(option);
+                        }
+                        
+                        // If there's only one branch, select it
+                        if (Object.keys(branches).length === 1) {
+                            branchSelect.value = Object.keys(branches)[0];
+                        }
+                    } else {
+                        branchSelect.disabled = true;
+                        branchSelect.innerHTML = '<option value="">No branches available</option>';
+                    }
+                }
+            })
+        .catch(error => {
+            console.error('Error loading branches:', error);
+            if (branchSelect) {
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                branchSelect.disabled = false;
+            }
+        });
+            
+
+    // Add event listeners
+    if (companySelect) {
+        companySelect.addEventListener('change', filterDepartments);
+        // Trigger change event on page load if a company is already selected
+        if (companySelect.value) {
+            filterDepartments();
+        }
+    }
 });
 </script>
 @endpush
