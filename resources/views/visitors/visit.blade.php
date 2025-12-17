@@ -74,9 +74,9 @@
                             <input type="hidden" name="branch_id" value="{{ $branches->keys()->first() }}">
                             <input type="text" class="form-control" value="{{ $branches->first() }}" readonly>
                         @else
-                           <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror" {{ empty($branches) ? 'disabled' : '' }}>
+                           <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror" {{ $branches->isEmpty() ? 'disabled' : '' }}>
                                 <option value="">-- Select Branch --</option>
-                                @if(!empty($branches))
+                                @if($branches->isNotEmpty())
                                     @foreach($branches as $id => $name)
                                         <option value="{{ $id }}" 
                                             {{ old('branch_id', $visitor->branch_id ?? '') == $id ? 'selected' : '' }}>
@@ -85,9 +85,10 @@
                                     @endforeach
                                 @endif
                             </select>
-                            @if(empty($branches))
+                            @if($branches->isEmpty())
                                 <div class="alert alert-warning mt-2">
-                                    No branches found for the selected company.
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    No branches found for this company. Please contact your administrator to add branches.
                                 </div>
                             @endif
                             @error('branch_id')
@@ -250,64 +251,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to load branches via AJAX
     function loadBranches(companyId) {
-        if (!companyId) {
-            // Clear branches if no company selected
+        if (!companyId || !branchSelect) {
             if (branchSelect) {
                 branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
             }
             return;
         }
         
-        // Show loading state
-        if (branchSelect) {
-            const currentValue = branchSelect.value;
-            branchSelect.innerHTML = '<option value="">Loading branches...</option>';
-            branchSelect.disabled = true;
-        }
+        branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+        branchSelect.disabled = true;
         
-        // Fetch branches for the selected company
         fetch(`/api/companies/${companyId}/branches`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(branches => {
-                console.log('Branches API response:', branches);
+                branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+                branchSelect.disabled = false;
                 
-                if (branchSelect) {
-                    // Clear existing options
-                    branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-                    branchSelect.disabled = false;
-                    
-                    if (Object.keys(branches).length > 0) {
-                        // Add new options
-                        for (const [id, name] of Object.entries(branches)) {
-                            const option = document.createElement('option');
-                            option.value = id;
-                            option.textContent = name;
-                            branchSelect.appendChild(option);
-                        }
-                        
-                        // If there's only one branch, select it
-                        if (Object.keys(branches).length === 1) {
-                            branchSelect.value = Object.keys(branches)[0];
-                        }
-                    } else {
-                        branchSelect.disabled = true;
-                        branchSelect.innerHTML = '<option value="">No branches available</option>';
-                    }
+                for (const [id, name] of Object.entries(branches)) {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    branchSelect.appendChild(option);
                 }
             })
-        .catch(error => {
-            console.error('Error loading branches:', error);
-            if (branchSelect) {
+            .catch(error => {
                 branchSelect.innerHTML = '<option value="">Error loading branches</option>';
                 branchSelect.disabled = false;
-            }
-        });
-            
+            });
+    }
 
     // Add event listeners
     if (companySelect) {
@@ -315,6 +286,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Trigger change event on page load if a company is already selected
         if (companySelect.value) {
             filterDepartments();
+        }
+    } else {
+        // If no company select (non-super user), branches should already be loaded
+        console.log('No company select found - branches should be pre-loaded');
+        if (branchSelect) {
+            console.log('Branch select options count:', branchSelect.options.length);
         }
     }
 });

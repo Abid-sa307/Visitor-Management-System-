@@ -727,6 +727,43 @@ $branches = \App\Models\Branch::when($companyId, function($query) use ($companyI
 ->orderBy('name')
 ->pluck('name', 'id');  // Keep as Collection
 
+// Debug logging for branches
+\Log::info('Branches query result:', [
+    'company_id' => $companyId,
+    'branches_count' => $branches->count(),
+    'branches_data' => $branches->toArray(),
+    'is_empty' => $branches->isEmpty()
+]);
+
+// If no branches exist and we have a company, create a default branch
+if ($branches->isEmpty() && $companyId) {
+    try {
+        $company = \App\Models\Company::find($companyId);
+        if ($company) {
+            $defaultBranch = \App\Models\Branch::create([
+                'company_id' => $companyId,
+                'name' => 'Main Branch',
+                'address' => $company->address ?? '',
+                'phone' => $company->contact_number ?? '',
+                'email' => $company->email ?? ''
+            ]);
+            
+            // Reload branches
+            $branches = \App\Models\Branch::where('company_id', $companyId)
+                ->orderBy('name')
+                ->pluck('name', 'id');
+                
+            \Log::info('Created default branch for company', [
+                'company_id' => $companyId,
+                'branch_id' => $defaultBranch->id,
+                'branch_name' => $defaultBranch->name
+            ]);
+        }
+    } catch (\Exception $e) {
+        \Log::error('Failed to create default branch: ' . $e->getMessage());
+    }
+}
+
 // Get visitor categories for the company
 $visitorCategories = \App\Models\VisitorCategory::when($companyId, function($query) use ($companyId) {
     return $query->where('company_id', $companyId);

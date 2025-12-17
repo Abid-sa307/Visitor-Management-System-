@@ -222,48 +222,12 @@ class CompanyController extends Controller
  */
 public function getBranches(Company $company)
 {
-    try {
-        \Log::info('getBranches called for company ID: ' . $company->id);
-        
-        // Check if the authenticated user has access to this company's branches
-        $user = auth()->user();
-        $companyUser = auth('company')->user();
-        
-        \Log::info('Auth check - User ID: ' . ($user ? $user->id : 'null') . 
-                  ', Company User ID: ' . ($companyUser ? $companyUser->id : 'null') .
-                  ', Company ID: ' . $company->id);
-        
-        // If user is a company user, ensure they can only access their own company's branches
-        if ($companyUser && $companyUser->id != $company->id) {
-            \Log::warning('Unauthorized access: Company user ' . $companyUser->id . ' tried to access company ' . $company->id);
-            return response()->json(['error' => 'Unauthorized access to branches (company user)'], 403);
-        }
-        
-        // If user is a regular user (admin/superadmin), check their role
-        if ($user && !in_array($user->role, ['superadmin', 'admin']) && $user->company_id != $company->id) {
-            \Log::warning('Unauthorized access: User ' . $user->id . ' tried to access company ' . $company->id);
-            return response()->json(['error' => 'Unauthorized access to branches (regular user)'], 403);
-        }
+    $branches = $company->branches()
+        ->select('id', 'name')
+        ->orderBy('name')
+        ->pluck('name', 'id');
 
-        $branches = $company->branches()
-            ->select('id', 'name')
-            ->orderBy('name')
-            ->get();
-            
-        \Log::info('Found ' . $branches->count() . ' branches for company ' . $company->id);
-        
-        $mappedBranches = $branches->map(function($branch) {
-            return [
-                'id'   => $branch->id,
-                'name' => $branch->name,
-            ];
-        });
-
-        return response()->json($mappedBranches);
-    } catch (\Exception $e) {
-        \Log::error('Error fetching branches: ' . $e->getMessage());
-        return response()->json(['error' => 'Failed to load branches: ' . $e->getMessage()], 500);
-    }
+    return response()->json($branches);
 }
 
 

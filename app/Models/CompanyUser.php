@@ -67,4 +67,14 @@ class CompanyUser extends Authenticatable implements AuthenticatableUserContract
         
         return $role === 'company';
     }
+    
+    /**
+     * Check if the user is a super admin
+     *
+     * @return bool
+     */
+    public function isSuperAdmin()
+    {
+        return in_array($this->role, ['super_admin', 'superadmin']);
+    }
 }

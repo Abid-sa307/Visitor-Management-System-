@@ -83,7 +83,6 @@
                     @endif
                 </div>
                 <div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="selectAllBranches">Select All</button>
                     <button type="button" class="btn btn-sm btn-primary" id="applyBranches">Apply</button>
                 </div>
             </div>
@@ -145,7 +144,6 @@
                     @endif
                 </div>
                 <div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="selectAllDepartments">Select All</button>
                     <button type="button" class="btn btn-sm btn-primary" id="applyDepartments">Apply</button>
                 </div>
             </div>
@@ -179,22 +177,7 @@
     @error('department_ids') <div class="text-danger small">{{ $message }}</div> @enderror
 </div>
 
-{{-- ===================== PERMISSIONS ===================== --}}
-<div class="mb-4">
-    <h5 class="mb-3">Permissions</h5>
 
-    <div class="form-check form-switch mb-2">
-        <input class="form-check-input" type="checkbox" id="can_access_qr_code" name="can_access_qr_code" value="1"
-            {{ old('can_access_qr_code', $user->can_access_qr_code ?? false) ? 'checked' : '' }}>
-        <label class="form-check-label" for="can_access_qr_code">Can Access QR Code</label>
-    </div>
-
-    <div class="form-check form-switch mb-2">
-        <input class="form-check-input" type="checkbox" id="can_access_visitor_category" name="can_access_visitor_category" value="1"
-            {{ old('can_access_visitor_category', $user->can_access_visitor_category ?? false) ? 'checked' : '' }}>
-        <label class="form-check-label" for="can_access_visitor_category">Can Access Visitor Category</label>
-    </div>
-</div>
 
 {{-- ===================== MASTER PAGES (VISIBLE FOR ALL) ===================== --}}
 <div class="mb-3 master-pages-field">
@@ -294,14 +277,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const branchButtonText = document.getElementById('branchButtonText');
     const branchCheckboxList = document.getElementById('branchCheckboxList');
     const branchIdsInput = document.getElementById('branchIds');
-    const selectAllBranchesBtn = document.getElementById('selectAllBranches');
     const applyBranchesBtn = document.getElementById('applyBranches');
 
     const departmentList = document.getElementById('departmentList');
     const departmentDropdownTitle = document.getElementById('departmentDropdownTitle');
     const departmentButtonText = document.getElementById('departmentButtonText');
     const departmentIdsInput = document.getElementById('departmentIds');
-    const selectAllDepartmentsBtn = document.getElementById('selectAllDepartments');
     const applyDepartmentsBtn = document.getElementById('applyDepartments');
     const departmentDropdown = document.getElementById('departmentDropdown');
 
@@ -353,22 +334,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Select all branches
-    if (selectAllBranchesBtn && branchCheckboxList) {
-        selectAllBranchesBtn.addEventListener('click', () => {
-            const boxes = branchCheckboxList.querySelectorAll('.branch-checkbox');
-            const allSelected = boxes.length > 0 && Array.from(boxes).every(cb => cb.checked);
 
-            selectedBranchIds = [];
-            boxes.forEach(cb => {
-                cb.checked = !allSelected;
-                if (!allSelected) selectedBranchIds.push(Number(cb.value));
-            });
-
-            selectAllBranchesBtn.textContent = allSelected ? 'Select All' : 'Deselect All';
-            updateBranchButton();
-        });
-    }
 
     // Apply branches close dropdown
     if (applyBranchesBtn && branchDropdown) {
@@ -381,22 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Select all departments
-    if (selectAllDepartmentsBtn && departmentList) {
-        selectAllDepartmentsBtn.addEventListener('click', () => {
-            const boxes = departmentList.querySelectorAll('.department-checkbox');
-            const allSelected = boxes.length > 0 && Array.from(boxes).every(cb => cb.checked);
 
-            selectedDeptIds = [];
-            boxes.forEach(cb => {
-                cb.checked = !allSelected;
-                if (!allSelected) selectedDeptIds.push(Number(cb.value));
-            });
-
-            selectAllDepartmentsBtn.textContent = allSelected ? 'Select All' : 'Deselect All';
-            updateDeptButton();
-        });
-    }
 
     // Apply departments close dropdown
     if (applyDepartmentsBtn && departmentDropdown) {
