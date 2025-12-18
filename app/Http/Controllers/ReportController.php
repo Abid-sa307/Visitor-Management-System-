@@ -74,20 +74,22 @@ class ReportController extends Controller
     }
 
     public function securityChecks(Request $request)
-{
-    $query = SecurityCheck::with(['visitor' => function($q) {
-        $q->with(['company', 'department', 'branch']);
-    }, 'securityOfficer']);
+    {
+        $query = SecurityCheck::with(['visitor' => function($q) {
+            $q->with(['company', 'department', 'branch']);
+        }, 'securityOfficer']);
 
-    // Apply date range filter
-    if ($request->filled('from')) {
-        $query->whereDate('security_checks.created_at', '>=', $request->from);
-        $filters['from'] = $request->from;
-    }
-    if ($request->filled('to')) {
-        $query->whereDate('security_checks.created_at', '<=', $request->to);
-        $filters['to'] = $request->to;
-    }
+        $filters = [];
+        
+        // Apply date range filter
+        if ($request->filled('from')) {
+            $query->whereDate('security_checks.created_at', '>=', $request->from);
+            $filters['from'] = $request->from;
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('security_checks.created_at', '<=', $request->to);
+            $filters['to'] = $request->to;
+        }
 
     // Apply company filter
     if ($request->filled('company_id')) {
@@ -285,30 +287,6 @@ class ReportController extends Controller
         }
         
         return $filters;
-    
-        if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
-        }
-
-        // Apply department filter
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
-
-        $hourlyData = $query->groupBy('hour')
-            ->orderBy('hour')
-            ->get();
-
-        $companies = $this->getCompanies();
-        $departments = $this->getDepartments($request);
-        
-        return view('reports.hourly', [
-            'hourlyData' => $hourlyData,
-            'selectedDate' => $request->date ?? now()->format('Y-m-d'),
-            'companies' => $companies,
-            'departments' => $departments,
-            'filters' => $request->all()
-        ]);
     }
 
     // Helper Methods

@@ -118,11 +118,11 @@
     ];
 
     $reportItems = [
-        ['title' => '👥 Visitor Report', 'route' => 'reports.visitors', 'page' => 'reports'],
-        ['title' => '🚪 In/Out Report', 'route' => 'reports.inout', 'page' => 'reports'],
-        ['title' => '🛡️ Security Checkpoints', 'route' => 'reports.security', 'page' => 'reports'],
-        ['title' => '✅ Approval Status', 'route' => 'reports.approval', 'page' => 'reports'],
-        ['title' => '⏰ Hourly Report', 'route' => 'reports.hourly', 'page' => 'reports']
+        ['title' => '👥 Visitor Report', 'route' => $isCompany ? 'company.reports.visitors' : 'reports.visitors', 'page' => 'reports'],
+        ['title' => '🚪 In/Out Report', 'route' => $isCompany ? 'company.reports.visits' : 'reports.inout', 'page' => 'reports'],
+        ['title' => '🛡️ Security Checkpoints', 'route' => $isCompany ? 'company.reports.security' : 'reports.security', 'page' => 'reports'],
+        ['title' => '✅ Approval Status', 'route' => $isCompany ? 'company.reports.approval' : 'reports.approval', 'page' => 'reports'],
+        ['title' => '⏰ Hourly Report', 'route' => $isCompany ? 'company.reports.hourly' : 'reports.hourly', 'page' => 'reports']
     ];
     $reportActive = collect($reportItems)->contains(fn($i) => request()->routeIs($i['route']));
 
@@ -182,32 +182,29 @@
         </li>
     @endif
 
-    <!-- Reports (group visible only if user has "reports") -->
-     @if($canPage('reports'))
-        <li class="nav-item {{ $reportActive ? 'active' : '' }}">
-            <a class="nav-link {{ $reportActive ? '' : 'collapsed' }}"
-               href="#"
-               data-bs-toggle="collapse"
-               data-bs-target="#collapseReports"
-               aria-expanded="{{ $reportActive ? 'true' : 'false' }}"
-               aria-controls="collapseReports">
-                <i class="bi bi-bar-chart-line me-2"></i>
-                <span>Reports</span>
-                <span class="ms-auto chev"><i class="bi bi-chevron-down"></i></span>
-            </a>
+    <!-- Check Reports -->
+    <li class="nav-item {{ $reportActive ? 'active' : '' }}">
+        <a class="nav-link {{ $reportActive ? '' : 'collapsed' }}"
+           href="#" 
+           data-toggle="collapse"
+           data-target="#collapseCheckReports"
+           aria-expanded="{{ $reportActive ? 'true' : 'false' }}"
+           aria-controls="collapseCheckReports">
+            <i class="bi bi-clipboard-data me-2"></i>
+            <span>Check Reports</span>
+        </a>
 
-            <div id="collapseReports" class="collapse {{ $reportActive ? 'show' : '' }}" data-bs-parent="#accordionSidebar">
-                <div class="collapse-inner px-2">
-                    @foreach($reportItems as $report)
-                        <a class="collapse-item {{ $active($report['route']) }} text-white"
-                           href="{{ route($report['route']) }}">
-                           {{ $report['title'] }}
-                        </a>
-                    @endforeach
-                </div>
+        <div id="collapseCheckReports" class="collapse {{ $reportActive ? 'show' : '' }}" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div class="py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visitors') : route('reports.visitors') }}">Visitor Report</a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visits') : route('reports.inout') }}">In/Out Report</a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.security') : route('reports.security') }}">Security Checkpoints</a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.approval') : route('reports.approval') }}">Approval Status</a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.hourly') : route('reports.hourly') }}">Hourly Report</a>
             </div>
-        </li>
-    @endif
+        </div>
+    </li>
+
 
 
 
@@ -216,16 +213,29 @@
 </ul>
 
 <style>
-    /* Reports dropdown styling: keep white text and add dark translucent hover */
-    #accordionSidebar #collapseReports .collapse-inner .collapse-item {
-       
-        color: #fff !important;
+    /* Check Reports dropdown styling */
+    #accordionSidebar #collapseCheckReports .collapse-inner {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3));
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        margin: 0 10px;
+    }
+    
+    #accordionSidebar #collapseCheckReports .collapse-inner .collapse-item {
+        color: rgba(255, 255, 255, 0.9) !important;
+        padding: 0.75rem 1rem;
+        display: block;
+        text-decoration: none;
+        border-radius: 6px;
+        margin: 2px 4px;
+        transition: all 0.2s ease;
     }
 
-    #accordionSidebar #collapseReports .collapse-inner .collapse-item:hover,
-    #accordionSidebar #collapseReports .collapse-inner .collapse-item:focus {
-        background-color: rgba(255, 255, 255, 0.12);
+    #accordionSidebar #collapseCheckReports .collapse-inner .collapse-item:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
         color: #fff !important;
+        transform: translateX(3px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     /* Hide the SB Admin footer */
@@ -257,24 +267,6 @@
   .nav-link span:not(.chev) {
     display: none;
   }
-  
-  #collapseReports {
-    position: fixed !important;
-    left: 135px !important;
-    background: #5a5c69 !important;
-    min-width: 220px !important;
-    border-radius: 0.35rem !important;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-    z-index: 99999 !important;
-  }
-  
-  #collapseReports .collapse-item {
-    padding: 0.75rem 1rem !important;
-    color: #fff !important;
-    font-size: 0.875rem !important;
-    display: block !important;
-    white-space: nowrap !important;
-  }
 }
 
 
@@ -282,40 +274,3 @@
     
 </style>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle Reports dropdown toggle
-    const reportsToggle = document.querySelector('[data-bs-target="#collapseReports"]');
-    const reportsCollapse = document.getElementById('collapseReports');
-    
-    if (reportsToggle && reportsCollapse) {
-        reportsToggle.addEventListener('click', function(e) {
-            if (window.innerWidth <= 768) {
-                e.preventDefault();
-                
-                const isExpanded = reportsCollapse.classList.contains('show');
-                
-                if (isExpanded) {
-                    reportsCollapse.classList.remove('show');
-                    this.classList.add('collapsed');
-                    this.setAttribute('aria-expanded', 'false');
-                } else {
-                    const rect = this.getBoundingClientRect();
-                    reportsCollapse.style.top = rect.top + 'px';
-                    reportsCollapse.classList.add('show');
-                    this.classList.remove('collapsed');
-                    this.setAttribute('aria-expanded', 'true');
-                }
-            }
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!reportsToggle.contains(e.target) && !reportsCollapse.contains(e.target)) {
-                reportsCollapse.classList.remove('show');
-                reportsToggle.classList.add('collapsed');
-                reportsToggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-});
-</script>

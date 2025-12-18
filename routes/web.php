@@ -312,6 +312,12 @@ Route::prefix('company')
             Route::get('/visitors/export', [ReportController::class, 'exportVisitors'])->name('visitors.export');
             Route::get('/visits', [ReportController::class, 'visits'])->name('visits');
             Route::get('/visits/export', [ReportController::class, 'exportVisits'])->name('visits.export');
+            Route::get('/security', [ReportController::class, 'securityChecks'])->name('security');
+            Route::get('/security/export', [ReportController::class, 'exportSecurityChecks'])->name('security.export');
+            Route::get('/approval', [ReportController::class, 'approvals'])->name('approval');
+            Route::get('/approval/export', [ReportController::class, 'exportApprovals'])->name('approval.export');
+            Route::get('/hourly', [ReportController::class, 'hourlyReport'])->name('hourly');
+            Route::get('/hourly/export', [ReportController::class, 'exportHourlyReport'])->name('hourly.export');
         });
 
         // Resources
