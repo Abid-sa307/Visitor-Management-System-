@@ -196,11 +196,21 @@
 
         <div id="collapseCheckReports" class="collapse {{ $reportActive ? 'show' : '' }}" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
             <div class="py-2 collapse-inner rounded">
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visitors') : route('reports.visitors') }}">Visitor Report</a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visits') : route('reports.inout') }}">In/Out Report</a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.security') : route('reports.security') }}">Security Checkpoints</a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.approval') : route('reports.approval') }}">Approval Status</a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.hourly') : route('reports.hourly') }}">Hourly Report</a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visitors') : route('reports.visitors') }}">
+                    <i class="fas fa-users me-2"></i>Visitor Report
+                </a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visits') : route('reports.inout') }}">
+                    <i class="fas fa-door-open me-2"></i>In/Out Report
+                </a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.security') : route('reports.security') }}">
+                    <i class="fas fa-shield-alt me-2"></i>Security Checkpoints
+                </a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.approval') : route('reports.approval') }}">
+                    <i class="fas fa-check-circle me-2"></i>Approval Status
+                </a>
+                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.hourly') : route('reports.hourly') }}">
+                    <i class="fas fa-clock me-2"></i>Hourly Report
+                </a>
             </div>
         </div>
     </li>
@@ -214,12 +224,7 @@
 
 <style>
     /* Check Reports dropdown styling */
-    #accordionSidebar #collapseCheckReports .collapse-inner {
-        background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3));
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-        border-radius: 8px;
-        margin: 0 10px;
-    }
+    /*  */
     
     #accordionSidebar #collapseCheckReports .collapse-inner .collapse-item {
         color: rgba(255, 255, 255, 0.9) !important;

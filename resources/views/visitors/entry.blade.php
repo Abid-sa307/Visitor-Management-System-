@@ -273,6 +273,14 @@
             $buttonText = !$visitor->in_time ? 'Mark In' : 'Mark Out';
             $buttonClass = !$visitor->in_time ? 'primary' : 'danger';
             $buttonIcon = !$visitor->in_time ? 'sign-in-alt' : 'sign-out-alt';
+            
+            // Check if undo is available (within 30 minutes)
+            $canUndo = false;
+            $undoAction = '';
+            if ($visitor->in_time && !$visitor->out_time) {
+                $canUndo = \Carbon\Carbon::parse($visitor->in_time)->diffInMinutes(now()) <= 30;
+                $undoAction = 'undo_in';
+            }
         @endphp
         
         <button type="button" 
@@ -283,6 +291,18 @@
             <i class="fas fa-{{ $buttonIcon }} me-1"></i>
             {{ $buttonText }}
         </button>
+        
+        @if($canUndo)
+            <button type="button" 
+                    class="btn btn-sm rounded-pill btn-warning toggle-entry-btn" 
+                    data-visitor-id="{{ $visitor->id }}" 
+                    data-action="{{ $undoAction }}"
+                    data-url="{{ route($routeName, $visitor->id) }}"
+                    title="Undo mark in (available for 30 minutes)">
+                <i class="fas fa-undo me-1"></i> Undo
+            </button>
+        @endif
+        
         @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]')
             <button type="button" 
                     class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
@@ -295,7 +315,22 @@
         @endif
     </div>
 @else
-    <span class="text-muted">Completed</span>
+    @php
+        // Check if undo is available for checkout (within 30 minutes)
+        $canUndoOut = $visitor->out_time && \Carbon\Carbon::parse($visitor->out_time)->diffInMinutes(now()) <= 30;
+    @endphp
+    @if($canUndoOut)
+        <button type="button" 
+                class="btn btn-sm rounded-pill btn-warning toggle-entry-btn" 
+                data-visitor-id="{{ $visitor->id }}" 
+                data-action="undo_out"
+                data-url="{{ route($routeName, $visitor->id) }}"
+                title="Undo mark out (available for 30 minutes)">
+            <i class="fas fa-undo me-1"></i> Undo
+        </button>
+    @else
+        <span class="text-muted">Completed</span>
+    @endif
 @endif
                             @else
                                 <span class="text-muted">Guard View Only</span>
@@ -389,6 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('_token', token);
         formData.append('_method', 'POST');
         formData.append('visitor_id', visitorId);
+        formData.append('action', action);
         formData.append('is_company', {{ $isCompany ? 'true' : 'false' }});
 
         // Send AJAX request
@@ -431,7 +467,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Otherwise, show success message and reload
-            const successMessage = action === 'in' ? 'Visitor checked in successfully' : 'Visitor checked out successfully';
+            let successMessage = 'Action completed successfully';
+            if (action === 'in') {
+                successMessage = 'Visitor checked in successfully';
+            } else if (action === 'out') {
+                successMessage = 'Visitor checked out successfully';
+            } else if (action === 'undo_in') {
+                successMessage = 'Check-in has been undone successfully';
+            } else if (action === 'undo_out') {
+                successMessage = 'Check-out has been undone successfully';
+            }
+            
             if (typeof showToast === 'function') {
                 showToast('success', successMessage);
             } else {

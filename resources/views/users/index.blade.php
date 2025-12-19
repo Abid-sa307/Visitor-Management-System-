@@ -110,7 +110,6 @@
                             <th>Role</th>
                             <th>Company</th>
                             <th>Status</th>
-                            <th>Last Login</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -140,13 +139,7 @@
                                     <span class="badge bg-secondary">Inactive</span>
                                 @endif
                             </td>
-                            <td>
-                                @if($user->last_login_at)
-                                    {{ $user->last_login_at->diffForHumans() }}
-                                @else
-                                    Never
-                                @endif
-                            </td>
+
                             <td>
                                 <div class="d-flex gap-2">
                                     <a href="{{ route($routeEdit, $user) }}" class="btn btn-sm btn-outline-primary">

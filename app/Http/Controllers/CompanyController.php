@@ -225,7 +225,10 @@ public function getBranches(Company $company)
     $branches = $company->branches()
         ->select('id', 'name')
         ->orderBy('name')
-        ->pluck('name', 'id');
+        ->get()
+        ->mapWithKeys(function ($branch) {
+            return [$branch->id => $branch->name];
+        });
 
     return response()->json($branches);
 }
@@ -274,20 +277,28 @@ public function getDepartments(Company $company)
         try {
             // Validation rules
             $validated = $request->validate([
-                'name'   => 'required|string|max:255',
+                'name'   => 'required|string|max:255|unique:companies,name',
                 'email'  => 'nullable|email|unique:companies,email',
                 'phone'  => 'nullable|string|max:32',
                 'address' => 'nullable|string',
                 'contact_number' => 'nullable|string|max:255',
                 'branch_start_date' => 'nullable|date',
                 'branch_end_date' => 'nullable|date|after_or_equal:branch_start_date',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
+            // Handle logo upload
+            $logoPath = null;
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('company_logos', 'public');
+            }
+            
             // Create new company
             $company = new Company($validated);
             $company->auto_approve_visitors = $request->boolean('auto_approve_visitors');
             $company->address = $validated['address'] ?? '';
             $company->contact_number = $validated['contact_number'] ?? '';
+            $company->logo = $logoPath;
             $company->save();
 
             // Handle branches if provided
@@ -298,6 +309,18 @@ public function getDepartments(Company $company)
                 $emails = array_values($branches['email'] ?? []);
                 $addresses = array_values($branches['address'] ?? []);
                 $count = max(count($names), count($phones), count($emails), count($addresses));
+                
+                // Check for duplicate branch names
+                $branchNames = [];
+                for ($i = 0; $i < $count; $i++) {
+                    $nm = trim((string)($names[$i] ?? ''));
+                    if ($nm !== '') {
+                        if (in_array(strtolower($nm), array_map('strtolower', $branchNames))) {
+                            throw new \Exception('Duplicate branch name: ' . $nm);
+                        }
+                        $branchNames[] = $nm;
+                    }
+                }
                 
                 for ($i = 0; $i < $count; $i++) {
                     $nm = trim((string)($names[$i] ?? ''));
@@ -361,7 +384,7 @@ public function getDepartments(Company $company)
         try {
             // Validation rules
             $validated = $request->validate([
-                'name'   => 'required|string|max:255',
+                'name'   => 'required|string|max:255|unique:companies,name,'.$company->id,
                 'email'  => 'nullable|email|unique:companies,email,'.$company->id,
                 'phone'  => 'nullable|string|max:32',
                 'address' => 'nullable|string',
@@ -370,8 +393,18 @@ public function getDepartments(Company $company)
                 'branch_end_date' => 'nullable|date|after_or_equal:branch_start_date',
                 'auto_approve_visitors' => 'sometimes|boolean',
                 'face_recognition_enabled' => 'sometimes|boolean',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
+            // Handle logo upload
+            if ($request->hasFile('logo')) {
+                // Delete old logo if exists
+                if ($company->logo) {
+                    Storage::disk('public')->delete($company->logo);
+                }
+                $company->logo = $request->file('logo')->store('company_logos', 'public');
+            }
+            
             // Update company attributes
             $company->fill($validated);
             $company->auto_approve_visitors = $request->boolean('auto_approve_visitors');
@@ -393,7 +426,8 @@ public function getDepartments(Company $company)
                 $startTimes = array_values($branches['start_time'] ?? []);
                 $endTimes = array_values($branches['end_time'] ?? []);
 
-                // Update existing and create new branches
+                // Check for duplicate branch names
+                $branchNames = [];
                 $count = max(
                     count($names), 
                     count($phones), 
@@ -403,6 +437,16 @@ public function getDepartments(Company $company)
                     count($endTimes),
                     count($ids)
                 );
+                
+                for ($i = 0; $i < $count; $i++) {
+                    $name = trim((string)($names[$i] ?? ''));
+                    if ($name !== '') {
+                        if (in_array(strtolower($name), array_map('strtolower', $branchNames))) {
+                            throw new \Exception('Duplicate branch name: ' . $name);
+                        }
+                        $branchNames[] = $name;
+                    }
+                }
                 
                 $keptBranchIds = [];
                 

@@ -7,6 +7,11 @@
       Register New Visitor
     </h3>
     <p class="text-center">{{ $company->name }}</p>
+    @if(isset($branch) && $branch)
+      <div class="alert alert-info text-center">
+        <i class="fas fa-map-marker-alt me-2"></i>Branch: <strong>{{ $branch->name }}</strong>
+      </div>
+    @endif
 
     @if ($errors->any())
       <div class="alert alert-danger">
@@ -155,7 +160,7 @@
 
       <!-- Submit Button -->
       <div class="d-grid gap-2 mt-4">
-        <a href="{{ route('qr.scan', $company) }}" class="btn btn-outline-secondary">
+        <a href="{{ route('qr.scan', $company) }}{{ isset($branch) && $branch ? '/' . $branch->id : '' }}" class="btn btn-outline-secondary">
           <i class="fas fa-arrow-left me-2"></i> Back
         </a>
         <button type="submit" class="btn btn-primary">

@@ -86,34 +86,46 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
-        @if(auth()->user()->hasRole('superadmin'))
+        @if(auth()->user()->role === 'superadmin')
         // Load branches when company changes
         $('#company_id').on('change', function() {
             var companyId = $(this).val();
             var selectedBranchId = '{{ $visitorCategory->branch_id }}';
             
             if (companyId) {
+                $('#branch_id').prop('disabled', false);
                 $.ajax({
-                    url: '{{ route("branches.by_company") }}',
+                    url: '/api/companies/' + companyId + '/branches',
                     type: 'GET',
-                    data: { company_id: companyId },
                     success: function(data) {
+                        console.log('Branch data:', data);
                         var $branchSelect = $('#branch_id');
                         $branchSelect.empty();
                         $branchSelect.append('<option value="">Select Branch (Optional)</option>');
                         
-                        $.each(data, function(key, value) {
-                            $branchSelect.append($('<option>', {
-                                value: key,
-                                text: value,
-                                selected: (key == selectedBranchId)
-                            }));
-                        });
+                        if (Array.isArray(data)) {
+                            $.each(data, function(index, branch) {
+                                $branchSelect.append($('<option>', {
+                                    value: branch.id,
+                                    text: branch.name,
+                                    selected: (branch.id == selectedBranchId)
+                                }));
+                            });
+                        } else {
+                            $.each(data, function(key, value) {
+                                $branchSelect.append($('<option>', {
+                                    value: key,
+                                    text: value,
+                                    selected: (key == selectedBranchId)
+                                }));
+                            });
+                        }
                     }
                 });
             } else {
+                $('#branch_id').prop('disabled', true);
                 $('#branch_id').empty();
-                $('#branch_id').append('<option value="">Select Branch (Optional)</option>');
+                $('#branch_id').append('<option value="">Select Company First</option>');
             }
         });
         @endif

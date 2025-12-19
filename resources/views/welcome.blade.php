@@ -754,7 +754,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <a href="/resident-societies" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <img src="/images/resident-gate.png" alt="Society Gate" class="industry-img">
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h4>Residents' Societies</h4>
+                                <h4>Residential Societies</h4>
                                 <p class="mb-0">
                                     Approve guests, delivery and staff via QR-code entry with resident
                                     pre-authorization.
@@ -831,7 +831,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             <img src="/images/resident-building-gate.png" alt="Residential Building Visitor Management"
                                 class="industry-img">
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h4>Resident Buildings</h4>
+                                <h4>Residential Buildings</h4>
                                 <p class="mb-0">
                                     Secure apartments, gated societies and residential towers with digital visitor
                                     approvals,
@@ -850,7 +850,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         <a href="/temple-and-dargah" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <img src="/images/temple-img.png" alt="Temple Gate" class="industry-img">
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h4>Temple & Dargah</h4>
+                                <h4>Holy places</h4>
                                 <p class="mb-0">
                                     Digitize darshan passes, manage crowd flow with live capacity limits
                                     and keep visitor records organised across all entry gates.

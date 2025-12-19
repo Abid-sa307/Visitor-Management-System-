@@ -52,6 +52,12 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Logo <small class="text-muted">(optional)</small></label>
+                        @if($company->logo)
+                            <div class="mb-2">
+                                <img src="{{ asset('storage/' . $company->logo) }}" alt="Current Logo" class="img-thumbnail" style="max-height: 60px;">
+                                <small class="text-muted d-block">Current logo</small>
+                            </div>
+                        @endif
                         <input name="logo" type="file" class="form-control">
                     </div>
 
@@ -93,27 +99,6 @@
                 </div>
 
 
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Branch Operation Start Time <small class="text-muted">(When the branch opens)</small></label>
-                        <input type="time" name="branch_start_time" class="form-control" 
-                               value="{{ old('branch_start_time', $company->branch_start_time ?? '09:00') }}" 
-                               placeholder="Select start time">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Branch Operation End Time <small class="text-muted">(When the branch closes)</small></label>
-                        <input type="time" name="branch_end_time" class="form-control" 
-                               value="{{ old('branch_end_time', $company->branch_end_time ?? '18:00') }}" 
-                               placeholder="Select end time">
-                    </div>
-                </div>
-
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="face_recognition_enabled" name="face_recognition_enabled" value="1"
-                        {{ old('face_recognition_enabled', $company->face_recognition_enabled ?? 0) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="face_recognition_enabled">Security Check with dropdown</label>
-                    <small class="form-text text-muted d-block"></small>
-                </div>
 
                 <hr class="my-4">
                 <h5 class="fw-bold mb-3">Branches</h5>
@@ -127,8 +112,8 @@
                                     <th style="width: 15%">Phone</th>
                                     <th style="width: 20%">Email</th>
                                     <th>Address</th>
-                                    <th style="width: 15%">Start Time</th>
-                                    <th style="width: 15%">End Time</th>
+                                    <th style="width: 15%">Operation Start time</th>
+                                    <th style="width: 15%">Operation End time</th>
                                     <th style="width: 60px"></th>
                                 </tr>
                             </thead>
@@ -150,11 +135,11 @@
                                     </td>
                                     <td>
                                         <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"
-                                               value="{{ $b->start_time ? $b->start_time->format('H:i') : '' }}">
+                                               value="{{ $b->start_time ?? '' }}">
                                     </td>
                                     <td>
                                         <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"
-                                               value="{{ $b->end_time ? $b->end_time->format('H:i') : '' }}">
+                                               value="{{ $b->end_time ?? '' }}">
                                     </td>
                                     <td class="text-end">
                                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
@@ -196,8 +181,8 @@ document.addEventListener('DOMContentLoaded', function(){
       <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
       <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
       <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
-      <td><input type="date" name="branches[start_date][]" class="form-control form-control-sm"></td>
-      <td><input type="date" name="branches[end_date][]" class="form-control form-control-sm"></td>
+      <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"></td>
+      <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"></td>
       <td class="text-end">
         <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
       </td>`;

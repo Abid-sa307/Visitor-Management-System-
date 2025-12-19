@@ -46,6 +46,17 @@ class DepartmentController extends Controller
             'name' => 'required|string|max:255',
             'company_id' => 'required|exists:companies,id',
         ]);
+        
+        // Check for duplicate department name within the same company
+        $exists = Department::where('company_id', $validated['company_id'])
+            ->whereRaw('LOWER(name) = ?', [strtolower($validated['name'])])
+            ->exists();
+        
+        if ($exists) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['name' => 'A department with this name already exists in this company.']);
+        }
 
         Department::create($validated);
 
@@ -82,6 +93,18 @@ class DepartmentController extends Controller
             'name' => 'required|string|max:255',
             'company_id' => 'required|exists:companies,id',
         ]);
+        
+        // Check for duplicate department name within the same company (excluding current department)
+        $exists = Department::where('company_id', $validated['company_id'])
+            ->where('id', '!=', $department->id)
+            ->whereRaw('LOWER(name) = ?', [strtolower($validated['name'])])
+            ->exists();
+        
+        if ($exists) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['name' => 'A department with this name already exists in this company.']);
+        }
 
         $department->update($validated);
 

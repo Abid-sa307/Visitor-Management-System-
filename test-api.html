@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <button onclick="testBranches()">Test Branches API</button>
+    <button onclick="testDepartments()">Test Departments API</button>
+    <div id="result"></div>
+
+    <script>
+        function testBranches() {
+            fetch('/api/companies/1/branches')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('result').innerHTML = '<h3>Branches:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                })
+                .catch(err => {
+                    document.getElementById('result').innerHTML = '<h3>Error:</h3><pre>' + err.message + '</pre>';
+                });
+        }
+
+        function testDepartments() {
+            fetch('/api/companies/1/departments')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('result').innerHTML = '<h3>Departments:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                })
+                .catch(err => {
+                    document.getElementById('result').innerHTML = '<h3>Error:</h3><pre>' + err.message + '</pre>';
+                });
+        }
+    </script>
+</body>
+</html>

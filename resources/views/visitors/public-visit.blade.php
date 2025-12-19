@@ -63,13 +63,16 @@
                     @if($branches->count() === 1)
                         <input type="hidden" name="branch_id" value="{{ $branches[0]->id }}">
                         <input type="text" class="form-control" value="{{ $branches[0]->name }}" readonly>
+                        @if(isset($branch) && $branch)
+                            <small class="text-muted">Branch locked from QR scan</small>
+                        @endif
                     @else
                         <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
                             <option value="">-- Select Branch --</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" 
-                                    {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
-                                    {{ $branch->name }}
+                            @foreach($branches as $branchItem)
+                                <option value="{{ $branchItem->id }}" 
+                                    {{ old('branch_id', $visitor->branch_id ?? (isset($branch) && $branch ? $branch->id : '')) == $branchItem->id ? 'selected' : '' }}>
+                                    {{ $branchItem->name }}
                                 </option>
                             @endforeach
                         </select>

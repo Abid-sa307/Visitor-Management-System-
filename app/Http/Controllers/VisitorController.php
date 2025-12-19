@@ -1095,13 +1095,38 @@ return view('visitors.visit', [
         }
 
         $originalStatus = $visitor->status;
-        $isCheckingIn = !$visitor->in_time;
+        $action = request()->input('action', (!$visitor->in_time ? 'in' : 'out'));
         
         try {
             DB::beginTransaction();
 
-            if ($isCheckingIn) {
-                // Check if visitor is approved or if auto-approval is enabled
+            // Handle undo actions
+            if ($action === 'undo_in') {
+                if (!$visitor->in_time || Carbon::parse($visitor->in_time)->diffInMinutes(now()) > 30) {
+                    $message = 'Undo is only available within 30 minutes of check-in.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                $visitor->in_time = null;
+                $visitor->status = 'Pending';
+                $message = 'Check-in has been undone successfully.';
+                
+            } elseif ($action === 'undo_out') {
+                if (!$visitor->out_time || Carbon::parse($visitor->out_time)->diffInMinutes(now()) > 30) {
+                    $message = 'Undo is only available within 30 minutes of check-out.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                $visitor->out_time = null;
+                $visitor->status = 'Approved';
+                $message = 'Check-out has been undone successfully.';
+                
+            } elseif ($action === 'in' || !$visitor->in_time) {
+                // Original check-in logic
                 $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
                 if (!$companyAuto && $visitor->status !== 'Approved') {
                     $message = 'Visitor must be approved before checking in.';
@@ -1110,20 +1135,16 @@ return view('visitors.visit', [
                     }
                     return back()->with('error', $message);
                 }
-                
-                // Only update check-in time, don't modify the status
                 $visitor->in_time = now();
-                
-                // If auto-approval is enabled and status is Pending, update to Approved
                 if ($companyAuto && $visitor->status === 'Pending') {
                     $visitor->status = 'Approved';
                     $visitor->approved_by = auth()->id();
                     $visitor->approved_at = now();
                 }
-                
                 $message = 'Visitor checked in successfully.';
-            } else {
-                // Check if already checked out
+                
+            } elseif ($action === 'out' || ($visitor->in_time && !$visitor->out_time)) {
+                // Original check-out logic
                 if ($visitor->out_time) {
                     $message = 'Visitor has already been checked out.';
                     if (request()->ajax()) {
@@ -1131,9 +1152,7 @@ return view('visitors.visit', [
                     }
                     return back()->with('error', $message);
                 }
-                
                 $visitor->out_time = now();
-                // Only update status to Completed if it's currently Approved
                 if ($visitor->status === 'Approved') {
                     $visitor->status = 'Completed';
                 }

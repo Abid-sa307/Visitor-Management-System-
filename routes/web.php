@@ -124,11 +124,15 @@ Route::get('/service-agreement', fn () => view('pages.service-agreement'))->name
 Route::get('/public/company/{company}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])
     ->name('public.visitor.index');
 
+// Branch-specific visitor index
+Route::get('/public/company/{company}/branch/{branch}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])
+    ->name('public.visitor.index.branch');
+
 
     
 Route::prefix('qr')->name('qr.')->group(function () {
     // Public routes
-    Route::get('/scan/{company}/{visitor?}', [QRManagementController::class, 'scan'])
+    Route::get('/scan/{company}/{branch?}', [QRManagementController::class, 'scan'])
         ->name('scan');
         
     Route::get('/{company}/visitor/create', [QRManagementController::class, 'createVisitor'])
@@ -584,19 +588,10 @@ if (app()->environment('local')) {
 
 Route::prefix('api')->name('api.')->group(function () {
     // Get departments for a company
-    Route::get('/companies/{company}/departments', [App\Http\Controllers\DepartmentController::class, 'getByCompany'])->name('departments.by_company');
+    Route::get('/companies/{company}/departments', [App\Http\Controllers\DepartmentController::class, 'getByCompany'])->name('departments.by_company')->middleware('web');
     
     // Get branches for a company
-    Route::get('/companies/{company}/branches', [App\Http\Controllers\BranchController::class, 'getByCompany'])->name('branches.by_company');
-    
-    // Get branches for a company
-    Route::get('/companies/{company}/branches', [App\Http\Controllers\CompanyController::class, 'getBranches'])
-        ->name('branches.by_company')
-        ->middleware('auth:web,company');
-        
-    // Non-API route for backward compatibility
-    Route::get('/companies/{company}/branches/list', [App\Http\Controllers\CompanyController::class, 'getBranches'])
-        ->name('branches.list');
+    Route::get('/companies/{company}/branches', [App\Http\Controllers\BranchController::class, 'getByCompany'])->name('branches.by_company')->middleware('web');
     
     Route::prefix('face')->name('face.')->group(function () {
         Route::post('/detect', [FaceRecognitionController::class, 'apiDetect'])->name('detect');

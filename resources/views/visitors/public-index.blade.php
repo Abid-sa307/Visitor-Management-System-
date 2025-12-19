@@ -36,9 +36,9 @@
                                     </div>
                                 </div>
                                 
-                                @if($visitor->visitor_pass)
+                                @if($visitor->visitor_pass || session('show_pass_button'))
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
-                                    <a href="{{ route('visitor.pass', $visitor) }}" 
+                                    <a href="{{ route('visitors.pass', $visitor->id) }}" 
                                        class="btn btn-success px-4" 
                                        target="_blank">
                                         <i class="bi bi-download me-2"></i> Download Visitor Pass
@@ -64,8 +64,15 @@
                                 </div>
                             @endif
                             
-                            <!-- Update Visit Button -->
+                            <!-- Pass Button and Update Visit Button -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+                                @if(session('show_pass_button') || $visitor->department_id)
+                                    <a href="{{ route('visitors.pass', $visitor->id) }}" 
+                                       class="btn btn-success px-4" 
+                                       target="_blank">
+                                        <i class="bi bi-download me-2"></i> Download Pass
+                                    </a>
+                                @endif
                                 @if($visitor->status === 'Approved')
                                     <a href="{{ route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
                                        class="btn btn-outline-primary px-4">
@@ -199,10 +206,13 @@
                                 <p class="lead text-muted mb-4">Please register as a visitor to continue your visit</p>
                                 
                                 <div class="d-grid gap-3 col-lg-6 mx-auto">
-                                    <a href="{{ route('qr.visitor.create', ['company' => $company->id]) }}" 
+                                    <a href="{{ route('qr.visitor.create', ['company' => $company->id]) }}{{ isset($branch) && $branch ? '?branch=' . $branch->id : '' }}" 
                                        class="btn btn-primary btn-lg rounded-pill py-3">
                                         <i class="bi bi-person-plus me-2"></i> Register as Visitor
                                     </a>
+                                    @if(isset($branch) && $branch)
+                                        <small class="text-muted">Branch: {{ $branch->name }}</small>
+                                    @endif
                                     
                                     <div class="position-relative my-4">
                                         <hr>

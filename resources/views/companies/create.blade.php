@@ -74,8 +74,8 @@
                                     <th style="width: 15%">Phone</th>
                                     <th style="width: 20%">Email</th>
                                     <th>Address</th>
-                                    <th style="width: 15%">Start Time</th>
-                                    <th style="width: 15%">End Time</th>
+                                    <th style="width: 15%">Operation Start Date</th>
+                                    <th style="width: 15%">Operation End Date</th>
                                     <th style="width: 60px"></th>
                                 </tr>
                             </thead>
@@ -115,19 +115,6 @@
                         <option value="both" {{ old('security_checkin_type') === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
                     </select>
                     <small class="form-text text-muted">Select the type of security check service to enable for this company.</small>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Branch Operation Start Time <small class="text-muted">(When the branch opens)</small></label>
-                        <input type="time" name="branch_start_time" class="form-control" value="{{ old('branch_start_time', '09:00') }}" 
-                               placeholder="Select start time">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Branch Operation End Time <small class="text-muted">(When the branch closes)</small></label>
-                        <input type="time" name="branch_end_time" class="form-control" value="{{ old('branch_end_time', '18:00') }}"
-                               placeholder="Select end time">
-                    </div>
                 </div>
 
                 <div class="mt-4 text-end">

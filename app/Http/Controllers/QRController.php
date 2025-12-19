@@ -67,8 +67,13 @@ class QRController extends Controller
         // Get departments for the company
         $departments = $company->departments()->get();
         
-        // Get branches for the company
-        $branches = $company->branches()->get();
+        // If a specific branch QR was scanned, only show that branch
+        // Otherwise show all branches of the company
+        if ($branchModel) {
+            $branches = collect([$branchModel]); // Only the scanned branch
+        } else {
+            $branches = $company->branches()->get(); // All branches
+        }
         
         return view('visitors.public-visit', [
             'company' => $company,
@@ -300,14 +305,21 @@ public function storeVisit(Request $request, Company $company, $branch = null)
             // Store visitor ID in session
             session(['current_visitor_id' => $visitor->id]);
             
-            // Get departments, branches and visitor categories
+            // Get departments and visitor categories
             $departments = $company->departments()->get();
-            $branches = $company->branches()->get();
             
             // Get visitor categories for the company
             $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
                 ->orderBy('name')
                 ->get();
+            
+            // If a specific branch QR was scanned, only show that branch
+            // Otherwise show all branches of the company
+            if ($branchModel) {
+                $branches = collect([$branchModel]); // Only the scanned branch
+            } else {
+                $branches = $company->branches()->get(); // All branches
+            }
             
             return view('visitors.public-visit', [
                 'company' => $company,

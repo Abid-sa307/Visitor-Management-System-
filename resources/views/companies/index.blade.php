@@ -49,13 +49,13 @@
                 <table class="table table-hover align-middle text-center table-striped mb-0">
                     <thead class="table-primary text-dark small text-uppercase">
                         <tr>
+                            <th>Logo</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Contact</th>
                             <th>Branches</th>
                             <th>Auto Approve</th>
                             <th>Website</th>
-                            <th>Working Hours</th>
                             <th>Security Check</th>
                             <th style="width: 120px;">Actions</th>
                         </tr>
@@ -63,6 +63,15 @@
                     <tbody>
                         @forelse($companies as $company)
                         <tr>
+                            <td>
+                                @if($company->logo)
+                                    <img src="{{ asset('storage/' . $company->logo) }}" alt="Logo" class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
+                                @else
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-building text-muted"></i>
+                                    </div>
+                                @endif
+                            </td>
                             <td class="fw-semibold">{{ $company->name }}</td>
                             <td>{{ $company->email }}</td>
                             <td>{{ $company->contact_number ?? '—' }}</td>
@@ -87,34 +96,30 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td>
-                                @if($company->start_time && $company->end_time)
-                                    {{ \Carbon\Carbon::parse($company->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($company->end_time)->format('h:i A') }}
-                                @else
-                                    <span class="text-muted">—</span>
-                                @endif
-                            </td>
                             <td class="text-capitalize">
                                 @php
-                                    $securityCheck = $company->security_check ?? 'none';
+                                    $securityCheck = $company->security_checkin_type ?? '';
+                                    $displayText = [
+                                        '' => 'None',
+                                        'checkin' => 'Check-in',
+                                        'checkout' => 'Check-out',
+                                        'both' => 'Both Check-in/out'
+                                    ][$securityCheck] ?? 'None';
                                     $badgeClass = [
-                                        'none' => 'bg-secondary',
+                                        '' => 'bg-secondary',
                                         'checkin' => 'bg-info',
                                         'checkout' => 'bg-warning',
                                         'both' => 'bg-success'
-                                    ][$securityCheck];
+                                    ][$securityCheck] ?? 'bg-secondary';
                                 @endphp
                                 <span class="badge {{ $badgeClass }}">
-                                    {{ str_replace('_', ' ', $securityCheck) }}
+                                    {{ $displayText }}
                                 </span>
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('companies.branches', $company) }}" class="btn btn-sm btn-primary me-1" title="View Branches">
                                         <i class="fas fa-code-branch"></i>
-                                    </a>
-                                    <a href="{{ route('companies.qr', $company) }}" class="btn btn-sm btn-info me-1" title="Download QR Code" target="_blank">
-                                        <i class="fas fa-qrcode"></i>
                                     </a>
                                     <a href="{{ route('companies.edit', $company->id) }}" class="btn btn-sm btn-warning me-1" title="Edit">
                                         <i class="fas fa-edit"></i>

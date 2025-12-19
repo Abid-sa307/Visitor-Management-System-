@@ -27,7 +27,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Company</label>
-                        <select name="company_id" class="form-select" required>
+                        <select name="company_id" id="company_id" class="form-select" required>
                             <option value="">-- Select Company --</option>
                             @foreach($companies as $company)
                                 <option value="{{ $company->id }}" {{ old('company_id') == $company->id ? 'selected' : '' }}>
@@ -39,13 +39,15 @@
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Department</label>
-                        <select name="department_id" class="form-select">
-                            <option value="">-- Optional --</option>
-                            @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
-                                    {{ $dept->name }}
-                                </option>
-                            @endforeach
+                        <select name="department_id" id="department_id" class="form-select" {{ auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                            <option value="">{{ auth()->user()->role === 'superadmin' ? 'Select Company First' : '-- Optional --' }}</option>
+                            @if(auth()->user()->role !== 'superadmin')
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
+                                        {{ $dept->name }}
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -83,4 +85,41 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    @if(auth()->user()->role === 'superadmin')
+    $('#company_id').on('change', function() {
+        var companyId = $(this).val();
+        if (companyId) {
+            $('#department_id').prop('disabled', false);
+            $.ajax({
+                url: '/api/companies/' + companyId + '/departments',
+                type: 'GET',
+                success: function(data) {
+                    $('#department_id').empty();
+                    $('#department_id').append('<option value="">-- Optional --</option>');
+                    
+                    if (Array.isArray(data)) {
+                        $.each(data, function(index, dept) {
+                            $('#department_id').append('<option value="' + dept.id + '">' + dept.name + '</option>');
+                        });
+                    } else {
+                        $.each(data, function(key, value) {
+                            $('#department_id').append('<option value="' + key + '">' + value + '</option>');
+                        });
+                    }
+                }
+            });
+        } else {
+            $('#department_id').prop('disabled', true);
+            $('#department_id').empty();
+            $('#department_id').append('<option value="">Select Company First</option>');
+        }
+    });
+    @endif
+});
+</script>
+@endpush
 @endsection
