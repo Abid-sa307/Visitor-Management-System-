@@ -1,6 +1,6 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Topbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm border-bottom">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm border-bottom topbar-sticky">
     <div class="container-fluid">
         <!-- Logo -->
         @php
@@ -133,8 +133,14 @@
         }
     }
 
-    /* Mobile responsive */
+    /* Mobile sticky topbar */
     @media (max-width: 991.98px) {
+        .topbar-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+        
         .navbar-collapse {
             background: white;
             border-radius: 10px;

@@ -20,6 +20,9 @@
     $masterPages = $authUser
         ? ($authUser->master_pages_list ?? $normalizeToArray($authUser->master_pages ?? []))
         : [];
+    
+    // Debug: uncomment to see what pages user has access to
+    // dd($authUser->master_pages, $masterPages);
 
     // Gate by page key: superadmins see all; company users must be permitted via master_pages
     $canPage = function (string $key) use ($isSuper, $masterPages) {
@@ -143,9 +146,9 @@
     <!-- Main items (gated by master_pages) -->
     @foreach($menuItems as $item)
         @php $superOnly = $item['super_only'] ?? false; @endphp
-        @if(($superOnly ? $isSuper : true) && Route::has($item['route']) && $canPage($item['page']))
+        @if(($superOnly ? $isSuper : $canPage($item['page'])) && (Route::has($item['route']) || $item['title'] === 'Visitor Approvals'))
             <li class="nav-item {{ $active($item['route']) }}">
-                <a class="nav-link" href="{{ route($item['route']) }}">
+                <a class="nav-link" href="{{ $item['title'] === 'Visitor Approvals' && !Route::has($item['route']) ? '/visitor-approvals' : route($item['route']) }}">
                     <i class="bi {{ $item['icon'] }} me-2"></i>
                     <span>{{ $item['title'] }}</span>
                 </a>
@@ -153,8 +156,7 @@
         @endif
     @endforeach
 
-    <!-- QR Codes Section -->
-    @if($isSuper || $canPage('qr_codes'))
+    @if($isSuper || $canPage('qr_scanner'))
         <li class="nav-item {{ $active(['qr-management.*']) }}">
             <a class="nav-link" href="{{ url('/qr-management') }}">
                 <i class="bi bi-qr-code-scan me-2"></i>
@@ -183,37 +185,48 @@
     @endif
 
     <!-- Check Reports -->
-    <li class="nav-item {{ $reportActive ? 'active' : '' }}">
-        <a class="nav-link {{ $reportActive ? '' : 'collapsed' }}"
-           href="#" 
-           data-toggle="collapse"
-           data-target="#collapseCheckReports"
-           aria-expanded="{{ $reportActive ? 'true' : 'false' }}"
-           aria-controls="collapseCheckReports">
-            <i class="bi bi-clipboard-data me-2"></i>
-            <span>Check Reports</span>
-        </a>
+    @if($isSuper || $canPage('reports'))
+        @php
+            $company = $authUser->company ?? null;
+            $showApprovalReport = !$company || !$company->auto_approved;
+            $showSecurityReport = !$company || $company->security_check_service_type !== 'none';
+        @endphp
+        <li class="nav-item {{ $reportActive ? 'active' : '' }}">
+            <a class="nav-link {{ $reportActive ? '' : 'collapsed' }}"
+               href="#" 
+               data-toggle="collapse"
+               data-target="#collapseCheckReports"
+               aria-expanded="{{ $reportActive ? 'true' : 'false' }}"
+               aria-controls="collapseCheckReports">
+                <i class="bi bi-clipboard-data me-2"></i>
+                <span>Check Reports</span>
+            </a>
 
-        <div id="collapseCheckReports" class="collapse {{ $reportActive ? 'show' : '' }}" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-            <div class="py-2 collapse-inner rounded">
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visitors') : route('reports.visitors') }}">
-                    <i class="fas fa-users me-2"></i>Visitor Report
-                </a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visits') : route('reports.inout') }}">
-                    <i class="fas fa-door-open me-2"></i>In/Out Report
-                </a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.security') : route('reports.security') }}">
-                    <i class="fas fa-shield-alt me-2"></i>Security Checkpoints
-                </a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.approval') : route('reports.approval') }}">
-                    <i class="fas fa-check-circle me-2"></i>Approval Status
-                </a>
-                <a class="collapse-item" href="{{ $isCompany ? route('company.reports.hourly') : route('reports.hourly') }}">
-                    <i class="fas fa-clock me-2"></i>Hourly Report
-                </a>
+            <div id="collapseCheckReports" class="collapse {{ $reportActive ? 'show' : '' }}" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                <div class="py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visitors') : route('reports.visitors') }}">
+                        <i class="fas fa-users me-2"></i>Visitor Report
+                    </a>
+                    <a class="collapse-item" href="{{ $isCompany ? route('company.reports.visits') : route('reports.inout') }}">
+                        <i class="fas fa-door-open me-2"></i>In/Out Report
+                    </a>
+                    @if($showSecurityReport)
+                        <a class="collapse-item" href="{{ $isCompany ? route('company.reports.security') : route('reports.security') }}">
+                            <i class="fas fa-shield-alt me-2"></i>Security Checkpoints
+                        </a>
+                    @endif
+                    @if($showApprovalReport)
+                        <a class="collapse-item" href="{{ $isCompany ? route('company.reports.approval') : route('reports.approval') }}">
+                            <i class="fas fa-check-circle me-2"></i>Approval Status
+                        </a>
+                    @endif
+                    <a class="collapse-item" href="{{ $isCompany ? route('company.reports.hourly') : route('reports.hourly') }}">
+                        <i class="fas fa-clock me-2"></i>Hourly Report
+                    </a>
+                </div>
             </div>
-        </div>
-    </li>
+        </li>
+    @endif
 
 
 

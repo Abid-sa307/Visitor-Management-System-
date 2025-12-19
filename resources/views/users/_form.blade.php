@@ -114,8 +114,13 @@
         </div>
     </div>
 
-    <input type="hidden" name="branch_ids" id="branchIds"
-           value="{{ isset($user) ? $user->branches->pluck('id')->implode(',') : '' }}">
+    <div id="branchHiddenInputs">
+        @if(isset($user) && $user->branches->count() > 0)
+            @foreach($user->branches as $branch)
+                <input type="hidden" name="branch_ids[]" value="{{ $branch->id }}">
+            @endforeach
+        @endif
+    </div>
     @error('branch_ids') <div class="text-danger small">{{ $message }}</div> @enderror
 </div>
 
@@ -175,7 +180,11 @@
         </div>
     </div>
 
-    <input type="hidden" name="department_ids" id="departmentIds" value="{{ implode(',', $preselectedDeptIds) }}">
+    <div id="departmentHiddenInputs">
+        @foreach($preselectedDeptIds as $deptId)
+            <input type="hidden" name="department_ids[]" value="{{ $deptId }}">
+        @endforeach
+    </div>
     @error('department_ids') <div class="text-danger small">{{ $message }}</div> @enderror
 </div>
 
@@ -188,29 +197,13 @@
     @php
         $moduleGroups = [
             'Main' => ['dashboard'],
-            'Visitors' => ['visitors','visitor_history','visitor_inout','visitor_categories','visitor_checkup','approvals'],
-            'Management' => ['employees','departments','users','security_checks'],
+            'Management' => ['departments', 'employees', 'users'],
+            'Visitors' => ['visitors', 'security_checks', 'approvals', 'visitor_inout', 'visitor_history', 'visitor_categories'],
+            'QR Code' => ['qr_scanner'],
             'Reports' => ['reports'],
-            'QR Code' => ['qr_scanner','qr_code'],
         ];
 
-        $normalizeToArray = function ($value) {
-            if (is_array($value)) return $value;
-            if (is_string($value) && $value !== '') {
-                $decoded = json_decode($value, true);
-                return is_array($decoded) ? $decoded : [];
-            }
-            return [];
-        };
-
-        $selectedPages = old('master_pages');
-        if (is_null($selectedPages)) {
-            $selectedPages = method_exists($user, 'getMasterPagesListAttribute')
-                ? ($user->master_pages_list ?? [])
-                : $normalizeToArray($user->master_pages ?? []);
-        } else {
-            $selectedPages = (array) $selectedPages;
-        }
+        $selectedPages = old('master_pages', isset($user) && $user->master_pages ? (array)$user->master_pages : []);
     @endphp
 
     <div class="row">
@@ -228,7 +221,14 @@
                                        value="{{ $module }}"
                                        {{ in_array($module, $selectedPages, true) ? 'checked' : '' }}>
                                 <label class="form-check-label text-capitalize" for="mp-{{ $module }}">
-                                    {{ str_replace('_', ' ', $module) }}
+                                    @switch($module)
+                                        @case('visitor_inout') Visitor In & Out @break
+                                        @case('visitor_history') Visitor History @break
+                                        @case('visitor_categories') Visitor Categories @break
+                                        @case('security_checks') Security Checks @break
+                                        @case('qr_scanner') QR Codes @break
+                                        @default {{ str_replace('_', ' ', ucfirst($module)) }}
+                                    @endswitch
                                 </label>
                             </div>
                         @endforeach
@@ -275,8 +275,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const companySelect = document.getElementById('companySelect');
     const branchCheckboxList = document.getElementById('branchCheckboxList');
     const departmentList = document.getElementById('departmentList');
-    const branchIds = document.getElementById('branchIds');
-    const departmentIds = document.getElementById('departmentIds');
 
     if (companySelect && companySelect.tagName === 'SELECT') {
         companySelect.addEventListener('change', function () {
@@ -312,6 +310,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <label class="form-check-label" for="branch-${b.id}">${b.name}</label>
                             </div>`;
                         });
+                        // Clear hidden inputs when company changes
+                        document.getElementById('branchHiddenInputs').innerHTML = '';
                         branchCheckboxList.innerHTML = html || '<div class="text-muted small">No branches found</div>';
                     })
                     .catch(err => {
@@ -343,6 +343,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <label class="form-check-label" for="dept-${d.id}">${d.name}</label>
                             </div>`;
                         });
+                        // Clear hidden inputs when company changes
+                        document.getElementById('departmentHiddenInputs').innerHTML = '';
                         departmentList.innerHTML = html || '<div class="text-muted small">No departments found</div>';
                     })
                     .catch(err => {
@@ -381,14 +383,36 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.target.classList.contains('branch-checkbox')) {
             const checked = document.querySelectorAll('.branch-checkbox:checked');
             const ids = Array.from(checked).map(cb => cb.value);
-            if (branchIds) branchIds.value = ids.join(',');
+            
+            // Update hidden inputs
+            const container = document.getElementById('branchHiddenInputs');
+            container.innerHTML = '';
+            ids.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'branch_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+            
             document.getElementById('branchButtonText').textContent = ids.length ? `${ids.length} selected` : 'Select Branches';
         }
         
         if (e.target.classList.contains('department-checkbox')) {
             const checked = document.querySelectorAll('.department-checkbox:checked');
             const ids = Array.from(checked).map(cb => cb.value);
-            if (departmentIds) departmentIds.value = ids.join(',');
+            
+            // Update hidden inputs
+            const container = document.getElementById('departmentHiddenInputs');
+            container.innerHTML = '';
+            ids.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'department_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+            
             document.getElementById('departmentButtonText').textContent = ids.length ? `${ids.length} selected` : 'Select Departments';
         }
     });
@@ -402,7 +426,18 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const checked = document.querySelectorAll('.branch-checkbox:checked');
             const ids = Array.from(checked).map(cb => cb.value);
-            if (branchIds) branchIds.value = ids.join(',');
+            
+            // Update hidden inputs
+            const container = document.getElementById('branchHiddenInputs');
+            container.innerHTML = '';
+            ids.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'branch_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+            
             document.getElementById('branchButtonText').textContent = ids.length ? `${ids.length} selected` : 'Select Branches';
             e.target.textContent = allChecked ? 'Select All' : 'Deselect All';
         }
@@ -418,7 +453,18 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const checked = document.querySelectorAll('.department-checkbox:checked');
             const ids = Array.from(checked).map(cb => cb.value);
-            if (departmentIds) departmentIds.value = ids.join(',');
+            
+            // Update hidden inputs
+            const container = document.getElementById('departmentHiddenInputs');
+            container.innerHTML = '';
+            ids.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'department_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+            
             document.getElementById('departmentButtonText').textContent = ids.length ? `${ids.length} selected` : 'Select Departments';
             e.target.textContent = allChecked ? 'Select All' : 'Deselect All';
         }

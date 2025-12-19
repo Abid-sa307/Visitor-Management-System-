@@ -116,6 +116,9 @@
                     <input type="hidden" name="captured_photo" id="capturedPhoto">
                 </div>
 
+                <!--   GET https://via.placeholder.com/300 net::ERR_NAME_NOT_RESOLVEDUnderstand this error
+                signature_pad.ts:88 Uncaught TypeError: Cannot read properties of null (reading 'getContext') -->
+
                 <!-- Signature Section -->
                 {{-- <div class="mb-4">
                     <h5>Visitor Signature</h5>

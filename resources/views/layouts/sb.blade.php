@@ -109,6 +109,14 @@
             margin-left: 0;
         }
 
+        /* Sticky topbar on mobile */
+        .navbar {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1040 !important;
+            background: white !important;
+        }
+
         /* Allow normal scrolling */
     }
     </style>
