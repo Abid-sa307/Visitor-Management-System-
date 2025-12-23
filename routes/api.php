@@ -22,6 +22,6 @@ Route::get('/companies/{company}/branches', function (Company $company) {
 // Get face recognition setting for a company
 Route::get('/companies/{company}/face-recognition', function (Company $company) {
     return response()->json([
-        'enabled' => (bool) $company->enable_face_recognition
+        'enabled' => (bool) $company->face_recognition_enabled
     ]);
 });

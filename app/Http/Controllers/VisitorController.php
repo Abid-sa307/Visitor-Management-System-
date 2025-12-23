@@ -1846,4 +1846,19 @@ return view('visitors.visit', [
             return back()->with('error', 'Error deleting visitor: ' . $e->getMessage());
         }
     }
+
+    /**
+     * API endpoint to check if face recognition is enabled for a company
+     */
+    public function checkFaceRecognition($companyId)
+    {
+        try {
+            $company = Company::findOrFail($companyId);
+            return response()->json([
+                'enabled' => (bool) $company->face_recognition_enabled
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['enabled' => false], 404);
+        }
+    }
 }

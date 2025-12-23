@@ -122,6 +122,7 @@
         <th>Person to Visit</th>
         <th>Vehicle No</th>
         <th>Visit Date</th>
+        <th>Face Verification</th>
         <th>Approval Status</th>
         <th>In/Out Status</th>
         <th style="min-width: 220px;">Actions</th>
@@ -139,6 +140,13 @@
             <td>{{ $visitor->person_to_visit ?? '—' }}</td>
             <td>{{ $visitor->vehicle_number ?? '—' }}</td>
             <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
+            <td>
+                @if($visitor->face_encoding || $visitor->face_image)
+                    <span class="badge bg-success">Yes</span>
+                @else
+                    <span class="badge bg-secondary">No</span>
+                @endif
+            </td>
             <td>
                 @php
                     $approvalStatus = $visitor->status ?? 'Pending';
@@ -219,7 +227,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="12" class="text-muted">No visitors found.</td></tr>
+            <tr><td colspan="13" class="text-muted">No visitors found.</td></tr>
           @endforelse
         </tbody>
       </table>

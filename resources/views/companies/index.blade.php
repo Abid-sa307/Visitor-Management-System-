@@ -91,7 +91,7 @@
                                 <span class="badge bg-{{ $auto ? 'success' : 'secondary' }}">{{ $auto ? 'Yes' : 'No' }}</span>
                             </td>
                             <td>
-                                @php $faceRecognition = (int)($company->enable_face_recognition ?? 0); @endphp
+                                @php $faceRecognition = (int)($company->face_recognition_enabled ?? 0); @endphp
                                 <span class="badge bg-{{ $faceRecognition ? 'success' : 'secondary' }}">{{ $faceRecognition ? 'Yes' : 'No' }}</span>
                             </td>
                             <td>
