@@ -111,6 +111,7 @@
                             @if($isSuper)
                                 <th>Company</th>
                             @endif
+                            <th>Branch</th>
                             <th>Department</th>
                             <th>Status</th>
                             <th>Last Visit</th>
@@ -131,6 +132,7 @@
                                 @if($isSuper)
                                     <td>{{ optional($visitor->company)->name ?? '—' }}</td>
                                 @endif
+                                <td>{{ optional($visitor->branch)->name ?? '—' }}</td>
                                 <td>{{ optional($visitor->department)->name ?? '—' }}</td>
                                 <td>
                                     <span class="badge bg-{{ $visitor->status === 'Approved' ? 'success' : ($visitor->status === 'Rejected' ? 'danger' : 'secondary') }}">

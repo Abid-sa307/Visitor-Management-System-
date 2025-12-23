@@ -4,12 +4,27 @@
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">Security Check for {{ $visitor->name }}</h4>
+            <div class="mt-2">
+                <div class="row text-sm">
+                    <div class="col-md-3">
+                        <strong>Company:</strong> {{ optional($visitor->company)->name ?? '—' }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Branch:</strong> {{ optional($visitor->branch)->name ?? '—' }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Department:</strong> {{ optional($visitor->department)->name ?? '—' }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Phone:</strong> {{ $visitor->phone ?? '—' }}
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ route('security-checks.store') }}" enctype="multipart/form-data" id="securityCheckForm">
                 @csrf
                 <input type="hidden" name="visitor_id" value="{{ $visitor->id }}">
-                <input type="hidden" name="signature" id="signatureData">
 
                 <!-- Dynamic Questions Section -->
                 <div class="mb-4">
@@ -107,7 +122,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="border p-2 text-center">
-                                <img id="previewPhoto" src="{{ $visitor->photo ? asset('storage/' . $visitor->photo) : 'https://via.placeholder.com/300' }}" 
+                                <img id="previewPhoto" src="{{ $visitor->photo ? asset('storage/' . $visitor->photo) : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOTk5Ij5WaXNpdG9yIFBob3RvPC90ZXh0Pjwvc3ZnPg==' }}" 
                                      alt="Visitor Photo" class="img-fluid" style="max-height: 300px;">
                                 <p class="small text-muted mt-2">Visitor's profile photo</p>
                             </div>
@@ -119,20 +134,7 @@
                 <!--   GET https://via.placeholder.com/300 net::ERR_NAME_NOT_RESOLVEDUnderstand this error
                 signature_pad.ts:88 Uncaught TypeError: Cannot read properties of null (reading 'getContext') -->
 
-                <!-- Signature Section -->
-                {{-- <div class="mb-4">
-                    <h5>Visitor Signature</h5>
-                    <div class="border p-3 bg-light">
-                        <div id="signature-pad" style="border: 1px solid #ddd; background: white; cursor: crosshair;">
-                            <canvas id="signatureCanvas" style="width: 100%; height: 150px;"></canvas>
-                        </div>
-                        <div class="mt-2">
-                            <button type="button" id="clearSignature" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-eraser"></i> Clear
-                            </button>
-                        </div>
-                    </div>
-                </div> --}}
+
 
                 <!-- Officer Information -->
                 <div class="mb-4">
@@ -222,37 +224,9 @@
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Signature Pad
-        const canvas = document.getElementById('signatureCanvas');
-        const signaturePad = new SignaturePad(canvas, {
-            backgroundColor: 'rgb(255, 255, 255)',
-            penColor: 'rgb(0, 0, 0)'
-        });
-
-        // Handle window resize
-        function resizeCanvas() {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext('2d').scale(ratio, ratio);
-            signaturePad.clear();
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        // Clear signature
-        document.getElementById('clearSignature').addEventListener('click', () => {
-            signaturePad.clear();
-        });
 
         // Handle form submission
         document.getElementById('securityCheckForm').addEventListener('submit', function(e) {
-            if (signaturePad.isEmpty()) {
-                e.preventDefault();
-                alert('Please provide a signature');
-                return false;
-            }
-            document.getElementById('signatureData').value = signaturePad.toDataURL();
             return true;
         });
 
@@ -311,7 +285,8 @@
         });
 
         retakePhotoBtn.addEventListener('click', () => {
-            photoPreview.src = 'https://via.placeholder.com/300';
+            const defaultImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOTk5Ij5WaXNpdG9yIFBob3RvPC90ZXh0Pjwvc3ZnPg==';
+            photoPreview.src = defaultImage;
             document.getElementById('capturedPhoto').value = '';
             startCameraBtn.click();
             retakePhotoBtn.classList.add('d-none');

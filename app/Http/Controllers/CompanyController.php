@@ -389,10 +389,13 @@ public function getDepartments(Company $company)
                 'phone'  => 'nullable|string|max:32',
                 'address' => 'nullable|string',
                 'contact_number' => 'nullable|string|max:255',
+                'website' => 'nullable|url|max:255',
+                'gst_number' => 'nullable|string|max:255',
                 'branch_start_date' => 'nullable|date',
                 'branch_end_date' => 'nullable|date|after_or_equal:branch_start_date',
                 'auto_approve_visitors' => 'sometimes|boolean',
                 'face_recognition_enabled' => 'sometimes|boolean',
+                'security_checkin_type' => 'nullable|string|in:,checkin,checkout,both',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
@@ -425,9 +428,14 @@ public function getDepartments(Company $company)
                 $addresses = array_values($branches['address'] ?? []);
                 $startTimes = array_values($branches['start_time'] ?? []);
                 $endTimes = array_values($branches['end_time'] ?? []);
+                $deleted = array_values($branches['deleted'] ?? []);
 
-                // Check for duplicate branch names
-                $branchNames = [];
+                \Log::info('Branch arrays:', [
+                    'ids' => $ids,
+                    'names' => $names,
+                    'deleted' => $deleted
+                ]);
+
                 $count = max(
                     count($names), 
                     count($phones), 
@@ -435,24 +443,32 @@ public function getDepartments(Company $company)
                     count($addresses), 
                     count($startTimes),
                     count($endTimes),
-                    count($ids)
+                    count($ids),
+                    count($deleted)
                 );
                 
                 for ($i = 0; $i < $count; $i++) {
-                    $name = trim((string)($names[$i] ?? ''));
-                    if ($name !== '') {
-                        if (in_array(strtolower($name), array_map('strtolower', $branchNames))) {
-                            throw new \Exception('Duplicate branch name: ' . $name);
-                        }
-                        $branchNames[] = $name;
-                    }
-                }
-                
-                $keptBranchIds = [];
-                
-                for ($i = 0; $i < $count; $i++) {
-                    $name = trim((string)($names[$i] ?? ''));
                     $id = (int)($ids[$i] ?? 0);
+                    $isDeleted = ($deleted[$i] ?? '0') === '1';
+                    
+                    \Log::info("Processing branch {$i}:", ['id' => $id, 'deleted' => $isDeleted]);
+                    
+                    if ($id > 0 && $isDeleted) {
+                        // Delete marked branches
+                        $branch = Branch::where('company_id', $company->id)->where('id', $id)->first();
+                        if ($branch) {
+                            \Log::info("Deleting branch {$id} (marked for deletion)");
+                            $branch->delete();
+                        }
+                        continue;
+                    }
+                    
+                    if ($isDeleted) {
+                        // Skip new branches marked for deletion
+                        continue;
+                    }
+                    
+                    $name = trim((string)($names[$i] ?? ''));
                     $data = [
                         'name' => $name,
                         'phone' => (string)($phones[$i] ?? ''),
@@ -463,39 +479,19 @@ public function getDepartments(Company $company)
                     ];
 
                     if ($id > 0) {
-                        $branch = Branch::where('company_id', $company->id)
-                            ->where('id', $id)
-                            ->first();
-                        
-                        if ($branch) {
-                            if ($name === '') {
-                                $branch->delete();
-                                continue;
-                            } else {
-                                $branch->update($data);
-                                $keptBranchIds[] = $branch->id;
-                            }
+                        // Update existing branch
+                        $branch = Branch::where('company_id', $company->id)->where('id', $id)->first();
+                        if ($branch && $name !== '') {
+                            \Log::info("Updating branch {$id}");
+                            $branch->update($data);
                         }
                     } else {
-                        // Create new branch if any field is provided
-                        $hasAny = ($name !== '') || ($data['phone'] !== '') || 
-                                 ($data['email'] !== '') || ($data['address'] !== '');
-                        
-                        if ($hasAny) {
-                            if ($name === '') { 
-                                $data['name'] = 'Branch ' . ($company->branches()->count() + 1); 
-                            }
-                            $newBranch = Branch::create($data + ['company_id' => $company->id]);
-                            $keptBranchIds[] = $newBranch->id;
+                        // Create new branch if name is provided
+                        if ($name !== '') {
+                            \Log::info('Creating new branch:', $data);
+                            Branch::create($data + ['company_id' => $company->id]);
                         }
                     }
-                }
-
-                // Delete branches not present in submission (only when at least one existing ID is submitted)
-                if (!empty($keptBranchIds)) {
-                    Branch::where('company_id', $company->id)
-                        ->whereNotIn('id', $keptBranchIds)
-                        ->delete();
                 }
             }
 

@@ -34,6 +34,12 @@
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Visitor Notification System -->
+    <script src="{{ asset('js/visitor-notification.js') }}"></script>
 
     <style>
         body {
@@ -207,6 +213,9 @@
 
         @yield('content')
     </main>
+    
+    <!-- Visitor Notification Trigger -->
+    @include('partials.visitor-notification')
 
     <!-- Sidebar Toggle Script -->
     <!-- Sidebar Toggle Script -->

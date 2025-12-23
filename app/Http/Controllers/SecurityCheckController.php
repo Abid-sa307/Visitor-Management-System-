@@ -102,17 +102,16 @@ class SecurityCheckController extends Controller
             'responses' => 'required|array',
             'security_officer_name' => 'required|string|max:255',
             'officer_badge' => 'nullable|string|max:100',
-            'captured_photo' => 'required|string',
-            'signature' => 'required|string',
+            'captured_photo' => 'nullable|string',
             'photo_responses' => 'nullable|array',
         ]);
 
         try {
-            // Process and save the visitor photo
-            $visitorPhotoPath = $this->saveBase64Image($request->captured_photo, 'visitor_photos');
-            
-            // Process and save the signature
-            $signaturePath = $this->saveBase64Image($request->signature, 'signatures');
+            // Process and save the visitor photo if provided
+            $visitorPhotoPath = null;
+            if ($request->captured_photo) {
+                $visitorPhotoPath = $this->saveBase64Image($request->captured_photo, 'visitor_photos');
+            }
             
             // Process photo responses if any
             $photoResponses = [];
@@ -131,15 +130,11 @@ class SecurityCheckController extends Controller
                 'questions' => $request->questions,
                 'responses' => $request->responses,
                 'security_officer_name' => $request->security_officer_name,
-                'officer_badge' => $request->officer_badge,
-                'visitor_photo' => $visitorPhotoPath,
-                'signature' => $signaturePath,
-                'photo_responses' => !empty($photoResponses) ? $photoResponses : null,
             ]);
 
-            // Update visitor's photo if it's a new one
+            // Update visitor's photo if it's a new one and visitor doesn't have a photo
             $visitor = Visitor::find($request->visitor_id);
-            if ($visitor && !$visitor->photo) {
+            if ($visitor && !$visitor->photo && $visitorPhotoPath) {
                 $visitor->photo = $visitorPhotoPath;
                 $visitor->save();
             }

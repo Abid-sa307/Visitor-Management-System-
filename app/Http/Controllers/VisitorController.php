@@ -32,6 +32,39 @@ class VisitorController extends Controller
 
     /* --------------------------- Helpers --------------------------- */
 
+    /**
+     * Validate if visitor has completed required security check based on company settings
+     */
+    private function validateSecurityCheck($visitor, $action)
+    {
+        if (!$visitor->company || !$visitor->company->security_check_service) {
+            return null; // No security check required
+        }
+
+        $securityType = $visitor->company->security_checkin_type;
+        $hasSecurityCheck = $visitor->securityChecks()->exists();
+        
+        // If no security check type is set, no validation needed
+        if (empty($securityType)) {
+            return null;
+        }
+
+        // Check requirements based on action and security type
+        if ($action === 'checking in') {
+            // For check-in, require security check if type is 'checkin' or 'both'
+            if (in_array($securityType, ['checkin', 'both']) && !$hasSecurityCheck) {
+                return "Security check must be completed before checking in.";
+            }
+        } elseif ($action === 'checking out') {
+            // For check-out, require security check if type is 'checkout' or 'both'
+            if (in_array($securityType, ['checkout', 'both']) && !$hasSecurityCheck) {
+                return "Security check must be completed before checking out.";
+            }
+        }
+
+        return null;
+    }
+
     private function isSuper(): bool
     {
         $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
@@ -164,28 +197,33 @@ class VisitorController extends Controller
                 'visitor_category_id' => 'nullable|exists:visitor_categories,id',
                 'email'               => 'nullable|email:rfc,dns',
                 'phone'               => 'required|regex:' . self::PHONE_REGEX,
-                'photo'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'photo'               => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'face_image'          => 'nullable|string', // base64 webcam photo
-                'face_encoding'       => 'nullable|json',   // Face descriptor array
+                'face_encoding'       => 'nullable|string',   // Face descriptor JSON
                 'department_id'       => 'nullable|exists:departments,id',
                 'purpose'             => 'nullable|string|max:255',
                 'person_to_visit'     => 'nullable|string|max:255',
                 'documents'           => 'nullable|array',
-                'documents.*'         => 'file|max:5120',
+                'documents.*'         => 'file|mimes:pdf,doc,docx,jpeg,png,jpg|max:5120',
                 'visitor_company'     => 'nullable|string|max:255',
-                'visitor_website'     => 'nullable|string|max:255',
+                'visitor_website'     => 'nullable|url|max:255',
                 'vehicle_type'        => 'nullable|string|max:20',
                 'vehicle_number'      => 'nullable|string|max:50',
                 'goods_in_car'        => 'nullable|string|max:255',
                 'workman_policy'      => 'nullable|in:Yes,No',
-                'workman_policy_photo'=> 'nullable|image|max:2048',
-                'photo' => 'sometimes|image|mimes:jpeg,png,jpg|max:2048',
-                'document' => 'sometimes|file|mimes:pdf,doc,docx,jpeg,png|max:5120', // 5MB max
+                'workman_policy_photo'=> 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'document'            => 'nullable|file|mimes:pdf,doc,docx,jpeg,png,jpg|max:5120',
             ], $messages);
 
-            $validated['name'] = Str::squish($validated['name']);
+            $validated['name'] = strip_tags(Str::squish($validated['name']));
             if (!empty($validated['email'])) {
-                $validated['email'] = strtolower($validated['email']);
+                $validated['email'] = strtolower(strip_tags($validated['email']));
+            }
+            if (!empty($validated['purpose'])) {
+                $validated['purpose'] = strip_tags($validated['purpose']);
+            }
+            if (!empty($validated['person_to_visit'])) {
+                $validated['person_to_visit'] = strip_tags($validated['person_to_visit']);
             }
 
             // ---------------------------
@@ -199,83 +237,7 @@ class VisitorController extends Controller
                 }
             }
 
-            // ---------------------------
             // Handle photo / face image
-            // ---------------------------
-            $faceData = null;
-            
-            // Log all request data for debugging
-            \Log::info('Request data:', [
-                'all' => $request->all(),
-                'has_face_encoding' => $request->has('face_encoding'),
-                'has_face_image' => $request->has('face_image'),
-                'files' => $request->allFiles()
-            ]);
-
-            // Process face encoding if provided
-            $faceData = null;
-            if ($request->has('face_encoding') && !empty($request->face_encoding)) {
-                \Log::info('Raw face_encoding from request:', [
-                    'face_encoding' => $request->face_encoding,
-                    'type' => gettype($request->face_encoding),
-                    'length' => is_string($request->face_encoding) ? strlen($request->face_encoding) : 'N/A'
-                ]);
-                
-                // Try to decode the JSON
-                $faceData = json_decode($request->face_encoding, true);
-                $jsonError = json_last_error();
-                
-                if ($jsonError !== JSON_ERROR_NONE) {
-                    $errorMsg = 'JSON decode error: ' . json_last_error_msg() . ' (code: ' . $jsonError . ')';
-                    \Log::error($errorMsg, [
-                        'input' => substr($request->face_encoding, 0, 100) . (strlen($request->face_encoding) > 100 ? '...' : '')
-                    ]);
-                    
-                    throw ValidationException::withMessages([
-                        'face_encoding' => ['Invalid face data format. Please try capturing your face again.']
-                    ]);
-                }
-                
-                \Log::info('Decoded face_encoding:', [
-                    'is_array' => is_array($faceData),
-                    'count' => is_array($faceData) ? count($faceData) : 'N/A',
-                    'sample' => is_array($faceData) ? array_slice($faceData, 0, 5) : 'N/A'
-                ]);
-                
-                // Add to validated data to be saved - store as JSON string
-                $validated['face_encoding'] = json_encode($faceData);
-                \Log::info('Face encoding added to validated data', [
-                    'first_5_values' => array_slice($faceData, 0, 5),
-                    'validated_keys' => array_keys($validated),
-                    'stored_value' => $validated['face_encoding']
-                ]);
-            } else {
-                \Log::warning('No face_encoding found in request', [
-                    'request_keys' => array_keys($request->all()),
-                    'request_has_face_encoding' => $request->has('face_encoding'),
-                    'face_encoding_empty' => $request->has('face_encoding') ? 'empty' : 'not present'
-                ]);
-            }
-
-
-            if ($request->hasFile('photo')) {
-                $path = $request->file('photo')->store('visitor_photos', 'public');
-                $visitor->photo_path = $path;
-            }
-
-            if ($request->hasFile('document')) {
-                $documentPath = $request->file('document')->store('visitor_documents', 'public');
-                $visitor->document_path = $documentPath;
-            }
-
-
-            // Handle document upload
-            if ($request->hasFile('document')) {
-                $document = $request->file('document');
-                $documentPath = $document->store('documents', 'public');
-                $validated['document_path'] = $documentPath;
-            }
-            // Handle face image (base64)
             if ($request->filled('face_image')) {
                 $dataUrl = $request->input('face_image');
                 if (preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $dataUrl, $m)) {
@@ -287,45 +249,28 @@ class VisitorController extends Controller
                         throw new \Exception('Invalid base64 image data');
                     }
                     
-                    // Generate a unique filename with timestamp
                     $filename = 'visitor_faces/visitor_face_' . time() . '_' . uniqid() . '.' . $ext;
-                    
-                    // Ensure the directory exists
                     Storage::disk('public')->makeDirectory('visitor_faces');
-                    
-                    // Save the file to storage
                     Storage::disk('public')->put($filename, $imageData);
+                    $validated['face_image'] = $filename;
                     
-                    // Store the path in the database (not the base64 data)
-                    $validated['face_image'] = $filename;  // Store the path, not the base64 data
-                    
-                    // Also set as the main photo if no other photo was uploaded
                     if (empty($validated['photo'])) {
                         $validated['photo'] = $filename;
                     }
-                    
-                    // If we have face encoding, it's already JSON encoded and added to $validated
-                    // No need to set it again as it would overwrite the JSON with an array
-                    
-                    \Log::info('Face image saved successfully', [
-                        'filename' => $filename,
-                        'path' => $filename,
-                        'size' => strlen($imageData) . ' bytes'
-                    ]);
                 }
-            }
-            // Handle regular photo upload
-            elseif ($request->hasFile('photo')) {
-                $validated['photo'] = $request->file('photo')->store('photos', 'public');
+            } elseif ($request->hasFile('photo')) {
+                $validated['photo'] = $request->file('photo')->store('visitor_photos', 'public');
             }
 
-            // Handle documents upload
-            if ($request->hasFile('documents')) {
-                $paths = [];
-                foreach ($request->file('documents') as $doc) {
-                    $paths[] = $doc->store('documents', 'public');
-                }
-                $validated['documents'] = $paths;
+            // Process face encoding
+            if ($request->has('face_encoding') && !empty($request->face_encoding)) {
+                $validated['face_encoding'] = $request->face_encoding;
+            }
+
+            // Handle document upload
+            if ($request->hasFile('document')) {
+                $documentPath = $request->file('document')->store('visitor_documents', 'public');
+                $validated['document_path'] = $documentPath;
             }
 
             // Workman policy photo
@@ -367,13 +312,13 @@ class VisitorController extends Controller
             // Email notifications
             try {
                 if (!empty($visitor->email)) {
-                    \Mail::to($visitor->email)->send(new \App\Mail\VisitorCreatedMail($visitor));
+                    \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
                     if ($visitor->status === 'Approved') {
-                        \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
+                        \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
                     }
                 }
             } catch (\Throwable $e) {
-                \Log::warning('VisitorCreated mail failed: '.$e->getMessage());
+                \Log::warning('VisitorCreated mail dispatch failed: '.$e->getMessage());
             }
 
             // Notify company users
@@ -401,7 +346,8 @@ class VisitorController extends Controller
                 ? 'Visitor registered and auto-approved successfully.' 
                 : 'Visitor registered successfully. Pending approval.';
 
-            return redirect()->route($route)->with('success', $message);
+            return redirect()->route($route)->with('success', $message)
+                ->with('play_notification', true);
         });
     }
 
@@ -524,9 +470,9 @@ class VisitorController extends Controller
             // If transitioned to Approved, send mail to visitor
             if ($previousStatus !== 'Approved' && $newStatus === 'Approved' && !empty($visitor->email)) {
                 try {
-                    \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
+                    \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
                 } catch (\Throwable $e) {
-                    \Log::error('Failed to send approval email: ' . $e->getMessage());
+                    \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
                 }
             }
 
@@ -535,6 +481,7 @@ class VisitorController extends Controller
                     'success' => true,
                     'status'  => $visitor->status,
                     'message' => "Visitor status updated to {$visitor->status}",
+                    'play_notification' => $newStatus === 'Approved'
                 ]);
             }
 
@@ -637,9 +584,9 @@ class VisitorController extends Controller
         // Send approval email if status changed to Approved
         if ($isBeingApproved && !empty($visitor->email)) {
             try {
-                \Mail::to($visitor->email)->send(new \App\Mail\VisitorApprovedMail($visitor));
+                \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
             } catch (\Throwable $e) {
-                \Log::error('Failed to send approval email: ' . $e->getMessage());
+                \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
             }
         }
 
@@ -936,7 +883,7 @@ return view('visitors.visit', [
 
     public function entryPage()
     {
-        $visitors = $this->companyScope(Visitor::query()->with(['company', 'branch', 'department'])->latest('created_at'))->paginate(10);
+        $visitors = $this->companyScope(Visitor::query()->with(['company', 'branch', 'department', 'securityChecks'])->latest('created_at'))->paginate(10);
         $isCompany = $this->isCompany();
         
         // Get companies for superadmin
@@ -959,6 +906,11 @@ return view('visitors.visit', [
             // For company users, get their company's branches and departments
             $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
             $departments = Department::where('company_id', $user->company_id)->pluck('name', 'id');
+            
+            // If company has no branches, show empty collection
+            if ($branches->isEmpty()) {
+                $branches = collect();
+            }
         }
         
         return view('visitors.entry', compact(
@@ -1126,6 +1078,15 @@ return view('visitors.visit', [
                 $message = 'Check-out has been undone successfully.';
                 
             } elseif ($action === 'in' || !$visitor->in_time) {
+                // Check security requirements
+                $securityError = $this->validateSecurityCheck($visitor, 'checking in');
+                if ($securityError) {
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $securityError], 400);
+                    }
+                    return back()->with('error', $securityError);
+                }
+                
                 // Original check-in logic
                 $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
                 if (!$companyAuto && $visitor->status !== 'Approved') {
@@ -1142,8 +1103,18 @@ return view('visitors.visit', [
                     $visitor->approved_at = now();
                 }
                 $message = 'Visitor checked in successfully.';
+                $playNotification = true;
                 
             } elseif ($action === 'out' || ($visitor->in_time && !$visitor->out_time)) {
+                // Check security requirements
+                $securityError = $this->validateSecurityCheck($visitor, 'checking out');
+                if ($securityError) {
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $securityError], 400);
+                    }
+                    return back()->with('error', $securityError);
+                }
+                
                 // Original check-out logic
                 if ($visitor->out_time) {
                     $message = 'Visitor has already been checked out.';
@@ -1172,6 +1143,7 @@ return view('visitors.visit', [
                 return response()->json([
                     'success' => true,
                     'message' => $message,
+                    'play_notification' => $playNotification ?? false,
                     'visitor' => [
                         'id' => $visitor->id,
                         'in_time' => $visitor->in_time,
@@ -1181,8 +1153,16 @@ return view('visitors.visit', [
                 ]);
             }
 
+            // Check if this is a public visitor request
+            if (request()->has('public') || request()->header('referer') && str_contains(request()->header('referer'), '/public/')) {
+                return redirect()->route('public.visitor.index', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
+                    ->with('success', $message)
+                    ->with('play_notification', $playNotification ?? false);
+            }
+
             return redirect()->route('visitors.entry.page')
-                ->with('success', $message);
+                ->with('success', $message)
+                ->with('play_notification', $playNotification ?? false);
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1258,87 +1238,87 @@ return view('visitors.visit', [
     /* --------------------------- Reports --------------------------- */
 
     // Visitor Report (filters by in_time)
- /**
- * Display a listing of visitors for reporting.
- *
- * @param  \Illuminate\Http\Request  $request
- * @return \Illuminate\View\View
- */
-public function report(Request $request)
-{
-    $today = Carbon::today();
-    $month = Carbon::now()->month;
+    /**
+     * Display a listing of visitors for reporting.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View
+     */
+    public function report(Request $request)
+    {
+        $today = Carbon::today();
+        $month = Carbon::now()->month;
 
-    // Get counts for today and this month
-    $todayVisitors = $this->companyScope(
-        Visitor::whereDate('created_at', $today)
-    )->count();
+        // Get counts for today and this month
+        $todayVisitors = $this->companyScope(
+            Visitor::whereDate('created_at', $today)
+        )->count();
 
-    $monthVisitors = $this->companyScope(
-        Visitor::whereMonth('created_at', $month)
-    )->count();
+        $monthVisitors = $this->companyScope(
+            Visitor::whereMonth('created_at', $month)
+        )->count();
 
-    // Get status counts
-    $statusCounts = $this->companyScope(
-        Visitor::select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-    )->pluck('total', 'status');
+        // Get status counts
+        $statusCounts = $this->companyScope(
+            Visitor::select('status', DB::raw('count(*) as total'))
+                ->groupBy('status')
+        )->pluck('total', 'status');
 
-    // Start building the query
-    $query = $this->companyScope(Visitor::query())
-        ->with(['company', 'department', 'branch'])
-        ->latest();
+        // Start building the query
+        $query = $this->companyScope(Visitor::query())
+            ->with(['company', 'department', 'branch'])
+            ->latest();
 
-    // Apply date range filter
-    $this->applyDateRange($query, 'in_time', $request);
+        // Apply date range filter
+        $this->applyDateRange($query, 'in_time', $request);
 
-    // Apply company filter if provided and user is superadmin
-    if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
-        $query->where('company_id', $request->company_id);
+        // Apply company filter if provided and user is superadmin
+        if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
+            $query->where('company_id', $request->company_id);
+        }
+
+        // Apply department filter if provided
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+        
+        // Apply branch filter if provided
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        // Get companies for filter dropdown
+        $companies = $this->getCompanies()->pluck('name', 'id');
+        
+        // Get departments based on selected company
+        $departmentsQuery = $this->getDepartments();
+        if ($request->filled('company_id')) {
+            $departmentsQuery->where('company_id', $request->company_id);
+        }
+        $departments = $departmentsQuery->pluck('name', 'id');
+        
+        // Get branches based on selected company
+        $branchesQuery = Branch::query();
+        if (auth()->user()->role !== 'superadmin') {
+            $branchesQuery->where('company_id', auth()->user()->company_id);
+        } elseif ($request->filled('company_id')) {
+            $branchesQuery->where('company_id', $request->company_id);
+        }
+        $branches = $branchesQuery->pluck('name', 'id');
+
+        // Get paginated results
+        $visitors = $query->paginate(10)->appends($request->query());
+
+        return view('visitors.report', compact(
+            'visitors', 
+            'todayVisitors', 
+            'monthVisitors', 
+            'statusCounts',
+            'companies',
+            'departments',
+            'branches'
+        ));
     }
-
-    // Apply department filter if provided
-    if ($request->filled('department_id')) {
-        $query->where('department_id', $request->department_id);
-    }
-    
-    // Apply branch filter if provided
-    if ($request->filled('branch_id')) {
-        $query->where('branch_id', $request->branch_id);
-    }
-
-    // Get companies for filter dropdown
-    $companies = $this->getCompanies()->pluck('name', 'id');
-    
-    // Get departments based on selected company
-    $departmentsQuery = $this->getDepartments();
-    if ($request->filled('company_id')) {
-        $departmentsQuery->where('company_id', $request->company_id);
-    }
-    $departments = $departmentsQuery->pluck('name', 'id');
-    
-    // Get branches based on selected company
-    $branchesQuery = Branch::query();
-    if (auth()->user()->role !== 'superadmin') {
-        $branchesQuery->where('company_id', auth()->user()->company_id);
-    } elseif ($request->filled('company_id')) {
-        $branchesQuery->where('company_id', $request->company_id);
-    }
-    $branches = $branchesQuery->pluck('name', 'id');
-
-    // Get paginated results
-    $visitors = $query->paginate(10)->appends($request->query());
-
-    return view('visitors.report', compact(
-        'visitors', 
-        'todayVisitors', 
-        'monthVisitors', 
-        'statusCounts',
-        'companies',
-        'departments',
-        'branches'
-    ));
-}
     public function inOutReport(Request $request)
     {
         $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch']);
@@ -1484,84 +1464,84 @@ public function report(Request $request)
     // Hourly visitors report (counts of in/out per hour over a date range)
     // In ReportController.php
 
-public function hourlyReport(Request $request)
-{
-    $query = Visitor::whereNotNull('in_time')
-        ->select(
-            DB::raw('HOUR(in_time) as hour'),
-            DB::raw('DATE(in_time) as date'),
-            DB::raw('COUNT(*) as count')
-        )
-        ->groupBy('hour', 'date')
-        ->orderBy('date')
-        ->orderBy('hour');
+    public function hourlyReport(Request $request)
+    {
+        $query = Visitor::whereNotNull('in_time')
+            ->select(
+                DB::raw('HOUR(in_time) as hour'),
+                DB::raw('DATE(in_time) as date'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('hour', 'date')
+            ->orderBy('date')
+            ->orderBy('hour');
 
-    // Apply date range filter
-    if ($request->filled('from')) {
-        $query->whereDate('in_time', '>=', $request->from);
-    }
-    if ($request->filled('to')) {
-        $query->whereDate('in_time', '<=', $request->to);
-    }
-
-    // Apply company filter
-    if ($request->filled('company_id')) {
-        $query->where('company_id', $request->company_id);
-    }
-
-    // Apply department filter
-    if ($request->filled('department_id')) {
-        $query->where('department_id', $request->department_id);
-    }
-
-    // Apply branch filter
-    if ($request->filled('branch_id')) {
-        $query->where('branch_id', $request->branch_id);
-    }
-
-    // Apply company filter for non-superadmins
-    if (auth()->user()->role !== 'superadmin') {
-        $query->where('company_id', auth()->user()->company_id);
-
-        // If user has specific departments assigned
-        if (auth()->user()->departments->isNotEmpty()) {
-            $query->whereIn('department_id', auth()->user()->departments->pluck('id'));
+        // Apply date range filter
+        if ($request->filled('from')) {
+            $query->whereDate('in_time', '>=', $request->from);
         }
+        if ($request->filled('to')) {
+            $query->whereDate('in_time', '<=', $request->to);
+        }
+
+        // Apply company filter
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        // Apply department filter
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        // Apply branch filter
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        // Apply company filter for non-superadmins
+        if (auth()->user()->role !== 'superadmin') {
+            $query->where('company_id', auth()->user()->company_id);
+
+            // If user has specific departments assigned
+            if (auth()->user()->departments->isNotEmpty()) {
+                $query->whereIn('department_id', auth()->user()->departments->pluck('id'));
+            }
+        }
+
+        // Get the raw results
+        $hourlyData = $query->get();
+
+        // Format the data for the view
+        $series = $hourlyData->map(function($item) {
+            return [
+                'hour' => $item->date . ' ' . str_pad($item->hour, 2, '0', STR_PAD_LEFT) . ':00:00',
+                'count' => $item->count
+            ];
+        })->toArray();
+
+        // Get companies, departments, and branches for filters
+        $companies = $this->getCompanies();
+        $departments = $this->getDepartments($request);
+        
+        // Get branches based on selected company
+        $branches = [];
+        if ($request->filled('company_id')) {
+            $branches = \App\Models\Branch::where('company_id', $request->company_id)
+                ->pluck('name', 'id')
+                ->toArray();
+        }
+
+        return view('visitors.reports_hourly', [
+            'series' => $series,
+            'from' => $request->input('from', now()->startOfDay()->format('Y-m-d')),
+            'to' => $request->input('to', now()->endOfDay()->format('Y-m-d')),
+            'companies' => $companies->pluck('name', 'id'),
+            'departments' => $departments->pluck('name', 'id'),
+            'branches' => $branches,
+            'filters' => $request->all()
+        ]);
     }
-
-    // Get the raw results
-    $hourlyData = $query->get();
-
-    // Format the data for the view
-    $series = $hourlyData->map(function($item) {
-        return [
-            'hour' => $item->date . ' ' . str_pad($item->hour, 2, '0', STR_PAD_LEFT) . ':00:00',
-            'count' => $item->count
-        ];
-    })->toArray();
-
-    // Get companies, departments, and branches for filters
-    $companies = $this->getCompanies();
-    $departments = $this->getDepartments($request);
-    
-    // Get branches based on selected company
-    $branches = [];
-    if ($request->filled('company_id')) {
-        $branches = \App\Models\Branch::where('company_id', $request->company_id)
-            ->pluck('name', 'id')
-            ->toArray();
-    }
-
-    return view('visitors.reports_hourly', [
-        'series' => $series,
-        'from' => $request->input('from', now()->startOfDay()->format('Y-m-d')),
-        'to' => $request->input('to', now()->endOfDay()->format('Y-m-d')),
-        'companies' => $companies->pluck('name', 'id'),
-        'departments' => $departments->pluck('name', 'id'),
-        'branches' => $branches,
-        'filters' => $request->all()
-    ]);
-}
 
     public function reportExport(Request $request)
     {
@@ -1683,31 +1663,31 @@ public function hourlyReport(Request $request)
     }
 
     public function approvalReportExport(Request $request)
-{
-    $query = $this->companyScope(Visitor::query())
-        ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
-        ->whereIn('status', ['approved', 'rejected'])
-        ->latest('updated_at');
+    {
+        $query = $this->companyScope(Visitor::query())
+            ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
+            ->whereIn('status', ['approved', 'rejected'])
+            ->latest('updated_at');
 
-    // Apply the same filters as the report
-    $this->applyDateRange($query, 'updated_at', $request);
+        // Apply the same filters as the report
+        $this->applyDateRange($query, 'updated_at', $request);
 
-    if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
-        $query->where('company_id', $request->company_id);
+        if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
+            $query->where('company_id', $request->company_id);
+        }
+
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+        
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        $visitors = $query->get();
+
+        return Excel::download(new VisitorsExport($visitors), 'approval-report-' . now()->format('Y-m-d') . '.xlsx');
     }
-
-    if ($request->filled('department_id')) {
-        $query->where('department_id', $request->department_id);
-    }
-    
-    if ($request->filled('branch_id')) {
-        $query->where('branch_id', $request->branch_id);
-    }
-
-    $visitors = $query->get();
-
-    return Excel::download(new VisitorsExport($visitors), 'approval-report-' . now()->format('Y-m-d') . '.xlsx');
-}
 
     public function securityReportExport(Request $request)
     {

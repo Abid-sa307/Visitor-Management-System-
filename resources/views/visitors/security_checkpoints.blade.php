@@ -192,7 +192,12 @@
                             <th>Date & Time</th>
                             <th>Visitor Details</th>
                             <th>Company</th>
+                            <th>Branch</th>
                             <th>Department</th>
+                            <th>Check In Time</th>
+                            <th>Check Out Time</th>
+                            <th>Officer Name</th>
+                            <th>Officer ID Badge</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Actions</th>
                         </tr>
@@ -212,7 +217,30 @@
                                 </div>
                             </td>
                             <td>{{ $check->visitor->company->name ?? 'N/A' }}</td>
+                            <td>{{ $check->visitor->branch->name ?? 'N/A' }}</td>
                             <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
+                            <td>
+                                @if($check->visitor->in_time)
+                                    <div class="small text-success">{{ \Carbon\Carbon::parse($check->visitor->in_time)->format('d M Y') }}</div>
+                                    <div class="text-success fw-bold">{{ \Carbon\Carbon::parse($check->visitor->in_time)->format('h:i A') }}</div>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($check->visitor->out_time)
+                                    <div class="small text-danger">{{ \Carbon\Carbon::parse($check->visitor->out_time)->format('d M Y') }}</div>
+                                    <div class="text-danger fw-bold">{{ \Carbon\Carbon::parse($check->visitor->out_time)->format('h:i A') }}</div>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ $check->security_officer_name ?? 'N/A' }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ $check->security_officer_badge ?? 'N/A' }}</div>
+                            </td>
                             <td class="text-center">
                                 @php
                                     $responses = is_string($check->responses) ? json_decode($check->responses, true) : ($check->responses ?? []);
@@ -247,7 +275,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-4">
+                            <td colspan="11" class="text-center py-4">
                                 <div class="text-muted">
                                     <i class="fas fa-inbox fa-2x mb-2"></i>
                                     <p class="mb-0">No security check records found</p>

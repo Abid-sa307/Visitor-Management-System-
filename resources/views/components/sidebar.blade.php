@@ -78,10 +78,22 @@
         ],
 
         [
-            'title' => 'Security Checks',
+            'title' => 'Security Questions',
             'icon' => 'bi-shield-check',
             'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
             'page' => 'security_checks',
+            'dropdown' => [
+                [
+                    'title' => 'Security Checks',
+                    'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
+                    'icon' => 'fas fa-shield-alt'
+                ],
+                [
+                    'title' => 'Security Questions',
+                    'route' => 'security-questions.index',
+                    'icon' => 'fas fa-question-circle'
+                ]
+            ]
         ],
 
         [
@@ -146,13 +158,39 @@
     <!-- Main items (gated by master_pages) -->
     @foreach($menuItems as $item)
         @php $superOnly = $item['super_only'] ?? false; @endphp
-        @if(($superOnly ? $isSuper : $canPage($item['page'])) && (Route::has($item['route']) || $item['title'] === 'Visitor Approvals'))
-            <li class="nav-item {{ $active($item['route']) }}">
-                <a class="nav-link" href="{{ $item['title'] === 'Visitor Approvals' && !Route::has($item['route']) ? '/visitor-approvals' : route($item['route']) }}">
-                    <i class="bi {{ $item['icon'] }} me-2"></i>
-                    <span>{{ $item['title'] }}</span>
-                </a>
-            </li>
+        @if(($superOnly ? $isSuper : $canPage($item['page'])) && (Route::has($item['route']) || $item['title'] === 'Visitor Approvals' || isset($item['dropdown'])))
+            @if(isset($item['dropdown']))
+                @php
+                    $dropdownActive = collect($item['dropdown'])->contains(fn($d) => request()->routeIs($d['route'] . '*'));
+                @endphp
+                <li class="nav-item {{ $dropdownActive ? 'active' : '' }}">
+                    <a class="nav-link {{ $dropdownActive ? '' : 'collapsed' }}"
+                       href="#" 
+                       data-toggle="collapse"
+                       data-target="#collapse{{ str_replace(' ', '', $item['title']) }}"
+                       aria-expanded="{{ $dropdownActive ? 'true' : 'false' }}"
+                       aria-controls="collapse{{ str_replace(' ', '', $item['title']) }}">
+                        <i class="bi {{ $item['icon'] }} me-2"></i>
+                        <span>{{ $item['title'] }}</span>
+                    </a>
+                    <div id="collapse{{ str_replace(' ', '', $item['title']) }}" class="collapse {{ $dropdownActive ? 'show' : '' }}" data-parent="#accordionSidebar">
+                        <div class="py-2 collapse-inner rounded">
+                            @foreach($item['dropdown'] as $subItem)
+                                <a class="collapse-item" href="{{ route($subItem['route']) }}">
+                                    <i class="{{ $subItem['icon'] }} me-2"></i>{{ $subItem['title'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </li>
+            @else
+                <li class="nav-item {{ $active($item['route']) }}">
+                    <a class="nav-link" href="{{ $item['title'] === 'Visitor Approvals' && !Route::has($item['route']) ? '/visitor-approvals' : route($item['route']) }}">
+                        <i class="bi {{ $item['icon'] }} me-2"></i>
+                        <span>{{ $item['title'] }}</span>
+                    </a>
+                </li>
+            @endif
         @endif
     @endforeach
 
@@ -236,24 +274,26 @@
 </ul>
 
 <style>
-    /* Check Reports dropdown styling */
-    /*  */
-    
-    #accordionSidebar #collapseCheckReports .collapse-inner .collapse-item {
+    /* Dropdown styling for both Check Reports and Security Questions */
+    #accordionSidebar .collapse-inner .collapse-item {
         color: rgba(255, 255, 255, 0.9) !important;
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 1rem;
         display: block;
         text-decoration: none;
         border-radius: 6px;
-        margin: 2px 4px;
+        margin: 1px 4px;
         transition: all 0.2s ease;
     }
 
-    #accordionSidebar #collapseCheckReports .collapse-inner .collapse-item:hover {
+    #accordionSidebar .collapse-inner .collapse-item:hover {
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
         color: #fff !important;
         transform: translateX(3px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    #accordionSidebar .collapse-inner {
+        padding: 0.25rem 0;
     }
 
     /* Hide the SB Admin footer */

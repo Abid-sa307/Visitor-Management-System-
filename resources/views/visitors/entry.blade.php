@@ -115,6 +115,30 @@
     .btn-verify-face:disabled {
         opacity: 0.7;
     }
+    
+    /* Toast Styling */
+    .toast {
+        min-width: 300px;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        border: none;
+    }
+    
+    .toast-icon {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+    
+    .toast-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .toast-body {
+        font-weight: 500;
+    }
 </style>
 @endpush
 
@@ -174,11 +198,13 @@
                         <label for="branch_id" class="form-label">Branch</label>
                         <select name="branch_id" id="branch_id"
                                 class="form-select"
-                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
+                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif
+                                @if(auth()->user()->role === 'company' && isset($branches) && $branches->count() === 1 && $branches->keys()->first() === 'none') disabled @endif>
                             <option value="">All Branches</option>
                             @if(auth()->user()->role === 'company' && isset($branches))
                                 @foreach($branches as $id => $name)
-                                    <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                    <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}
+                                            @if($id === 'none') disabled @endif>
                                         {{ $name }}
                                     </option>
                                 @endforeach
@@ -218,23 +244,58 @@
     </div>
 
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-success border-0 shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                    <div class="bg-success bg-opacity-10 rounded-circle p-2">
+                        <i class="fas fa-check-circle text-success fs-4"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <h6 class="alert-heading mb-1 text-success fw-bold">Success!</h6>
+                    <p class="mb-0">{{ session('success') }}</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         </div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert alert-danger border-0 shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="flex-shrink-0">
+                    <div class="bg-danger bg-opacity-10 rounded-circle p-2">
+                        <i class="fas fa-exclamation-triangle text-danger fs-4"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <h6 class="alert-heading mb-1 text-danger fw-bold">Error!</h6>
+                    <p class="mb-0">{{ session('error') }}</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         </div>
     @endif
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="actionToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <div class="rounded me-2 toast-icon"></div>
+                <strong class="me-auto toast-title">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body toast-message">
+                Action completed successfully.
+            </div>
+        </div>
+    </div>
 
     <div class="table-responsive shadow-sm border rounded-3">
         <table class="table table-hover table-striped align-middle text-center mb-0">
             <thead class="table-primary">
                 <tr>
                     <th>Name</th>
+                    <th>Company</th>
                     <th>Department</th>
                     <th>Purpose</th>
                     <th>In Time</th>
@@ -247,6 +308,7 @@
                 @forelse($visitors as $visitor)
                     <tr>
                         <td class="fw-semibold">{{ $visitor->name }}</td>
+                        <td>{{ $visitor->company->name ?? '—' }}</td>
                         <td>{{ $visitor->department->name ?? '—' }}</td>
                         <td>{{ $visitor->purpose ?? '—' }}</td>
                         <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>
@@ -259,10 +321,13 @@
                             </span>
                         </td>
                         <td>
-                            @php
-                                // Use the correct company toggle route
-                                $toggleRoute = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
-                            @endphp
+                                @php
+                                    $toggleRoute = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
+                                    $hasSecurityCheck = $visitor->securityChecks()->exists();
+                                    $securityType = $visitor->company->security_checkin_type ?? '';
+                                    $needsSecurityCheckIn = in_array($securityType, ['checkin', 'both']) && !$hasSecurityCheck;
+                                    $needsSecurityCheckOut = in_array($securityType, ['checkout', 'both']) && !$hasSecurityCheck;
+                                @endphp
                             @if(auth()->user()->role !== 'guard')
                                 @if(!$visitor->out_time)
     <div class="d-flex gap-2 toggle-buttons" data-visitor-id="{{ $visitor->id }}">
@@ -281,18 +346,28 @@
                 $canUndo = \Carbon\Carbon::parse($visitor->in_time)->diffInMinutes(now()) <= 30;
                 $undoAction = 'undo_in';
             }
+            
+            // Determine which security check is needed based on action
+            $needsSecurityCheck = $action === 'in' ? $needsSecurityCheckIn : $needsSecurityCheckOut;
         @endphp
         
-        <button type="button" 
-                class="btn btn-sm rounded-pill btn-{{ $buttonClass }} toggle-entry-btn" 
-                data-visitor-id="{{ $visitor->id }}" 
-                data-action="{{ $action }}"
-                data-url="{{ route($routeName, $visitor->id) }}">
-            <i class="fas fa-{{ $buttonIcon }} me-1"></i>
-            {{ $buttonText }}
-        </button>
+        @if($needsSecurityCheck)
+            <a href="{{ route('security-checks.create', $visitor->id) }}" 
+               class="btn btn-sm rounded-pill btn-warning">
+                <i class="fas fa-shield-alt me-1"></i> Security Check Required
+            </a>
+        @else
+            <button type="button" 
+                    class="btn btn-sm rounded-pill btn-{{ $buttonClass }} toggle-entry-btn" 
+                    data-visitor-id="{{ $visitor->id }}" 
+                    data-action="{{ $action }}"
+                    data-url="{{ route($routeName, $visitor->id) }}">
+                <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                {{ $buttonText }}
+            </button>
+        @endif
         
-        @if($canUndo)
+        @if($canUndo && !$needsSecurityCheck)
             <button type="button" 
                     class="btn btn-sm rounded-pill btn-warning toggle-entry-btn" 
                     data-visitor-id="{{ $visitor->id }}" 
@@ -303,7 +378,7 @@
             </button>
         @endif
         
-        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]')
+        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]' && $visitor->company && $visitor->company->face_recognition_enabled && !$needsSecurityCheck)
             <button type="button" 
                     class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
                     data-visitor-id="{{ $visitor->id }}"
@@ -324,7 +399,7 @@
                 class="btn btn-sm rounded-pill btn-warning toggle-entry-btn" 
                 data-visitor-id="{{ $visitor->id }}" 
                 data-action="undo_out"
-                data-url="{{ route($routeName, $visitor->id) }}"
+                data-url="{{ route($toggleRoute, $visitor->id) }}"
                 title="Undo mark out (available for 30 minutes)">
             <i class="fas fa-undo me-1"></i> Undo
         </button>
@@ -339,7 +414,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-muted">No visitors found.</td>
+                        <td colspan="8" class="text-muted">No visitors found.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -393,6 +468,51 @@
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
+// Toast notification function
+function showToast(type, message, title = null) {
+    const toast = document.getElementById('actionToast');
+    const toastIcon = toast.querySelector('.toast-icon');
+    const toastTitle = toast.querySelector('.toast-title');
+    const toastMessage = toast.querySelector('.toast-message');
+    const toastHeader = toast.querySelector('.toast-header');
+    
+    // Reset classes
+    toastIcon.className = 'rounded me-2 toast-icon';
+    toastHeader.className = 'toast-header';
+    
+    // Set content based on type
+    if (type === 'success') {
+        toastIcon.classList.add('bg-success');
+        toastHeader.classList.add('text-success');
+        toastTitle.textContent = title || 'Success!';
+        toastIcon.innerHTML = '<i class="fas fa-check text-white"></i>';
+    } else if (type === 'error') {
+        toastIcon.classList.add('bg-danger');
+        toastHeader.classList.add('text-danger');
+        toastTitle.textContent = title || 'Error!';
+        toastIcon.innerHTML = '<i class="fas fa-times text-white"></i>';
+    } else if (type === 'warning') {
+        toastIcon.classList.add('bg-warning');
+        toastHeader.classList.add('text-warning');
+        toastTitle.textContent = title || 'Warning!';
+        toastIcon.innerHTML = '<i class="fas fa-exclamation text-white"></i>';
+    } else if (type === 'info') {
+        toastIcon.classList.add('bg-info');
+        toastHeader.classList.add('text-info');
+        toastTitle.textContent = title || 'Info';
+        toastIcon.innerHTML = '<i class="fas fa-info text-white"></i>';
+    }
+    
+    toastMessage.textContent = message;
+    
+    // Show toast
+    const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: 4000
+    });
+    bsToast.show();
+}
+
 // Handle toggle entry button clicks
 document.addEventListener('DOMContentLoaded', function() {
     // Handle toggle entry button clicks
@@ -466,6 +586,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Play notification if check-in was successful
+            if (data.play_notification && typeof playVisitorNotification === 'function') {
+                playVisitorNotification();
+            }
+            
             // Otherwise, show success message and reload
             let successMessage = 'Action completed successfully';
             if (action === 'in') {
@@ -478,14 +603,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 successMessage = 'Check-out has been undone successfully';
             }
             
-            if (typeof showToast === 'function') {
-                showToast('success', successMessage);
-            } else {
-                alert(successMessage);
-            }
+            showToast('success', successMessage);
             
             // Reload after a short delay to show the success message
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => window.location.reload(), 1500);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -512,12 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Use toast if available, otherwise use alert
-            if (typeof showToast === 'function') {
-                showToast('error', errorMessage);
-            } else {
-                alert(errorMessage);
-            }
+            showToast('error', errorMessage);
         });
     });
 });
@@ -852,7 +968,6 @@ function handleModalClose() {
     if (video && video.srcObject) {
         video.srcObject.getTracks().forEach(track => {
             track.stop();
-            video.srcObject.removeTrack(track);
         });
         video.srcObject = null;
     }
@@ -865,10 +980,11 @@ function handleModalClose() {
     
     // Reset verification state
     isVerifying = false;
+    verificationStartTime = null;
     currentButton = null;
     currentFormAction = null;
     
-    // Reset UI
+    // Reset UI elements
     const statusDiv = document.querySelector('.verification-status');
     const cameraContainer = document.querySelector('.camera-container');
     const faceOutline = document.querySelector('.face-outline');

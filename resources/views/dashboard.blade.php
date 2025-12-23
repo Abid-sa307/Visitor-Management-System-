@@ -56,15 +56,16 @@
                     </div>
                 @endif
 
-                {{-- Branch --}}
                 <div class="col-lg-2 col-md-6">
                     <label for="branch_id" class="form-label">Branch</label>
                     <select name="branch_id" id="branch_id" class="form-select"
-                            @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
+                            @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif
+                            @if(isset($branches) && $branches->count() === 1 && $branches->keys()->first() === 'none') disabled @endif>
                         <option value="">All Branches</option>
                         @if(isset($branches) && count($branches) > 0)
                             @foreach($branches as $id => $name)
-                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}
+                                        @if($id === 'none') disabled @endif>
                                     {{ $name }}
                                 </option>
                             @endforeach

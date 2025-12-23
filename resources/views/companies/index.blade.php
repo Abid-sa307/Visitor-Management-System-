@@ -55,6 +55,7 @@
                             <th>Contact</th>
                             <th>Branches</th>
                             <th>Auto Approve</th>
+                            <th>Face Verification</th>
                             <th>Website</th>
                             <th>Security Check</th>
                             <th style="width: 120px;">Actions</th>
@@ -88,6 +89,10 @@
                             <td>
                                 @php $auto = (int)($company->auto_approve_visitors ?? 0); @endphp
                                 <span class="badge bg-{{ $auto ? 'success' : 'secondary' }}">{{ $auto ? 'Yes' : 'No' }}</span>
+                            </td>
+                            <td>
+                                @php $faceRecognition = (int)($company->enable_face_recognition ?? 0); @endphp
+                                <span class="badge bg-{{ $faceRecognition ? 'success' : 'secondary' }}">{{ $faceRecognition ? 'Yes' : 'No' }}</span>
                             </td>
                             <td>
                                 @if ($company->website)
@@ -135,7 +140,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-muted py-4">No companies found.</td>
+                            <td colspan="10" class="text-muted py-4">No companies found.</td>
                         </tr>
                         @endforelse
                     </tbody>

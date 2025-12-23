@@ -142,7 +142,8 @@
                                                value="{{ $b->end_time ?? '' }}">
                                     </td>
                                     <td class="text-end">
-                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="markForDeletion(this)">&times;</button>
+                                        <input type="hidden" name="branches[deleted][]" value="0" class="delete-marker">
                                     </td>
                                 </tr>
                                 @empty
@@ -168,6 +169,26 @@
 
 @push('scripts')
 <script>
+function markForDeletion(button) {
+  const row = button.closest('tr');
+  const deleteMarker = row.querySelector('.delete-marker');
+  deleteMarker.value = '1';
+  row.style.opacity = '0.5';
+  row.style.textDecoration = 'line-through';
+  button.innerHTML = 'Undo';
+  button.onclick = function() { undoDeletion(this); };
+}
+
+function undoDeletion(button) {
+  const row = button.closest('tr');
+  const deleteMarker = row.querySelector('.delete-marker');
+  deleteMarker.value = '0';
+  row.style.opacity = '1';
+  row.style.textDecoration = 'none';
+  button.innerHTML = '&times;';
+  button.onclick = function() { markForDeletion(this); };
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   const body = document.getElementById('branchesBody');
   const addBtn = document.getElementById('addBranchBtn');
@@ -185,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function(){
       <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"></td>
       <td class="text-end">
         <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
+        <input type="hidden" name="branches[deleted][]" value="0" class="delete-marker">
       </td>`;
     return tr;
   };

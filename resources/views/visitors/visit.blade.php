@@ -16,26 +16,8 @@
         <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
             @csrf
 
-            {{-- Company & Department --}}
+            {{-- Department & Visitor Category --}}
             <div class="row mb-3">
-                <div class="col">
-                    <label class="form-label fw-semibold">Company</label>
-                    @if($isSuper)
-                        <select name="company_id" id="companySelect" class="form-select" required>
-                            <option value="">-- Select Company --</option>
-                            @foreach($companies as $company)
-                                <option value="{{ $company->id }}" 
-                                    {{ old('company_id', $visitor->company_id ?? '') == $company->id ? 'selected' : '' }}>
-                                    {{ $company->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    @else
-                        <input type="hidden" name="company_id" value="{{ $user->company_id }}">
-                        <input type="text" class="form-control" value="{{ $user->company->name }}" readonly>
-                    @endif
-                </div>
-
                 <div class="col">
                     <label class="form-label fw-semibold">Department</label>
                     <select name="department_id" id="departmentSelect" class="form-select" required>
@@ -47,55 +29,6 @@
                             </option>
                         @endforeach
                     </select>
-                </div>
-            </div>
-
-            
-
-            {{-- Branch Selection --}}
-            <div class="row mb-3">
-                <div class="col">
-                    <label class="form-label fw-semibold">Branch</label>
-                    @if($isSuper)
-                        <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
-                            <option value="">-- Select Branch --</option>
-                            @foreach($branches as $id => $name)
-                                <option value="{{ $id }}" 
-                                    {{ old('branch_id', $visitor->branch_id ?? '') == $id ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('branch_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    @else
-                        @if($branches->count() === 1)
-                            <input type="hidden" name="branch_id" value="{{ $branches->keys()->first() }}">
-                            <input type="text" class="form-control" value="{{ $branches->first() }}" readonly>
-                        @else
-                           <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror" {{ $branches->isEmpty() ? 'disabled' : '' }}>
-                                <option value="">-- Select Branch --</option>
-                                @if($branches->isNotEmpty())
-                                    @foreach($branches as $id => $name)
-                                        <option value="{{ $id }}" 
-                                            {{ old('branch_id', $visitor->branch_id ?? '') == $id ? 'selected' : '' }}>
-                                            {{ $name }}
-                                        </option>
-                                    @endforeach
-                                @endif
-                            </select>
-                            @if($branches->isEmpty())
-                                <div class="alert alert-warning mt-2">
-                                    <i class="fas fa-exclamation-triangle"></i> 
-                                    No branches found for this company. Please contact your administrator to add branches.
-                                </div>
-                            @endif
-                            @error('branch_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        @endif
-                    @endif
                 </div>
                 <div class="col">
                     <label class="form-label fw-semibold">Visitor Category</label>
@@ -115,11 +48,6 @@
                             <i class="fas fa-exclamation-circle"></i> {{ $message }}
                         </div>
                     @enderror
-                    @if(empty($visitorCategories))
-                        <div class="alert alert-warning mt-2 small">
-                            <i class="fas fa-exclamation-triangle"></i> No visitor categories found. Please contact support.
-                        </div>
-                    @endif
                 </div>
             </div>
 
@@ -223,77 +151,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     @endif
 
-    // Department filtering
-    const companySelect = document.getElementById('companySelect');
+    // Department filtering (if needed for future enhancements)
     const departmentSelect = document.getElementById('departmentSelect');
-    const branchSelect = document.getElementById('branchSelect');
-
-    function filterDepartments() {
-        const selectedCompanyId = companySelect.value;
-
-        Array.from(departmentSelect.options).forEach(option => {
-            const belongsTo = option.getAttribute('data-company');
-            if (!belongsTo || belongsTo === selectedCompanyId || option.value === "") {
-                option.hidden = false;
-            } else {
-                option.hidden = true;
-            }
-        });
-
-        // Reset if selected option is now hidden
-        if (departmentSelect.selectedOptions[0]?.hidden) {
-            departmentSelect.value = "";
-        }
-        
-        // Load branches for the selected company
-        loadBranches(selectedCompanyId);
-    }
-
-    // Function to load branches via AJAX
-    function loadBranches(companyId) {
-        if (!companyId || !branchSelect) {
-            if (branchSelect) {
-                branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-            }
-            return;
-        }
-        
-        branchSelect.innerHTML = '<option value="">Loading branches...</option>';
-        branchSelect.disabled = true;
-        
-        fetch(`/api/companies/${companyId}/branches`)
-            .then(response => response.json())
-            .then(branches => {
-                branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-                branchSelect.disabled = false;
-                
-                for (const [id, name] of Object.entries(branches)) {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.textContent = name;
-                    branchSelect.appendChild(option);
-                }
-            })
-            .catch(error => {
-                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
-                branchSelect.disabled = false;
-            });
-    }
-
-    // Add event listeners
-    if (companySelect) {
-        companySelect.addEventListener('change', filterDepartments);
-        // Trigger change event on page load if a company is already selected
-        if (companySelect.value) {
-            filterDepartments();
-        }
-    } else {
-        // If no company select (non-super user), branches should already be loaded
-        console.log('No company select found - branches should be pre-loaded');
-        if (branchSelect) {
-            console.log('Branch select options count:', branchSelect.options.length);
-        }
-    }
 });
 </script>
 @endpush

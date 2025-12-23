@@ -11,17 +11,12 @@ class SecurityCheck extends Model
         'visitor_id', 
         'questions', 
         'responses', 
-        'security_officer_name',
-        'visitor_photo',
-        'signature',
-        'officer_badge',
-        'photo_responses'
+        'security_officer_name'
     ];
 
     protected $casts = [
         'questions' => 'array',
         'responses' => 'array',
-        'photo_responses' => 'array',
     ];
     
     protected $appends = ['visitor_photo_url', 'signature_url'];

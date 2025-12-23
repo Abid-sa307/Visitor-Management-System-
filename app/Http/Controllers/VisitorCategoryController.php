@@ -32,6 +32,11 @@ class VisitorCategoryController extends Controller
         } else {
             $companies = [$user->company_id => $user->company->name];
             $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+            
+            // If company has no branches, add a "None" option
+            if ($branches->isEmpty()) {
+                $branches = collect(['none' => 'None']);
+            }
         }
 
         return view('visitor-categories.create', [
@@ -89,6 +94,11 @@ class VisitorCategoryController extends Controller
             }
             $companies = [$visitorCategory->company_id => $visitorCategory->company->name];
             $branches = Branch::where('company_id', $visitorCategory->company_id)->pluck('name', 'id');
+            
+            // If company has no branches, add a "None" option
+            if ($branches->isEmpty()) {
+                $branches = collect(['none' => 'None']);
+            }
         }
 
         return view('visitor-categories.edit', compact('visitorCategory', 'companies', 'branches'));

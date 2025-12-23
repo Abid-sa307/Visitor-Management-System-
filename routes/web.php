@@ -35,6 +35,11 @@ Route::get('/test-db', function() {
     dd(config('database.connections.mysql.username'));
 });
 
+// Test notification route
+Route::get('/test-notification', function() {
+    return view('test-notification');
+})->name('test.notification');
+
 // Test email route
 Route::get('/test-email', function () {
     try {
@@ -79,38 +84,7 @@ Route::get('/visitor-management-system-in-usa', fn() => view('pages.visitor-mana
 Route::get('/visitor-management-system-in-uk', fn() => view('pages.visitor-management-system-in-uk'))->name('visitor-management-system-in-uk');
 
 
-/*
-|--------------------------------------------------------------------------
-| Public Routes (Unauthenticated Routes)
-|--------------------------------------------------------------------------
-*/
-Route::get('/', fn () => view('welcome'));
-Route::get('/about', fn () => view('about'))->name('about');
-Route::get('/partner', fn () => view('partner'))->name('partner');
-Route::get('/pricing', fn () => view('pricing'))->name('pricing');
-Route::get('/contact', fn () => view('contact'))->name('contact');
 
-Route::get('/industrial-and-cold-storage', fn () => view('pages.industrial-and-cold-storage'))
-    ->name('industrial-and-cold-storage');
-Route::get('/school-and-colleges', fn () => view('pages.school-and-colleges'))
-    ->name('school-and-colleges');
-Route::get('/industrial-manufacturing-unit', fn () => view('pages.industrial-manufacturing-unit'))
-    ->name('industrial-manufacturing-unit');
-Route::get('/resident-societies', fn () => view('pages.resident-societies'))
-    ->name('resident-societies');
-Route::get('/resident-buildings', fn () => view('pages.resident-buildings'))
-    ->name('resident-buildings');
-Route::get('/office-workplace-management', fn () => view('pages.office-workplace-management'))
-    ->name('office-workplace-management');
-Route::get('/healthcare-facilities', fn () => view('pages.healthcare-facilities'))
-    ->name('healthcare-facilities');
-Route::get('/malls-and-events', fn () => view('pages.malls-and-events'))
-    ->name('malls-and-events');
-
-Route::get('/privacy-policy', fn () => view('pages.privacy-policy'))->name('privacy-policy');
-Route::get('/terms-of-use', fn () => view('pages.terms-of-use'))->name('terms-of-use');
-Route::get('/refund-and-cancellation', fn () => view('pages.refund-and-cancellation'))->name('refund-and-cancellation');
-Route::get('/service-agreement', fn () => view('pages.service-agreement'))->name('service-agreement');
 
 
 
@@ -208,7 +182,7 @@ Route::middleware(['auth'])->group(function () {
 |----------------------------------------------------------------------|
 */
 // Shared dashboard route for both superadmins and company users
-Route::middleware(['web', 'auth:web,company', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile
@@ -274,6 +248,9 @@ Route::middleware(['web', 'auth:web,company', 'verified'])->group(function () {
         Route::get('/{securityCheck}', [SecurityCheckController::class, 'show'])->name('show');
         Route::get('/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('print');
     });
+    
+    // Security Questions
+    Route::resource('security-questions', \App\Http\Controllers\SecurityQuestionController::class);
 });
 
 /*
@@ -282,7 +259,7 @@ Route::middleware(['web', 'auth:web,company', 'verified'])->group(function () {
 |----------------------------------------------------------------------|
 */
 Route::prefix('company')
-    ->middleware(['auth:company', 'verified'])
+    ->middleware(['auth:company'])
     ->name('company.')
     ->group(function () {
         // Dashboard
@@ -615,6 +592,10 @@ Route::get('/models/{filename}', function ($filename) {
 
 // Public visit routes
 Route::prefix('public')->name('public.')->group(function () {
+    // Visitor tracking route
+    Route::get('/visitors/{visitor}/track', [\App\Http\Controllers\QRController::class, 'trackVisitor'])
+        ->name('visitor.track');
+    
     // Show public visit form (for new visits)
     Route::get('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
         ->name('visitor.visit.form');

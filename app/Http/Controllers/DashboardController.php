@@ -244,9 +244,19 @@ public function index(Request $request)
     if (($user->role ?? null) === 'company') {
         $branches    = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
         $departments = Department::where('company_id', $user->company_id)->pluck('name', 'id');
+        
+        // If company has no branches, add a "None" option
+        if ($branches->isEmpty()) {
+            $branches = collect(['none' => 'None']);
+        }
     } elseif (($user->role ?? null) === 'superadmin' && $selectedCompany) {
         $branches    = Branch::where('company_id', $selectedCompany)->pluck('name', 'id');
         $departments = Department::where('company_id', $selectedCompany)->pluck('name', 'id');
+        
+        // If selected company has no branches, add a "None" option
+        if ($branches->isEmpty()) {
+            $branches = collect(['none' => 'None']);
+        }
     }
 
     // ----- Companies for filter -----

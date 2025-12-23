@@ -48,6 +48,13 @@
                 @endif
             </div>
 
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ route('public.visitor.track', $visitor->id) }}" 
+                   style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                    Track Your Visit Status
+                </a>
+            </div>
+
             <p>Please bring a valid ID and arrive on time for your scheduled visit.</p>
         </div>
 

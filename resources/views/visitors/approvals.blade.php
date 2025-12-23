@@ -485,6 +485,11 @@
                 throw new Error(data.message || 'Request failed');
             }
 
+            // Play notification if approval was successful
+            if (data.play_notification && typeof playVisitorNotification === 'function') {
+                playVisitorNotification();
+            }
+
             if (isUndoAction) {
                 window.location.reload();
             } else {

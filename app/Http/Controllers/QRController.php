@@ -224,7 +224,8 @@ class QRController extends Controller
             return redirect()
                 ->route('qr.scan', $company)
                 ->with('success', 'Visitor registered successfully!' . 
-                    ($company->auto_approve_visitors ? ' Your visit has been approved.' : ' Please wait for approval.'));
+                    ($company->auto_approve_visitors ? ' Your visit has been approved.' : ' Please wait for approval.'))
+                ->with('play_notification', true);
                 
         } catch (\Exception $e) {
             return back()
@@ -435,6 +436,23 @@ public function storeVisit(Request $request, Company $company, $branch = null)
                 'departments' => $departments,
                 'branches' => $branches,
                 'visitorCategories' => $visitorCategories,
+            ]);
+        }
+
+        /**
+         * Track visitor status (public interface)
+         *
+         * @param  int  $visitorId  Visitor ID
+         * @return \Illuminate\View\View
+         */
+        public function trackVisitor($visitorId)
+        {
+            // Find the visitor with related data
+            $visitor = Visitor::with(['company', 'department', 'branch', 'securityChecks'])
+                ->findOrFail($visitorId);
+            
+            return view('visitors.public-track', [
+                'visitor' => $visitor
             ]);
         }
 }

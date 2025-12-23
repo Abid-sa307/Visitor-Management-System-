@@ -63,6 +63,19 @@
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
           </div>
+
+          <!-- Visit Date -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Visit Date</label>
+            <input type="date" name="visit_date" class="form-control @error('visit_date') is-invalid @enderror" 
+                   value="{{ old('visit_date', date('Y-m-d')) }}" 
+                   min="{{ date('Y-m-d') }}" 
+                   max="{{ date('Y-m-d', strtotime('+7 days')) }}">
+            <div class="form-text">You can book a visit up to 7 days in advance</div>
+            @error('visit_date')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </div>
         </div>
 
         <!-- Right Column -->
@@ -81,7 +94,7 @@
 
           <!-- Photo Upload/Capture Section -->
           <div class="mb-3">
-            <label class="form-label fw-semibold">Visitor Photo (Optional)</label>
+            <label class="form-label fw-semibold">Visitor Photo <span class="text-danger d-none" id="faceRequired">*</span></label>
             
             <!-- Toggle between capture and upload -->
             <ul class="nav nav-tabs mb-3" id="photoTab" role="tablist">
@@ -102,7 +115,7 @@
               <div class="tab-pane fade show active" id="capture-pane" role="tabpanel" aria-labelledby="capture-tab">
                 <div class="face-capture-container mb-2">
                   <div class="face-detection-box">
-                    <video id="video" width="320" height="240" autoplay playsinline></video>
+                    <video id="video" width="480" height="360" autoplay playsinline></video>
                     <div class="face-overlay">
                       <div class="circle"></div>
                     </div>
@@ -174,7 +187,7 @@
 @push('styles')
 <style>
 .face-capture-container {
-  max-width: 320px;
+  max-width: 480px;
   margin: 0 auto 1rem auto;
   position: relative;
 }
@@ -210,7 +223,7 @@
 .face-detection-box {
   position: relative;
   width: 100%;
-  height: 240px;
+  height: 360px;
   overflow: hidden;
   border-radius: 8px;
   background-color: #f8f9fa;
@@ -248,15 +261,14 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
 }
 
 #photoPreview {
   max-width: 100%;
-  max-height: 240px;
+  max-height: 360px;
   display: block;
   margin: 0 auto;
 }
@@ -274,6 +286,39 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
+  // Check face recognition requirement for this company
+  let faceRecognitionRequired = false;
+  
+  // Function to check company's face recognition setting
+  async function checkFaceRecognitionRequirement() {
+    try {
+      const response = await fetch(`/api/companies/{{ $company->id }}/face-recognition`);
+      const data = await response.json();
+      faceRecognitionRequired = data.enabled || false;
+      
+      const faceRequired = document.getElementById('faceRequired');
+      const statusElement = document.getElementById('status');
+      
+      if (faceRecognitionRequired) {
+        faceRequired.classList.remove('d-none');
+        if (statusElement) {
+          statusElement.textContent = 'Face capture is required - Position your face inside the circle';
+        }
+      } else {
+        faceRequired.classList.add('d-none');
+        if (statusElement) {
+          statusElement.textContent = 'Face capture is optional - Position your face inside the circle';
+        }
+      }
+    } catch (error) {
+      console.error('Error checking face recognition requirement:', error);
+      faceRecognitionRequired = false;
+      document.getElementById('faceRequired').classList.add('d-none');
+    }
+  }
+  
+  // Check requirement on page load
+  await checkFaceRecognitionRequirement();
   // DOM Elements
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
@@ -571,10 +616,17 @@ document.addEventListener('DOMContentLoaded', async function() {
   const form = document.getElementById('visitorForm');
   if (form) {
     form.addEventListener('submit', function(e) {
-      // Remove empty face-related fields before submission
+      // Check if face recognition is required but no photo captured/uploaded
       const faceImageInput = document.getElementById('faceImageInput');
-      const faceEncodingInput = document.getElementById('faceEncodingInput');
+      const photoUploadInput = document.getElementById('photoUploadInput');
       
+      if (faceRecognitionRequired && !faceImageInput.value && !photoUploadInput.value) {
+        e.preventDefault();
+        alert('Please capture or upload your photo before submitting.');
+        return false;
+      }
+      
+      // Remove empty face-related fields before submission
       if (faceImageInput && !faceImageInput.value) {
         faceImageInput.disabled = true; // This will prevent the field from being submitted
       }

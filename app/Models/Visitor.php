@@ -14,12 +14,7 @@ class Visitor extends Model
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The relationships that should always be loaded.
-     *
-     * @var array
-     */
-    protected $with = ['company', 'department', 'branch', 'approvedBy', 'rejectedBy'];
+
 
     protected $fillable = [
         'company_id',
@@ -81,7 +76,6 @@ class Visitor extends Model
         'out_time' => 'datetime',
         'status_changed_at' => 'datetime',
         'approved_at' => 'datetime',
-        'face_encoding' => 'array',
     ];
     
     /**
@@ -99,27 +93,7 @@ class Visitor extends Model
         'deleted_at'
     ];
 
-    /**
-     * Get the face_encoding attribute.
-     *
-     * @param  mixed  $value
-     * @return mixed
-     */
-    public function getFaceEncodingAttribute($value)
-    {
-        if (empty($value)) {
-            return null;
-        }
 
-        // If it's already an array, return it as is
-        if (is_array($value)) {
-            return $value;
-        }
-
-        // If it's a JSON string, decode it
-        $decoded = json_decode($value, true);
-        return json_last_error() === JSON_ERROR_NONE ? $decoded : null;
-    }
 
     /**
      * Get the branch that the visitor belongs to.
@@ -191,6 +165,11 @@ class Visitor extends Model
     public function logs()
     {
         return $this->hasMany(VisitorLog::class);
+    }
+
+    public function securityChecks()
+    {
+        return $this->hasMany(SecurityCheck::class);
     }
 
     public function getCanUndoStatusAttribute(): bool
