@@ -147,54 +147,56 @@
                                     @endif
                                 </td>
                                 <td class="d-flex gap-2">
-                                    @if($createRoute)
-                                        @php
-                                            // Get the current user (could be guard or company user)
-                                            $user = auth('company')->user() ?? auth()->user();
-                                            $userCompanyId = $user->company_id ?? null;
-                                            $visitorCompanyId = $visitor->company_id ?? null;
-                                            
-                                            // Check if user is authorized (same company or super admin)
-                                            $isAuthorized = $isSuper || ($userCompanyId && $visitorCompanyId && $userCompanyId == $visitorCompanyId);
-                                            
-                                            if ($isAuthorized) {
-                                                // Get the company's security check type
-                                                $securityCheckType = $visitor->company->security_checkin_type ?? '';
-                                                
-                                                // Determine if visitor is checked in
-                                                $isCheckedIn = $visitor->in_time && !$visitor->out_time;
-                                                
-                                                // Show buttons based on the security check type and current status
-                                                $showCheckIn = !$isCheckedIn && in_array($securityCheckType, ['checkin', 'both']);
-                                                $showCheckOut = $isCheckedIn && in_array($securityCheckType, ['checkout', 'both']);
-                                                
-                                                if ($showCheckIn || $showCheckOut) {
-                                                    if ($showCheckIn) {
-                                                        echo '<a href="' . route($createRoute, ['visitorId' => $visitor->id]) . '" class="btn btn-outline-success btn-sm">
-                                                            <i class="fas fa-sign-in-alt me-1"></i> Check In
-                                                        </a>';
-                                                    }
-                                                    
-                                                    if ($showCheckOut) {
-                                                        echo '<a href="' . route($createRoute, ['visitorId' => $visitor->id, 'action' => 'checkout']) . '" class="btn btn-outline-warning btn-sm">
-                                                            <i class="fas fa-sign-out-alt me-1"></i> Check Out
-                                                        </a>';
-                                                    }
-                                                } else {
-                                                    if ($isCheckedIn && !in_array($securityCheckType, ['checkout', 'both'])) {
-                                                        echo '<span class="text-muted">Already checked in</span>';
-                                                    } elseif (!$isCheckedIn && !in_array($securityCheckType, ['checkin', 'both'])) {
-                                                        echo '<span class="text-muted">Not checked in</span>';
-                                                    } else {
-                                                        echo '<span class="text-muted">No actions available</span>';
-                                                    }
-                                                }
-                                            } else {
-                                                echo '<span class="text-muted">Not authorized</span>';
-                                            }
-                                        @endphp
+                                    @php
+                                        $toggleRoute = $isCompany ? 'company.security-checks.toggle' : 'security-checks.toggle';
+                                        $hasSecurityCheckin = $visitor->security_checkin_time !== null;
+                                        $hasSecurityCheckout = $visitor->security_checkout_time !== null;
+                                        $canUndoCheckin = $hasSecurityCheckin && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
+                                        $canUndoCheckout = $hasSecurityCheckout && \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) <= 30;
+                                    @endphp
+                                    
+                                    @if(!$hasSecurityCheckin)
+                                        {{-- Security Check-in Button --}}
+                                        <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="action" value="checkin">
+                                            <button type="submit" class="btn btn-sm btn-success" title="Security Check-in">
+                                                <i class="fas fa-sign-in-alt me-1"></i> Check In
+                                            </button>
+                                        </form>
+                                    @elseif(!$hasSecurityCheckout)
+                                        {{-- Security Check-out Button --}}
+                                        <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="action" value="checkout">
+                                            <button type="submit" class="btn btn-sm btn-warning" title="Security Check-out">
+                                                <i class="fas fa-sign-out-alt me-1"></i> Check Out
+                                            </button>
+                                        </form>
+                                        
+                                        {{-- Undo Check-in Button --}}
+                                        @if($canUndoCheckin)
+                                            <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <input type="hidden" name="action" value="undo_checkin">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Undo Security Check-in">
+                                                    <i class="fas fa-undo me-1"></i> Undo In
+                                                </button>
+                                            </form>
+                                        @endif
                                     @else
-                                        <span class="text-muted">Routes unavailable</span>
+                                        {{-- Both completed - show undo checkout if available --}}
+                                        @if($canUndoCheckout)
+                                            <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <input type="hidden" name="action" value="undo_checkout">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Undo Security Check-out">
+                                                    <i class="fas fa-undo me-1"></i> Undo Out
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-success">Completed</span>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>

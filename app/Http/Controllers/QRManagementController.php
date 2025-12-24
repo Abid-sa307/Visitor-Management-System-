@@ -122,35 +122,51 @@ public function __construct()
 
     public function storeVisitor(Company $company, Request $request)
 {
-    $validated = $request->validate([
+    // Check if face recognition is enabled for this company
+    $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
+    
+    // Build validation rules dynamically
+    $rules = [
         'name' => 'required|string|max:255',
         'email' => 'required|email|max:255',
         'phone' => 'required|string|max:20',
-        'face_image' => 'required|string',
-        'face_encoding' => 'required|string',
-    ]);
+    ];
+    
+    // Only add face validation if face recognition is enabled
+    if ($faceRecognitionEnabled) {
+        $rules['face_image'] = 'required|string';
+        $rules['face_encoding'] = 'required|string';
+    }
+    
+    $validated = $request->validate($rules);
 
     try {
-        // Process the image data (remove data:image/jpeg;base64, prefix if present)
-        $imageData = $request->input('face_image');
-        if (strpos($imageData, ';base64,') !== false) {
-            $imageData = explode(';base64,', $imageData)[1];
-        }
-        
-        // Save the image
-        $imageName = 'visitor_photos/' . Str::random(40) . '.jpg';
-        Storage::disk('public')->put($imageName, base64_decode($imageData));
-
-        // Create visitor
-        $visitor = Visitor::create([
+        $visitorData = [
             'company_id' => $company->id,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
-            'photo' => $imageName,
-            'face_encoding' => $validated['face_encoding'],
             'status' => 'Pending',
-        ]);
+        ];
+        
+        // Only process face data if face recognition is enabled and data is provided
+        if ($faceRecognitionEnabled && isset($validated['face_image'])) {
+            // Process the image data (remove data:image/jpeg;base64, prefix if present)
+            $imageData = $validated['face_image'];
+            if (strpos($imageData, ';base64,') !== false) {
+                $imageData = explode(';base64,', $imageData)[1];
+            }
+            
+            // Save the image
+            $imageName = 'visitor_photos/' . Str::random(40) . '.jpg';
+            Storage::disk('public')->put($imageName, base64_decode($imageData));
+            
+            $visitorData['photo'] = $imageName;
+            $visitorData['face_encoding'] = $validated['face_encoding'];
+        }
+
+        // Create visitor
+        $visitor = Visitor::create($visitorData);
 
         // Check if branch was stored in session
         $branchId = session('scanned_branch_id');

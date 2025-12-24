@@ -295,9 +295,8 @@
                     </div>
                 @endif
                 
-                <form method="POST" action="{{ route('company.login.submit') }}" id="loginForm">
+                <form method="POST" action="{{ route('login') }}" id="loginForm">
                     @csrf
-                    <input type="hidden" name="role" value="company">
                     <div id="formErrors" class="alert alert-danger d-none"></div>
 
                     <div class="mb-4">

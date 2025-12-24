@@ -75,22 +75,34 @@
             'icon' => 'bi-person-lines-fill',
             'route' => $isCompany ? 'company.visitors.index' : 'visitors.index',
             'page' => 'visitors',
+            'dropdown' => [
+                [
+                    'title' => 'All Visitors',
+                    'route' => $isCompany ? 'company.visitors.index' : 'visitors.index',
+                    'icon' => 'fas fa-users'
+                ],
+                [
+                    'title' => 'Visit Management',
+                    'route' => $isCompany ? 'company.visits.index' : 'visits.index',
+                    'icon' => 'fas fa-calendar-check'
+                ]
+            ]
         ],
 
         [
-            'title' => 'Security Questions',
+            'title' => 'Security',
             'icon' => 'bi-shield-check',
             'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
             'page' => 'security_checks',
             'dropdown' => [
                 [
-                    'title' => 'Security Checks',
+                    'title' => 'Check In & Check Out',
                     'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
                     'icon' => 'fas fa-shield-alt'
                 ],
                 [
                     'title' => 'Security Questions',
-                    'route' => 'security-questions.index',
+                    'route' => $isCompany ? 'company.security-questions.index' :'security-questions.index',
                     'icon' => 'fas fa-question-circle'
                 ]
             ]
@@ -155,7 +167,34 @@
 
     <hr class="sidebar-divider my-0">
 
-    <!-- Main items (gated by master_pages) -->
+    <!-- Mobile Navbar (visible only on mobile) -->
+    <div class="mobile-navbar d-md-none">
+        <div class="mobile-nav-grid">
+            @foreach($menuItems as $item)
+                @php $superOnly = $item['super_only'] ?? false; @endphp
+                @if(($superOnly ? $isSuper : $canPage($item['page'])) && (Route::has($item['route']) || $item['title'] === 'Visitor Approvals' || isset($item['dropdown'])))
+                    @if(isset($item['dropdown']))
+                        @foreach($item['dropdown'] as $subItem)
+                            @if(Route::has($subItem['route']))
+                                <a href="{{ route($subItem['route']) }}" class="mobile-nav-item">
+                                    <i class="{{ $subItem['icon'] }}"></i>
+                                    <span>{{ $subItem['title'] }}</span>
+                                </a>
+                            @endif
+                        @endforeach
+                    @else
+                        <a href="{{ $item['title'] === 'Visitor Approvals' && !Route::has($item['route']) ? '/visitor-approvals' : route($item['route']) }}" class="mobile-nav-item">
+                            <i class="bi {{ $item['icon'] }}"></i>
+                            <span>{{ $item['title'] }}</span>
+                        </a>
+                    @endif
+                @endif
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Main items (gated by master_pages) - Desktop only -->
+    <div class="desktop-nav d-none d-md-block">
     @foreach($menuItems as $item)
         @php $superOnly = $item['super_only'] ?? false; @endphp
         @if(($superOnly ? $isSuper : $canPage($item['page'])) && (Route::has($item['route']) || $item['title'] === 'Visitor Approvals' || isset($item['dropdown'])))
@@ -176,9 +215,11 @@
                     <div id="collapse{{ str_replace(' ', '', $item['title']) }}" class="collapse {{ $dropdownActive ? 'show' : '' }}" data-parent="#accordionSidebar">
                         <div class="py-2 collapse-inner rounded">
                             @foreach($item['dropdown'] as $subItem)
-                                <a class="collapse-item" href="{{ route($subItem['route']) }}">
-                                    <i class="{{ $subItem['icon'] }} me-2"></i>{{ $subItem['title'] }}
-                                </a>
+                                @if(Route::has($subItem['route']))
+                                    <a class="collapse-item" href="{{ route($subItem['route']) }}">
+                                        <i class="{{ $subItem['icon'] }} me-2"></i>{{ $subItem['title'] }}
+                                    </a>
+                                @endif
                             @endforeach
                         </div>
                     </div>
@@ -193,6 +234,7 @@
             @endif
         @endif
     @endforeach
+    </div>
 
     @if($isSuper || $canPage('qr_scanner'))
         <li class="nav-item {{ $active(['qr-management.*']) }}">
@@ -274,6 +316,47 @@
 </ul>
 
 <style>
+    /* Mobile Navbar Styles */
+    .mobile-navbar {
+        padding: 1rem;
+    }
+    
+    .mobile-nav-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.75rem 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+    
+    .mobile-nav-item:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff !important;
+        transform: translateY(-2px);
+    }
+    
+    .mobile-nav-item i {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .mobile-nav-item span {
+        font-size: 0.7rem;
+        font-weight: 500;
+        line-height: 1.2;
+    }
+
     /* Dropdown styling for both Check Reports and Security Questions */
     #accordionSidebar .collapse-inner .collapse-item {
         color: rgba(255, 255, 255, 0.9) !important;
@@ -326,9 +409,5 @@
     display: none;
   }
 }
-
-
-
-    
 </style>
 

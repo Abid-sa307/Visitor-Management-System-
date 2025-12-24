@@ -170,13 +170,41 @@ class VisitorController extends Controller
         return view('visitors.index', compact('visitors'));
     }
 
+    public function visitsIndex(Request $request)
+    {
+        $query = $this->companyScope(Visitor::with(['company', 'branch', 'department'])->latest());
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('purpose', 'like', "%{$search}%")
+                  ->orWhere('person_to_visit', 'like', "%{$search}%");
+            });
+        }
+        
+        $visitors = $query->paginate(10);
+        return view('visits.index', compact('visitors'));
+    }
+
     public function create()
     {
         $companies   = $this->getCompanies();
         $departments = $this->getDepartments();
         $categories  = VisitorCategory::orderBy('name')->get();
+        
+        // Get branches for company users
+        $branches = collect();
+        if (!$this->isSuper()) {
+            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+            $branches = \App\Models\Branch::where('company_id', $u->company_id)
+                ->orderBy('name')
+                ->pluck('name', 'id');
+        }
 
-        return view('visitors.create', compact('companies', 'departments', 'categories'));
+        return view('visitors.create', compact('companies', 'departments', 'categories', 'branches'));
     }
     
     public function store(Request $request)
@@ -982,7 +1010,8 @@ return view('visitors.visit', [
             DB::commit();
             
             return redirect()->route('company.visitors.entry.page')
-                ->with('success', $message);
+                ->with('success', $message)
+                ->with('play_notification', true);
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1128,6 +1157,8 @@ return view('visitors.visit', [
                     $visitor->status = 'Completed';
                 }
                 $message = 'Visitor checked out successfully.';
+                $playNotification = true;
+                $playNotification = true;
             }
 
             // Update status history if status changed
@@ -1191,7 +1222,7 @@ return view('visitors.visit', [
         }
 
         if ($visitor->status !== 'Approved') {
-            return redirect()->back()->with('error', 'Pass is available only after the visitor is approved.');
+            return redirect()->back()->with('error', 'Pass not available.');
         }
 
         return view('visitors.pass', [

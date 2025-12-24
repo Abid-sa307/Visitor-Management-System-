@@ -200,6 +200,11 @@
 
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Visitor Notification System -->
+    <script src="{{ asset('js/visitor-notification.js') }}"></script>
+    @include('partials.visitor-notification')
+    
     @stack('scripts')
 </body>
 </html>

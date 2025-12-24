@@ -56,6 +56,17 @@ class AuthenticatedSessionController extends Controller
         
         // Get the authenticated user
         $user = Auth::user();
+        
+        // Check if this is a superadmin login attempt
+        if ($request->routeIs('superadmin.login.store')) {
+            // Only allow superadmin users to login via superadmin route
+            if (!($user->hasRole('superadmin') || $user->is_super_admin)) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Access denied. This login is for administrators only.',
+                ]);
+            }
+        }
 
 \Log::info('DEBUG SUPERADMIN CHECK', [
     'user_id'         => $user->id,

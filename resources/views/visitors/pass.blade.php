@@ -249,7 +249,7 @@
 
             <div class="details">
                 <div class="detail-row">
-                    <div class="detail-label">Department:</div>
+                    <div class="detail-label">department:</div>
                     <div class="detail-value">
                         {{ $visitor->department->name ?? 'N/A' }}
                     </div>
@@ -263,16 +263,23 @@
                 </div>
 
                 <div class="detail-row">
-                    <div class="detail-label">Purpose:</div>
+                    <div class="detail-label">purpose:</div>
                     <div class="detail-value">
                         {{ $visitor->purpose ?? 'N/A' }}
                     </div>
                 </div>
 
                 <div class="detail-row">
-                    <div class="detail-label">Valid Until:</div>
+                    <div class="detail-label">mobile number:</div>
                     <div class="detail-value">
-                        {{ $visitor->valid_until ? \Carbon\Carbon::parse($visitor->valid_until)->format('d M Y h:i A') : 'N/A' }}
+                        {{ $visitor->phone ?? 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">valid_until:</div>
+                    <div class="detail-value">
+                        {{ $visitor->valid_until ? \Carbon\Carbon::parse($visitor->valid_until)->format('d-m-Y') : 'N/A' }}
                     </div>
                 </div>
             </div>

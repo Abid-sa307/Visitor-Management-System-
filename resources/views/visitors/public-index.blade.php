@@ -457,6 +457,10 @@
 </script>
 @endif
 
+<!-- Include visitor notification system -->
+<script src="{{ asset('js/visitor-notification.js') }}"></script>
+@include('partials.visitor-notification')
+
 <!-- Face Verification Modal -->
 @if($visitor && $visitor->status === 'Approved' && $visitor->company && $visitor->company->face_recognition_enabled)
 <div class="modal fade" id="faceVerificationModal" tabindex="-1">

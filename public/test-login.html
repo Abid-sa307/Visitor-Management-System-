@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Company Login</title>
+</head>
+<body>
+    <h2>Test Company Login</h2>
+    <form action="http://localhost:8000/company/login" method="POST">
+        <input type="hidden" name="_token" value="test-token">
+        <div>
+            <label>Email:</label>
+            <input type="email" name="email" value="company@example.com" required>
+        </div>
+        <div>
+            <label>Password:</label>
+            <input type="password" name="password" value="password123" required>
+        </div>
+        <div>
+            <input type="checkbox" name="remember" id="remember">
+            <label for="remember">Remember me</label>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    
+    <p><strong>Test Credentials:</strong></p>
+    <p>Email: company@example.com</p>
+    <p>Password: password123</p>
+    
+    <p><a href="http://localhost:8000/company/login">Go to Company Login Page</a></p>
+</body>
+</html>

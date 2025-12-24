@@ -34,7 +34,7 @@
           <div class="mb-3">
             <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
             <input type="text" name="phone" id="phoneInput" class="form-control @error('phone') is-invalid @enderror" required 
-                   value="{{ old('phone') }}" placeholder="Enter mobile number" pattern="[0-9]+" title="Please enter numbers only" autofocus>
+                   value="{{ old('phone') }}" placeholder="Enter mobile number" autofocus>
             @error('phone')
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
@@ -76,95 +76,55 @@
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
           </div>
+          
+          <!-- Document Upload -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Upload Document (Optional)</label>
+            <div class="input-group">
+              <input type="file" class="form-control" id="documentUpload" name="document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+              <button class="btn btn-outline-secondary" type="button" id="documentUploadBtn">
+                <i class="fas fa-file-upload me-1"></i> Choose File
+              </button>
+            </div>
+            <div class="form-text">Accepted formats: PDF, DOC, DOCX, JPG, PNG (max 5MB)</div>
+            @error('document')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+            <div id="documentPreview" class="mt-2 d-none">
+              <div class="alert alert-success py-2">
+                <i class="fas fa-check-circle me-2"></i> Document selected
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Right Column -->
         <div class="col-md-6">
-          <!-- Document Upload -->
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Document (Optional)</label>
-            <div class="input-group">
-              <input type="file" class="form-control" id="documentUpload" name="document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-            </div>
-            <div class="form-text">Upload any document (PDF, DOC, JPG, PNG, max 5MB)</div>
-            @error('document')
-              <div class="invalid-feedback d-block">{{ $message }}</div>
-            @enderror
-          </div>
-
-          <!-- Photo Upload/Capture Section -->
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Visitor Photo <span class="text-danger d-none" id="faceRequired">*</span></label>
-            
-            <!-- Toggle between capture and upload -->
-            <ul class="nav nav-tabs mb-3" id="photoTab" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="capture-tab" data-bs-toggle="tab" data-bs-target="#capture-pane" type="button" role="tab" aria-controls="capture-pane" aria-selected="true">
-                  <i class="fas fa-camera me-1"></i> Capture Photo
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-pane" type="button" role="tab" aria-controls="upload-pane" aria-selected="false">
-                  <i class="fas fa-upload me-1"></i> Upload Photo
-                </button>
-              </li>
-            </ul>
-            
-            <div class="tab-content" id="photoTabContent">
-              <!-- Capture Tab -->
-              <div class="tab-pane fade show active" id="capture-pane" role="tabpanel" aria-labelledby="capture-tab">
-                <div class="face-capture-container mb-2">
-                  <div class="face-detection-box">
-                    <video id="video" width="480" height="360" autoplay playsinline></video>
-                    <div class="face-overlay">
-                      <div class="circle"></div>
-                    </div>
-                  </div>
-                  <canvas id="canvas" class="d-none"></canvas>
-                  <div id="capturedPhoto" class="d-none">
-                    <img id="photoPreview" class="img-fluid rounded" src="" alt="Captured photo">
-                  </div>
-                </div>
-                <div class="text-center">
-                  <div id="status" class="small mb-2">Position your face inside the circle</div>
-                  <button type="button" id="startCamera" class="btn btn-primary btn-sm">
-                    <i class="fas fa-camera me-1"></i> Start Camera
-                  </button>
-                  <button type="button" id="retakePhoto" class="btn btn-warning btn-sm d-none">
-                    <i class="fas fa-redo me-1"></i> Retake
-                  </button>
+          <!-- Face Capture Section -->
+          <div class="mb-3" id="faceCaptureSection">
+            <label class="form-label fw-semibold">Face Capture <span class="text-danger" id="faceRequired">*</span></label>
+            <div class="face-capture-container mb-2">
+              <div class="face-detection-box">
+                <video id="video" width="480" height="360" autoplay playsinline></video>
+                <div class="face-overlay">
+                  <div class="circle"></div>
                 </div>
               </div>
-              
-              <!-- Upload Tab -->
-              <div class="tab-pane fade" id="upload-pane" role="tabpanel" aria-labelledby="upload-tab">
-                <div class="mb-3 text-center">
-                  <div id="uploadPreview" class="mb-3">
-                    <img id="uploadedPhoto" src="{{ asset('images/default-avatar.png') }}" 
-                         class="img-fluid rounded" 
-                         style="max-height: 240px;" 
-                         alt="Uploaded photo">
-                  </div>
-                  <div class="input-group">
-                    <input type="file" class="form-control" id="photoUpload" accept="image/*">
-                    <button class="btn btn-outline-secondary" type="button" id="uploadBtn">
-                      <i class="fas fa-upload me-1"></i> Upload
-                    </button>
-                  </div>
-                  <div class="form-text">JPG, PNG, max 2MB</div>
-                </div>
+              <canvas id="canvas" class="d-none"></canvas>
+              <div id="capturedPhoto" class="d-none">
+                <img id="photoPreview" class="img-fluid rounded" src="" alt="Captured photo">
               </div>
             </div>
-            
-            <!-- Hidden inputs for form submission -->
-            <input type="hidden" name="face_image" id="faceImageInput" value="">
-            <input type="hidden" name="face_encoding" id="faceEncodingInput" value="">
-            <input type="hidden" name="photo_upload" id="photoUploadInput" value="">
-            
+            <div class="text-center">
+              <div id="status" class="small mb-2">Position your face inside the circle</div>
+              <button type="button" id="startCamera" class="btn btn-primary btn-sm">
+                <i class="fas fa-camera me-1"></i> Start Camera
+              </button>
+              <button type="button" id="retakePhoto" class="btn btn-warning btn-sm d-none">
+                <i class="fas fa-redo me-1"></i> Retake
+              </button>
+            </div>
             @error('face_image')
-              <div class="invalid-feedback d-block">{{ $message }}</div>
-            @enderror
-            @error('photo_upload')
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
           </div>
@@ -176,8 +136,8 @@
         <a href="{{ route('qr.scan', $company) }}{{ isset($branch) && $branch ? '/' . $branch->id : '' }}" class="btn btn-outline-secondary">
           <i class="fas fa-arrow-left me-2"></i> Back
         </a>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-user-plus me-2"></i> Register Visitor
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="fas fa-user-plus me-2"></i>Register Visitor
         </button>
       </div>
     </form>
@@ -188,36 +148,8 @@
 <style>
 .face-capture-container {
   max-width: 480px;
-  margin: 0 auto 1rem auto;
+  margin: 0 auto;
   position: relative;
-}
-
-.nav-tabs .nav-link {
-  color: #495057;
-  font-weight: 500;
-}
-
-.nav-tabs .nav-link.active {
-  font-weight: 600;
-  border-color: #dee2e6 #dee2e6 #fff;
-}
-
-#uploadPreview {
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8f9fa;
-  border: 2px dashed #dee2e6;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
-#uploadedPhoto {
-  max-width: 100%;
-  max-height: 240px;
-  border-radius: 8px;
 }
 
 .face-detection-box {
@@ -281,67 +213,115 @@
 @endpush
 
 @push('scripts')
-<!-- Load face-api.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
+const documentUpload = document.getElementById('documentUpload');
+const documentUploadBtn = document.getElementById('documentUploadBtn');
+const documentPreview = document.getElementById('documentPreview');
+
+if (documentUploadBtn && documentUpload) {
+    documentUploadBtn.addEventListener('click', function() {
+        documentUpload.click();
+    });
+
+    documentUpload.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            const fileSize = file.size / 1024 / 1024;
+            const fileTypes = ['application/pdf', 'application/msword', 
+                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+                             'image/jpeg', 'image/png'];
+            
+            if (!fileTypes.includes(file.type)) {
+                alert('Please select a valid file type (PDF, DOC, DOCX, JPG, or PNG)');
+                this.value = '';
+                documentPreview.classList.add('d-none');
+                return;
+            }
+            
+            if (fileSize > 5) {
+                alert('File size should not exceed 5MB');
+                this.value = '';
+                documentPreview.classList.add('d-none');
+                return;
+            }
+            
+            documentPreview.classList.remove('d-none');
+        } else {
+            documentPreview.classList.add('d-none');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
-  // Check face recognition requirement for this company
   let faceRecognitionRequired = false;
   
-  // Function to check company's face recognition setting
+  function updateFaceRequirement(required) {
+    faceRecognitionRequired = required;
+    const faceRequired = document.getElementById('faceRequired');
+    const statusElement = document.getElementById('status');
+    
+    if (required) {
+      faceRequired.style.display = 'inline';
+      if (statusElement) {
+        statusElement.textContent = 'Face capture is required - Position your face inside the circle';
+      }
+    } else {
+      faceRequired.style.display = 'none';
+      if (statusElement) {
+        statusElement.textContent = 'Face capture is optional - Position your face inside the circle';
+      }
+    }
+  }
+  
   async function checkFaceRecognitionRequirement() {
     try {
       const response = await fetch(`/api/companies/{{ $company->id }}/face-recognition`);
       const data = await response.json();
-      faceRecognitionRequired = data.enabled || false;
-      
-      const faceRequired = document.getElementById('faceRequired');
-      const statusElement = document.getElementById('status');
-      
-      if (faceRecognitionRequired) {
-        faceRequired.classList.remove('d-none');
-        if (statusElement) {
-          statusElement.textContent = 'Face capture is required - Position your face inside the circle';
-        }
-      } else {
-        faceRequired.classList.add('d-none');
-        if (statusElement) {
-          statusElement.textContent = 'Face capture is optional - Position your face inside the circle';
-        }
-      }
+      updateFaceRequirement(data.enabled || false);
     } catch (error) {
       console.error('Error checking face recognition requirement:', error);
-      faceRecognitionRequired = false;
-      document.getElementById('faceRequired').classList.add('d-none');
+      updateFaceRequirement(false);
     }
   }
   
-  // Check requirement on page load
   await checkFaceRecognitionRequirement();
-  // DOM Elements
+  
+  const form = document.getElementById('visitorForm');
+  let faceImageInput, faceEncodingInput;
+  
+  form.addEventListener('submit', function(e) {
+    if (faceRecognitionRequired) {
+      if (!faceImageInput || !faceImageInput.value) {
+        e.preventDefault();
+        alert('Please capture your face photo before submitting.');
+        return false;
+      }
+      
+      if (!faceImageInput.parentNode) {
+        form.appendChild(faceImageInput);
+      }
+      if (faceEncodingInput && !faceEncodingInput.parentNode) {
+        form.appendChild(faceEncodingInput);
+      }
+    }
+  });
+
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   const photoPreview = document.getElementById('photoPreview');
   const startCameraBtn = document.getElementById('startCamera');
   const retakePhotoBtn = document.getElementById('retakePhoto');
   const statusElement = document.getElementById('status');
-  const faceImageInput = document.getElementById('faceImageInput');
-  const faceEncodingInput = document.getElementById('faceEncodingInput');
-  const photoUploadInput = document.getElementById('photoUploadInput');
-  const photoUpload = document.getElementById('photoUpload');
-  const uploadBtn = document.getElementById('uploadBtn');
-  const uploadedPhoto = document.getElementById('uploadedPhoto');
   const faceOverlay = document.querySelector('.circle');
   const capturedPhoto = document.getElementById('capturedPhoto');
-  const photoTab = document.getElementById('photoTab');
   
   let stream = null;
   let isFaceDetected = false;
   let faceDescriptor = null;
   let detectionInterval = null;
   
-  // Load face-api models
   async function loadModels() {
     try {
       statusElement.textContent = 'Loading face detection models...';
@@ -359,15 +339,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
   
-  // Start camera
   async function startCamera() {
     try {
-      // Stop any existing stream
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
       
-      // Request camera access
       stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           width: { ideal: 640 },
@@ -377,14 +354,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         audio: false
       });
       
-      // Set video source
       video.srcObject = stream;
       await video.play();
       
-      // Start face detection
       startFaceDetection();
       
-      // Update UI
       startCameraBtn.classList.add('d-none');
       statusElement.textContent = 'Position your face inside the circle';
       
@@ -394,31 +368,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
   
-  // Start face detection
   function startFaceDetection() {
     if (detectionInterval) clearInterval(detectionInterval);
     
     detectionInterval = setInterval(async () => {
-      if (video.readyState === 4) { // Video is ready
+      if (video.readyState === 4) {
         const detections = await faceapi.detectAllFaces(
           video,
           new faceapi.TinyFaceDetectorOptions()
         ).withFaceLandmarks().withFaceDescriptors();
         
         if (detections.length > 0) {
-          // Get the largest face
           const detection = detections.reduce((prev, current) => 
             (prev.detection.box.area() > current.detection.box.area()) ? prev : current
           );
           
-          // Check if face is properly centered
           const videoWidth = video.videoWidth;
           const videoHeight = video.videoHeight;
           const box = detection.detection.box;
           const centerX = box.x + box.width / 2;
           const centerY = box.y + box.height / 2;
           
-          // Define the center area (40% of the video)
           const centerArea = {
             x1: videoWidth * 0.3,
             x2: videoWidth * 0.7,
@@ -433,7 +403,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             faceOverlay.classList.add('face-detected');
             statusElement.textContent = 'Face detected! Capturing in 2 seconds...';
             
-            // Auto-capture after 2 seconds of centered face
             if (!isFaceDetected) {
               isFaceDetected = true;
               setTimeout(capturePhoto, 2000);
@@ -449,38 +418,38 @@ document.addEventListener('DOMContentLoaded', async function() {
           isFaceDetected = false;
         }
       }
-    }, 300); // Check every 300ms
+    }, 300);
   }
   
-  // Capture photo
   async function capturePhoto() {
     if (!stream) return;
     
     try {
-      // Stop face detection
       if (detectionInterval) {
         clearInterval(detectionInterval);
         detectionInterval = null;
       }
       
-      // Set canvas dimensions
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
-      // Draw current video frame to canvas
       const context = canvas.getContext('2d');
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Convert canvas to data URL
       const imageData = canvas.toDataURL('image/jpeg', 0.8);
       
-      // Update UI
       photoPreview.src = imageData;
       video.classList.add('d-none');
       capturedPhoto.classList.remove('d-none');
+      
+      if (!faceImageInput) {
+        faceImageInput = document.createElement('input');
+        faceImageInput.type = 'hidden';
+        faceImageInput.name = 'face_image';
+        faceImageInput.id = 'faceImageInput';
+      }
       faceImageInput.value = imageData;
       
-      // Get face descriptor
       const detections = await faceapi.detectAllFaces(
         canvas,
         new faceapi.TinyFaceDetectorOptions()
@@ -489,16 +458,22 @@ document.addEventListener('DOMContentLoaded', async function() {
       if (detections.length > 0) {
         const detection = detections[0];
         faceDescriptor = Array.from(detection.descriptor);
+        
+        if (!faceEncodingInput) {
+          faceEncodingInput = document.createElement('input');
+          faceEncodingInput.type = 'hidden';
+          faceEncodingInput.name = 'face_encoding';
+          faceEncodingInput.id = 'faceEncodingInput';
+        }
         faceEncodingInput.value = JSON.stringify(faceDescriptor);
+        
         statusElement.textContent = 'Photo captured successfully!';
       } else {
         throw new Error('No face found in the captured photo');
       }
       
-      // Show retake button
       retakePhotoBtn.classList.remove('d-none');
       
-      // Stop camera stream
       stream.getTracks().forEach(track => track.stop());
       
     } catch (error) {
@@ -508,24 +483,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
   
-  // Retake photo
   function retakePhoto() {
-    // Reset UI
     capturedPhoto.classList.add('d-none');
     video.classList.remove('d-none');
     retakePhotoBtn.classList.add('d-none');
     faceOverlay.classList.remove('face-detected');
     
-    // Clear previous data
-    faceImageInput.value = '';
-    faceEncodingInput.value = '';
+    if (faceImageInput) faceImageInput.value = '';
+    if (faceEncodingInput) faceEncodingInput.value = '';
     isFaceDetected = false;
     
-    // Restart camera
     startCamera();
   }
   
-  // Event Listeners
   startCameraBtn.addEventListener('click', async () => {
     const modelsLoaded = await loadModels();
     if (modelsLoaded) {
@@ -535,115 +505,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   retakePhotoBtn.addEventListener('click', retakePhoto);
   
-  // Handle photo upload
-  if (uploadBtn && photoUpload) {
-    uploadBtn.addEventListener('click', function() {
-      if (!photoUpload.files || !photoUpload.files[0]) {
-        alert('Please select a photo to upload.');
-        return;
-      }
-      
-      const file = photoUpload.files[0];
-      
-      // Check file size (2MB max)
-      if (file.size > 2 * 1024 * 1024) {
-        alert('File size should not exceed 2MB');
-        return;
-      }
-      
-      // Check file type
-      if (!file.type.match('image.*')) {
-        alert('Please select a valid image file (JPG, PNG)');
-        return;
-      }
-      
-      const reader = new FileReader();
-      
-      reader.onload = function(e) {
-        // Update preview
-        uploadedPhoto.src = e.target.result;
-        
-        // Set the value for form submission
-        photoUploadInput.value = e.target.result;
-        
-        // Clear any face capture data
-        faceImageInput.value = '';
-        faceEncodingInput.value = '';
-        
-        // Switch to upload tab if not already active
-        const uploadTab = new bootstrap.Tab(document.getElementById('upload-tab'));
-        uploadTab.show();
-        
-        // Show success message
-        statusElement.textContent = 'Photo uploaded successfully!';
-        statusElement.className = 'text-success small mb-2';
-      };
-      
-      reader.readAsDataURL(file);
-    });
-  }
-  
-  // Handle tab switching
-  if (photoTab) {
-    photoTab.addEventListener('shown.bs.tab', function (event) {
-      const target = event.target.getAttribute('data-bs-target');
-      
-      // When switching to capture tab, clear upload fields
-      if (target === '#capture-pane') {
-        if (photoUpload) photoUpload.value = '';
-        if (uploadedPhoto) uploadedPhoto.src = "{{ asset('images/default-avatar.png') }}";
-        photoUploadInput.value = '';
-      }
-      // When switching to upload tab, stop camera
-      else if (target === '#upload-pane') {
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-          stream = null;
-        }
-        if (video) video.classList.add('d-none');
-        if (capturedPhoto) capturedPhoto.classList.add('d-none');
-        if (startCameraBtn) startCameraBtn.classList.remove('d-none');
-        if (retakePhotoBtn) retakePhotoBtn.classList.add('d-none');
-        
-        // Clear face capture data
-        faceImageInput.value = '';
-        faceEncodingInput.value = '';
-      }
-    });
-  }
-  
-  // Form submission
-  const form = document.getElementById('visitorForm');
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      // Check if face recognition is required but no photo captured/uploaded
-      const faceImageInput = document.getElementById('faceImageInput');
-      const photoUploadInput = document.getElementById('photoUploadInput');
-      
-      if (faceRecognitionRequired && !faceImageInput.value && !photoUploadInput.value) {
-        e.preventDefault();
-        alert('Please capture or upload your photo before submitting.');
-        return false;
-      }
-      
-      // Remove empty face-related fields before submission
-      if (faceImageInput && !faceImageInput.value) {
-        faceImageInput.disabled = true; // This will prevent the field from being submitted
-      }
-      
-      if (faceEncodingInput && !faceEncodingInput.value) {
-        faceEncodingInput.disabled = true; // This will prevent the field from being submitted
-      }
-      
-      const submitButton = this.querySelector('button[type="submit"]');
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-      }
-    });
-  }
-  
-  // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());

@@ -140,17 +140,30 @@ class QRController extends Controller
      */
     public function storeVisitor(Request $request, Company $company)
     {
-        // Validate the request
-        $validated = $request->validate([
+        // Check if face recognition is enabled for this company
+        $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
+        
+        // Build validation rules dynamically
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'required|string|max:20',
             'purpose' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
-            'face_encoding' => 'nullable',
-            'face_image' => 'nullable',
             'document' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
-        ]);
+        ];
+        
+        // Only add face validation if face recognition is enabled
+        if ($faceRecognitionEnabled) {
+            $rules['face_encoding'] = 'required';
+            $rules['face_image'] = 'required';
+        } else {
+            $rules['face_encoding'] = 'nullable';
+            $rules['face_image'] = 'nullable';
+        }
+        
+        // Validate the request
+        $validated = $request->validate($rules);
         
         // Set default values for required fields if they're empty
         $validated['name'] = $validated['name'] ?? 'Guest Visitor';

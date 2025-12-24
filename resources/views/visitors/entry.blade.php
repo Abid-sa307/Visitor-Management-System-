@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Play notification if check-in was successful
+            // Play notification if check-in or check-out was successful
             if (data.play_notification && typeof playVisitorNotification === 'function') {
                 playVisitorNotification();
             }

@@ -114,37 +114,31 @@
         <thead class="table-primary text-uppercase">
     <tr>
         <th>Name</th>
-        <th>Phone</th>
         <th>Company</th>
         <th>Branch</th>
-        <th>Department</th>
-        <th>Purpose</th>
-        <th>Person to Visit</th>
-        <th>Vehicle No</th>
+        <th>Email</th>
         <th>Visit Date</th>
-        <th>Face Verification</th>
+        <th>Document</th>
         <th>Approval Status</th>
         <th>In/Out Status</th>
-        <th style="min-width: 220px;">Actions</th>
+        <th style="min-width: 180px;">Actions</th>
     </tr>
 </thead>
 <tbody>
     @forelse($visitors as $visitor)
         <tr>
             <td>{{ $visitor->name }}</td>
-            <td>{{ $visitor->phone }}</td>
             <td>{{ $visitor->company->name ?? '—' }}</td>
-            <td>{{ $visitor->branch->name ?? '—' }}</td> <!-- Added Branch cell -->
-            <td>{{ $visitor->department->name ?? '—' }}</td>
-            <td>{{ $visitor->purpose ?? '—' }}</td>
-            <td>{{ $visitor->person_to_visit ?? '—' }}</td>
-            <td>{{ $visitor->vehicle_number ?? '—' }}</td>
+            <td>{{ $visitor->branch->name ?? '—' }}</td>
+            <td>{{ $visitor->email ?? '—' }}</td>
             <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
             <td>
-                @if($visitor->face_encoding || $visitor->face_image)
-                    <span class="badge bg-success">Yes</span>
+                @if($visitor->document_path)
+                    <a href="{{ asset('storage/' . $visitor->document_path) }}" target="_blank" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-file-alt"></i>
+                    </a>
                 @else
-                    <span class="badge bg-secondary">No</span>
+                    <span class="text-muted">—</span>
                 @endif
             </td>
             <td>
@@ -166,13 +160,21 @@
             </td>
               <td>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
+                  @php
+                    $isCompleted = $visitor->out_time !== null;
+                  @endphp
+                  
                   @if($visitor->status === 'Approved' && $visitor->in_time && !$visitor->out_time)
                     <!-- Check-out functionality removed -->
                   @endif
 
                   {{-- Edit --}}
                   @if(Route::has($editRoute))
-                    @if($visitor->status === 'Approved')
+                    @if($isCompleted)
+                      <button class="btn btn-sm btn-outline-secondary" disabled title="Edit (Locked - Visit completed)">
+                        <i class="fas fa-lock text-muted"></i>
+                      </button>
+                    @elseif($visitor->status === 'Approved')
                       <button class="btn btn-sm btn-outline-warning" disabled title="Edit (Locked - Visitor is approved)">
                         <i class="fas fa-lock text-warning"></i>
                       </button>
@@ -183,27 +185,14 @@
                     @endif
                   @endif
 
-                  {{-- Visit --}}
-                  @if($visitRoute)
-                    @if($visitor->status === 'Approved' && $visitor->out_time)
-                      <button class="btn btn-sm btn-outline-secondary" title="Visit Details (Locked - Visitor has checked out)" disabled>
-                        <i class="fas fa-lock"></i>
-                      </button>
-                    @elseif($visitor->status === 'Approved')
-                      <a href="{{ route($visitRoute, $visitor->id) }}" class="btn btn-sm btn-outline-info" title="Visit Details">
-                        <i class="fas fa-eye"></i>
-                      </a>
-                    @else
-                      <button class="btn btn-sm btn-outline-secondary" title="Visit Details (Waiting for approval)" disabled>
-                        <i class="fas fa-clock"></i>
-                      </button>
-                    @endif
-                  @endif
-
                   {{-- Pass (available after check-in) --}}
                   @if($passRoute)
-                    @if($visitor->in_time)
-                      <a href="{{ route($passRoute, $visitor->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Pass">
+                    @if($isCompleted)
+                      <a href="{{ route($passRoute, $visitor->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Pass (Visit completed)">
+                        <i class="fas fa-print"></i>
+                      </a>
+                    @elseif($visitor->in_time)
+                      <a href="{{ route($passRoute, $visitor->id) }}" target="_blank" class="btn btn-sm btn-outline-success" title="Print Pass">
                         <i class="fas fa-print"></i>
                       </a>
                     @else
@@ -215,19 +204,25 @@
 
                   {{-- Delete (POST + method spoofing) --}}
                   @if(Route::has($destroyRoute))
-                    <form action="{{ route($destroyRoute, $visitor->id) }}" method="POST"
-                          onsubmit="return confirm('Delete this visitor?')" class="d-inline">
-                      @csrf @method('DELETE')
-                      <button class="btn btn-sm btn-outline-danger" title="Delete">
-                        <i class="fas fa-trash"></i>
+                    @if($isCompleted)
+                      <button class="btn btn-sm btn-outline-secondary" title="Delete (Locked - Visit completed)" disabled>
+                        <i class="fas fa-lock text-muted"></i>
                       </button>
-                    </form>
+                    @else
+                      <form action="{{ route($destroyRoute, $visitor->id) }}" method="POST"
+                            onsubmit="return confirm('Delete this visitor?')" class="d-inline">
+                        @csrf @method('DELETE')
+                        <button class="btn btn-sm btn-outline-danger" title="Delete">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    @endif
                   @endif
                 </div>
               </td>
             </tr>
           @empty
-            <tr><td colspan="13" class="text-muted">No visitors found.</td></tr>
+            <tr><td colspan="9" class="text-muted">No visitors found.</td></tr>
           @endforelse
         </tbody>
       </table>

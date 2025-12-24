@@ -91,6 +91,12 @@ class SecurityCheckController extends Controller
     public function create($visitorId)
     {
         $visitor = Visitor::with('company')->findOrFail($visitorId);
+        
+        // Check if visitor has completed the visit form
+        if (!$this->hasCompletedVisitForm($visitor)) {
+            return redirect()->back()->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
+        }
+        
         return view('visitors.security', compact('visitor'));
     }
 
@@ -105,6 +111,14 @@ class SecurityCheckController extends Controller
             'captured_photo' => 'nullable|string',
             'photo_responses' => 'nullable|array',
         ]);
+
+        // Check if visitor has completed the visit form
+        $visitor = Visitor::findOrFail($request->visitor_id);
+        if (!$this->hasCompletedVisitForm($visitor)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
+        }
 
         try {
             // Process and save the visitor photo if provided
@@ -226,5 +240,59 @@ class SecurityCheckController extends Controller
         }
         
         return $path;
+    }
+    
+    /**
+     * Check if visitor has completed the visit form
+     */
+    private function hasCompletedVisitForm($visitor)
+    {
+        // Check if essential visit form fields are filled
+        return !empty($visitor->department_id) && 
+               !empty($visitor->person_to_visit) && 
+               !empty($visitor->purpose);
+    }
+    
+    /**
+     * Toggle security check-in/check-out for a visitor
+     */
+    public function toggleSecurity(Request $request, $visitorId)
+    {
+        $visitor = Visitor::findOrFail($visitorId);
+        $action = $request->input('action', 'checkin');
+        
+        // Check if visitor has completed visit form
+        if (!$this->hasCompletedVisitForm($visitor)) {
+            return redirect()->back()->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
+        }
+        
+        try {
+            if ($action === 'checkin') {
+                $visitor->security_checkin_time = now();
+                $message = 'Visitor security check-in completed successfully.';
+            } elseif ($action === 'checkout') {
+                $visitor->security_checkout_time = now();
+                $message = 'Visitor security check-out completed successfully.';
+            } elseif ($action === 'undo_checkin') {
+                if (!$visitor->security_checkin_time || \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) > 30) {
+                    return redirect()->back()->with('error', 'Undo is only available within 30 minutes of security check-in.');
+                }
+                $visitor->security_checkin_time = null;
+                $message = 'Security check-in has been undone successfully.';
+            } elseif ($action === 'undo_checkout') {
+                if (!$visitor->security_checkout_time || \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) > 30) {
+                    return redirect()->back()->with('error', 'Undo is only available within 30 minutes of security check-out.');
+                }
+                $visitor->security_checkout_time = null;
+                $message = 'Security check-out has been undone successfully.';
+            }
+            
+            $visitor->save();
+            
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 }

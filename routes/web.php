@@ -217,6 +217,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/visitors/{visitor}/checkout', [VisitorController::class, 'checkout'])->name('visitors.checkout');
     Route::get('/visitor-approvals', [VisitorController::class, 'approvals'])->name('visitors.approvals');
 
+    // Visits Management
+    Route::get('/visits', [VisitorController::class, 'visitsIndex'])->name('visits.index');
+
     // Face Recognition Management
     Route::prefix('face-management')->name('face.management.')->group(function () {
         Route::get('/', [FaceRecognitionController::class, 'index'])->name('index');
@@ -247,6 +250,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [SecurityCheckController::class, 'store'])->name('store');
         Route::get('/{securityCheck}', [SecurityCheckController::class, 'show'])->name('show');
         Route::get('/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('print');
+        Route::post('/toggle/{visitor}', [SecurityCheckController::class, 'toggleSecurity'])->name('toggle');
     });
     
     // Security Questions
@@ -277,6 +281,9 @@ Route::prefix('company')
         Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
         Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
         Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+        
+        // Visits Management
+        Route::get('/visits', [VisitorController::class, 'visitsIndex'])->name('visits.index');
         
         // Face Recognition
         Route::post('/visitors/{visitor}/verify-face', [FaceRecognitionController::class, 'verifyVisitor'])->name('visitors.verify-face');
@@ -316,6 +323,10 @@ Route::prefix('company')
         // Security Checks
         Route::resource('security-checks', SecurityCheckController::class)->except(['edit', 'update', 'destroy']);
         Route::get('security-checks/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('security-checks.print');
+        Route::post('security-checks/toggle/{visitor}', [SecurityCheckController::class, 'toggleSecurity'])->name('security-checks.toggle');
+        
+        // Security Questions
+        Route::resource('security-questions', \App\Http\Controllers\SecurityQuestionController::class);
     });
 
 /*
