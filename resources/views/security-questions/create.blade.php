@@ -3,7 +3,15 @@
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Add Security Question</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            @if(request()->routeIs('*.create.checkin'))
+                Add Check-in Security Question
+            @elseif(request()->routeIs('*.create.checkout'))
+                Add Check-out Security Question
+            @else
+                Add Security Question
+            @endif
+        </h1>
         <a href="{{ route('security-questions.index') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left me-1"></i> Back
         </a>
@@ -55,6 +63,19 @@
                     <label class="form-label">Question <span class="text-danger">*</span></label>
                     <input type="text" name="question" class="form-control" value="{{ old('question') }}" required>
                     @error('question')
+                        <div class="text-danger">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Check Type <span class="text-danger">*</span></label>
+                    <select name="check_type" id="checkTypeSelect" class="form-select" required>
+                        <option value="">Select Check Type</option>
+                        <option value="checkin" {{ old('check_type') == 'checkin' || (request()->routeIs('*.create.checkin')) ? 'selected' : '' }}>Check-in Only</option>
+                        <option value="checkout" {{ old('check_type') == 'checkout' || (request()->routeIs('*.create.checkout')) ? 'selected' : '' }}>Check-out Only</option>
+                        <option value="both" {{ old('check_type') == 'both' || (!request()->routeIs('*.create.checkin') && !request()->routeIs('*.create.checkout')) ? 'selected' : '' }}>Both Check-in & Check-out</option>
+                    </select>
+                    @error('check_type')
                         <div class="text-danger">{{ $message }}</div>
                     @enderror
                 </div>

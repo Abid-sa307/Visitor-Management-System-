@@ -1,18 +1,19 @@
-@extends('layouts.sb')
+@extends('layouts.guest')
+
 @section('content')
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card border-0 shadow-lg overflow-hidden">
                 <!-- Header with Gradient Background -->
-                <div class="card-header bg-gradient-primary text-white py-4">
+                <div class="card-header bg-gradient-warning text-white py-4">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h2 class="h3 mb-1">Security Check</h2>
-                            <p class="mb-0 opacity-75">Admin Portal - {{ optional($visitor->company)->name ?? 'No Company' }}</p>
+                            <h2 class="h3 mb-1">Security Check-In</h2>
+                            <p class="mb-0 opacity-75">{{ $company->name }} - Visitor Portal</p>
                         </div>
                         <div class="status-badge">
-                            <span class="badge bg-white text-primary fw-normal p-2 rounded-pill">
+                            <span class="badge bg-white text-warning fw-normal p-2 rounded-pill">
                                 <i class="bi bi-person-circle me-1"></i> Visitor ID: {{ substr($visitor->id, 0, 8) }}
                             </span>
                         </div>
@@ -35,40 +36,18 @@
                                 <div class="col-md-6">
                                     <p class="mb-1"><strong>Person to Visit:</strong> {{ $visitor->person_to_visit ?? 'N/A' }}</p>
                                     <p class="mb-1"><strong>Purpose:</strong> {{ $visitor->purpose ?? 'N/A' }}</p>
-                                    <p class="mb-1"><strong>Department:</strong> {{ optional($visitor->department)->name ?? 'N/A' }}</p>
-                                </div>
-                            </div>
-                            <div class="row mt-2">
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>Visit Company:</strong> {{ optional($visitor->company)->name ?? 'N/A' }}</p>
-                                    <p class="mb-1"><strong>Branch:</strong> {{ optional($visitor->branch)->name ?? 'N/A' }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>Check-in Time:</strong> 
-                                        @if($visitor->in_time)
-                                            {{ \Carbon\Carbon::parse($visitor->in_time)->format('M d, Y h:i A') }}
-                                        @else
-                                            Not checked in
-                                        @endif
-                                    </p>
-                                    <p class="mb-1"><strong>Check-out Time:</strong> 
-                                        @if($visitor->out_time)
-                                            {{ \Carbon\Carbon::parse($visitor->out_time)->format('M d, Y h:i A') }}
-                                        @else
-                                            Not checked out
-                                        @endif
-                                    </p>
+                                    <p class="mb-1"><strong>Department:</strong> {{ $visitor->department->name ?? 'N/A' }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Security Check Form -->
-                        <form action="{{ route('security-checks.store') }}" method="POST" enctype="multipart/form-data">
+                        <form action="{{ route('public.security-check.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="visitor_id" value="{{ $visitor->id }}">
                             <input type="hidden" name="check_type" value="checkin">
-
-                <div class="mb-4">
+                            
+                            <div class="mb-4">
                                 <h5 class="mb-3">
                                     <i class="bi bi-shield-check me-2"></i>Security Questions
                                 </h5>
@@ -79,7 +58,7 @@
                                                 <h6 class="card-title">Question {{ $index + 1 }}</h6>
                                                 <p class="card-text">{{ $question->question }}</p>
                                                 
-                                                @if($question->type === 'yes_no')
+                                                @if($question->question_type === 'yes_no')
                                                     <div class="form-check">
                                                         <input class="form-check-input" type="radio" name="responses[{{ $index }}]" 
                                                                id="yes_{{ $index }}" value="yes" required>
@@ -94,10 +73,10 @@
                                                             No
                                                         </label>
                                                     </div>
-                                                @elseif($question->type === 'text')
+                                                @elseif($question->question_type === 'text')
                                                     <textarea class="form-control" name="responses[{{ $index }}]" 
                                                               rows="3" required placeholder="Please provide your answer..."></textarea>
-                                                @elseif($question->type === 'multiple_choice')
+                                                @elseif($question->question_type === 'multiple_choice')
                                                     @if($question->options)
                                                         @php
                                                             $options = is_string($question->options) ? json_decode($question->options, true) : $question->options;
@@ -121,46 +100,12 @@
                                 @else
                                     <div class="alert alert-warning">
                                         <i class="bi bi-exclamation-triangle me-2"></i>
-                                        No security questions configured for this company/branch. 
-                                        <a href="{{ route('security-questions.index') }}" target="_blank">Add Security Questions</a>
-                                    </div>
-                                    
-                                    <!-- Fallback to default questions if no database questions exist -->
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h6 class="card-title">Question 1</h6>
-                                            <p class="card-text">Are you carrying any prohibited items?</p>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="yes_default_1" value="yes" required>
-                                                <label class="form-check-label" for="yes_default_1">Yes</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="no_default_1" value="no" required>
-                                                <label class="form-check-label" for="no_default_1">No</label>
-                                            </div>
-                                            <input type="hidden" name="questions[]" value="Are you carrying any prohibited items?">
-                                        </div>
-                                    </div>
-
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h6 class="card-title">Question 2</h6>
-                                            <p class="card-text">Have you visited this facility before?</p>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="yes_default_2" value="yes" required>
-                                                <label class="form-check-label" for="yes_default_2">Yes</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="no_default_2" value="no" required>
-                                                <label class="form-check-label" for="no_default_2">No</label>
-                                            </div>
-                                            <input type="hidden" name="questions[]" value="Have you visited this facility before?">
-                                        </div>
+                                        No security questions configured for this company.
                                     </div>
                                 @endif
                             </div>
-
-                <!-- Security Officer Information -->
+                            
+                            <!-- Security Officer Information -->
                             <div class="row mb-4">
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">
@@ -216,11 +161,12 @@
                             
                             <!-- Submit Buttons -->
                             <div class="d-flex justify-content-between">
-                                <a href="{{ url()->previous() }}" class="btn btn-secondary">
-                                    <i class="bi bi-arrow-left me-2"></i>Back
+                                <a href="{{ route('public.visitor.index', [$company->id, $visitor->id]) }}" 
+                                   class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back to Visitor Page
                                 </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-shield-check me-2"></i>Complete Security Check
+                                <button type="submit" class="btn btn-warning" onclick="debugFormSubmit(event)">
+                                    <i class="bi bi-shield-check me-2"></i>Complete Security Check-In
                                 </button>
                             </div>
                         </form>
@@ -232,6 +178,55 @@
 </div>
 
 <script>
+// Debug function to log form data before submission
+function debugFormSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target.closest('form');
+    const formData = new FormData(form);
+    
+    console.log('=== SECURITY CHECK FORM DEBUG ===');
+    console.log('Form action:', form.action);
+    console.log('Form method:', form.method);
+    
+    // Log all form data
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+    }
+    
+    // Specifically check required fields
+    console.log('Required Fields Check:');
+    console.log('visitor_id:', formData.get('visitor_id'));
+    console.log('check_type:', formData.get('check_type'));
+    console.log('security_officer_name:', formData.get('security_officer_name'));
+    console.log('questions:', formData.get('questions'));
+    console.log('responses:', formData.get('responses'));
+    
+    // Check if all radio buttons are selected
+    const radioGroups = {};
+    form.querySelectorAll('input[type="radio"]').forEach(radio => {
+        if (!radioGroups[radio.name]) {
+            radioGroups[radio.name] = false;
+        }
+        if (radio.checked) {
+            radioGroups[radio.name] = true;
+        }
+    });
+    
+    console.log('Radio button groups checked:', radioGroups);
+    
+    // Check if any radio groups are unchecked
+    const uncheckedRadios = Object.keys(radioGroups).filter(name => !radioGroups[name]);
+    if (uncheckedRadios.length > 0) {
+        alert('Please answer all security questions. Unchecked: ' + uncheckedRadios.join(', '));
+        return false;
+    }
+    
+    // If everything looks good, submit the form
+    console.log('Form validation passed, submitting...');
+    form.submit();
+}
+
 let stream = null;
 let capturedImageData = null;
 

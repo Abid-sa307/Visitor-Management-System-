@@ -141,11 +141,16 @@ class VisitorController extends Controller
         return Company::where('id', $u->company_id)->get();
     }
 
-    private function getDepartments()
+    private function getDepartments($branchId = null)
     {
+        if ($branchId) {
+            return Department::where('branch_id', $branchId)->orderBy('name')->get();
+        }
+
         if ($this->isSuper()) {
             return Department::orderBy('name')->get();
         }
+
         $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
         return Department::where('company_id', $u->company_id)->orderBy('name')->get();
     }
@@ -340,9 +345,9 @@ class VisitorController extends Controller
             // Email notifications
             try {
                 if (!empty($visitor->email)) {
-                    \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
+                    \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
                     if ($visitor->status === 'Approved') {
-                        \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+                        \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
                     }
                 }
             } catch (\Throwable $e) {
@@ -691,80 +696,31 @@ class VisitorController extends Controller
         // Get companies - all for super admin, only user's company for others
         $companies = $isSuper ? $this->getCompanies() : collect([$user->company]);
         
-        // Get departments for the visitor's company or the first company if not set
         $companyId = $visitor->company_id ?? ($companies->first()->id ?? null);
-        $departments = $companyId ? $this->getDepartments($companyId) : collect();
-        
-        // In VisitorController.php, update the branches query and add visitor categories
-$branches = \App\Models\Branch::when($companyId, function($query) use ($companyId) {
-    return $query->where('company_id', $companyId);
-})
-->orderBy('name')
-->pluck('name', 'id');  // Keep as Collection
 
-// Debug logging for branches
-\Log::info('Branches query result:', [
-    'company_id' => $companyId,
-    'branches_count' => $branches->count(),
-    'branches_data' => $branches->toArray(),
-    'is_empty' => $branches->isEmpty()
-]);
+        $branches = Branch::query()
+            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-// If no branches exist and we have a company, create a default branch
-if ($branches->isEmpty() && $companyId) {
-    try {
-        $company = \App\Models\Company::find($companyId);
-        if ($company) {
-            $defaultBranch = \App\Models\Branch::create([
-                'company_id' => $companyId,
-                'name' => 'Main Branch',
-                'address' => $company->address ?? '',
-                'phone' => $company->contact_number ?? '',
-                'email' => $company->email ?? ''
-            ]);
-            
-            // Reload branches
-            $branches = \App\Models\Branch::where('company_id', $companyId)
-                ->orderBy('name')
-                ->pluck('name', 'id');
-                
-            \Log::info('Created default branch for company', [
-                'company_id' => $companyId,
-                'branch_id' => $defaultBranch->id,
-                'branch_name' => $defaultBranch->name
-            ]);
-        }
-    } catch (\Exception $e) {
-        \Log::error('Failed to create default branch: ' . $e->getMessage());
-    }
-}
+        $selectedBranchId = $visitor->branch_id ?? ($branches->first()->id ?? null);
+        $departments = $selectedBranchId ? $this->getDepartments($selectedBranchId) : collect();
 
-// Get visitor categories for the company
-$visitorCategories = \App\Models\VisitorCategory::when($companyId, function($query) use ($companyId) {
-    return $query->where('company_id', $companyId);
-})
-->orderBy('name')
-->pluck('name', 'id');
+        $visitorCategories = VisitorCategory::query()
+            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-// Debug logging
-\Log::info('Branches being passed to visit form:', [
-    'company_id' => $companyId,
-    'branches_count' => $branches->count(),
-    'branches' => $branches->toArray(),
-    'visitor_categories_count' => $visitorCategories->count(),
-    'is_super' => $isSuper,
-    'user_company_id' => $user->company_id ?? null
-]);
-
-return view('visitors.visit', [
-    'visitor' => $visitor,
-    'departments' => $departments,
-    'companies' => $companies,
-    'branches' => $branches,
-    'visitorCategories' => $visitorCategories,
-    'isSuper' => $isSuper,
-    'user' => $user
-]);
+        return view('visitors.visit', [
+            'visitor' => $visitor,
+            'departments' => $departments,
+            'companies' => $companies,
+            'branches' => $branches,
+            'visitorCategories' => $visitorCategories,
+            'isSuper' => $isSuper,
+            'user' => $user,
+            'selectedBranchId' => $selectedBranchId,
+        ]);
     }
 
 /**
@@ -867,10 +823,10 @@ return view('visitors.visit', [
 
                 // Determine the appropriate redirect route based on user type
                 if (auth()->guard('company')->check()) {
-                    return redirect()->route('company.visitors.index')
+                    return redirect()->route('visits.index')
                         ->with('success', 'Visit submitted successfully.');
                 } else {
-                    return redirect()->route('visitors.index')
+                    return redirect()->route('visits.index')
                         ->with('success', 'Visit submitted successfully.');
                 }
 
@@ -1386,12 +1342,21 @@ return view('visitors.visit', [
         
         // Get filter data
         $companies = $this->getCompanies();
-        $departments = $request->filled('company_id') 
-            ? Department::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
-            : [];
-        $branches = $request->filled('company_id')
-            ? Branch::where('company_id', $request->company_id)->pluck('name', 'id')->toArray()
-            : [];
+
+        $branchesQuery = Branch::query();
+        if ($request->filled('company_id')) {
+            $branchesQuery->where('company_id', $request->company_id);
+        } elseif (!$this->isSuper()) {
+            $branchesQuery->where('company_id', auth()->user()->company_id);
+        }
+        $branches = $branchesQuery->orderBy('name')->get(['id', 'name']);
+
+        $departments = collect();
+        if ($request->filled('branch_id')) {
+            $departments = Department::where('branch_id', $request->branch_id)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
 
         return view('visitors.visitor_inout', compact(
             'visits', 

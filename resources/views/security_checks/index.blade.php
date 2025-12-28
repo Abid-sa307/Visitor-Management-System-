@@ -124,6 +124,14 @@
                                 $createRoute = $isCompany
                                     ? (Route::has('company.security-checks.create') ? 'company.security-checks.create' : null)
                                     : (Route::has('security-checks.create') ? 'security-checks.create' : null);
+                                $checkoutRoute = $isCompany
+                                    ? (Route::has('company.security-checks.create-checkout') ? 'company.security-checks.create-checkout' : null)
+                                    : (Route::has('security-checks.create-checkout') ? 'security-checks.create-checkout' : null);
+                                $toggleRoute = $isCompany ? 'company.security-checks.toggle' : 'security-checks.toggle';
+                                $hasSecurityCheckin = $visitor->security_checkin_time !== null;
+                                $hasSecurityCheckout = $visitor->security_checkout_time !== null;
+                                $canUndoCheckin = $hasSecurityCheckin && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
+                                $canUndoCheckout = $hasSecurityCheckout && \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) <= 30;
                             @endphp
                             <tr>
                                 <td class="fw-semibold">{{ $visitor->name }}</td>
@@ -147,14 +155,6 @@
                                     @endif
                                 </td>
                                 <td class="d-flex gap-2">
-                                    @php
-                                        $toggleRoute = $isCompany ? 'company.security-checks.toggle' : 'security-checks.toggle';
-                                        $hasSecurityCheckin = $visitor->security_checkin_time !== null;
-                                        $hasSecurityCheckout = $visitor->security_checkout_time !== null;
-                                        $canUndoCheckin = $hasSecurityCheckin && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
-                                        $canUndoCheckout = $hasSecurityCheckout && \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) <= 30;
-                                    @endphp
-                                    
                                     @if(!$hasSecurityCheckin)
                                         {{-- Security Check-in Button --}}
                                         <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
@@ -166,11 +166,16 @@
                                         </form>
                                     @elseif(!$hasSecurityCheckout)
                                         {{-- Security Check-out Button --}}
+                                        @if($visitor->in_time && !$visitor->out_time)
+                                            <a href="{{ route($checkoutRoute, $visitor->id) }}" class="btn btn-sm btn-warning" title="Security Check-out Form">
+                                                <i class="fas fa-clipboard-check me-1"></i> Security Check-Out
+                                            </a>
+                                        @endif
                                         <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             <input type="hidden" name="action" value="checkout">
-                                            <button type="submit" class="btn btn-sm btn-warning" title="Security Check-out">
-                                                <i class="fas fa-sign-out-alt me-1"></i> Check Out
+                                            <button type="submit" class="btn btn-sm btn-warning" title="Quick Security Check-out">
+                                                <i class="fas fa-sign-out-alt me-1"></i> Quick Out
                                             </button>
                                         </form>
                                         
@@ -297,7 +302,7 @@
         function loadBranches(companyId) {
             if (!companyId) return;
             
-            fetch(`/api/branches?company_id=${companyId}`)
+            fetch(`/api/companies/${companyId}/branches`)
                 .then(response => {
                     if (!response.ok) throw new Error('Network response was not ok');
                     return response.json();
@@ -309,8 +314,12 @@
                         branchSelect.innerHTML = '<option value="">All Branches</option>';
                         
                         // Add new options
-                        if (data && Array.isArray(data)) {
-                            data.forEach(branch => {
+                        const branches = Array.isArray(data)
+                            ? data
+                            : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
+
+                        if (branches && branches.length) {
+                            branches.forEach(branch => {
                                 const option = new Option(branch.name, branch.id);
                                 option.selected = (branch.id == currentValue);
                                 branchSelect.add(option);
@@ -325,32 +334,9 @@
 
         // Function to load departments
         function loadDepartments(companyId) {
-            if (!companyId) return;
-            
-            fetch(`/api/departments?company_id=${companyId}`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    if (departmentSelect) {
-                        // Store current value to maintain selection
-                        const currentValue = departmentSelect.value;
-                        departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                        
-                        // Add new options
-                        if (data && Array.isArray(data)) {
-                            data.forEach(dept => {
-                                const option = new Option(dept.name, dept.id);
-                                option.selected = (dept.id == currentValue);
-                                departmentSelect.add(option);
-                            });
-                        }
-                        
-                        departmentSelect.disabled = false;
-                    }
-                })
-                .catch(handleApiError);
+            if (!departmentSelect) return;
+            departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+            departmentSelect.disabled = true;
         }
 
         // Handle company change - load branches and departments
@@ -381,8 +367,11 @@
                     }
                 } else {
                     // If no company is selected, enable the dropdowns but keep them empty
-                    if (branchSelect) branchSelect.disabled = false;
-                    if (departmentSelect) departmentSelect.disabled = false;
+                    if (branchSelect) branchSelect.disabled = (companySelect.dataset.isSuper === '1');
+                    if (departmentSelect) {
+                        departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+                        departmentSelect.disabled = true;
+                    }
                 }
             });
         }
@@ -429,8 +418,81 @@
             });
         });
 
-        // Auto-submit when company changes (for superadmin)
-        if (companySelect && {{ $isSuper ? 'true' : 'false' }}) {
+        // Dynamic dropdown loading
+        if (companySelect) {
+            companySelect.addEventListener('change', function() {
+                const companyId = this.value;
+                
+                // Reset department and branch dropdowns
+                departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">All Branches</option>';
+                }
+                
+                // Enable/disable dropdowns based on company selection
+                departmentSelect.disabled = !companyId && {{ $isSuper ? 'true' : 'false' }};
+                if (branchSelect) branchSelect.disabled = !companyId && {{ $isSuper ? 'true' : 'false' }};
+                
+                if (companyId) {
+                    // Load branches for selected company
+                    if (branchSelect) {
+                        fetch(`/api/companies/${companyId}/branches`)
+                            .then(response => response.json())
+                            .then(branches => {
+                                branches.forEach(branch => {
+                                    const option = document.createElement('option');
+                                    option.value = branch.id;
+                                    option.textContent = branch.name;
+                                    branchSelect.appendChild(option);
+                                });
+                            })
+                            .catch(error => console.error('Error loading branches:', error));
+                    }
+                    
+                    // Load departments for selected company
+                    fetch(`/api/companies/${companyId}/departments`)
+                        .then(response => response.json())
+                        .then(departments => {
+                            departments.forEach(dept => {
+                                const option = document.createElement('option');
+                                option.value = dept.id;
+                                option.textContent = dept.name;
+                                departmentSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error loading departments:', error));
+                }
+            });
+        }
+        
+        // Handle branch change to load departments
+        if (branchSelect) {
+            branchSelect.addEventListener('change', function() {
+                const branchId = this.value;
+                
+                // Reset department dropdown
+                departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                
+                if (branchId) {
+                    // Load departments for selected branch
+                    fetch(`/api/branches/${branchId}/departments`)
+                        .then(response => response.json())
+                        .then(departments => {
+                            departments.forEach(dept => {
+                                const option = document.createElement('option');
+                                option.value = dept.id;
+                                option.textContent = dept.name;
+                                departmentSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error loading departments:', error));
+                }
+            });
+        }
+
+        // Auto-submit when company changes (for superadmin) - remove this to allow dynamic loading
+        // Only auto-submit for non-superadmin or if explicitly needed
+        if (companySelect && {{ $isSuper ? 'false' : 'true' }}) {
             companySelect.addEventListener('change', function() {
                 document.getElementById('filterForm').submit();
             });

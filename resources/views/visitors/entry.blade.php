@@ -378,7 +378,7 @@
             </button>
         @endif
         
-        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]' && $visitor->company && $visitor->company->face_recognition_enabled && !$needsSecurityCheck)
+        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]' && $visitor->company && $visitor->company->face_recognition_enabled)
             <button type="button" 
                     class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
                     data-visitor-id="{{ $visitor->id }}"
@@ -1079,7 +1079,11 @@ document.addEventListener('DOMContentLoaded', function() {
         companySelect.addEventListener('change', function() {
             const companyId = this.value || '';
             loadBranches(companyId);
-            loadDepartments(companyId);
+
+            if (departmentSelect) {
+                departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+                departmentSelect.disabled = true;
+            }
         });
     }
 
@@ -1125,52 +1129,66 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Function to load departments via AJAX
-    function loadDepartments(companyId) {
-        if (!departmentSelect) return;
-        departmentSelect.innerHTML = '<option value="">All Departments</option>';
-        if (!companyId) {
-            departmentSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
-            return;
-        }
-        departmentSelect.disabled = false;
+    // Load departments when branch changes
+    if (branchSelect && departmentSelect) {
+        const setDepartmentOptions = (optionsHtml, disabled) => {
+            departmentSelect.innerHTML = optionsHtml;
+            departmentSelect.disabled = disabled;
+        };
 
-        // Show loading state
-        const loadingOption = document.createElement('option');
-        loadingOption.textContent = 'Loading departments...';
-        departmentSelect.appendChild(loadingOption);
+        const loadDepartmentsForBranch = (branchId) => {
+            if (!branchId) {
+                setDepartmentOptions('<option value="">Select a branch first</option>', true);
+                return;
+            }
 
-        fetch(`/api/companies/${companyId}/departments`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+            setDepartmentOptions('<option value="">Loading departments...</option>', true);
+
+            fetch(`/api/branches/${branchId}/departments`, {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-                return response.json();
             })
-            .then(data => {
-                departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                if (data && data.length > 0) {
-                    data.forEach(dept => {
-                        const option = document.createElement('option');
-                        option.value = dept.id;
-                        option.textContent = dept.name;
-                        if (String(selectedDept) === String(dept.id)) {
-                            option.selected = true;
-                        }
-                        departmentSelect.appendChild(option);
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const departments = Array.isArray(data)
+                        ? data
+                        : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
+
+                    let optionsHtml = '<option value="">All Departments</option>';
+                    departments.forEach(dep => {
+                        const selected = String(dep.id) === String(selectedDept) ? 'selected' : '';
+                        optionsHtml += `<option value="${dep.id}" ${selected}>${dep.name}</option>`;
                     });
-                }
-            })
-            .catch(error => {
-                console.error('Error loading departments:', error);
-                departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
-            });
+
+                    setDepartmentOptions(optionsHtml, departments.length === 0);
+                })
+                .catch(() => {
+                    setDepartmentOptions('<option value="">Unable to load departments</option>', true);
+                });
+        };
+
+        branchSelect.addEventListener('change', function () {
+            loadDepartmentsForBranch(this.value || '');
+        });
+
+        if (branchSelect.value) {
+            loadDepartmentsForBranch(branchSelect.value);
+        } else {
+            setDepartmentOptions('<option value="">Select a branch first</option>', true);
+        }
     }
 
     // Initialize branches and departments if company is already selected
     @if(auth()->user()->role === 'superadmin' && request('company_id'))
         loadBranches('{{ request('company_id') }}');
-        loadDepartments('{{ request('company_id') }}');
     @endif
 });
 </script>

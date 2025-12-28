@@ -163,7 +163,12 @@
 
                     <div class="col-md-2">
                         <label for="branch_id" class="form-label">Branch</label>
-                        <select name="branch_id" id="branch_id" class="form-select" 
+                        <select
+                            name="branch_id"
+                            id="branch_id"
+                            class="form-select"
+                            data-selected="{{ request('branch_id') }}"
+                            data-department-target="#department_id"
                             {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
                             <option value="">All Branches</option>
                             @if(isset($branches) && count($branches) > 0)
@@ -178,16 +183,14 @@
 
                     <div class="col-md-2">
                         <label for="department_id" class="form-label">Department</label>
-                        <select name="department_id" id="department_id" class="form-select"
+                        <select
+                            name="department_id"
+                            id="department_id"
+                            class="form-select"
+                            data-placeholder="Select Department"
+                            data-selected="{{ request('department_id') }}"
                             {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
-                            <option value="">All Departments</option>
-                            @if(isset($departments) && count($departments) > 0)
-                                @foreach($departments as $department)
-                                    <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
-                                        {{ $department->name }}
-                                    </option>
-                                @endforeach
-                            @endif
+                            <option value="">{{ request('company_id') ? 'Loading departments...' : 'Select a branch first' }}</option>
                         </select>
                     </div>
 
@@ -242,62 +245,132 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle company change to load departments and branches
     const companySelect = document.getElementById('company_id');
-    const departmentSelect = document.getElementById('department_id');
     const branchSelect = document.getElementById('branch_id');
+    const departmentSelect = document.getElementById('department_id');
 
-    if (companySelect) {
-        companySelect.addEventListener('change', function() {
-            const companyId = this.value;
-            
-            // Reset and disable dependent selects
-            departmentSelect.innerHTML = '<option value="">All Departments</option>';
-            branchSelect.innerHTML = '<option value="">All Branches</option>';
-            
-            if (companyId) {
-                // Enable department and branch selects
-                departmentSelect.disabled = false;
-                branchSelect.disabled = false;
-                
-                // Load departments
-                fetch(`/api/companies/${companyId}/departments`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(dept => {
-                            const option = new Option(dept.name, dept.id);
-                            departmentSelect.add(option);
-                        });
-                    });
-                
-                // Load branches
-                fetch(`/api/companies/${companyId}/branches`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(branch => {
-                            const option = new Option(branch.name, branch.id);
-                            branchSelect.add(option);
-                        });
-                    });
-            } else {
-                // Disable if no company selected
-                departmentSelect.disabled = true;
-                branchSelect.disabled = true;
+    const placeholderText = departmentSelect?.dataset.placeholder || 'Select a branch first';
+    const loadingText = departmentSelect?.dataset.loadingText || 'Loading departments...';
+    const errorText = departmentSelect?.dataset.errorText || 'Unable to load departments';
+
+    const setDepartmentOptions = (optionsHtml, disabled = true) => {
+        if (!departmentSelect) return;
+        departmentSelect.innerHTML = optionsHtml;
+        departmentSelect.disabled = disabled;
+    };
+
+    const loadDepartmentsForBranch = (branchId, selectedDepartment = '') => {
+        if (!departmentSelect) return;
+
+        if (!branchId) {
+            setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
+            return;
+        }
+
+        setDepartmentOptions(`<option value="">${loadingText}</option>`, true);
+
+        fetch(`/api/branches/${branchId}/departments`, {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const departments = Array.isArray(data)
+                    ? data
+                    : Object.entries(data).map(([id, name]) => ({ id, name }));
+
+                if (departments.length === 0) {
+                    setDepartmentOptions('<option value="">No departments available</option>', true);
+                    return;
+                }
+
+                let optionsHtml = '<option value="">All Departments</option>';
+                departments.forEach(dep => {
+                    const selected = String(dep.id) === String(selectedDepartment) ? 'selected' : '';
+                    optionsHtml += `<option value="${dep.id}" ${selected}>${dep.name}</option>`;
+                });
+
+                setDepartmentOptions(optionsHtml, false);
+            })
+            .catch(() => {
+                setDepartmentOptions(`<option value="">${errorText}</option>`, true);
+            });
+    };
+
+    if (branchSelect && departmentSelect) {
+        const initialBranch = branchSelect.value || branchSelect.dataset.selected || '';
+        const initialDepartment = departmentSelect.dataset.selected || '';
+
+        branchSelect.addEventListener('change', function () {
+            loadDepartmentsForBranch(this.value, departmentSelect.dataset.selected || '');
         });
 
-        // Initialize state on page load
-        if (companySelect.value) {
-            companySelect.dispatchEvent(new Event('change'));
+        if (initialBranch) {
+            loadDepartmentsForBranch(initialBranch, initialDepartment);
+        } else {
+            setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
         }
     }
 
-    // Existing search functionality
-    const searchBtn = document.getElementById('searchBtn');
-    if (searchBtn) {
+    if (companySelect && branchSelect) {
+        companySelect.addEventListener('change', function () {
+            const companyId = this.value;
+
+            branchSelect.dataset.selected = '';
+            branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+            branchSelect.disabled = true;
+            setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
+
+            if (!companyId) {
+                branchSelect.innerHTML = '<option value="">All Branches</option>';
+                branchSelect.disabled = false;
+                return;
+            }
+
+            fetch(`/api/companies/${companyId}/branches`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const branches = Array.isArray(data)
+                        ? data
+                        : Object.entries(data).map(([id, name]) => ({ id, name }));
+
+                    branchSelect.innerHTML = '<option value="">All Branches</option>';
+
+                    branches.forEach(branch => {
+                        const option = new Option(branch.name, branch.id);
+                        branchSelect.add(option);
+                    });
+
+                    branchSelect.disabled = false;
+
+                    if (departmentSelect) {
+                        departmentSelect.dataset.selected = '';
+                        setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
+                    }
+                })
+                .catch(() => {
+                    branchSelect.innerHTML = '<option value="">Failed to load branches</option>';
+                });
+        });
     }
 
-    // Function to format date as YYYY-MM-DD
+    if (branchSelect && branchSelect.value) {
+        branchSelect.dispatchEvent(new Event('change'));
+    }
+
     function formatDate(date) {
         const d = new Date(date);
         let month = '' + (d.getMonth() + 1);

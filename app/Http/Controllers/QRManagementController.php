@@ -168,6 +168,15 @@ public function __construct()
         // Create visitor
         $visitor = Visitor::create($visitorData);
 
+        // Send email notification to visitor
+        try {
+            if (!empty($visitor->email)) {
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('VisitorCreated mail dispatch failed: '.$e->getMessage());
+        }
+
         // Check if branch was stored in session
         $branchId = session('scanned_branch_id');
         
@@ -258,16 +267,31 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
         
         // Update visitor with visit details
         $visitor->fill([
-            'department_id' => $validated['department_id'],
-            'purpose' => $validated['purpose'],
-            'status' => $visitor->status === 'Approved' ? 'Approved' : 'Pending',
-            'visitor_company' => $validated['visitor_company'] ?? null,
-            'branch_id' => $validated['branch_id'] ?? null,
-            'visitor_category_id' => $request->input('visitor_category_id') ?: null,
-            'updated_at' => now()
+            'department_id'        => $validated['department_id'],
+            'purpose'              => $validated['purpose'],
+            'status'               => $visitor->status === 'Approved' ? 'Approved' : 'Pending',
+            'visitor_company'      => $validated['visitor_company'] ?? null,
+            'branch_id'            => $validated['branch_id'] ?? null,
+            'visitor_category_id'  => $request->input('visitor_category_id') ?: null,
+            'person_to_visit'      => $request->input('person_to_visit') ?: null,
+            'vehicle_type'         => $request->input('vehicle_type') ?: null,
+            'vehicle_number'       => $request->input('vehicle_number') ?: null,
+            'goods_in_car'         => $request->input('goods_in_car') ?: null,
+            'visitor_website'      => $request->input('visitor_website') ?: null,
+            'workman_policy_photo' => $request->hasFile('workman_policy_photo') ? $visitor->workman_policy_photo : $visitor->workman_policy_photo,
+            'updated_at'           => now()
         ]);
         
         $visitor->save();
+
+        // Send approval email if visitor was auto-approved or status changed to approved
+        try {
+            if ($visitor->status === 'Approved' && !empty($visitor->email)) {
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('VisitorApproved mail dispatch failed: '.$e->getMessage());
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

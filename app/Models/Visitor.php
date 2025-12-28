@@ -29,6 +29,10 @@ class Visitor extends Model
         'department_id',
         'purpose',
         'person_to_visit',
+        'visitor_website',
+        'vehicle_type',
+        'vehicle_number',
+        'goods_in_car',
         'documents',
         'workman_policy',
         'workman_policy_photo',
@@ -41,7 +45,13 @@ class Visitor extends Model
         'approved_by',
         'approved_at',
         'rejected_by',
-        'reject_reason'
+        'reject_reason',
+        'vehicle_type',
+        'vehicle_number',
+        'goods_in_car',
+        'visitor_website',
+        'security_checkin_time',
+        'security_checkout_time'
     ];
     
     /**

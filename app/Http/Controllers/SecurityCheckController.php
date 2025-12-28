@@ -58,19 +58,31 @@ class SecurityCheckController extends Controller
             $companies = \App\Models\Company::orderBy('name')->pluck('name', 'id')->toArray();
         }
 
-        // Get branches based on company selection
+        // Get branches based on company selection or user's company
         $branches = [];
         if ($companyId) {
             $branches = \App\Models\Branch::where('company_id', $companyId)
                 ->orderBy('name')
                 ->pluck('name', 'id')
                 ->toArray();
+        } elseif (!$isSuper && $authUser) {
+            // For non-superadmin, get their company's branches
+            $branches = \App\Models\Branch::where('company_id', $authUser->company_id)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
         }
 
-        // Get departments based on company selection
+        // Get departments based on company selection or user's company
         $departments = [];
         if ($companyId) {
             $departments = \App\Models\Department::where('company_id', $companyId)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        } elseif (!$isSuper && $authUser) {
+            // For non-superadmin, get their company's departments
+            $departments = \App\Models\Department::where('company_id', $authUser->company_id)
                 ->orderBy('name')
                 ->pluck('name', 'id')
                 ->toArray();
@@ -88,16 +100,46 @@ class SecurityCheckController extends Controller
         ]);
     }
 
-    public function create($visitorId)
+    public function create(Request $request, $visitorId)
     {
         $visitor = Visitor::with('company')->findOrFail($visitorId);
         
         // Check if visitor has completed the visit form
-        if (!$this->hasCompletedVisitForm($visitor)) {
+        $bypassFormCheck = $request->boolean('access_form', false);
+
+        if (!$this->hasCompletedVisitForm($visitor) && !$bypassFormCheck) {
             return redirect()->back()->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
         }
         
-        return view('visitors.security', compact('visitor'));
+        $securityQuestions = $this->getSecurityQuestions($visitor, 'checkin');
+        
+        return view('visitors.security', compact('visitor', 'securityQuestions'));
+    }
+
+    public function createCheckout(Request $request, $visitorId)
+    {
+        $visitor = Visitor::with('company')->findOrFail($visitorId);
+        
+        // Check if visitor has completed the visit form
+        $bypassFormCheck = $request->boolean('access_form', false);
+
+        if (!$this->hasCompletedVisitForm($visitor) && !$bypassFormCheck) {
+            return redirect()->back()->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
+        }
+        
+        // Check if visitor is checked in (for checkout security check)
+        if (!$visitor->in_time) {
+            return redirect()->back()->with('error', 'Visitor must be checked in before security check-out.');
+        }
+        
+        // Check if visitor is already checked out
+        if ($visitor->out_time) {
+            return redirect()->back()->with('error', 'Visitor has already checked out.');
+        }
+        
+        $securityQuestions = $this->getSecurityQuestions($visitor, 'checkout');
+        
+        return view('security_checks.checkout', compact('visitor', 'securityQuestions'));
     }
 
     public function store(Request $request)
@@ -114,7 +156,9 @@ class SecurityCheckController extends Controller
 
         // Check if visitor has completed the visit form
         $visitor = Visitor::findOrFail($request->visitor_id);
-        if (!$this->hasCompletedVisitForm($visitor)) {
+        $bypassFormCheck = $request->boolean('access_form', false);
+
+        if (!$this->hasCompletedVisitForm($visitor) && !$bypassFormCheck) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
@@ -148,12 +192,16 @@ class SecurityCheckController extends Controller
 
             // Update visitor's photo if it's a new one and visitor doesn't have a photo
             $visitor = Visitor::find($request->visitor_id);
-            if ($visitor && !$visitor->photo && $visitorPhotoPath) {
-                $visitor->photo = $visitorPhotoPath;
+            if ($visitor) {
+                if (!$visitor->photo && $visitorPhotoPath) {
+                    $visitor->photo = $visitorPhotoPath;
+                }
+                // Set security check-in time after form is completed
+                $visitor->security_checkin_time = now();
                 $visitor->save();
             }
 
-            return redirect()->route('security-checks.show', $securityCheck->id)
+            return redirect()->route('security-checks.index')
                 ->with('success', 'Security check completed successfully.');
 
         } catch (\Exception $e) {
@@ -163,10 +211,33 @@ class SecurityCheckController extends Controller
         }
     }
     
-    public function show($id)
+    /**
+     * Get security questions for a visitor based on company/branch and check type
+     */
+    private function getSecurityQuestions($visitor, $checkType = 'checkin')
     {
-        $securityCheck = SecurityCheck::with('visitor')->findOrFail($id);
-        return view('security_checks.show', compact('securityCheck'));
+        $query = \App\Models\SecurityQuestion::query();
+        
+        // Filter by company if visitor has a company
+        if ($visitor->company) {
+            $query->where('company_id', $visitor->company->id);
+        }
+        
+        // Filter by branch if visitor has a branch
+        if ($visitor->branch) {
+            $query->where(function($q) use ($visitor) {
+                $q->where('branch_id', $visitor->branch->id)
+                  ->orWhereNull('branch_id'); // Include company-wide questions
+            });
+        }
+        
+        // Filter by check type
+        $query->where(function($q) use ($checkType) {
+            $q->where('check_type', $checkType)
+              ->orWhere('check_type', 'both');
+        });
+        
+        return $query->where('is_active', true)->get();
     }
     
     /**
@@ -249,7 +320,6 @@ class SecurityCheckController extends Controller
     {
         // Check if essential visit form fields are filled
         return !empty($visitor->department_id) && 
-               !empty($visitor->person_to_visit) && 
                !empty($visitor->purpose);
     }
     
@@ -261,9 +331,68 @@ class SecurityCheckController extends Controller
         $visitor = Visitor::findOrFail($visitorId);
         $action = $request->input('action', 'checkin');
         
-        // Check if visitor has completed visit form
+        // Debug logging
+        \Log::info('toggleSecurity called', [
+            'visitor_id' => $visitorId,
+            'action' => $action,
+            'visitor_status' => $visitor->status,
+            'visit_form_completed' => $this->hasCompletedVisitForm($visitor),
+            'company_id' => $visitor->company_id,
+            'company_security_check_service' => $visitor->company ? $visitor->company->security_check_service : 'no company',
+            'company_security_checkin_type' => $visitor->company ? $visitor->company->security_checkin_type : 'no company',
+            'security_checks_exist' => $visitor->securityChecks()->exists(),
+        ]);
+        
+        // Check if visitor has completed visit form (required step before security check)
         if (!$this->hasCompletedVisitForm($visitor)) {
+            \Log::info('Visit form not completed, returning error');
             return redirect()->back()->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
+        }
+
+        // For check-in, ensure visitor is approved and has visit form
+        if ($action === 'checkin') {
+            if ($visitor->status !== 'Approved') {
+                \Log::info('Visitor not approved, returning error');
+                return redirect()->back()->with('error', 'Visitor must be approved before security check-in.');
+            }
+            
+            // Check if security form is required based on company settings
+            $requiresSecurityForm = false;
+            if ($visitor->company && $visitor->company->security_check_service) {
+                $securityType = $visitor->company->security_checkin_type;
+                \Log::info('Security check enabled, type: ' . $securityType);
+                
+                // Check if security form is required for this action
+                if (in_array($securityType, ['checkin', 'both']) && !$visitor->securityChecks()->exists()) {
+                    $requiresSecurityForm = true;
+                    \Log::info('Security form required for check-in');
+                }
+            }
+            
+            if ($requiresSecurityForm) {
+                \Log::info('Redirecting to security form');
+                $routeName = $request->routeIs('company.*') ? 'company.security-checks.create' : 'security-checks.create';
+                return redirect()->route($routeName, [
+                    'visitorId' => $visitor->id,
+                    'access_form' => 1,
+                ]);
+            }
+        }
+        
+        // For check-out, ensure visitor has checked in first
+        if ($action === 'checkout') {
+            if (!$visitor->in_time) {
+                return redirect()->back()->with('error', 'Visitor must check in before security check-out.');
+            }
+            
+            // For checkout, if security checks are enabled and no security check exists, send to security form
+            if ($visitor->company && $visitor->company->security_check_service && $visitor->securityChecks()->doesntExist()) {
+                $routeName = $request->routeIs('company.*') ? 'company.security-checks.create' : 'security-checks.create';
+                return redirect()->route($routeName, [
+                    'visitorId' => $visitor->id,
+                    'access_form' => 1,
+                ]);
+            }
         }
         
         try {
@@ -278,6 +407,8 @@ class SecurityCheckController extends Controller
                     return redirect()->back()->with('error', 'Undo is only available within 30 minutes of security check-in.');
                 }
                 $visitor->security_checkin_time = null;
+                // Delete the security check record to allow fresh form
+                $visitor->securityChecks()->delete();
                 $message = 'Security check-in has been undone successfully.';
             } elseif ($action === 'undo_checkout') {
                 if (!$visitor->security_checkout_time || \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) > 30) {

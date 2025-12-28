@@ -8,7 +8,19 @@
         ->map(fn($v) => (int)$v)
         ->all();
 
+    $preselectedBranchIds = collect(old('branch_ids', optional($user)->branches?->pluck('id')?->all() ?? []))
+        ->map(fn($v) => (int)$v)
+        ->all();
+
     $companyId = old('company_id', $user->company_id ?? (auth()->user()->company_id ?? null));
+
+    $prefetchedBranches = collect();
+    $prefetchedDepartments = collect();
+
+    if ($companyId && !$isSuper) {
+        $prefetchedBranches = \App\Models\Branch::where('company_id', $companyId)->orderBy('name')->get();
+        $prefetchedDepartments = \App\Models\Department::where('company_id', $companyId)->orderBy('name')->get();
+    }
 @endphp
 
 <div class="mb-3">
@@ -64,8 +76,8 @@
     <div class="position-relative">
         <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchDropdown">
             <span id="branchButtonText">
-                @if(isset($user) && $user->branches->count() > 0)
-                    {{ $user->branches->count() }} selected
+                @if(count($preselectedBranchIds) > 0)
+                    {{ count($preselectedBranchIds) }} selected
                 @else
                     Select Branches
                 @endif
@@ -91,35 +103,35 @@
             <hr class="my-2">
 
             <div id="branchCheckboxList" class="mt-2">
-                @if($isSuper)
+                @if($isSuper && !$companyId)
                     <div class="text-muted small">Please select a company first</div>
                 @else
                     @php
-                        $companyId = auth()->user()->company_id;
-                        $branches = \App\Models\Branch::where('company_id', $companyId)->orderBy('name')->get();
-                        $selectedBranches = isset($user) ? $user->branches->pluck('id')->toArray() : [];
+                        $branchOptions = $isSuper
+                            ? \App\Models\Branch::where('company_id', $companyId)->orderBy('name')->get()
+                            : $prefetchedBranches;
                     @endphp
-                    @foreach($branches as $branch)
+                    @forelse($branchOptions as $branch)
                         <div class="form-check">
                             <input class="form-check-input branch-checkbox" type="checkbox"
                                    value="{{ $branch->id }}" id="branch-{{ $branch->id }}"
-                                   {{ in_array($branch->id, $selectedBranches) ? 'checked' : '' }}>
+                                   {{ in_array($branch->id, $preselectedBranchIds, true) ? 'checked' : '' }}>
                             <label class="form-check-label" for="branch-{{ $branch->id }}">
                                 {{ $branch->name }}
                             </label>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="text-muted small">No branches found</div>
+                    @endforelse
                 @endif
             </div>
         </div>
     </div>
 
     <div id="branchHiddenInputs">
-        @if(isset($user) && $user->branches->count() > 0)
-            @foreach($user->branches as $branch)
-                <input type="hidden" name="branch_ids[]" value="{{ $branch->id }}">
-            @endforeach
-        @endif
+        @foreach($preselectedBranchIds as $branchId)
+            <input type="hidden" name="branch_ids[]" value="{{ $branchId }}">
+        @endforeach
     </div>
     @error('branch_ids') <div class="text-danger small">{{ $message }}</div> @enderror
 </div>
@@ -158,23 +170,26 @@
             <hr class="my-2">
 
             <div id="departmentList" class="mt-2">
-                @if($isSuper)
+                @if($isSuper && !$companyId)
                     <div class="text-muted small">Please select a company first</div>
                 @else
                     @php
-                        $companyId = auth()->user()->company_id;
-                        $departments = \App\Models\Department::where('company_id', $companyId)->orderBy('name')->get();
+                        $departmentOptions = $isSuper
+                            ? \App\Models\Department::where('company_id', $companyId)->orderBy('name')->get()
+                            : $prefetchedDepartments;
                     @endphp
-                    @foreach($departments as $dept)
+                    @forelse($departmentOptions as $dept)
                         <div class="form-check">
                             <input class="form-check-input department-checkbox" type="checkbox"
                                    value="{{ $dept->id }}" id="dept-{{ $dept->id }}"
-                                   {{ in_array($dept->id, $preselectedDeptIds) ? 'checked' : '' }}>
+                                   {{ in_array($dept->id, $preselectedDeptIds, true) ? 'checked' : '' }}>
                             <label class="form-check-label" for="dept-{{ $dept->id }}">
                                 {{ $dept->name }}
                             </label>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="text-muted small">No departments found</div>
+                    @endforelse
                 @endif
             </div>
         </div>

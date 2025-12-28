@@ -39,8 +39,9 @@ class ReportController extends Controller
         $visitors = $query->latest()->paginate(20);
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
+        $branches = $this->getBranches($request);
 
-        return view('visitors.report', compact('visitors', 'companies', 'departments') + $filters);
+        return view('visitors.report', compact('visitors', 'companies', 'departments', 'branches') + $filters);
     }
 
     // Visit Reports (In/Out)
@@ -173,8 +174,9 @@ class ReportController extends Controller
         $approvals = $query->latest('approved_at')->paginate(20);
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
+        $branches = $this->getBranches($request);
 
-        return view('visitors.approval_status', compact('approvals', 'companies', 'departments') + $filters);
+        return view('visitors.approval_status', compact('approvals', 'companies', 'departments', 'branches') + $filters);
     }
 
     // Hourly Report
@@ -220,12 +222,14 @@ class ReportController extends Controller
 
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
+        $branches = $this->getBranches($request);
         
         return view('reports.hourly', [
             'hourlyData' => $hourlyData,
             'selectedDate' => $request->date ?? now()->format('Y-m-d'),
             'companies' => $companies,
             'departments' => $departments,
+            'branches' => $branches,
             'filters' => $request->all()
         ]);
     }
@@ -317,6 +321,35 @@ class ReportController extends Controller
             // If user has specific departments assigned
             if (auth()->user()->departments->isNotEmpty()) {
                 $query->whereIn('id', auth()->user()->departments->pluck('id'));
+            }
+        } elseif ($request->filled('company_id')) {
+            // For superadmins, filter by selected company if any
+            $query->where('company_id', $request->company_id);
+        }
+        
+        return $query->pluck('name', 'id')->toArray();
+    }
+
+    private function getBranches($request)
+    {
+        $query = \App\Models\Branch::query();
+        
+        // For non-superadmins, filter by user's assigned branches
+        if (auth()->user()->role !== 'superadmin') {
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $query->whereIn('id', $userBranchIds);
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $query->where('id', $user->branch_id);
+                } else {
+                    // If no branches assigned, filter by company
+                    $query->where('company_id', $user->company_id);
+                }
             }
         } elseif ($request->filled('company_id')) {
             // For superadmins, filter by selected company if any

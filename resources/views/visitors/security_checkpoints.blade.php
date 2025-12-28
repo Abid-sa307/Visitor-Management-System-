@@ -371,8 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reset and disable dependent dropdowns
             if (departmentSelect) {
-                departmentSelect.innerHTML = '<option value="">Loading departments...</option>';
-                departmentSelect.disabled = !companyId;
+                departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+                departmentSelect.disabled = true;
             }
             
             if (branchSelect) {
@@ -383,8 +383,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // If no company selected, reset the form
             if (!companyId) {
                 if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                    departmentSelect.disabled = isSuperAdmin ? true : false;
+                    departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+                    departmentSelect.disabled = true;
                 }
                 if (branchSelect) {
                     branchSelect.innerHTML = '<option value="">All Branches</option>';
@@ -393,44 +393,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Load departments and branches for the selected company
-            Promise.all([
-                fetch(`/api/companies/${companyId}/departments`),
-                fetch(`/api/companies/${companyId}/branches`)
-            ])
-            .then(async ([deptResponse, branchResponse]) => {
-                const departments = await deptResponse.json();
-                const branches = await branchResponse.json();
+            // Load branches for the selected company
+            fetch(`/api/companies/${companyId}/branches`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const branches = Array.isArray(data)
+                        ? data
+                        : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
 
-                // Update departments dropdown
-                if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                    departments.forEach(dept => {
-                        const option = new Option(dept.name, dept.id);
-                        departmentSelect.add(option);
-                    });
-                    departmentSelect.disabled = false;
-                }
-
-                // Update branches dropdown
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">All Branches</option>';
-                    branches.forEach(branch => {
-                        const option = new Option(branch.name, branch.id);
-                        branchSelect.add(option);
-                    });
-                    branchSelect.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error loading data:', error);
-                if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
-                }
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">Error loading branches</option>';
-                }
-            });
+                    if (branchSelect) {
+                        branchSelect.innerHTML = '<option value="">All Branches</option>';
+                        branches.forEach(branch => {
+                            const option = new Option(branch.name, branch.id);
+                            branchSelect.add(option);
+                        });
+                        branchSelect.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading branches:', error);
+                    if (branchSelect) {
+                        branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                    }
+                });
         });
     }
 
@@ -493,8 +483,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reset and disable dependent dropdowns
             if (departmentSelect) {
-                departmentSelect.innerHTML = '<option value="">Loading departments...</option>';
-                departmentSelect.disabled = !companyId;
+                departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+                departmentSelect.disabled = true;
             }
             
             if (branchSelect) {
@@ -505,8 +495,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // If no company selected, reset the form
             if (!companyId) {
                 if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                    departmentSelect.disabled = !isSuperAdmin;
+                    departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+                    departmentSelect.disabled = true;
                 }
                 if (branchSelect) {
                     branchSelect.innerHTML = '<option value="">All Branches</option>';
@@ -515,44 +505,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Load departments and branches for the selected company
-            Promise.all([
-                fetch(`/api/companies/${companyId}/departments`),
-                fetch(`/api/companies/${companyId}/branches`)
-            ])
-            .then(async ([deptResponse, branchResponse]) => {
-                const departments = await deptResponse.json();
-                const branches = await branchResponse.json();
+            // Load branches for the selected company
+            fetch(`/api/companies/${companyId}/branches`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const branches = Array.isArray(data)
+                        ? data
+                        : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
 
-                // Update departments dropdown
-                if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                    departments.forEach(dept => {
-                        const option = new Option(dept.name, dept.id);
-                        departmentSelect.add(option);
-                    });
-                    departmentSelect.disabled = false;
-                }
-
-                // Update branches dropdown
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">All Branches</option>';
-                    branches.forEach(branch => {
-                        const option = new Option(branch.name, branch.id);
-                        branchSelect.add(option);
-                    });
-                    branchSelect.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error loading data:', error);
-                if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
-                }
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">Error loading branches</option>';
-                }
-            });
+                    if (branchSelect) {
+                        branchSelect.innerHTML = '<option value="">All Branches</option>';
+                        branches.forEach(branch => {
+                            const option = new Option(branch.name, branch.id);
+                            branchSelect.add(option);
+                        });
+                        branchSelect.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading branches:', error);
+                    if (branchSelect) {
+                        branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                    }
+                });
         });
     }
 
@@ -586,27 +566,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to load departments based on company
     async function loadDepartments(companyId) {
-        if (!companyId) {
-            departmentSelect.innerHTML = '<option value="">All Departments</option>';
-            departmentSelect.disabled = true;
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/companies/${companyId}/departments`);
-            const departments = await response.json();
-            
-            let options = '<option value="">All Departments</option>';
-            departments.forEach(dept => {
-                const selected = departmentSelect.dataset.selected == dept.id ? 'selected' : '';
-                options += `<option value="${dept.id}" ${selected}>${dept.name}</option>`;
-            });
-            
-            departmentSelect.innerHTML = options;
-            departmentSelect.disabled = false;
-        } catch (error) {
-            console.error('Error loading departments:', error);
-        }
+        departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+        departmentSelect.disabled = true;
     }
 
     // Function to load branches based on company

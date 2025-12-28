@@ -83,11 +83,36 @@
                     <h4 style="margin: 0; font-size: 14px; font-weight: bold;">Solutions Provided</h4>
                 </div>
                 <ul style="margin: 0; padding: 0; list-style: none; font-size: 12px; color: #374151;">
-                    <li style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">✅ Bulk Hardware Supply</li>
-                    <li style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">✅ Custom Software Development</li>
-                    <li style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">✅ Data Center Services</li>
-                    <li style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">✅ Security & Firewall Management</li>
                     <li style="display: flex; align-items: center; gap: 6px;">✅ Database Management & Hosting</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Custom Mobile app Development</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Custom Ai Software Development</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Hire Developers(Staff Augmentation Services)</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Custom Erp Solutions</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Custom E-commerce Software Development</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Custom Website Devlopment</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Seo Services for your business</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Bulk Hardware Supply</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Data Center Services</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Security & Firewall Management</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Database Management & Hosting</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Bulk Hardware Supply</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Data Center Services</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Security & Firewall Management</li>
+                    <li style="display: flex; align-items: center; gap: 6px;">✅ Database Management & Hosting</li>
+
+                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">INDUSTIES We Served</h4>
+
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Healthcare Solutions</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Logistics Optimization</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Fintech Innovation</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Retail Transformation</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Advanced Manufacturing</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Education Solutions</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Real Estate</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Travel & Hospitality</li>                    
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Government IT Solution</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Local Infra</li>
+                <li style="display: flex; align-items: center; gap: 6px;">✅ Support software, products, devices and infrastructure – all under one roof</li>
                 </ul>
             </div>
         </div>

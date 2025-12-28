@@ -103,6 +103,7 @@ Route::get('/public/company/{company}/branch/{branch}/visitor/{visitor}', [QRMan
     ->name('public.visitor.index.branch');
 
 
+
     
 Route::prefix('qr')->name('qr.')->group(function () {
     // Public routes
@@ -215,6 +216,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
     Route::post('/visitors/{visitor}/checkin', [VisitorController::class, 'checkin'])->name('visitors.checkin');
     Route::post('/visitors/{visitor}/checkout', [VisitorController::class, 'checkout'])->name('visitors.checkout');
+    
+    // Face Recognition
+    Route::post('/visitors/{visitor}/verify-face', [FaceRecognitionController::class, 'verifyVisitor'])->name('visitors.verify-face');
+    Route::post('/visitors/{visitor}/register-face', [FaceRecognitionController::class, 'registerVisitor'])->name('visitors.register-face');
+    Route::post('/visitors/{visitor}/checkin-face', [FaceRecognitionController::class, 'checkInWithFace'])->name('visitors.checkin-face');
+    Route::post('/visitors/{visitor}/checkout-face', [FaceRecognitionController::class, 'checkOutWithFace'])->name('visitors.checkout-face');
+    
     Route::get('/visitor-approvals', [VisitorController::class, 'approvals'])->name('visitors.approvals');
 
     // Visits Management
@@ -247,6 +255,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('security-checks')->name('security-checks.')->group(function () {
         Route::get('/', [SecurityCheckController::class, 'index'])->name('index');
         Route::get('/create/{visitorId}', [SecurityCheckController::class, 'create'])->name('create');
+        Route::get('/checkout/{visitorId}', [SecurityCheckController::class, 'createCheckout'])->name('create-checkout');
         Route::post('/', [SecurityCheckController::class, 'store'])->name('store');
         Route::get('/{securityCheck}', [SecurityCheckController::class, 'show'])->name('show');
         Route::get('/{securityCheck}/print', [SecurityCheckController::class, 'print'])->name('print');
@@ -255,6 +264,8 @@ Route::middleware(['auth'])->group(function () {
     
     // Security Questions
     Route::resource('security-questions', \App\Http\Controllers\SecurityQuestionController::class);
+    Route::get('security-questions/create/checkin', [\App\Http\Controllers\SecurityQuestionController::class, 'createCheckin'])->name('security-questions.create.checkin');
+    Route::get('security-questions/create/checkout', [\App\Http\Controllers\SecurityQuestionController::class, 'createCheckout'])->name('security-questions.create.checkout');
 });
 
 /*
@@ -580,6 +591,9 @@ Route::prefix('api')->name('api.')->group(function () {
     
     // Get branches for a company
     Route::get('/companies/{company}/branches', [App\Http\Controllers\BranchController::class, 'getByCompany'])->name('branches.by_company')->middleware('web');
+    
+    // Get departments for a branch
+    Route::get('/branches/{branch}/departments', [App\Http\Controllers\BranchController::class, 'getDepartments'])->name('departments.by_branch')->middleware('web');
     
     Route::prefix('face')->name('face.')->group(function () {
         Route::post('/detect', [FaceRecognitionController::class, 'apiDetect'])->name('detect');

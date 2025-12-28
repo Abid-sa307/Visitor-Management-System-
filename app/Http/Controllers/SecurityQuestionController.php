@@ -42,7 +42,21 @@ class SecurityQuestionController extends Controller
         if ($request->filled('company_id')) {
             $branches = Branch::where('company_id', $request->company_id)->get();
         } elseif (!$this->isSuper()) {
-            $branches = Branch::where('company_id', $user->company_id)->get();
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->get();
+                }
+            }
         }
         
         return view('security-questions.index', compact('questions', 'companies', 'branches'));
@@ -55,10 +69,78 @@ class SecurityQuestionController extends Controller
         $branches = collect();
         
         if (!$this->isSuper()) {
-            $branches = Branch::where('company_id', $user->company_id)->get();
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->get();
+                }
+            }
         }
         
         return view('security-questions.create', compact('companies', 'branches'));
+    }
+
+    public function createCheckin()
+    {
+        $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $companies = $this->isSuper() ? Company::all() : collect([$user->company]);
+        $branches = collect();
+        
+        if (!$this->isSuper()) {
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->get();
+                }
+            }
+        }
+        
+        return view('security-questions.create', compact('companies', 'branches'))->with('check_type', 'checkin');
+    }
+
+    public function createCheckout()
+    {
+        $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $companies = $this->isSuper() ? Company::all() : collect([$user->company]);
+        $branches = collect();
+        
+        if (!$this->isSuper()) {
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->get();
+                }
+            }
+        }
+        
+        return view('security-questions.create', compact('companies', 'branches'))->with('check_type', 'checkout');
     }
 
     public function store(Request $request)
@@ -68,6 +150,7 @@ class SecurityQuestionController extends Controller
         $validated = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'branch_id' => 'nullable|exists:branches,id',
+            'check_type' => 'required|in:checkin,checkout,both',
             'question' => 'required|string|max:255',
             'type' => 'required|in:text,yes_no,multiple_choice',
             'options' => 'nullable|array',
@@ -95,7 +178,27 @@ class SecurityQuestionController extends Controller
         }
         
         $companies = $this->isSuper() ? Company::all() : collect([$user->company]);
-        $branches = Branch::where('company_id', $securityQuestion->company_id)->get();
+        $branches = collect();
+        
+        if (!$this->isSuper()) {
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->get();
+                }
+            }
+        } else {
+            $branches = Branch::where('company_id', $securityQuestion->company_id)->get();
+        }
         
         return view('security-questions.edit', compact('securityQuestion', 'companies', 'branches'));
     }
@@ -111,6 +214,7 @@ class SecurityQuestionController extends Controller
         $validated = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'branch_id' => 'nullable|exists:branches,id',
+            'check_type' => 'required|in:checkin,checkout,both',
             'question' => 'required|string|max:255',
             'type' => 'required|in:text,yes_no,multiple_choice',
             'options' => 'nullable|array',

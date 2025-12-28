@@ -278,6 +278,175 @@
     });
     </script>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const processedPairs = new WeakMap();
+
+        const bindBranchToDepartment = (branchSelect, departmentSelect) => {
+            if (!branchSelect || !departmentSelect) {
+                return;
+            }
+
+            if (processedPairs.get(branchSelect) === departmentSelect) {
+                return;
+            }
+
+            processedPairs.set(branchSelect, departmentSelect);
+
+            const includeEmpty = departmentSelect.dataset.includeEmpty !== 'false';
+            const placeholder = departmentSelect.dataset.placeholder || (departmentSelect.options[0]?.text ?? 'Select Department');
+            const loadingText = departmentSelect.dataset.loadingText || 'Loading departments...';
+            const errorText = departmentSelect.dataset.errorText || 'Unable to load departments';
+            const emptyText = departmentSelect.dataset.emptyText || 'Select a branch first';
+
+            const setOptions = (optionsHtml) => {
+                departmentSelect.innerHTML = optionsHtml;
+            };
+
+            const setDisabledState = (text, disabled) => {
+                const baseOption = includeEmpty ? `<option value="">${text}</option>` : `<option value="">${text}</option>`;
+                setOptions(baseOption);
+                if (disabled) {
+                    departmentSelect.value = '';
+                } else {
+                    const selected = departmentSelect.dataset.selected || '';
+                    departmentSelect.value = selected;
+                    if (departmentSelect.value !== selected) {
+                        departmentSelect.value = '';
+                    }
+                }
+                departmentSelect.disabled = disabled;
+            };
+
+            const populateDepartments = (departments) => {
+                let optionsHtml = '';
+                if (includeEmpty) {
+                    optionsHtml += `<option value="">${placeholder}</option>`;
+                }
+
+                const selectedValue = departmentSelect.dataset.selected || '';
+
+                departments.forEach(dep => {
+                    const value = String(dep.id);
+                    const selected = value === selectedValue ? 'selected' : '';
+                    optionsHtml += `<option value="${value}" ${selected}>${dep.name}</option>`;
+                });
+
+                setOptions(optionsHtml);
+                departmentSelect.disabled = departments.length === 0;
+
+                if (departments.length === 0) {
+                    departmentSelect.value = '';
+                } else if (selectedValue) {
+                    departmentSelect.value = selectedValue;
+                    if (departmentSelect.value !== selectedValue) {
+                        departmentSelect.value = '';
+                        departmentSelect.dataset.selected = '';
+                    }
+                }
+            };
+
+            const loadDepartments = (branchId) => {
+                if (!branchId) {
+                    setDisabledState(emptyText, true);
+                    return;
+                }
+
+                setDisabledState(loadingText, true);
+
+                fetch(`/api/branches/${branchId}/departments`, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const departments = Array.isArray(data)
+                            ? data
+                            : Object.entries(data).map(([id, name]) => ({ id, name }));
+
+                        if (departments.length === 0) {
+                            setDisabledState('No departments available', true);
+                            return;
+                        }
+
+                        populateDepartments(departments);
+                    })
+                    .catch(() => {
+                        setDisabledState(errorText, true);
+                    });
+            };
+
+            departmentSelect.dataset.selected = departmentSelect.dataset.selected || departmentSelect.value || '';
+
+            branchSelect.addEventListener('change', function () {
+                departmentSelect.dataset.selected = departmentSelect.value || '';
+                loadDepartments(this.value);
+            });
+
+            const initialBranch = branchSelect.value || branchSelect.dataset.selected || '';
+            if (initialBranch) {
+                loadDepartments(initialBranch);
+            } else {
+                setDisabledState(emptyText, true);
+            }
+        };
+
+        const initialiseBindings = () => {
+            document.querySelectorAll('[data-department-target]').forEach(branchSelect => {
+                const selector = branchSelect.dataset.departmentTarget;
+                const departmentSelect = selector ? document.querySelector(selector) : null;
+                if (departmentSelect) {
+                    bindBranchToDepartment(branchSelect, departmentSelect);
+                }
+            });
+
+            document.querySelectorAll('select[name="branch_id"]').forEach(branchSelect => {
+                const form = branchSelect.closest('form');
+                const departmentSelect = form ? form.querySelector('select[name="department_id"]') : null;
+                if (departmentSelect) {
+                    bindBranchToDepartment(branchSelect, departmentSelect);
+                }
+            });
+        };
+
+        initialiseBindings();
+
+        const observer = new MutationObserver(mutations => {
+            let needsInit = false;
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (!(node instanceof Element)) {
+                        return;
+                    }
+
+                    if (
+                        node.matches?.('[data-department-target]') ||
+                        node.matches?.('select[name="branch_id"]') ||
+                        node.querySelector?.('[data-department-target]') ||
+                        node.querySelector?.('select[name="branch_id"]')
+                    ) {
+                        needsInit = true;
+                    }
+                });
+            });
+
+            if (needsInit) {
+                initialiseBindings();
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

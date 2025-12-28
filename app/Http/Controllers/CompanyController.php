@@ -280,10 +280,14 @@ public function getDepartments(Company $company)
                 'name'   => 'required|string|max:255|unique:companies,name',
                 'email'  => 'nullable|email|unique:companies,email',
                 'phone'  => 'nullable|string|max:32',
-                'address' => 'nullable|string',
+                'address' => 'required|string',
                 'contact_number' => 'nullable|string|max:255',
-                'branch_start_date' => 'nullable|date',
-                'branch_end_date' => 'nullable|date|after_or_equal:branch_start_date',
+                'website' => 'nullable|url|max:255',
+                'gst_number' => 'nullable|string|max:255',
+                'auto_approve_visitors' => 'sometimes|boolean',
+                'face_recognition_enabled' => 'sometimes|boolean',
+                'security_check_service' => 'sometimes|boolean',
+                'security_checkin_type' => 'nullable|string|in:checkin,checkout,both',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
@@ -296,10 +300,21 @@ public function getDepartments(Company $company)
             // Create new company
             $company = new Company($validated);
             $company->auto_approve_visitors = $request->boolean('auto_approve_visitors');
-            $company->address = $validated['address'] ?? '';
+            $company->face_recognition_enabled = $request->boolean('face_recognition_enabled');
+            $company->security_check_service = $request->boolean('security_check_service');
+            $company->security_checkin_type = $request->input('security_checkin_type');
             $company->contact_number = $validated['contact_number'] ?? '';
             $company->logo = $logoPath;
             $company->save();
+
+            // Create default "Main Branch" for the company
+            \App\Models\Branch::create([
+                'company_id' => $company->id,
+                'name' => 'Main Branch',
+                'phone' => $validated['contact_number'] ?? '',
+                'email' => $validated['email'] ?? '',
+                'address' => $validated['address'] ?? '',
+            ]);
 
             // Handle branches if provided
             $branches = $request->input('branches', []);
@@ -358,11 +373,16 @@ public function getDepartments(Company $company)
                 ->withInput()
                 ->with('error', 'An error occurred while saving the company. Please try again.');
         } catch (\Exception $e) {
+            \Log::error('Company creation error: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             // For any other exceptions
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'An unexpected error occurred. Please try again.');
+                ->with('error', 'An unexpected error occurred: ' . $e->getMessage());
         }
     }
 
@@ -382,22 +402,31 @@ public function getDepartments(Company $company)
     public function update(Request $request, Company $company)
     {
         try {
+            // Debug: Log incoming request data
+            \Log::info('Company update request:', [
+                'company_id' => $company->id,
+                'request_data' => $request->all(),
+                'security_check_service' => $request->input('security_check_service'),
+                'security_checkin_type' => $request->input('security_checkin_type'),
+            ]);
+            
             // Validation rules
             $validated = $request->validate([
                 'name'   => 'required|string|max:255|unique:companies,name,'.$company->id,
                 'email'  => 'nullable|email|unique:companies,email,'.$company->id,
                 'phone'  => 'nullable|string|max:32',
-                'address' => 'nullable|string',
+                'address' => 'required|string',
                 'contact_number' => 'nullable|string|max:255',
                 'website' => 'nullable|url|max:255',
                 'gst_number' => 'nullable|string|max:255',
-                'branch_start_date' => 'nullable|date',
-                'branch_end_date' => 'nullable|date|after_or_equal:branch_start_date',
                 'auto_approve_visitors' => 'sometimes|boolean',
                 'face_recognition_enabled' => 'sometimes|boolean',
-                'security_checkin_type' => 'nullable|string|in:,checkin,checkout,both',
+                'security_check_service' => 'sometimes|boolean',
+                'security_checkin_type' => 'nullable|string|in:checkin,checkout,both',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
+
+            \Log::info('Validation passed', ['validated' => $validated]);
 
             // Handle logo upload
             if ($request->hasFile('logo')) {
@@ -409,10 +438,30 @@ public function getDepartments(Company $company)
             }
             
             // Update company attributes
+            \Log::info('Before updating company attributes');
             $company->fill($validated);
             $company->auto_approve_visitors = $request->boolean('auto_approve_visitors');
             $company->face_recognition_enabled = $request->boolean('face_recognition_enabled');
-            $company->save();
+            $company->security_check_service = $request->boolean('security_check_service');
+            $company->security_checkin_type = $request->input('security_checkin_type');
+            
+            \Log::info('About to save company', [
+                'security_check_service' => $company->security_check_service,
+                'security_checkin_type' => $company->security_checkin_type,
+            ]);
+            
+            try {
+                $company->save();
+                \Log::info('Company saved successfully');
+            } catch (\Exception $e) {
+                \Log::error('Error saving company: ' . $e->getMessage(), [
+                    'exception' => $e,
+                    'company_data' => $company->toArray(),
+                ]);
+                throw $e;
+            }
+
+            \Log::info('About to process branches');
 
             // Handle branches if provided
             $branches = $request->input('branches', []);
@@ -514,10 +563,25 @@ public function getDepartments(Company $company)
                 ->with('error', 'An error occurred while updating the company. Please try again.');
                 
         } catch (\Exception $e) {
+            \Log::error('Company update error: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($e instanceof \Illuminate\Database\QueryException) {
+                $errorCode = $e->errorInfo[1];
+                if ($errorCode == 1062) { // Duplicate entry error code
+                    return redirect()
+                        ->back()
+                        ->withInput()
+                        ->with('error', 'A company with this email already exists. Please use a different email address.');
+                }
+            }
+            
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'An unexpected error occurred. Please try again.');
+                ->with('error', 'An error occurred while updating the company: ' . $e->getMessage());
         }
     }
 

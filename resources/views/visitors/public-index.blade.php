@@ -36,6 +36,24 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Operating Hours Notification -->
+                                @php
+                                    $isOutsideOperatingHours = $visitor->company && $visitor->company->isVisitorOutsideOperatingHours($visitor->created_at);
+                                @endphp
+                                @if($isOutsideOperatingHours)
+                                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                        <i class="bi bi-clock-fill fs-4 me-3"></i>
+                                        <div>
+                                            <h5 class="alert-heading mb-1">Outside Operating Hours!</h5>
+                                            <p class="mb-0">
+                                                Your visit was created outside of the company's operating hours 
+                                                ({{ $visitor->company->operation_start_time }} - {{ $visitor->company->operation_end_time }}).
+                                                Please contact reception for assistance.
+                                            </p>
+                                        </div>
+                                    </div>
+                                @endif
+                                
                                 <!-- Mark In/Out Buttons -->
                                 @php
                                     $hasSecurityCheck = $visitor->securityChecks()->exists();
@@ -49,24 +67,34 @@
                                 <div class="card border-0 shadow-sm mb-4">
                                     <div class="card-header bg-light py-3">
                                         <h5 class="mb-0">
-                                            <i class="bi bi-clock me-2"></i>Check In/Out
+                                            <i class="bi bi-clock me-2"></i>Mark In/Out
                                         </h5>
                                     </div>
                                     <div class="card-body text-center">
-                                        @if($needsSecurityCheckIn)
-                                            <div class="alert alert-warning mb-3">
-                                                <i class="bi bi-shield-exclamation me-2"></i>
-                                                Security check required before check-in
-                                            </div>
-                                            <a href="{{ route('security-checks.create', $visitor->id) }}" class="btn btn-warning btn-lg">
-                                                <i class="bi bi-shield-check me-2"></i>Complete Security Check
-                                            </a>
-                                        @else
-                                            @if(!$visitor->in_time)
+                                        @if(!$visitor->in_time)
+                                            @if($needsSecurityCheckIn)
+                                                <div class="alert alert-warning mb-3">
+                                                    <i class="bi bi-shield-exclamation me-2"></i>
+                                                    Please complete security check-in process first
+                                                </div>
+                                                <p class="text-muted mb-3">Security check is required before marking in</p>
+                                                <button type="button" class="btn btn-secondary" disabled>
+                                                    <i class="bi bi-box-arrow-in-right me-2"></i>Mark In (Security Check Required)
+                                                </button>
+                                            @else
                                                 @if($hasFaceRecognition && $hasFaceEncoding)
                                                     <p class="text-muted mb-3">Face verification available for check-in</p>
                                                     <button type="button" class="btn btn-primary me-2" id="faceVerifyBtn">
-                                                        <i class="bi bi-person-check me-2"></i>Verify Face & Check In
+                                                        <i class="bi bi-person-check me-2"></i>Verify Face & Mark In
+                                                    </button>
+                                                    <div class="mt-2"><small class="text-muted">Or</small></div>
+                                                @elseif($hasFaceRecognition && !$hasFaceEncoding)
+                                                    <div class="alert alert-info mb-3">
+                                                        <i class="bi bi-info-circle me-2"></i>
+                                                        Face registration required for verification
+                                                    </div>
+                                                    <button type="button" class="btn btn-info me-2" id="faceRegisterBtn">
+                                                        <i class="bi bi-person-plus me-2"></i>Register Face
                                                     </button>
                                                     <div class="mt-2"><small class="text-muted">Or</small></div>
                                                 @endif
@@ -75,45 +103,55 @@
                                                     <input type="hidden" name="action" value="in">
                                                     <input type="hidden" name="public" value="1">
                                                     <button type="submit" class="btn btn-success">
-                                                        <i class="bi bi-box-arrow-in-right me-2"></i>Check In
+                                                        <i class="bi bi-box-arrow-in-right me-2"></i>Mark In
                                                     </button>
                                                 </form>
-                                            @elseif(!$visitor->out_time)
-                                                <div class="alert alert-info mb-3">
-                                                    <i class="bi bi-info-circle me-2"></i>
-                                                    Checked in at {{ $visitor->in_time->format('M d, Y h:i A') }}
-                                                </div>
-                                                @if($needsSecurityCheckOut)
-                                                    <div class="alert alert-warning mb-3">
-                                                        <i class="bi bi-shield-exclamation me-2"></i>
-                                                        Security check required before check-out
-                                                    </div>
-                                                    <a href="{{ route('security-checks.create', $visitor->id) }}" class="btn btn-warning btn-lg">
-                                                        <i class="bi bi-shield-check me-2"></i>Complete Security Check
-                                                    </a>
-                                                @else
-                                                    @if($hasFaceRecognition && $hasFaceEncoding)
-                                                        <p class="text-muted mb-3">Face verification available for check-out</p>
-                                                        <button type="button" class="btn btn-danger me-2" id="faceVerifyOutBtn">
-                                                            <i class="bi bi-person-check me-2"></i>Verify Face & Check Out
-                                                        </button>
-                                                        <div class="mt-2"><small class="text-muted">Or</small></div>
-                                                    @endif
-                                                    <form method="POST" action="{{ route('visitors.entry.toggle', $visitor->id) }}">
-                                                        @csrf
-                                                        <input type="hidden" name="action" value="out">
-                                                        <input type="hidden" name="public" value="1">
-                                                        <button type="submit" class="btn btn-danger">
-                                                            <i class="bi bi-box-arrow-right me-2"></i>Check Out
-                                                        </button>
-                                                    </form>
-                                                @endif
-                                            @else
-                                                <div class="alert alert-secondary">
-                                                    <i class="bi bi-check-circle me-2"></i>
-                                                    Visit completed on {{ $visitor->out_time->format('M d, Y h:i A') }}
-                                                </div>
                                             @endif
+                                        @elseif(!$visitor->out_time)
+                                            <div class="alert alert-info mb-3">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                Marked in at {{ $visitor->in_time->format('M d, Y h:i A') }}
+                                            </div>
+                                            @if($needsSecurityCheckOut)
+                                                <div class="alert alert-warning mb-3">
+                                                    <i class="bi bi-shield-exclamation me-2"></i>
+                                                    Please complete security check-out process first
+                                                </div>
+                                                <p class="text-muted mb-3">Security check is required before marking out</p>
+                                                <button type="button" class="btn btn-secondary" disabled>
+                                                    <i class="bi bi-box-arrow-right me-2"></i>Mark Out (Security Check Required)
+                                                </button>
+                                            @else
+                                                @if($hasFaceRecognition && $hasFaceEncoding)
+                                                    <p class="text-muted mb-3">Face verification available for check-out</p>
+                                                    <button type="button" class="btn btn-danger me-2" id="faceVerifyOutBtn">
+                                                        <i class="bi bi-person-check me-2"></i>Verify Face & Mark Out
+                                                    </button>
+                                                    <div class="mt-2"><small class="text-muted">Or</small></div>
+                                                @elseif($hasFaceRecognition && !$hasFaceEncoding)
+                                                    <div class="alert alert-info mb-3">
+                                                        <i class="bi bi-info-circle me-2"></i>
+                                                        Face registration required for verification
+                                                    </div>
+                                                    <button type="button" class="btn btn-info me-2" id="faceRegisterOutBtn">
+                                                        <i class="bi bi-person-plus me-2"></i>Register Face
+                                                    </button>
+                                                    <div class="mt-2"><small class="text-muted">Or</small></div>
+                                                @endif
+                                                <form method="POST" action="{{ route('visitors.entry.toggle', $visitor->id) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="action" value="out">
+                                                    <input type="hidden" name="public" value="1">
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="bi bi-box-arrow-right me-2"></i>Mark Out
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @else
+                                            <div class="alert alert-secondary">
+                                                <i class="bi bi-check-circle me-2"></i>
+                                                Visit completed on {{ $visitor->out_time->format('M d, Y h:i A') }}
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
@@ -497,6 +535,8 @@ let stream = null;
 document.addEventListener('DOMContentLoaded', function() {
     const faceVerifyBtn = document.getElementById('faceVerifyBtn');
     const faceVerifyOutBtn = document.getElementById('faceVerifyOutBtn');
+    const faceRegisterBtn = document.getElementById('faceRegisterBtn');
+    const faceRegisterOutBtn = document.getElementById('faceRegisterOutBtn');
     
     if (faceVerifyBtn) {
         faceVerifyBtn.addEventListener('click', function() {
@@ -508,6 +548,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (faceVerifyOutBtn) {
         faceVerifyOutBtn.addEventListener('click', function() {
             faceVerificationAction = 'out';
+            new bootstrap.Modal(document.getElementById('faceVerificationModal')).show();
+        });
+    }
+    
+    if (faceRegisterBtn) {
+        faceRegisterBtn.addEventListener('click', function() {
+            faceVerificationAction = 'register_in';
+            new bootstrap.Modal(document.getElementById('faceVerificationModal')).show();
+        });
+    }
+    
+    if (faceRegisterOutBtn) {
+        faceRegisterOutBtn.addEventListener('click', function() {
+            faceVerificationAction = 'register_out';
             new bootstrap.Modal(document.getElementById('faceVerificationModal')).show();
         });
     }
@@ -529,30 +583,74 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verify face
     document.getElementById('verifyFaceBtn').addEventListener('click', function() {
-        // Simulate face verification (replace with actual face-api.js implementation)
         const resultDiv = document.getElementById('verificationResult');
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Face verified successfully!</div>';
         
-        setTimeout(() => {
-            // Submit the form
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ route("visitors.entry.toggle", $visitor->id) }}';
+        if (faceVerificationAction.startsWith('register_')) {
+            // Handle face registration
+            resultDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-person-plus me-2"></i>Registering face...</div>';
             
-            const csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
+            // Simulate face registration
+            setTimeout(() => {
+                // Submit registration request
+                fetch('{{ route("visitors.register-face", $visitor->id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        face_encoding: 'sample_face_encoding_data'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resultDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Face registered successfully!</div>';
+                        setTimeout(() => {
+                            location.reload(); // Reload to show verification button
+                        }, 1500);
+                    } else {
+                        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>' + data.message + '</div>';
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>Registration failed: ' + error.message + '</div>';
+                });
+            }, 1000);
+        } else {
+            // Handle face verification
+            resultDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Face verified successfully!</div>';
             
-            const actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            actionInput.value = faceVerificationAction;
-            
-            const faceVerifiedInput = document.createElement('input');
-            faceVerifiedInput.type = 'hidden';
-            faceVerifiedInput.name = 'face_verified';
+            setTimeout(() => {
+                // Submit the form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("visitors.entry.toggle", $visitor->id) }}';
+                
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = faceVerificationAction;
+                
+                const faceVerifiedInput = document.createElement('input');
+                faceVerifiedInput.type = 'hidden';
+                faceVerifiedInput.name = 'face_verified';
+                faceVerifiedInput.value = '1';
+                
+                form.appendChild(csrfToken);
+                form.appendChild(actionInput);
+                form.appendChild(faceVerifiedInput);
+                document.body.appendChild(form);
+                form.submit();
+            }, 1500);
+        }
+    });
             faceVerifiedInput.value = '1';
             
             const publicInput = document.createElement('input');

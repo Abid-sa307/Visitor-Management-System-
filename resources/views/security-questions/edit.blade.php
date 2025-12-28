@@ -65,6 +65,19 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">Check Type <span class="text-danger">*</span></label>
+                    <select name="check_type" id="checkTypeSelect" class="form-select" required>
+                        <option value="">Select Check Type</option>
+                        <option value="checkin" {{ old('check_type', $securityQuestion->check_type) == 'checkin' ? 'selected' : '' }}>Check-in Only</option>
+                        <option value="checkout" {{ old('check_type', $securityQuestion->check_type) == 'checkout' ? 'selected' : '' }}>Check-out Only</option>
+                        <option value="both" {{ old('check_type', $securityQuestion->check_type) == 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
+                    </select>
+                    @error('check_type')
+                        <div class="text-danger">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label">Question Type <span class="text-danger">*</span></label>
                     <select name="type" id="typeSelect" class="form-select" required>
                         <option value="text" {{ old('type', $securityQuestion->type) == 'text' ? 'selected' : '' }}>Text Input</option>

@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (companyId) {
                 // Load departments for the selected company
-                fetch(`/companies/${companyId}/departments`)
+                fetch(`/api/companies/${companyId}/departments`)
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(department => {
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                 // Load branches for the selected company
                 if (branchSelect) {
-                    fetch(`/companies/${companyId}/branches-json`)
+                    fetch(`/api/companies/${companyId}/branches`)
                         .then(response => response.json())
                         .then(data => {
                             data.forEach(branch => {
@@ -249,6 +249,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+        
+        // Handle branch change to load departments
+        if (branchSelect) {
+            branchSelect.addEventListener('change', function() {
+                const branchId = this.value;
+                
+                // Reset department dropdown
+                departmentSelect.innerHTML = '<option value="">All Departments</option>';
+                
+                if (branchId) {
+                    // Load departments for selected branch
+                    fetch(`/api/branches/${branchId}/departments`)
+                        .then(response => response.json())
+                        .then(data => {
+                            data.forEach(department => {
+                                const option = document.createElement('option');
+                                option.value = department.id;
+                                option.textContent = department.name;
+                                departmentSelect.appendChild(option);
+                            });
+                            
+                            // If there's a department_id in the URL, select it
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const deptId = urlParams.get('department_id');
+                            if (deptId) {
+                                departmentSelect.value = deptId;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading departments:', error);
+                        });
+                }
+            });
+        }
         
         // Trigger change event if company is already selected
         if (companySelect.value) {

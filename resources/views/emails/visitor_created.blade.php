@@ -20,7 +20,6 @@
     <div class="container">
         <div class="header">
             <div class="logo-section">
-                <img src="{{ url('images/mail.jpeg') }}" alt="Logo" class="logo">
                 <div>
                     <h1 style="margin: 0; font-size: 24px; font-weight: bold;">N & T Software Pvt. Ltd.</h1>
                     <p style="margin: 0; color: #60a5fa; font-size: 12px; text-transform: uppercase; font-weight: 600;">
@@ -40,6 +39,8 @@
 
             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>Company:</strong> {{ $visitor->company->name ?? 'N/A' }}</p>
+                <p><strong>Branch:</strong> {{ $visitor->branch->name ?? 'N/A' }}</p>
+                <p><strong>Department:</strong> {{ $visitor->department->name ?? 'N/A' }}</p>
                 <p><strong>Purpose:</strong> {{ $visitor->purpose ?? 'N/A' }}</p>
                 <p><strong>Person to Visit:</strong> {{ $visitor->person_to_visit ?? 'N/A' }}</p>
                 <p><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">{{ $visitor->status }}</span></p>

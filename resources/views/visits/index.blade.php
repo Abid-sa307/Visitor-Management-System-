@@ -75,6 +75,7 @@
               <td>
                 @php
                   $isCompleted = $visitor->out_time !== null;
+                  $hasSecurityCheck = $visitor->security_checkin_time !== null;
                 @endphp
                 
                 {{-- Visit Details Button --}}
@@ -84,9 +85,15 @@
                       <i class="fas fa-lock text-muted"></i>
                     </button>
                   @elseif($visitor->status === 'Approved')
-                    <a href="{{ route($visitRoute, $visitor->id) }}" class="btn btn-sm btn-outline-info" title="Visit Details">
-                      <i class="fas fa-eye"></i> Visit
-                    </a>
+                    @if($hasSecurityCheck)
+                      <button class="btn btn-sm btn-outline-secondary" title="Visit Details (Locked - Security check completed)" disabled>
+                        <i class="fas fa-lock text-muted"></i> Visit
+                      </button>
+                    @else
+                      <a href="{{ route($visitRoute, $visitor->id) }}" class="btn btn-sm btn-outline-info" title="Visit Details">
+                        <i class="fas fa-eye"></i> Visit
+                      </a>
+                    @endif
                   @else
                     <button class="btn btn-sm btn-outline-secondary" title="Visit Details (Waiting for approval)" disabled>
                       <i class="fas fa-clock"></i>

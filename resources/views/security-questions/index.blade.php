@@ -4,9 +4,17 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">Security Questions</h1>
-        <a href="{{ route('security-questions.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Add Question
-        </a>
+        <div class="btn-group">
+            <a href="{{ route('security-questions.create.checkin') }}" class="btn btn-success">
+                <i class="fas fa-sign-in-alt me-1"></i> Add Check-in Questions
+            </a>
+            <a href="{{ route('security-questions.create.checkout') }}" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt me-1"></i> Add Check-out Questions
+            </a>
+            <a href="{{ route('security-questions.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Add General Questions
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
@@ -61,6 +69,7 @@
                             <th>Question</th>
                             <th>Company</th>
                             <th>Branch</th>
+                            <th>Check Type</th>
                             <th>Type</th>
                             <th>Required</th>
                             <th>Status</th>
@@ -73,6 +82,11 @@
                             <td>{{ $question->question }}</td>
                             <td>{{ $question->company->name }}</td>
                             <td>{{ $question->branch->name ?? 'All Branches' }}</td>
+                            <td>
+                                <span class="badge bg-{{ $question->check_type === 'checkin' ? 'success' : ($question->check_type === 'checkout' ? 'danger' : 'primary') }}">
+                                    {{ ucfirst($question->check_type) }}
+                                </span>
+                            </td>
                             <td>
                                 <span class="badge bg-info">
                                     {{ ucfirst(str_replace('_', ' ', $question->type)) }}
@@ -103,7 +117,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center">No security questions found.</td>
+                            <td colspan="8" class="text-center">No security questions found.</td>
                         </tr>
                         @endforelse
                     </tbody>

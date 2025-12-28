@@ -23,16 +23,16 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Search Departments</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Search & Filters</h6>
         </div>
         <div class="card-body">
             <form method="GET" action="{{ $isCompany ? route('company.departments.index') : route('departments.index') }}" id="searchForm" class="row g-3">
-                <div class="col-md-8">
+                <div class="col-md-6 col-lg-4">
                     <div class="input-group">
                         <input type="text" 
                                name="search" 
                                class="form-control" 
-                               placeholder="Search by department name or company..." 
+                               placeholder="Search by company or branch..." 
                                value="{{ request('search') }}"
                                id="searchInput">
                         <button class="btn btn-primary" type="submit">
@@ -46,12 +46,37 @@
                         @endif
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" id="showAll" name="show_all" 
-                               {{ request('show_all') ? 'checked' : '' }}>
-                        <label class="form-check-label" for="showAll">Show all departments</label>
+                @if($isSuper)
+                    <div class="col-md-6 col-lg-4">
+                        <label class="form-label">Company</label>
+                        <select name="company_id" id="filterCompany" class="form-select">
+                            <option value="">All Companies</option>
+                            @foreach($companies as $company)
+                                <option value="{{ $company->id }}" {{ (string)request('company_id') === (string)$company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
+                @endif
+                <div class="col-md-6 col-lg-4">
+                    <label class="form-label">Branch</label>
+                    <select name="branch_id" id="filterBranch" class="form-select" {{ (!$isSuper && $branches->isEmpty()) ? 'disabled' : '' }}>
+                        <option value="">All Branches</option>
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}" {{ (string)request('branch_id') === (string)$branch->id ? 'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-filter me-1"></i> Apply Filters
+                    </button>
+                    <a href="{{ $isCompany ? route('company.departments.index') : route('departments.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-undo me-1"></i> Reset
+                    </a>
                 </div>
             </form>
         </div>
@@ -70,6 +95,7 @@
                             <tr>
                                 <th>Department</th>
                                 <th>Company</th>
+                                <th>Branch</th>
                                 <th style="width: 160px;">Actions</th>
                             </tr>
                         </thead>
@@ -78,6 +104,7 @@
                                 <tr>
                                     <td class="fw-semibold">{{ $department->name }}</td>
                                     <td>{{ $department->company->name ?? 'N/A' }}</td>
+                                    <td>{{ $department->branch->name ?? 'N/A' }}</td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
                                             {{-- Edit Button --}}
@@ -143,6 +170,49 @@ document.addEventListener('DOMContentLoaded', function() {
             if (searchTimer) {
                 clearTimeout(searchTimer);
             }
+        });
+    }
+
+    const companyFilter = document.getElementById('filterCompany');
+    const branchFilter = document.getElementById('filterBranch');
+
+    if (companyFilter) {
+        companyFilter.addEventListener('change', function () {
+            const companyId = this.value;
+
+            if (!branchFilter) return;
+
+            branchFilter.innerHTML = '<option value="">Loading branches...</option>';
+            branchFilter.disabled = true;
+
+            if (!companyId) {
+                branchFilter.innerHTML = '<option value="">All Branches</option>';
+                branchFilter.disabled = false;
+                return;
+            }
+
+            fetch(`/api/companies/${companyId}/branches`)
+                .then(response => response.json())
+                .then(data => {
+                    branchFilter.innerHTML = '<option value="">All Branches</option>';
+
+                    const branches = Array.isArray(data)
+                        ? data
+                        : Object.entries(data).map(([id, name]) => ({ id, name }));
+
+                    branches.forEach(branch => {
+                        const option = document.createElement('option');
+                        option.value = branch.id;
+                        option.textContent = branch.name;
+                        branchFilter.appendChild(option);
+                    });
+
+                    branchFilter.disabled = false;
+                })
+                .catch(() => {
+                    branchFilter.innerHTML = '<option value="">Failed to load branches</option>';
+                    branchFilter.disabled = false;
+                });
         });
     }
 });

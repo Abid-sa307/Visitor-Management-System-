@@ -20,7 +20,6 @@
     <div class="container">
         <div class="header">
             <div class="logo-section">
-                <img src="{{ url('images/mail.jpeg') }}" alt="Logo" class="logo">
                 <div>
                     <h1 style="margin: 0; font-size: 24px; font-weight: bold;">N & T Software Pvt. Ltd.</h1>
                     <p style="margin: 0; color: #60a5fa; font-size: 12px; text-transform: uppercase; font-weight: 600;">

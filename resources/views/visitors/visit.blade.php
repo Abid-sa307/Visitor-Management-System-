@@ -11,25 +11,68 @@
             $formAction = $user->role === 'company' 
                           ? route('company.visitors.visit.submit', $visitor->id)
                           : route('visitors.visit.submit', $visitor->id);
+            $isSuper = $user->role === 'superadmin';
         @endphp
 
         <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
-            @csrf
+            @csrf            
+            {{-- Hidden company_id field --}}
+            <input type="hidden" name="company_id" value="{{ $visitor->company_id ?? $user->company_id ?? '' }}">
 
-            {{-- Department & Visitor Category --}}
+            {{-- Company (superadmin only) --}}
+            @if($isSuper)
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label fw-semibold">Company</label>
+                        <select name="company_id" id="companySelect" class="form-select" required>
+                            <option value="">-- Select Company --</option>
+                            @foreach($companies as $company)
+                                <option value="{{ $company->id }}" 
+                                    {{ old('company_id', $visitor->company_id) == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Branch & Department --}}
             <div class="row mb-3">
                 <div class="col">
-                    <label class="form-label fw-semibold">Department</label>
-                    <select name="department_id" id="departmentSelect" class="form-select" required>
-                        <option value="">-- Select Department --</option>
-                        @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}" data-company="{{ $dept->company_id }}"
-                                {{ old('department_id', $visitor->department_id ?? '') == $dept->id ? 'selected' : '' }}>
-                                {{ $dept->name }}
+                    <label class="form-label fw-semibold">Branch</label>
+                    <select
+                        name="branch_id"
+                        id="branchSelect"
+                        class="form-select"
+                        data-department-target="#departmentSelect"
+                        data-selected="{{ old('branch_id', $selectedBranchId ?? $visitor->branch_id ?? '') }}"
+                        required>
+                        <option value="">-- Select Branch --</option>
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}"
+                                {{ (string)old('branch_id', $selectedBranchId ?? $visitor->branch_id ?? '') === (string)$branch->id ? 'selected' : '' }}>
+                                {{ $branch->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
+                <div class="col">
+                    <label class="form-label fw-semibold">Department</label>
+                    <select
+                        name="department_id"
+                        id="departmentSelect"
+                        class="form-select"
+                        data-placeholder="-- Select Department --"
+                        data-selected="{{ old('department_id', $visitor->department_id ?? '') }}"
+                        required>
+                        <option value="">{{ $selectedBranchId ? 'Loading departments...' : 'Select a branch first' }}</option>
+                    </select>
+                </div>
+            </div>
+
+            {{-- Visitor Category --}}
+            <div class="row mb-3">
                 <div class="col">
                     <label class="form-label fw-semibold">Visitor Category</label>
                     <select name="visitor_category_id" class="form-select @error('visitor_category_id') is-invalid @enderror">
@@ -126,6 +169,93 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Dynamic company-branch-department loading for superadmin
+    @if($isSuper)
+        const companySelect = document.getElementById('companySelect');
+        const branchSelect = document.getElementById('branchSelect');
+        const departmentSelect = document.getElementById('departmentSelect');
+        
+        if (companySelect) {
+            companySelect.addEventListener('change', function() {
+                const companyId = this.value;
+                
+                // Update hidden company_id field
+                document.querySelector('input[name="company_id"]').value = companyId;
+                
+                // Reset branch and department dropdowns
+                if (branchSelect) {
+                    branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+                    branchSelect.disabled = !companyId;
+                }
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">-- Select Department --</option>';
+                    departmentSelect.disabled = true;
+                }
+                
+                if (companyId) {
+                    // Load branches for selected company
+                    if (branchSelect) {
+                        fetch(`/api/companies/${companyId}/branches`)
+                            .then(response => response.json())
+                            .then(branches => {
+                                branches.forEach(branch => {
+                                    const option = document.createElement('option');
+                                    option.value = branch.id;
+                                    option.textContent = branch.name;
+                                    branchSelect.appendChild(option);
+                                });
+                                branchSelect.disabled = false;
+                            })
+                            .catch(error => console.error('Error loading branches:', error));
+                    }
+                    
+                    // Load departments for selected company
+                    if (departmentSelect) {
+                        fetch(`/api/companies/${companyId}/departments`)
+                            .then(response => response.json())
+                            .then(departments => {
+                                departments.forEach(dept => {
+                                    const option = document.createElement('option');
+                                    option.value = dept.id;
+                                    option.textContent = dept.name;
+                                    departmentSelect.appendChild(option);
+                                });
+                                departmentSelect.disabled = false;
+                            })
+                            .catch(error => console.error('Error loading departments:', error));
+                    }
+                }
+            });
+        }
+        
+        // Handle branch change to load departments
+        if (branchSelect) {
+            branchSelect.addEventListener('change', function() {
+                const branchId = this.value;
+                
+                // Reset department dropdown
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">-- Select Department --</option>';
+                    departmentSelect.disabled = !branchId;
+                }
+                
+                if (branchId) {
+                    fetch(`/api/branches/${branchId}/departments`)
+                        .then(response => response.json())
+                        .then(departments => {
+                            departments.forEach(dept => {
+                                const option = document.createElement('option');
+                                option.value = dept.id;
+                                option.textContent = dept.name;
+                                departmentSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error loading departments:', error));
+                }
+            });
+        }
+    @endif
+    
     // Form submission handling
     const form = document.querySelector('form');
     const submitBtn = document.getElementById('submitBtn');

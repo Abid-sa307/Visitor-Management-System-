@@ -341,8 +341,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 console.log('Branches data:', data);
                 branchSelect.innerHTML = '<option value="">All Branches</option>';
-                
-                const branches = Array.isArray(data) ? data : (data.data || []);
+
+                const branches = Array.isArray(data)
+                    ? data
+                    : (data.data || Object.entries(data || {}).map(([id, name]) => ({ id, name })));
                 
                 if (branches.length > 0) {
                     branches.forEach(branch => {
@@ -374,48 +376,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // ------- Load departments via AJAX --------
     function loadDepartments(companyId) {
         if (!departmentSelect) return;
-        departmentSelect.innerHTML = '<option value="">All Departments</option>';
-        if (!companyId) {
-            departmentSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
-            return;
-        }
-        departmentSelect.disabled = false;
-
-        // Show loading state
-        const loadingOption = document.createElement('option');
-        loadingOption.textContent = 'Loading departments...';
-        departmentSelect.appendChild(loadingOption);
-
-        fetch(`/companies/${companyId}/departments`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(list => {
-                departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                if (Array.isArray(list) && list.length > 0) {
-                    list.forEach(dept => {
-                        const option = document.createElement('option');
-                        option.value = dept.id;
-                        option.textContent = dept.name;
-                        if (String(selectedDept) === String(dept.id)) {
-                            option.selected = true;
-                        }
-                        departmentSelect.appendChild(option);
-                    });
-                } else {
-                    const option = document.createElement('option');
-                    option.textContent = 'No departments found';
-                    option.disabled = true;
-                    departmentSelect.appendChild(option);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading departments:', error);
-                departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
-            });
+        departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+        departmentSelect.disabled = true;
     }
 
     // Handle company change
@@ -437,8 +399,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             if (departmentSelect) {
-                departmentSelect.innerHTML = '<option value="">Select company first</option>';
-                departmentSelect.disabled = !companyId;
+                departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
+                departmentSelect.disabled = true;
             }
             
             // Load branches and departments for the selected company
@@ -450,11 +412,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Handle department select
             if (departmentSelect) {
                 departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                departmentSelect.disabled = !companyId;
-                
-                if (companyId) {
-                    loadDepartments(companyId);
-                }
+                departmentSelect.disabled = true;
             }
         });
     }

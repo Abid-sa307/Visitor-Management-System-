@@ -71,8 +71,24 @@
             @endif
 
             <div class="col-md-3">
+                <label class="form-label">Branch</label>
+                <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
+                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                    <option value="">All Branches</option>
+                    @if(isset($branches))
+                        @foreach($branches as $id => $name)
+                            <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+
+            <div class="col-md-3">
                 <label class="form-label">Department</label>
-                <select name="department_id" id="department_id" class="form-select form-select-sm">
+                <select name="department_id" id="department_id" class="form-select form-select-sm" 
+                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
                     <option value="">All Departments</option>
                     @foreach($departments as $id => $name)
                         <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
@@ -139,17 +155,65 @@
 document.addEventListener('DOMContentLoaded', function() {
     const companySelect = document.getElementById('company_id');
     const departmentSelect = document.getElementById('department_id');
+    const branchSelect = document.getElementById('branch_id');
     
     if (companySelect) {
         companySelect.addEventListener('change', function() {
             const companyId = this.value;
             
+            // Reset department and branch dropdowns
+            departmentSelect.innerHTML = '<option value="">All Departments</option>';
+            if (branchSelect) {
+                branchSelect.innerHTML = '<option value="">All Branches</option>';
+            }
+            
+            // Enable/disable dropdowns based on company selection
+            departmentSelect.disabled = !companyId;
+            if (branchSelect) branchSelect.disabled = !companyId;
+            
+            if (companyId) {
+                // Load branches for selected company
+                if (branchSelect) {
+                    fetch(`/api/companies/${companyId}/branches`)
+                        .then(response => response.json())
+                        .then(branches => {
+                            branches.forEach(branch => {
+                                const option = document.createElement('option');
+                                option.value = branch.id;
+                                option.textContent = branch.name;
+                                branchSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error loading branches:', error));
+                }
+                
+                // Load departments for selected company
+                fetch(`/api/companies/${companyId}/departments`)
+                    .then(response => response.json())
+                    .then(departments => {
+                        departments.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.id;
+                            option.textContent = dept.name;
+                            departmentSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error loading departments:', error));
+            }
+        });
+    }
+    
+    // Handle branch change to load departments
+    if (branchSelect) {
+        branchSelect.addEventListener('change', function() {
+            const branchId = this.value;
+            
             // Reset department dropdown
             departmentSelect.innerHTML = '<option value="">All Departments</option>';
             
-            if (companyId) {
-                // Load departments for selected company
-                fetch(`/companies/${companyId}/departments`)
+            if (branchId) {
+                // Load departments for selected branch
+                fetch(`/api/branches/${branchId}/departments`)
                     .then(response => response.json())
                     .then(departments => {
                         departments.forEach(dept => {

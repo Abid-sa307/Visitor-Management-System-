@@ -30,6 +30,8 @@ class Company extends Authenticatable
         'security_checkin_type',
         'branch_start_date',
         'branch_end_date',
+        'operation_start_time',
+        'operation_end_time',
         'is_active',
     ];
 
@@ -117,5 +119,24 @@ class Company extends Authenticatable
     public function employees()
     {
         return $this->hasMany(Employee::class);
+    }
+    
+    /**
+     * Check if a visitor is created outside operating hours
+     */
+    public function isVisitorOutsideOperatingHours($visitorCreatedAt = null)
+    {
+        // If no operating hours are set, return false
+        if (!$this->operation_start_time || !$this->operation_end_time) {
+            return false;
+        }
+        
+        $createdAt = $visitorCreatedAt ?: now();
+        $currentTime = $createdAt->format('H:i');
+        $startTime = $this->operation_start_time;
+        $endTime = $this->operation_end_time;
+        
+        // Check if current time is outside operating hours
+        return $currentTime < $startTime || $currentTime > $endTime;
     }
 }

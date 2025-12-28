@@ -155,7 +155,7 @@
                     branchSelect.disabled = true;
                 }
                 if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">Loading departments...</option>';
+                    departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
                     departmentSelect.disabled = true;
                 }
 
@@ -163,21 +163,25 @@
                 if (!companyId) {
                     if (branchSelect) {
                         branchSelect.innerHTML = '<option value="">All Branches</option>';
-                        branchSelect.disabled = false;
+                        branchSelect.disabled = (companySelect.dataset.isSuper === '1');
                     }
                     if (departmentSelect) {
                         departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                        departmentSelect.disabled = false;
+                        departmentSelect.disabled = (companySelect.dataset.isSuper === '1');
                     }
                     return;
                 }
 
                 // Load branches for selected company
-                fetch(`/api/branches?company_id=${companyId}`)
+                fetch(`/api/companies/${companyId}/branches`)
                     .then(response => response.json())
-                    .then(branches => {
+                    .then(data => {
                         if (branchSelect) {
                             branchSelect.innerHTML = '<option value="">All Branches</option>';
+                            const branches = Array.isArray(data)
+                                ? data
+                                : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
+
                             if (branches && branches.length > 0) {
                                 branches.forEach(branch => {
                                     const option = new Option(branch.name, branch.id);
@@ -191,28 +195,6 @@
                         console.error('Error loading branches:', error);
                         if (branchSelect) {
                             branchSelect.innerHTML = '<option value="">Error loading branches</option>';
-                        }
-                    });
-
-                // Load departments for selected company
-                fetch(`/api/departments?company_id=${companyId}`)
-                    .then(response => response.json())
-                    .then(departments => {
-                        if (departmentSelect) {
-                            departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                            if (departments && departments.length > 0) {
-                                departments.forEach(dept => {
-                                    const option = new Option(dept.name, dept.id);
-                                    departmentSelect.add(option);
-                                });
-                            }
-                            departmentSelect.disabled = false;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading departments:', error);
-                        if (departmentSelect) {
-                            departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
                         }
                     });
             });
