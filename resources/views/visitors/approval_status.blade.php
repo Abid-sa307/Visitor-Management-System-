@@ -33,33 +33,32 @@
 @endpush
 
 @section('content')
-@php
-    $exportRoute = 'reports.approval.export';
-@endphp
-
 <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-        <h2 class="fw-bold text-primary m-0">Approval Status Report</h2>
-        <form method="GET" action="{{ route($exportRoute) }}" class="d-flex gap-2" id="exportForm">
-            @foreach(request()->all() as $key => $value)
-                @if(!in_array($key, ['_token', 'page']))
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endif
-            @endforeach
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800">Visitor Approval Status</h2>
+        <form method="GET" action="{{ route('reports.approval.export') }}" class="d-inline">
+            @csrf
             <button type="submit" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
             </button>
         </form>
     </div>
 
-    <form method="GET" class="filter-section mb-4">
-        <div class="row g-2">
-            @if(auth()->user()->role === 'superadmin')
-            <div class="col-md-12 mb-3">
-                <div class="row">
-                    <div class="col-md-4">
-                        <label class="form-label">Company</label>
-                        <select name="company_id" id="company_id" class="form-select form-select-sm">
+    {{-- =================== FILTERS CARD =================== --}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" id="approvalStatusFilterForm">
+                <div class="row g-3 align-items-end">
+                    {{-- 1️⃣ Date Range (first) --}}
+                    <div class="col-lg-4 col-md-6">
+                        @include('components.basic_date_range')
+                    </div>
+                    
+                    {{-- 2️⃣ Company (superadmin only) --}}
+                    @if(auth()->user()->role === 'superadmin')
+                    <div class="col-lg-3 col-md-6">
+                        <label for="company_id" class="form-label fw-semibold">Company</label>
+                        <select name="company_id" id="company_id" class="form-select form-select-lg">
                             <option value="">All Companies</option>
                             @foreach($companies as $id => $name)
                                 <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
@@ -68,84 +67,102 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-8">
-                        <label class="form-label">Date Range</label>
-                        @include('components.date_range')
+                    @endif
+
+                    {{-- 3️⃣ Branch --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label for="branch_id" class="form-label fw-semibold">Branch</label>
+                        <select name="branch_id" id="branch_id" class="form-select form-select-lg" 
+                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                            <option value="">All Branches</option>
+                            @foreach($branches ?? [] as $id => $name)
+                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- 4️⃣ Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label for="department_id" class="form-label fw-semibold">Department</label>
+                        <select name="department_id" id="department_id" class="form-select form-select-lg" 
+                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                            <option value="">All Departments</option>
+                            @foreach($departments as $id => $name)
+                                <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Buttons row --}}
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i> Apply
+                        </button>
+                        <a href="{{ url()->current() }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i> Reset
+                        </a>
                     </div>
                 </div>
-            </div>
-            @endif
-
-            <div class="col-md-6 col-lg-4">
-                <label class="form-label">Department</label>
-                <select name="department_id" id="department_id" class="form-select form-select-sm" 
-                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                    <option value="">All Departments</option>
-                    @foreach($departments as $id => $name)
-                        <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-md-6 col-lg-4">
-                <label class="form-label">Branch</label>
-                <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
-                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                    <option value="">All Branches</option>
-                    @foreach($branches as $id => $name)
-                        <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-12 d-flex justify-content-end gap-2 pt-2">
-                <a href="{{ url()->current() }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
-                </a>
-                <div class="d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-funnel me-1"></i> Apply Filters
-                    </button>
-                </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     @if($visitors->count())
         <div class="table-responsive shadow-sm border rounded">
             <table class="table table-bordered align-middle mb-0" style="width: 100%;">
                 <thead class="table-primary">
                     <tr class="text-nowrap">
-                        <th class="text-start">Visitor</th>
+                        <th>Visitor Name</th>
+                        <th>Company</th>
                         <th>Department</th>
-                        <th>Approved By</th>
-                        <th>Rejected By</th>
-                        <th>Reason</th>
+                        <th>Visit Date</th>
+                        <th>Approval Status</th>
+                        <th>Approved/Rejected By</th>
+                        <th>Approval Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($visitors as $visitor)
                         <tr>
                             <td class="text-nowrap">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-2">
-                                        <div class="avatar-title bg-light rounded-circle text-primary fw-semibold">
-                                            {{ substr($visitor->name, 0, 1) }}
-                                        </div>
-                                    </div>
-                                    <div class="text-truncate" style="max-width: 150px;">
-                                        {{ $visitor->name }}
-                                    </div>
-                                </div>
+                                <div class="fw-semibold">{{ $visitor->name }}</div>
+                                @if($visitor->phone)
+                                    <small class="text-muted">{{ $visitor->phone }}</small>
+                                @endif
                             </td>
+                            <td class="text-nowrap">{{ $visitor->company->name ?? '—' }}</td>
                             <td class="text-nowrap">{{ $visitor->department->name ?? '—' }}</td>
-                            <td class="text-nowrap">{{ $visitor->approvedBy->name ?? '—' }}</td>
-                            <td class="text-nowrap">{{ $visitor->rejectedBy->name ?? '—' }}</td>
-                            <td class="text-truncate" style="max-width: 200px;">{{ $visitor->reject_reason ?? '—' }}</td>
+                            <td class="text-nowrap">{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
+                            <td class="text-nowrap">
+                                @php
+                                    $status = $visitor->status;
+                                    $badgeClass = $status === 'Approved' ? 'bg-success' : 
+                                                ($status === 'Rejected' ? 'bg-danger' : 'bg-warning');
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">{{ $status }}</span>
+                            </td>
+                            <td class="text-nowrap">
+                                @if($visitor->status === 'Approved' && $visitor->approvedBy)
+                                    {{ $visitor->approvedBy->name }}
+                                @elseif($visitor->status === 'Rejected' && $visitor->rejectedBy)
+                                    {{ $visitor->rejectedBy->name }}
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="text-nowrap">
+                                @if($visitor->status === 'Approved' && $visitor->approved_at)
+                                    {{ \Carbon\Carbon::parse($visitor->approved_at)->format('M d, Y h:i A') }}
+                                @elseif($visitor->status === 'Rejected' && $visitor->rejected_at)
+                                    {{ \Carbon\Carbon::parse($visitor->rejected_at)->format('M d, Y h:i A') }}
+                                @else
+                                    —
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

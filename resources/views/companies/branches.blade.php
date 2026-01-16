@@ -2,16 +2,16 @@
 
 @section('content')
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 text-gray-800">
-            <a href="{{ route('companies.index') }}" class="text-decoration-none text-primary">
-                <i class="fas fa-arrow-left me-2"></i>
+    <div class="page-heading mb-4">
+        <div>
+            <div class="page-heading__eyebrow">Organization</div>
+            <h1 class="page-heading__title">{{ $company->name }} Branches</h1>
+        </div>
+        <div class="page-heading__actions">
+            <a href="{{ route('companies.index') }}" class="btn btn-outline-secondary btn-lg shadow-sm">
+                <i class="fas fa-arrow-left me-2"></i> Back to Companies
             </a>
-            {{ $company->name }} - Branch Details
-        </h1>
-        <a href="{{ route('companies.edit', $company->id) }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-edit me-1"></i> Edit Company
-        </a>
+        </div>
     </div>
 
     <div class="card shadow-sm">
@@ -29,8 +29,8 @@
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Address</th>
-                            <th>Operation Start Date</th>
-                            <th>Operation End Date</th>
+                            <th>Operation Start time</th>
+                            <th>Operation End time</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,19 +41,20 @@
                             <td>{{ $branch->phone ?? '—' }}</td>
                             <td>{{ $branch->address ?? '—' }}</td>
                             <td>
-                                @if($branch->start_date)
-                                    {{ \Carbon\Carbon::parse($branch->start_date)->format('M d, Y') }}
+                               @if($branch->start_time)
+                                    {{ \Carbon\Carbon::parse($branch->timezone, $branch->start_time)->format('h:i A') }}
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
                             <td>
-                                @if($branch->end_date)
-                                    {{ \Carbon\Carbon::parse($branch->end_date)->format('M d, Y') }}
+                               @if($branch->end_time)
+                                    {{ \Carbon\Carbon::parse($company->timezone, $branch->end_time)->format('h:i A') }}
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            
                         </tr>
                         @empty
                         <tr>
@@ -71,9 +72,12 @@
         </div>
     </div>
 
-    <div class="mt-3">
+    <div class="mt-3 d-flex gap-2">
         <a href="{{ route('companies.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i> Back to Companies
+        </a>
+        <a href="{{ route('companies.edit', $company->id) }}" class="btn btn-primary">
+            <i class="fas fa-edit me-1"></i> Edit Company
         </a>
     </div>
 </div>

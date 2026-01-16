@@ -38,9 +38,23 @@ class SecurityCheckController extends Controller
         } elseif ($isCompany && $authUser) {
             $companyId = $authUser->company_id;
             $visitorQuery->where('company_id', $companyId);
+            
+            // Apply branch filter for company users only if not explicitly selecting a different branch
+            if (!$request->filled('branch_id') && $authUser->branch_id) {
+                $visitorQuery->where('branch_id', $authUser->branch_id);
+            }
+            
+            \Log::info('Security Check Index - Company User Filter', [
+                'user_id' => $authUser->id,
+                'company_id' => $companyId,
+                'user_branch_id' => $authUser->branch_id,
+                'request_branch_id' => $request->input('branch_id'),
+                'query_sql' => $visitorQuery->toSql(),
+                'query_bindings' => $visitorQuery->getBindings()
+            ]);
         }
 
-        // Branch filter
+        // Branch filter (override if explicitly selected)
         if ($request->filled('branch_id')) {
             $visitorQuery->where('branch_id', $request->input('branch_id'));
         }
@@ -66,11 +80,31 @@ class SecurityCheckController extends Controller
                 ->pluck('name', 'id')
                 ->toArray();
         } elseif (!$isSuper && $authUser) {
-            // For non-superadmin, get their company's branches
-            $branches = \App\Models\Branch::where('company_id', $authUser->company_id)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
+            // For non-superadmin, get their assigned branches
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $authUser->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Filter branches by user's assigned branches
+                $branches = \App\Models\Branch::whereIn('id', $userBranchIds)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($authUser->branch_id) {
+                    $branches = \App\Models\Branch::where('id', $authUser->branch_id)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                } else {
+                    // If no branches assigned, get all company branches
+                    $branches = \App\Models\Branch::where('company_id', $authUser->company_id)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                }
+            }
         }
 
         // Get departments based on company selection or user's company
@@ -81,11 +115,45 @@ class SecurityCheckController extends Controller
                 ->pluck('name', 'id')
                 ->toArray();
         } elseif (!$isSuper && $authUser) {
-            // For non-superadmin, get their company's departments
-            $departments = \App\Models\Department::where('company_id', $authUser->company_id)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
+            // For non-superadmin, get their assigned departments
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $authUser->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Get user's assigned department IDs from the pivot table
+                $userDepartmentIds = $authUser->departments()->pluck('departments.id')->toArray();
+                
+                if (!empty($userDepartmentIds)) {
+                    // Filter departments by user's assigned departments
+                    $departments = \App\Models\Department::whereIn('id', $userDepartmentIds)
+                        ->where('company_id', $authUser->company_id)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                } else {
+                    // Fallback: filter departments by user's assigned branches
+                    $departments = \App\Models\Department::whereIn('branch_id', $userBranchIds)
+                        ->where('company_id', $authUser->company_id)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                }
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($authUser->branch_id) {
+                    $departments = \App\Models\Department::where('branch_id', $authUser->branch_id)
+                        ->where('company_id', $authUser->company_id)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                } else {
+                    // If no branches assigned, get all company departments
+                    $departments = \App\Models\Department::where('company_id', $authUser->company_id)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                }
+            }
         }
 
         return view('security_checks.index', [
@@ -146,8 +214,9 @@ class SecurityCheckController extends Controller
     {
         $request->validate([
             'visitor_id' => 'required|exists:visitors,id',
-            'questions' => 'required|array',
-            'responses' => 'required|array',
+            'check_type' => 'required|in:checkin,checkout',
+            'questions' => 'nullable|array',
+            'responses' => 'nullable|array',
             'security_officer_name' => 'required|string|max:255',
             'officer_badge' => 'nullable|string|max:100',
             'captured_photo' => 'nullable|string',
@@ -185,8 +254,9 @@ class SecurityCheckController extends Controller
             // Create the security check record
             $securityCheck = SecurityCheck::create([
                 'visitor_id' => $request->visitor_id,
-                'questions' => $request->questions,
-                'responses' => $request->responses,
+                'check_type' => $request->check_type,
+                'questions' => $request->questions ?? [],
+                'responses' => $request->responses ?? [],
                 'security_officer_name' => $request->security_officer_name,
             ]);
 
@@ -196,13 +266,27 @@ class SecurityCheckController extends Controller
                 if (!$visitor->photo && $visitorPhotoPath) {
                     $visitor->photo = $visitorPhotoPath;
                 }
-                // Set security check-in time after form is completed
-                $visitor->security_checkin_time = now();
+                // Set security check time based on check type
+                if ($request->check_type === 'checkout') {
+                    $visitor->security_checkout_time = now();
+                } else {
+                    $visitor->security_checkin_time = now();
+                }
                 $visitor->save();
             }
 
-            return redirect()->route('security-checks.index')
-                ->with('success', 'Security check completed successfully.');
+            // Redirect based on check type
+            if ($request->check_type === 'checkout') {
+                // For check-out, redirect back to entry page with success message
+                return redirect()->route('visitors.entry.page')
+                    ->with('success', 'Security check-out completed successfully. You can now mark out the visitor.')
+                    ->with('show_undo_security_checkout', true)
+                    ->with('security_checkout_id', $securityCheck->id);
+            } else {
+                // For check-in, redirect to security checks index
+                return redirect()->route('security-checks.index')
+                    ->with('success', 'Security check completed successfully.');
+            }
 
         } catch (\Exception $e) {
             return redirect()->back()

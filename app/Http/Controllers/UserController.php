@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CompanyUserCreatedMail;
 
 class UserController extends Controller
 {
@@ -212,10 +214,17 @@ class UserController extends Controller
                     $payload['branch_id'] = $user->branch_id;
                 }
 
-                CompanyUser::updateOrCreate(
+                $companyUser = CompanyUser::updateOrCreate(
                     ['email' => $user->email],
                     $payload
                 );
+                
+                // Send welcome email to company user
+                try {
+                    Mail::to($companyUser->email)->send(new CompanyUserCreatedMail($companyUser, $data['password']));
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to send company user creation email: ' . $e->getMessage());
+                }
             } catch (\Exception $e) {
                 // Log the error but don't fail the entire operation
                 \Log::error('Failed to sync user to company_users table: ' . $e->getMessage());

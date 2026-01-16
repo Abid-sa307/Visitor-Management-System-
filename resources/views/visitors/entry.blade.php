@@ -151,91 +151,80 @@
         <div class="card-body">
             <form method="GET" action="{{ route('visitors.entry.page') }}" id="entryFilterForm">
                 <div class="row g-3 align-items-end">
-                    {{-- Date Range --}}
+                    {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
+                        @php
+                            $from = request('from', now()->format('Y-m-d'));
+                            $to = request('to', now()->format('Y-m-d'));
+                        @endphp
                         <label class="form-label">Date Range</label>
-                        <div class="input-group mb-2">
-                            @php
-                                $fromDate = request('from') ?? now()->format('Y-m-d');
-                                $toDate = request('to') ?? now()->format('Y-m-d');
-                            @endphp
-                            <input type="date" name="from" id="from_date" class="form-control"
-                                   value="{{ $fromDate }}">
-                            <span class="input-group-text">to</span>
-                            <input type="date" name="to" id="to_date" class="form-control"
-                                   value="{{ $toDate }}">
-                        </div>
-                        <div class="d-flex flex-wrap gap-1">
-                            <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">
-                                Today
-                            </button>
-                            <button class="btn btn-sm btn-outline-primary quick-range" data-range="yesterday" type="button">
-                                Yesterday
-                            </button>
-                            <button class="btn btn-sm btn-outline-primary quick-range" data-range="this-week" type="button">
-                                This Week
-                            </button>
-                        </div>
+                        @include('components.basic_date_range', ['from' => $from, 'to' => $to])
                     </div>
 
-                    {{-- Company (superadmin only) --}}
+                    {{-- 2️⃣ Company (superadmin only) --}}
                     @if(auth()->user()->role === 'superadmin')
-                        <div class="col-lg-3 col-md-6">
-                            <label for="company_id" class="form-label">Company</label>
-                            <select name="company_id" id="company_id" class="form-select">
-                                <option value="">All Companies</option>
-                                @foreach($companies as $id => $name)
-                                    <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
-                                        {{ $name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="company_id" class="form-label">Company</label>
+                        <select name="company_id" id="company_id" class="form-select">
+                            <option value="">All Companies</option>
+                            @foreach($companies as $id => $name)
+                                <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     @endif
 
-                    {{-- Branch --}}
-                    <div class="col-lg-3 col-md-6">
+                    {{-- 3️⃣ Branch --}}
+                    <div class="col-lg-2 col-md-6">
                         <label for="branch_id" class="form-label">Branch</label>
-                        <select name="branch_id" id="branch_id"
-                                class="form-select"
-                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif
-                                @if(auth()->user()->role === 'company' && isset($branches) && $branches->count() === 1 && $branches->keys()->first() === 'none') disabled @endif>
-                            <option value="">All Branches</option>
-                            @if(auth()->user()->role === 'company' && isset($branches))
-                                @foreach($branches as $id => $name)
-                                    <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}
-                                            @if($id === 'none') disabled @endif>
-                                        {{ $name }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                                <span id="branchText">All Branches</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="branchDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllBranches" onchange="toggleAllBranches()">
+                                    <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="branchOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
                     </div>
 
-                    {{-- Department --}}
+                    {{-- 4️⃣ Department --}}
                     <div class="col-lg-2 col-md-6">
                         <label for="department_id" class="form-label">Department</label>
-                        <select name="department_id" id="department_id"
-                                class="form-select"
-                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
-                            <option value="">All Departments</option>
-                            @if(auth()->user()->role === 'company' && isset($departments))
-                                @foreach($departments as $id => $name)
-                                    <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
-                                        {{ $name }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                                <span id="departmentText">All Departments</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="departmentDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllDepartments" onchange="toggleAllDepartments()">
+                                    <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('departmentDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
                     </div>
 
-                    {{-- Buttons --}}
+                    {{-- Buttons row --}}
                     <div class="col-12 d-flex flex-wrap gap-2 mt-3">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-filter me-1"></i> Apply Filters
+                            <i class="fas fa-filter me-1"></i> Apply
                         </button>
                         <a href="{{ route('visitors.entry.page') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-sync-alt me-1"></i> Reset
+                            <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>
                 </div>
@@ -301,6 +290,7 @@
                     <th>In Time</th>
                     <th>Out Time</th>
                     <th>Status</th>
+                    <th>Approval Status</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -321,16 +311,31 @@
                             </span>
                         </td>
                         <td>
+                            <span class="badge bg-{{ 
+                                $visitor->status === 'Approved' ? 'primary' : 
+                                ($visitor->status === 'Pending' ? 'warning' : 'info') }}">
+                                {{ $visitor->status === 'Approved' ? 'Approved ✓' : $visitor->status }}
+                            </span>
+                        </td>
+                        <td>
                                 @php
                                     $toggleRoute = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
                                     $hasSecurityCheck = $visitor->securityChecks()->exists();
+                                    $hasCheckInSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkin')->exists();
+                                    $hasCheckOutSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkout')->exists();
+                                    $securityServiceEnabled = $visitor->company->security_check_service ?? false;
                                     $securityType = $visitor->company->security_checkin_type ?? '';
-                                    $needsSecurityCheckIn = in_array($securityType, ['checkin', 'both']) && !$hasSecurityCheck;
-                                    $needsSecurityCheckOut = in_array($securityType, ['checkout', 'both']) && !$hasSecurityCheck;
+                                    
+                                    // Only allow mark in/out for approved visitors (visit form completion is separate from visit completion)
+                                    $canMarkEntry = $visitor->status === 'Approved';
+                                    
+                                    // Only require security checks if service is enabled and type is not 'none'
+                                    $needsSecurityCheckIn = $canMarkEntry && $securityServiceEnabled && in_array($securityType, ['checkin', 'both']) && !$hasCheckInSecurityCheck;
+                                    $needsSecurityCheckOut = $canMarkEntry && $securityServiceEnabled && in_array($securityType, ['checkout', 'both']) && !$hasCheckOutSecurityCheck;
                                 @endphp
                             @if(auth()->user()->role !== 'guard')
                                 @if(!$visitor->out_time)
-    <div class="d-flex gap-2 toggle-buttons" data-visitor-id="{{ $visitor->id }}">
+    <div class="d-flex gap-2 toggle-buttons" data-visitor-id="{{ $visitor->id }}" data-visitor-status="{{ $visitor->status }}" data-visit-completed="{{ $visitor->visit_completed_at ? 'true' : 'false' }}">
         @php
             // Determine the correct route based on user type
             $routeName = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
@@ -351,23 +356,43 @@
             $needsSecurityCheck = $action === 'in' ? $needsSecurityCheckIn : $needsSecurityCheckOut;
         @endphp
         
-        @if($needsSecurityCheck)
-            <a href="{{ route('security-checks.create', $visitor->id) }}" 
-               class="btn btn-sm rounded-pill btn-warning">
-                <i class="fas fa-shield-alt me-1"></i> Security Check Required
-            </a>
+        @if($canMarkEntry)
+            @if($needsSecurityCheck)
+                @if($action === 'out')
+                    <a href="{{ route('security-checks.create-checkout', $visitor->id) }}?access_form=1" 
+                       class="btn btn-sm rounded-pill btn-warning">
+                        <i class="fas fa-shield-alt me-1"></i> Security Check Out Required
+                    </a>
+                @else
+                    <a href="{{ route('security-checks.create', $visitor->id) }}" 
+                       class="btn btn-sm rounded-pill btn-warning">
+                        <i class="fas fa-shield-alt me-1"></i> Security Check In Required
+                    </a>
+                @endif
+            @else
+                <button type="button" 
+                        class="btn btn-sm rounded-pill btn-{{ $buttonClass }} toggle-entry-btn" 
+                        data-visitor-id="{{ $visitor->id }}" 
+                        data-action="{{ $action }}"
+                        data-url="{{ route($routeName, $visitor->id) }}">
+                    <i class="fas fa-{{ $buttonIcon }} me-1"></i>
+                    {{ $buttonText }}
+                </button>
+            @endif
         @else
+            <span class="text-muted small">Visitor must be approved first</span>
+        @endif
+        
+        @if(session('show_undo_security_checkout') && session('security_checkout_id'))
             <button type="button" 
-                    class="btn btn-sm rounded-pill btn-{{ $buttonClass }} toggle-entry-btn" 
-                    data-visitor-id="{{ $visitor->id }}" 
-                    data-action="{{ $action }}"
-                    data-url="{{ route($routeName, $visitor->id) }}">
-                <i class="fas fa-{{ $buttonIcon }} me-1"></i>
-                {{ $buttonText }}
+                    class="btn btn-sm rounded-pill btn-info undo-security-checkout-btn" 
+                    data-security-check-id="{{ session('security_checkout_id') }}"
+                    title="Undo security check-out (available for 30 minutes)">
+                <i class="fas fa-undo me-1"></i> Undo Security Check
             </button>
         @endif
         
-        @if($canUndo && !$needsSecurityCheck)
+        @if($canUndo)
             <button type="button" 
                     class="btn btn-sm rounded-pill btn-warning toggle-entry-btn" 
                     data-visitor-id="{{ $visitor->id }}" 
@@ -378,7 +403,7 @@
             </button>
         @endif
         
-        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]' && $visitor->company && $visitor->company->face_recognition_enabled)
+        @if(!empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]' && $visitor->company && $visitor->company->face_recognition_enabled )
             <button type="button" 
                     class="btn btn-sm rounded-pill btn-verify-face verify-face-btn"
                     data-visitor-id="{{ $visitor->id }}"
@@ -414,7 +439,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="text-muted">No visitors found.</td>
+                        <td colspan="9" class="text-muted">No visitors found.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -522,10 +547,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         e.preventDefault();
         
-        const visitorId = toggleBtn.dataset.visitorId;
+        // Get the parent container to access data attributes
+        const container = toggleBtn.closest('.toggle-buttons');
+        const visitorId = container.dataset.visitorId;
+        const visitorStatus = container.dataset.visitorStatus || 'Pending';
+        const visitCompleted = container.dataset.visitCompleted || 'false';
+        // Check if visitor is approved (visit form completion is separate from visit completion)
+        const visitFormCompleted = visitorStatus === 'Approved';
+        
         const action = toggleBtn.dataset.action;
         const url = toggleBtn.dataset.url;
         const buttonText = toggleBtn.textContent.trim();
+        
+        console.log('Validation check:', {
+            visitorStatus,
+            visitCompleted,
+            visitFormCompleted,
+            visitorId
+        });
         
         if (!confirm(`Are you sure you want to ${buttonText.toLowerCase()} this visitor?`)) {
             return;
@@ -545,7 +584,6 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('_method', 'POST');
         formData.append('visitor_id', visitorId);
         formData.append('action', action);
-        formData.append('is_company', {{ $isCompany ? 'true' : 'false' }});
 
         // Send AJAX request
         fetch(url, {
@@ -565,6 +603,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 if (!response.ok) {
                     throw new Error(data.message || 'An error occurred');
+                }
+                
+                // If successful and visitor was updated, refresh the page to get updated status
+                if (data.success) {
+                    // Trigger notification for check-in/out
+                    if (typeof showPersistentNotification === 'function') {
+                        const visitorName = data.visitor ? data.visitor.name : 'Visitor';
+                        const location = '{{ auth()->user()->company->name ?? "Security" }}';
+                        
+                        if (action === 'in') {
+                            showPersistentNotification('Visitor Checked In', {
+                                visitorName: visitorName,
+                                location: location
+                            });
+                        } else if (action === 'out') {
+                            showPersistentNotification('Visitor Checked Out', {
+                                visitorName: visitorName,
+                                location: location
+                            });
+                        }
+                    }
+                    
+                    // Update visitor status in the button data immediately
+                    const toggleBtn = document.querySelector(`[data-visitor-id="${visitorId}"]`);
+                    if (toggleBtn) {
+                        // Check if visitor status exists in response and update accordingly
+                        if (data.visitor && data.visitor.status) {
+                            toggleBtn.dataset.visitorStatus = data.visitor.status;
+                        }
+                    }
+                    
+                    // Show success message and refresh after a delay
+                    showToast('success', data.message || 'Action completed successfully');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.message || data.error || 'An error occurred');
                 }
                 return data;
             }
@@ -634,6 +710,45 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             showToast('error', errorMessage);
+        });
+    });
+});
+
+// Handle undo security check-out
+document.addEventListener('DOMContentLoaded', function() {
+    const undoSecurityCheckButtons = document.querySelectorAll('.undo-security-checkout-btn');
+    
+    undoSecurityCheckButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const securityCheckId = this.dataset.securityCheckId;
+            
+            if (!confirm('Are you sure you want to undo this security check-out?')) {
+                return;
+            }
+            
+            fetch(`/undo-security-checkout/${securityCheckId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', data.message);
+                    // Reload the page to update the UI
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast('error', data.error || 'Error undoing security check-out');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'Error undoing security check-out');
+            });
         });
     });
 });
@@ -717,20 +832,34 @@ async function startFaceVerification(button, faceEncoding, formAction) {
     }
 }
 
-// Load face-api.js models
+// Load face detection models
 async function loadFaceModels() {
     try {
-        updateStatus('Loading face detection models...', 0);
+        console.log('Loading face detection models...');
         
-        await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
-            faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
-            faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
-        ]);
-        
-        return true;
+        // Try local models first
+        try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+                faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+                faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+            ]);
+            console.log('Face detection models loaded successfully from local');
+            return true;
+        } catch (localError) {
+            console.log('Local models failed, trying CDN...', localError);
+            
+            // Try CDN as fallback
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'),
+                faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'),
+                faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights')
+            ]);
+            console.log('Face detection models loaded successfully from CDN');
+            return true;
+        }
     } catch (error) {
-        console.error('Error loading models:', error);
+        console.error('Error loading face detection models:', error);
         updateStatus('Error loading face detection models. Please refresh the page.', 0, true);
         return false;
     }
@@ -1038,44 +1167,22 @@ document.addEventListener('DOMContentLoaded', function() {
         modalElement.addEventListener('hidden.bs.modal', handleModalClose);
     }
 
-    // =================== Date Range Picker ===================
-    document.querySelectorAll('.quick-range').forEach(button => {
-        button.addEventListener('click', function() {
-            const range = this.dataset.range;
-            const fromInput = document.getElementById('from_date');
-            const toInput = document.getElementById('to_date');
-            const today = new Date();
-            
-            switch(range) {
-                case 'today':
-                    fromInput.value = today.toISOString().split('T')[0];
-                    toInput.value = today.toISOString().split('T')[0];
-                    break;
-                case 'yesterday':
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    fromInput.value = yesterday.toISOString().split('T')[0];
-                    toInput.value = yesterday.toISOString().split('T')[0];
-                    break;
-                case 'this-week':
-                    const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
-                    const lastDay = new Date(today.setDate(today.getDate() - today.getDay() + 6));
-                    fromInput.value = firstDay.toISOString().split('T')[0];
-                    toInput.value = lastDay.toISOString().split('T')[0];
-                    break;
-            }
-        });
-    });
-
     // =================== Company-Branch-Department Relationship ===================
     const companySelect = document.getElementById('company_id');
     const branchSelect = document.getElementById('branch_id');
     const departmentSelect = document.getElementById('department_id');
-    const selectedBranch = '{{ request('branch_id') }}';
-    const selectedDept = '{{ request('department_id') }}';
+    const selectedBranch = @json(request('branch_id', []));
+    const selectedDept = @json(request('department_id', []));
 
     // Load branches when company changes (for superadmin)
     if (companySelect) {
+        // Unlock branch if company is pre-selected
+        if (companySelect.value && branchSelect) {
+            branchSelect.disabled = false;
+            branchSelect.style.opacity = '1';
+            branchSelect.style.cursor = 'pointer';
+        }
+
         companySelect.addEventListener('change', function() {
             const companyId = this.value || '';
             loadBranches(companyId);
@@ -1083,6 +1190,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (departmentSelect) {
                 departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
                 departmentSelect.disabled = true;
+                departmentSelect.style.opacity = '0.5';
+                departmentSelect.style.cursor = 'not-allowed';
             }
         });
     }
@@ -1092,10 +1201,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!branchSelect) return;
         branchSelect.innerHTML = '<option value="">All Branches</option>';
         if (!companyId) {
-            branchSelect.disabled = ({{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }});
+            branchSelect.disabled = true;
+            branchSelect.style.opacity = '0.5';
+            branchSelect.style.cursor = 'not-allowed';
             return;
         }
         branchSelect.disabled = false;
+        branchSelect.style.opacity = '1';
+        branchSelect.style.cursor = 'pointer';
 
         // Show loading state
         const loadingOption = document.createElement('option');
@@ -1131,9 +1244,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load departments when branch changes
     if (branchSelect && departmentSelect) {
+        // Unlock department if branch is pre-selected
+        if (branchSelect.value && companySelect && companySelect.value) {
+            departmentSelect.disabled = false;
+            departmentSelect.style.opacity = '1';
+            departmentSelect.style.cursor = 'pointer';
+        }
+
         const setDepartmentOptions = (optionsHtml, disabled) => {
             departmentSelect.innerHTML = optionsHtml;
             departmentSelect.disabled = disabled;
+            if (disabled) {
+                departmentSelect.style.opacity = '0.5';
+                departmentSelect.style.cursor = 'not-allowed';
+            } else {
+                departmentSelect.style.opacity = '1';
+                departmentSelect.style.cursor = 'pointer';
+            }
         };
 
         const loadDepartmentsForBranch = (branchId) => {
@@ -1190,6 +1317,56 @@ document.addEventListener('DOMContentLoaded', function() {
     @if(auth()->user()->role === 'superadmin' && request('company_id'))
         loadBranches('{{ request('company_id') }}');
     @endif
+});
+</script>
+
+<script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
+<script>
+window.toggleAllBranches = function() {
+    const selectAll = document.getElementById('selectAllBranches');
+    const checkboxes = document.querySelectorAll('.branch-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    window.updateBranchText();
+};
+
+window.toggleAllDepartments = function() {
+    const selectAll = document.getElementById('selectAllDepartments');
+    const checkboxes = document.querySelectorAll('.department-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    window.updateDepartmentText();
+};
+
+window.updateBranchText = function() {
+    const checkboxes = document.querySelectorAll('.branch-checkbox:checked');
+    const text = document.getElementById('branchText');
+    if (checkboxes.length === 0) {
+        text.textContent = 'All Branches';
+    } else if (checkboxes.length === 1) {
+        text.textContent = checkboxes[0].nextElementSibling.textContent;
+    } else {
+        text.textContent = `${checkboxes.length} branches selected`;
+    }
+};
+
+window.updateDepartmentText = function() {
+    const checkboxes = document.querySelectorAll('.department-checkbox:checked');
+    const text = document.getElementById('departmentText');
+    if (checkboxes.length === 0) {
+        text.textContent = 'All Departments';
+    } else if (checkboxes.length === 1) {
+        text.textContent = checkboxes[0].nextElementSibling.textContent;
+    } else {
+        text.textContent = `${checkboxes.length} departments selected`;
+    }
+};
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.position-relative')) {
+        const branchMenu = document.getElementById('branchDropdownMenu');
+        const deptMenu = document.getElementById('departmentDropdownMenu');
+        if (branchMenu) branchMenu.style.display = 'none';
+        if (deptMenu) deptMenu.style.display = 'none';
+    }
 });
 </script>
 @endpush

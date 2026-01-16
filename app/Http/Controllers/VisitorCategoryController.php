@@ -31,7 +31,22 @@ class VisitorCategoryController extends Controller
             $branches = Branch::pluck('name', 'id');
         } else {
             $companies = [$user->company_id => $user->company->name];
-            $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+            
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Filter branches by user's assigned branches
+                $branches = Branch::whereIn('id', $userBranchIds)->pluck('name', 'id');
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->pluck('name', 'id');
+                } else {
+                    // If no branches assigned, get all company branches
+                    $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+                }
+            }
             
             // If company has no branches, add a "None" option
             if ($branches->isEmpty()) {
@@ -55,6 +70,25 @@ class VisitorCategoryController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
             'is_active' => 'boolean'
         ]);
+
+        // Validate unique name within the same branch
+        $companyId = auth()->user()->role !== 'superadmin' ? auth()->user()->company_id : $data['company_id'];
+        $branchId = $data['branch_id'] ?? null;
+        
+        $exists = VisitorCategory::where('company_id', $companyId)
+            ->where('name', $data['name'])
+            ->where(function($q) use ($branchId) {
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else {
+                    $q->whereNull('branch_id');
+                }
+            })
+            ->exists();
+            
+        if ($exists) {
+            return back()->withErrors(['name' => 'A category with this name already exists in this branch.'])->withInput();
+        }
 
         if (auth()->user()->role !== 'superadmin') {
             $data['company_id'] = auth()->user()->company_id;
@@ -93,7 +127,23 @@ class VisitorCategoryController extends Controller
                 abort(403);
             }
             $companies = [$visitorCategory->company_id => $visitorCategory->company->name];
-            $branches = Branch::where('company_id', $visitorCategory->company_id)->pluck('name', 'id');
+            
+            // Get user's assigned branch IDs from the pivot table
+            $user = auth()->user();
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Filter branches by user's assigned branches
+                $branches = Branch::whereIn('id', $userBranchIds)->pluck('name', 'id');
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->pluck('name', 'id');
+                } else {
+                    // If no branches assigned, get all company branches
+                    $branches = Branch::where('company_id', $visitorCategory->company_id)->pluck('name', 'id');
+                }
+            }
             
             // If company has no branches, add a "None" option
             if ($branches->isEmpty()) {
@@ -113,6 +163,26 @@ class VisitorCategoryController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
             'is_active' => 'boolean'
         ]);
+
+        // Validate unique name within the same branch (excluding current category)
+        $companyId = auth()->user()->role !== 'superadmin' ? auth()->user()->company_id : $data['company_id'];
+        $branchId = $data['branch_id'] ?? null;
+        
+        $exists = VisitorCategory::where('company_id', $companyId)
+            ->where('name', $data['name'])
+            ->where('id', '!=', $visitorCategory->id)
+            ->where(function($q) use ($branchId) {
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else {
+                    $q->whereNull('branch_id');
+                }
+            })
+            ->exists();
+            
+        if ($exists) {
+            return back()->withErrors(['name' => 'A category with this name already exists in this branch.'])->withInput();
+        }
 
         if (auth()->user()->role !== 'superadmin') {
             // Non-superadmin can only update their own company's categories

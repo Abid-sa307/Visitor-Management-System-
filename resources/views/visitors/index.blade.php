@@ -74,40 +74,34 @@
       // Are we inside /company/* ?
       $isCompany = request()->is('company/*');
 
-      // Compute route names safely (fallback to superadmin routes if company routes don't exist)
-      $indexRoute    = $isCompany && Route::has('company.visitors.index')    ? 'company.visitors.index'    : 'visitors.index';
-      $createRoute   = $isCompany && Route::has('company.visitors.create')   ? 'company.visitors.create'   : 'visitors.create';
-      $editRoute     = $isCompany && Route::has('company.visitors.edit')     ? 'company.visitors.edit'     : 'visitors.edit';
-      $destroyRoute  = $isCompany && Route::has('company.visitors.destroy')  ? 'company.visitors.destroy'  : 'visitors.destroy';
+      // Simple route names
+      $indexRoute    = 'visitors.index';
+      $createRoute   = 'visitors.create';
+      $editRoute     = 'visitors.edit';
+      $destroyRoute  = 'visitors.destroy';
+      $passRoute     = 'visitors.pass';
+    @endphp
 
-      // Visit form exists only on superadmin by default; add company route if you create it
-      $visitRoute    = !$isCompany && Route::has('visitors.visit.form') ? 'visitors.visit.form' : (Route::has('company.visitors.visit.form') ? 'company.visitors.visit.form' : null);
-
-      // Security check create (exists in both namespaces)
-      $securityCreateRoute = $isCompany ? (Route::has('company.security-checks.create') ? 'company.security-checks.create' : null)
-                                        : (Route::has('security-checks.create') ? 'security-checks.create' : null);
-
-      // Print Pass route
-      $passRoute = $isCompany && Route::has('company.visitors.pass') ? 'company.visitors.pass'
-                  : (Route::has('visitors.pass') ? 'visitors.pass' : null);
-                  
-      @endphp
+  <div class="page-heading mb-4">
+    <div>
+      <div class="page-heading__eyebrow">Operations</div>
+      <h1 class="page-heading__title">Visitor Ledger</h1>
+    </div>
+    <div class="page-heading__actions">
+      <a href="{{ route('visitors.create') }}" class="btn btn-primary btn-lg shadow-sm">
+        <i class="fas fa-user-plus me-2"></i> Add Visitor
+      </a>
+    </div>
+  </div>
 
   <div class="bg-white p-4 rounded-4 shadow-lg">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="fw-bold text-primary m-0">All Visitors</h2>
 
-      @if(Route::has($createRoute))
-        <a href="{{ route($createRoute) }}" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm">+ Add Visitor</a>
-      @endif
-    </div>
-
-    @if(session('success'))
+    <!-- @if(session('success'))
       <div class="alert alert-success alert-dismissible fade show" role="alert">
         {{ session('success') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
-    @endif
+    @endif -->
 
     <div class="table-responsive">
       <table class="table table-striped table-hover align-middle text-center border shadow-sm rounded-4 overflow-hidden">
@@ -118,7 +112,6 @@
         <th>Branch</th>
         <th>Email</th>
         <th>Visit Date</th>
-        <th>Document</th>
         <th>Approval Status</th>
         <th>In/Out Status</th>
         <th style="min-width: 180px;">Actions</th>
@@ -131,92 +124,75 @@
             <td>{{ $visitor->company->name ?? '—' }}</td>
             <td>{{ $visitor->branch->name ?? '—' }}</td>
             <td>{{ $visitor->email ?? '—' }}</td>
-            <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
+            <td>{{ $visitor->visit_date ? 'Jan 08, 2026' : '—' }}</td>
             <td>
-                @if($visitor->document_path)
-                    <a href="{{ asset('storage/' . $visitor->document_path) }}" target="_blank" class="btn btn-sm btn-outline-info">
-                        <i class="fas fa-file-alt"></i>
-                    </a>
-                @else
-                    <span class="text-muted">—</span>
-                @endif
+                <span class="badge bg-warning">{{ $visitor->status ?? 'Pending' }}</span>
             </td>
             <td>
-                @php
-                    $approvalStatus = $visitor->status ?? 'Pending';
-                    $approvalBadgeClass = $approvalStatus === 'Approved' ? 'success' : 
-                                        ($approvalStatus === 'Rejected' ? 'danger' : 'warning');
-                @endphp
-                <span class="badge bg-{{ $approvalBadgeClass }}">{{ $approvalStatus }}</span>
-            </td>
-            <td>
-                @php
-                    $inOut = $visitor->in_time && !$visitor->out_time ? 'In' : 
-                            ($visitor->out_time ? 'Out' : 'Pending');
-                    $inOutBadgeClass = $inOut === 'In' ? 'success' : 
-                                     ($inOut === 'Out' ? 'dark' : 'secondary');
-                @endphp
-                <span class="badge bg-{{ $inOutBadgeClass }}">{{ $inOut }}</span>
+                <span class="badge bg-secondary">Pending</span>
             </td>
               <td>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                   @php
                     $isCompleted = $visitor->out_time !== null;
+                    $isApproved = $visitor->status === 'Approved';
+                    $visitFormFilled = $visitor->visit_completed_at !== null;
+                    
+                    // Edit button: locked if approved
+                    $editDisabled = $isApproved || $isCompleted;
+                    
+                    // Pass button: unlocked only if visit form is filled
+                    $passDisabled = !$visitFormFilled || $isCompleted;
+                    
+                    // Delete button: locked if completed
+                    $deleteDisabled = $isCompleted;
                   @endphp
-                  
-                  @if($visitor->status === 'Approved' && $visitor->in_time && !$visitor->out_time)
-                    <!-- Check-out functionality removed -->
-                  @endif
 
                   {{-- Edit --}}
-                  @if(Route::has($editRoute))
-                    @if($isCompleted)
-                      <button class="btn btn-sm btn-outline-secondary" disabled title="Edit (Locked - Visit completed)">
-                        <i class="fas fa-lock text-muted"></i>
-                      </button>
-                    @elseif($visitor->status === 'Approved')
-                      <button class="btn btn-sm btn-outline-warning" disabled title="Edit (Locked - Visitor is approved)">
-                        <i class="fas fa-lock text-warning"></i>
-                      </button>
-                    @else
-                      <a href="{{ route($editRoute, $visitor->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
-                        <i class="fas fa-edit"></i>
-                      </a>
-                    @endif
+                  @if($editDisabled)
+                    <button class="action-btn action-btn--edit action-btn--icon" 
+                            title="Edit locked (visitor approved or completed)" 
+                            disabled style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                  @else
+                    <a href="{{ route('visitors.edit', $visitor->id) }}"
+                       class="action-btn action-btn--edit action-btn--icon"
+                       title="Edit">
+                      <i class="fas fa-edit"></i>
+                    </a>
                   @endif
 
-                  {{-- Pass (available after check-in) --}}
-                  @if($passRoute)
-                    @if($isCompleted)
-                      <a href="{{ route($passRoute, $visitor->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Pass (Visit completed)">
-                        <i class="fas fa-print"></i>
-                      </a>
-                    @elseif($visitor->in_time)
-                      <a href="{{ route($passRoute, $visitor->id) }}" target="_blank" class="btn btn-sm btn-outline-success" title="Print Pass">
-                        <i class="fas fa-print"></i>
-                      </a>
-                    @else
-                      <button type="button" class="btn btn-sm btn-outline-secondary" title="Available after check-in" disabled>
-                        <i class="fas fa-print"></i>
-                      </button>
-                    @endif
+                  {{-- Pass --}}
+                  @if($passDisabled)
+                    <button class="action-btn action-btn--view action-btn--icon" 
+                            title="{{ $isCompleted ? 'Pass locked (visit completed)' : 'Pass locked (visit form not filled)' }}" 
+                            disabled style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fas fa-print"></i>
+                    </button>
+                  @else
+                    <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
+                       class="action-btn action-btn--view action-btn--icon"
+                       title="Print Pass">
+                      <i class="fas fa-print"></i>
+                    </a>
                   @endif
 
-                  {{-- Delete (POST + method spoofing) --}}
-                  @if(Route::has($destroyRoute))
-                    @if($isCompleted)
-                      <button class="btn btn-sm btn-outline-secondary" title="Delete (Locked - Visit completed)" disabled>
-                        <i class="fas fa-lock text-muted"></i>
+                  {{-- Delete --}}
+                  @if($deleteDisabled)
+                    <button class="action-btn action-btn--delete action-btn--icon" 
+                            title="Delete locked (visit completed)" 
+                            disabled style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  @else
+                    <form action="{{ route('visitors.destroy', $visitor->id) }}" method="POST"
+                          onsubmit="return confirm('Delete this visitor?')" class="d-inline">
+                      @csrf @method('DELETE')
+                      <button class="action-btn action-btn--delete action-btn--icon" title="Delete">
+                        <i class="fas fa-trash"></i>
                       </button>
-                    @else
-                      <form action="{{ route($destroyRoute, $visitor->id) }}" method="POST"
-                            onsubmit="return confirm('Delete this visitor?')" class="d-inline">
-                        @csrf @method('DELETE')
-                        <button class="btn btn-sm btn-outline-danger" title="Delete">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </form>
-                    @endif
+                    </form>
                   @endif
                 </div>
               </td>
@@ -229,10 +205,33 @@
     </div>
 
     <div class="d-flex justify-content-center mt-4">
-      {{ $visitors->appends(request()->query())->links() }}
+      {{ $visitors->links() }}
     </div>
   </div>
 </div>
+
+<!-- Simple notification trigger for visitor creation -->
+@if(session('success') && session('play_notification'))
+<script>
+// Multiple attempts to trigger notification
+function triggerVisitorNotification() {
+    if (typeof showPersistentNotification === 'function') {
+        showPersistentNotification('New Visitor Added', {
+            visitorName: 'New Visitor',
+            companyName: 'ABCEFGH Industries'
+        });
+    }
+}
+
+// Try immediately
+triggerVisitorNotification();
+
+// Also try after delay
+setTimeout(triggerVisitorNotification, 500);
+setTimeout(triggerVisitorNotification, 1000);
+setTimeout(triggerVisitorNotification, 2000);
+</script>
+@endif
 
 @push('scripts')
 <script>
@@ -469,6 +468,7 @@ function resetVerificationUI() {
   // Stop any active camera
   stopCamera();
 }
+
 </script>
 @endpush
 

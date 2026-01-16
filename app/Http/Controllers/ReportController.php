@@ -102,16 +102,18 @@ class ReportController extends Controller
 
     // Apply department filter
     if ($request->filled('department_id')) {
-        $query->whereHas('visitor', function($q) use ($request) {
-            $q->where('department_id', $request->department_id);
+        $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+        $query->whereHas('visitor', function($q) use ($departmentIds) {
+            $q->whereIn('department_id', $departmentIds);
         });
         $filters['department_id'] = $request->department_id;
     }
     
     // Apply branch filter
     if ($request->filled('branch_id')) {
-        $query->whereHas('visitor', function($q) use ($request) {
-            $q->where('branch_id', $request->branch_id);
+        $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+        $query->whereHas('visitor', function($q) use ($branchIds) {
+            $q->whereIn('branch_id', $branchIds);
         });
         $filters['branch_id'] = $request->branch_id;
     }
@@ -131,14 +133,7 @@ class ReportController extends Controller
     $securityChecks = $query->latest('security_checks.created_at')->paginate(20)->appends($request->query());
     $companies = $this->getCompanies();
     $departments = $this->getDepartments($request);
-    
-    // Get branches based on selected company
-    $branches = [];
-    if ($request->filled('company_id')) {
-        $branches = \App\Models\Branch::where('company_id', $request->company_id)
-            ->pluck('name', 'id')
-            ->toArray();
-    }
+    $branches = $this->getBranches($request);
     
     return view('reports.security_checks', compact(
         'securityChecks', 
@@ -152,7 +147,7 @@ class ReportController extends Controller
     public function approvals(Request $request)
     {
         $query = Visitor::whereNotNull('approved_at')
-            ->with(['company', 'department', 'approvedBy']);
+            ->with(['company', 'department', 'approvedBy', 'rejectedBy']);
         
         // Apply filters
         $filters = $this->applyCommonFilters($query, $request);
@@ -211,9 +206,16 @@ class ReportController extends Controller
             $query->where('company_id', $request->company_id);
         }
 
+        // Apply branch filter
+        if ($request->filled('branch_id')) {
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
+        }
+
         // Apply department filter
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereIn('department_id', $departmentIds);
         }
 
         $hourlyData = $query->groupBy('hour')
@@ -280,8 +282,15 @@ class ReportController extends Controller
             $filters['company_id'] = $request->company_id;
         }
         
+        if ($request->filled('branch_id')) {
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
+            $filters['branch_id'] = $request->branch_id;
+        }
+        
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereIn('department_id', $departmentIds);
             $filters['department_id'] = $request->department_id;
         }
         
@@ -297,15 +306,11 @@ class ReportController extends Controller
     private function getCompanies()
     {
         if (auth()->user()->role === 'superadmin') {
-            return Company::pluck('name', 'id')->mapWithKeys(function ($name, $id) {
-                return [$id => $name];
-            })->toArray();
+            return Company::orderBy('name')->pluck('name', 'id')->toArray();
         } else {
             return Company::where('id', auth()->user()->company_id)
+                ->orderBy('name')
                 ->pluck('name', 'id')
-                ->mapWithKeys(function ($name, $id) {
-                    return [$id => $name];
-                })
                 ->toArray();
         }
     }
@@ -326,6 +331,7 @@ class ReportController extends Controller
             // For superadmins, filter by selected company if any
             $query->where('company_id', $request->company_id);
         }
+        // If superadmin and no company selected, return all departments
         
         return $query->pluck('name', 'id')->toArray();
     }

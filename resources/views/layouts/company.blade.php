@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
+    @include('layouts.partials.theme')
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -29,115 +30,128 @@
         }
 
         .sidebar {
-            width: 220px;
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-right: 1px solid #ddd;
+            width: 240px;
+            background: var(--sidebar-bg);
+            padding: 24px 18px;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
             height: 100vh;
             position: fixed;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
         .main-content {
-            margin-left: 220px;
-            padding: 20px;
-            width: calc(100% - 220px);
+            margin-left: 240px;
+            padding: 30px;
+            width: calc(100% - 240px);
+            background: var(--surface-muted);
+            min-height: 100vh;
         }
 
         .nav-link {
-            color: #333;
-            padding: 8px 12px;
-            border-radius: 4px;
-            margin-bottom: 4px;
+            color: var(--sidebar-link);
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            transition: background 0.2s ease, transform 0.2s ease;
         }
 
         .nav-link:hover, .nav-link.active {
-            background-color: #e9ecef;
-            color: #0d6efd;
+            background: rgba(255, 255, 255, 0.14);
+            color: var(--sidebar-link-hover);
+            transform: translateY(-1px);
         }
 
         .nav-link i {
             width: 24px;
             text-align: center;
-            margin-right: 8px;
+            margin-right: 2px;
+            font-size: 1rem;
         }
 
         .logo {
             font-weight: 600;
             font-size: 1.2rem;
-            margin-bottom: 20px;
-            padding: 10px;
+            padding-bottom: 18px;
             text-align: center;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .logo span {
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.8;
         }
 
         .user-info {
-            padding: 15px;
             text-align: center;
-            border-bottom: 1px solid #dee2e6;
-            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 18px;
+            padding: 18px;
+            background: rgba(255,255,255,0.05);
         }
 
         .user-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
             margin: 0 auto 10px;
-            display: block;
-            background: #e9ecef;
-            line-height: 60px;
-            text-align: center;
-            font-size: 24px;
-            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.15);
+            font-size: 1.6rem;
+            color: #fff;
         }
 
         .user-name {
             font-weight: 600;
-            margin: 5px 0;
+            margin: 4px 0;
         }
 
         .user-role {
-            font-size: 0.8rem;
-            color: #6c757d;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
         }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
-                width: 60px;
-                overflow: hidden;
-                padding: 10px 5px;
+                width: 72px;
+                padding: 20px 10px;
             }
             
-            .sidebar .nav-text {
+            .sidebar .nav-text,
+            .logo span,
+            .user-name,
+            .user-role {
                 display: none;
             }
             
             .main-content {
-                margin-left: 60px;
-                width: calc(100% - 60px);
-            }
-            
-            .logo span {
-                display: none;
+                margin-left: 72px;
+                width: calc(100% - 72px);
             }
             
             .logo i {
-                font-size: 1.5rem;
+                font-size: 1.6rem;
             }
             
             .user-info {
-                padding: 10px 5px;
+                padding: 10px;
             }
             
             .user-avatar {
-                width: 40px;
-                height: 40px;
-                line-height: 40px;
-                font-size: 18px;
-            }
-            
-            .user-name, .user-role {
-                display: none;
+                width: 46px;
+                height: 46px;
+                border-radius: 14px;
+                font-size: 1.2rem;
             }
         }
     </style>

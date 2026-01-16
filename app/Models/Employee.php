@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Employee extends Model
 {
     protected $fillable = [
-        'company_id', 'department_id', 'name', 'designation', 'email', 'phone'
+        'company_id', 'branch_id', 'department_id', 'name', 'designation', 'email', 'phone'
     ];
 
     public function company()
@@ -18,6 +18,16 @@ class Employee extends Model
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function departments()
+    {
+        return $this->belongsToMany(Department::class);
     }
 
     // protected static function booted()

@@ -66,6 +66,9 @@
                     @csrf
                     <input type="hidden" name="visitor_id" value="{{ $visitor->id }}">
                     <input type="hidden" name="check_type" value="checkout">
+                    @if(request('access_form'))
+                    <input type="hidden" name="access_form" value="1">
+                    @endif
                     
                     <div class="mb-4">
                         <h5 class="mb-3">
@@ -143,20 +146,7 @@
                         </div>
                     </div>
                     
-                    <!-- Items Declaration (for check-out) -->
-                    <div class="mb-4">
-                        <h5 class="mb-3">
-                            <i class="bi bi-box-seam me-2"></i>Items Declaration
-                        </h5>
-                        <div class="card">
-                            <div class="card-body">
-                                <p class="card-text">Please declare any items being carried out during check-out:</p>
-                                <textarea class="form-control" name="items_declaration" 
-                                          rows="4" placeholder="List any items being carried out (e.g., laptop, documents, equipment, etc.)"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    
+                                        
                     <!-- Photo Capture (Optional) -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">

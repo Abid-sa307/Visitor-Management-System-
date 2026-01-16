@@ -29,6 +29,7 @@ class Visitor extends Model
         'department_id',
         'purpose',
         'person_to_visit',
+        'visit_date',
         'visitor_website',
         'vehicle_type',
         'vehicle_number',
@@ -86,6 +87,7 @@ class Visitor extends Model
         'out_time' => 'datetime',
         'status_changed_at' => 'datetime',
         'approved_at' => 'datetime',
+        'visit_completed_at' => 'datetime',
     ];
     
     /**
@@ -98,6 +100,7 @@ class Visitor extends Model
         'out_time',
         'status_changed_at',
         'approved_at',
+        'visit_completed_at',
         'created_at',
         'updated_at',
         'deleted_at'

@@ -84,12 +84,12 @@
                 <h3><i class="bi bi-shield-lock me-2"></i> OTP Verification</h3>
             </div>
             <div class="otp-body">
-                @if (session('status'))
+                <!-- @if (session('status'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('status') }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                @endif
+                @endif -->
 
                 @if (session('error'))
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">

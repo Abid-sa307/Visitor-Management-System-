@@ -16,6 +16,7 @@
 
         // Visitors Section
         ['key' => 'visitors', 'route' => 'company.visitors.index', 'label' => 'Visitors', 'icon' => 'fas fa-fw fa-users'],
+        ['key' => 'visit_details', 'route' => 'company.visits.index', 'label' => 'Visit Details', 'icon' => 'fas fa-fw fa-calendar-check'],
         
         // Only show QR Code if user has permission
         @if($companyUser->can_access_qr_code ?? false)
@@ -31,6 +32,7 @@
         ['key' => 'visitor_in_out', 'route' => 'company.visitors.inout', 'label' => 'Visitor In & Out', 'icon' => 'fas fa-fw fa-sign-in-alt'],
         ['key' => 'visitor_reports', 'route' => 'company.visitors.report', 'label' => 'Visitor Reports', 'icon' => 'fas fa-fw fa-chart-line'],
         ['key' => 'visitor_history', 'route' => 'company.visitors.history', 'label' => 'Visitor History', 'icon' => 'fas fa-fw fa-history'],
+        ['key' => 'security_questions', 'route' => 'company.security-questions.index', 'label' => 'Security Questions', 'icon' => 'fas fa-fw fa-question-circle'],
 
         // Company Management
         ['key' => 'companies', 'route' => 'companies.index', 'label' => 'Companies', 'icon' => 'fas fa-fw fa-building'],

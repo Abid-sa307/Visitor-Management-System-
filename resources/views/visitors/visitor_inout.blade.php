@@ -1,4 +1,3 @@
-// In visitor_inout.blade.php
 @extends('layouts.sb')
 
 @push('styles')
@@ -102,53 +101,34 @@
 @endphp
 
 <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-        <h2 class="fw-bold text-primary m-0">Visitor In/Out Management</h2>
-        <form method="GET" action="{{ route($exportRoute) }}" class="d-flex gap-2" id="exportForm">
-            @foreach(request()->all() as $key => $value)
-                @if(!in_array($key, ['_token', 'page']))
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endif
-            @endforeach
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800">Visitor In/Out Reports</h2>
+        <form method="GET" action="{{ route($exportRoute) }}" class="d-inline">
+            @csrf
             <button type="submit" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
             </button>
         </form>
     </div>
 
-    <!-- Date Range Filter -->
-    <form method="GET" action="{{ route('reports.inout') }}" class="mb-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Filter Results</h5>
-                <div class="row g-3">
-                    <div class="col-md-3">
+    {{-- =================== FILTERS CARD =================== --}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('reports.inout') }}" id="inoutFilterForm">
+                <div class="row g-3 align-items-end">
+                    {{-- 1️⃣ Date Range (first) --}}
+                    <div class="col-lg-4 col-md-6">
+                        @php
+                            $from = request('from', now()->format('Y-m-d'));
+                            $to = request('to', now()->format('Y-m-d'));
+                        @endphp
                         <label class="form-label">Date Range</label>
-                        <div class="input-group">
-                            <input type="date" name="from" id="from_date" class="form-control" 
-                                   value="{{ request('from') }}" max="{{ date('Y-m-d') }}">
-                            <span class="input-group-text">to</span>
-                            <input type="date" name="to" id="to_date" class="form-control" 
-                                   value="{{ request('to') ?? date('Y-m-d') }}" max="{{ date('Y-m-d') }}">
-                        </div>
-                        <div class="d-flex flex-wrap gap-2 mt-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="today" onclick="setDateRange('today', event)">
-                                Today
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="yesterday" onclick="setDateRange('yesterday', event)">
-                                Yesterday
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="this-month" onclick="setDateRange('this-month', event)">
-                                This Month
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="last-month" onclick="setDateRange('last-month', event)">
-                                Last Month
-                            </button>
-                        </div>
+                        @include('components.basic_date_range', ['from' => $from, 'to' => $to])
                     </div>
 
+                    {{-- 2️⃣ Company (superadmin only) --}}
                     @if(auth()->user()->role === 'superadmin')
-                    <div class="col-md-2">
+                    <div class="col-lg-3 col-md-6">
                         <label for="company_id" class="form-label">Company</label>
                         <select name="company_id" id="company_id" class="form-select">
                             <option value="">All Companies</option>
@@ -161,51 +141,61 @@
                     </div>
                     @endif
 
-                    <div class="col-md-2">
-                        <label for="branch_id" class="form-label">Branch</label>
-                        <select
-                            name="branch_id"
-                            id="branch_id"
-                            class="form-select"
-                            data-selected="{{ request('branch_id') }}"
-                            data-department-target="#department_id"
-                            {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
-                            <option value="">All Branches</option>
-                            @if(isset($branches) && count($branches) > 0)
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->name }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
+                    {{-- 3️⃣ Branch --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label">Branch</label>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchBtn" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
+                                <span id="branchText">All Branches</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="branchDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllBranches" onchange="toggleAllBranches()">
+                                    <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="branchOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-md-2">
-                        <label for="department_id" class="form-label">Department</label>
-                        <select
-                            name="department_id"
-                            id="department_id"
-                            class="form-select"
-                            data-placeholder="Select Department"
-                            data-selected="{{ request('department_id') }}"
-                            {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
-                            <option value="">{{ request('company_id') ? 'Loading departments...' : 'Select a branch first' }}</option>
-                        </select>
+                    {{-- 4️⃣ Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label">Department</label>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="departmentBtn" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                                <span id="departmentText">All Departments</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="departmentDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllDepartments" onchange="toggleAllDepartments()">
+                                    <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('departmentDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary me-2">
-                            <i class="bi bi-funnel me-1"></i> Apply Filters
+                    {{-- Buttons row --}}
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i> Apply
                         </button>
                         <a href="{{ route('reports.inout') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                            <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     @if($visits->count())
         <div class="table-responsive shadow-sm border rounded">
@@ -230,7 +220,38 @@
                             <td>{{ $visit->branch->name ?? '—' }}</td>
                             <td>{{ $visit->in_time ? \Carbon\Carbon::parse($visit->in_time)->format('M d, Y h:i A') : '—' }}</td>
                             <td>{{ $visit->out_time ? \Carbon\Carbon::parse($visit->out_time)->format('M d, Y h:i A') : '—' }}</td>
-                            <td>{{ $visit->verification_method ?? '—' }}</td>
+                            <td>
+                            @php
+                                $verificationMethod = 'Manual';
+                                
+                                // Check if face verification was used
+                                if (!empty($visit->face_encoding) || !empty($visit->face_image)) {
+                                    // If face encoding exists and security check times match entry/exit times
+                                    if (($visit->security_checkin_time && $visit->in_time && 
+                                         \Carbon\Carbon::parse($visit->security_checkin_time)->format('Y-m-d H:i') === 
+                                         \Carbon\Carbon::parse($visit->in_time)->format('Y-m-d H:i')) ||
+                                        ($visit->security_checkout_time && $visit->out_time && 
+                                         \Carbon\Carbon::parse($visit->security_checkout_time)->format('Y-m-d H:i') === 
+                                         \Carbon\Carbon::parse($visit->out_time)->format('Y-m-d H:i'))) {
+                                        $verificationMethod = 'Face Verification';
+                                    }
+                                }
+                                
+                                // Also check visitor logs for verification method
+                                if ($visit->logs && $visit->logs->isNotEmpty()) {
+                                    $latestLog = $visit->logs->sortByDesc('created_at')->first();
+                                    if ($latestLog && !empty($latestLog->verification_method)) {
+                                        if (stripos($latestLog->verification_method, 'face') !== false) {
+                                            $verificationMethod = 'Face Verification';
+                                        }
+                                    }
+                                }
+                            @endphp
+                            
+                            <span class="badge {{ $verificationMethod === 'Face Verification' ? 'bg-success' : 'bg-secondary' }}">
+                                {{ $verificationMethod }}
+                            </span>
+                        </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -244,194 +265,164 @@
 
 @push('scripts')
 <script>
+    function toggleAllBranches() {
+        const selectAll = document.getElementById('selectAllBranches');
+        const checkboxes = document.querySelectorAll('.branch-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBranchText();
+        loadDepartmentsByBranches();
+    }
+
+    function toggleAllDepartments() {
+        const selectAll = document.getElementById('selectAllDepartments');
+        const checkboxes = document.querySelectorAll('.department-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateDepartmentText();
+    }
+
+    function updateBranchText() {
+        const checkboxes = document.querySelectorAll('.branch-checkbox:checked');
+        const text = document.getElementById('branchText');
+        if (checkboxes.length === 0) text.textContent = 'All Branches';
+        else if (checkboxes.length === 1) text.textContent = checkboxes[0].nextElementSibling.textContent;
+        else text.textContent = `${checkboxes.length} branches selected`;
+    }
+
+    function updateDepartmentText() {
+        const checkboxes = document.querySelectorAll('.department-checkbox:checked');
+        const text = document.getElementById('departmentText');
+        if (checkboxes.length === 0) text.textContent = 'All Departments';
+        else if (checkboxes.length === 1) text.textContent = checkboxes[0].nextElementSibling.textContent;
+        else text.textContent = `${checkboxes.length} departments selected`;
+    }
+
 document.addEventListener('DOMContentLoaded', function() {
     const companySelect = document.getElementById('company_id');
-    const branchSelect = document.getElementById('branch_id');
-    const departmentSelect = document.getElementById('department_id');
-
-    const placeholderText = departmentSelect?.dataset.placeholder || 'Select a branch first';
-    const loadingText = departmentSelect?.dataset.loadingText || 'Loading departments...';
-    const errorText = departmentSelect?.dataset.errorText || 'Unable to load departments';
-
-    const setDepartmentOptions = (optionsHtml, disabled = true) => {
-        if (!departmentSelect) return;
-        departmentSelect.innerHTML = optionsHtml;
-        departmentSelect.disabled = disabled;
-    };
-
-    const loadDepartmentsForBranch = (branchId, selectedDepartment = '') => {
-        if (!departmentSelect) return;
-
-        if (!branchId) {
-            setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
-            return;
+    const branchBtn = document.querySelector('[data-dropdown="branch"]');
+    const departmentBtn = document.querySelector('[data-dropdown="department"]');
+    const branchOptions = document.getElementById('branchOptions');
+    const departmentOptions = document.getElementById('departmentOptions');
+    
+    let allBranches = @json($branches ?? []);
+    let allDepartments = @json($departments ?? []);
+    
+    function initBranches(skipDeptLoad = false) {
+        branchOptions.innerHTML = '';
+        const branches = Array.isArray(allBranches) ? allBranches : Object.entries(allBranches).map(([id, name]) => ({id, name}));
+        const selectedBranches = @json(request('branch_id', []));
+        branches.forEach(branch => {
+            const isChecked = selectedBranches.includes(branch.id.toString());
+            const div = document.createElement('div');
+            div.className = 'form-check';
+            const checkbox = document.createElement('input');
+            checkbox.className = 'form-check-input branch-checkbox';
+            checkbox.type = 'checkbox';
+            checkbox.name = 'branch_id[]';
+            checkbox.value = branch.id;
+            checkbox.id = `branch_${branch.id}`;
+            checkbox.checked = isChecked;
+            checkbox.onchange = function() { updateBranchText(); loadDepartmentsByBranches(); };
+            
+            const label = document.createElement('label');
+            label.className = 'form-check-label';
+            label.htmlFor = `branch_${branch.id}`;
+            label.textContent = branch.name;
+            
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            branchOptions.appendChild(div);
+        });
+        updateBranchText();
+        if (branches.length > 0) {
+            branchBtn.disabled = false;
+            branchBtn.style.opacity = '1';
+            branchBtn.style.cursor = 'pointer';
         }
+        if (!skipDeptLoad && selectedBranches.length > 0 && deptCount === 0) {
+            loadDepartmentsByBranches();
+        }
+    }
+    
+    function initDepartments() {
+        departmentOptions.innerHTML = '';
+        const departments = Array.isArray(allDepartments) ? allDepartments : Object.entries(allDepartments).map(([id, name]) => ({id, name}));
+        const selectedDepartments = @json(request('department_id', []));
+        departments.forEach(dept => {
+            const isChecked = selectedDepartments.includes(dept.id.toString());
+            const div = document.createElement('div');
+            div.className = 'form-check';
+            div.innerHTML = `
+                <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
+                <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
+            `;
+            departmentOptions.appendChild(div);
+        });
+        updateDepartmentText();
+        if (departments.length > 0) {
+            departmentBtn.disabled = false;
+            departmentBtn.style.opacity = '1';
+            departmentBtn.style.cursor = 'pointer';
+        }
+    }
+    
+    const branchCount = Array.isArray(allBranches) ? allBranches.length : Object.keys(allBranches).length;
+    const deptCount = Array.isArray(allDepartments) ? allDepartments.length : Object.keys(allDepartments).length;
+    if (branchCount > 0) initBranches(true);
+    if (deptCount > 0) initDepartments();
+    
+    window.loadDepartmentsByBranches = function() {
+        const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
+        
+        departmentOptions.innerHTML = '';
+        departmentBtn.disabled = true;
+        departmentBtn.style.opacity = '0.5';
+        departmentBtn.style.cursor = 'not-allowed';
+        document.getElementById('departmentText').textContent = 'All Departments';
+        
+        if (selectedBranches.length === 0) return;
 
-        setDepartmentOptions(`<option value="">${loadingText}</option>`, true);
-
-        fetch(`/api/branches/${branchId}/departments`, {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const departments = Array.isArray(data)
-                    ? data
-                    : Object.entries(data).map(([id, name]) => ({ id, name }));
-
-                if (departments.length === 0) {
-                    setDepartmentOptions('<option value="">No departments available</option>', true);
-                    return;
-                }
-
-                let optionsHtml = '<option value="">All Departments</option>';
-                departments.forEach(dep => {
-                    const selected = String(dep.id) === String(selectedDepartment) ? 'selected' : '';
-                    optionsHtml += `<option value="${dep.id}" ${selected}>${dep.name}</option>`;
+        Promise.all(selectedBranches.map(branchId => 
+            fetch(`/api/branches/${branchId}/departments`).then(r => r.json())
+        )).then(results => {
+            const deptMap = [];
+            results.forEach(depts => {
+                depts.forEach(dept => {
+                    if (!deptMap.find(d => d.id == dept.id)) {
+                        deptMap.push(dept);
+                    }
                 });
-
-                setDepartmentOptions(optionsHtml, false);
-            })
-            .catch(() => {
-                setDepartmentOptions(`<option value="">${errorText}</option>`, true);
             });
+            allDepartments = deptMap;
+            initDepartments();
+        }).catch(error => console.error('Error loading departments:', error));
     };
-
-    if (branchSelect && departmentSelect) {
-        const initialBranch = branchSelect.value || branchSelect.dataset.selected || '';
-        const initialDepartment = departmentSelect.dataset.selected || '';
-
-        branchSelect.addEventListener('change', function () {
-            loadDepartmentsForBranch(this.value, departmentSelect.dataset.selected || '');
-        });
-
-        if (initialBranch) {
-            loadDepartmentsForBranch(initialBranch, initialDepartment);
-        } else {
-            setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
-        }
-    }
-
-    if (companySelect && branchSelect) {
-        companySelect.addEventListener('change', function () {
+    
+    if (companySelect) {
+        companySelect.addEventListener('change', function() {
             const companyId = this.value;
-
-            branchSelect.dataset.selected = '';
-            branchSelect.innerHTML = '<option value="">Loading branches...</option>';
-            branchSelect.disabled = true;
-            setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
-
-            if (!companyId) {
-                branchSelect.innerHTML = '<option value="">All Branches</option>';
-                branchSelect.disabled = false;
-                return;
+            
+            branchOptions.innerHTML = '';
+            departmentOptions.innerHTML = '';
+            branchBtn.disabled = true;
+            branchBtn.style.opacity = '0.5';
+            branchBtn.style.cursor = 'not-allowed';
+            departmentBtn.disabled = true;
+            departmentBtn.style.opacity = '0.5';
+            departmentBtn.style.cursor = 'not-allowed';
+            document.getElementById('branchText').textContent = 'All Branches';
+            document.getElementById('departmentText').textContent = 'All Departments';
+            
+            if (companyId) {
+                fetch(`/api/companies/${companyId}/branches`)
+                    .then(response => response.json())
+                    .then(data => {
+                        allBranches = data;
+                        initBranches();
+                    })
+                    .catch(error => console.error('Error loading branches:', error));
             }
-
-            fetch(`/api/companies/${companyId}/branches`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const branches = Array.isArray(data)
-                        ? data
-                        : Object.entries(data).map(([id, name]) => ({ id, name }));
-
-                    branchSelect.innerHTML = '<option value="">All Branches</option>';
-
-                    branches.forEach(branch => {
-                        const option = new Option(branch.name, branch.id);
-                        branchSelect.add(option);
-                    });
-
-                    branchSelect.disabled = false;
-
-                    if (departmentSelect) {
-                        departmentSelect.dataset.selected = '';
-                        setDepartmentOptions(`<option value="">${placeholderText}</option>`, true);
-                    }
-                })
-                .catch(() => {
-                    branchSelect.innerHTML = '<option value="">Failed to load branches</option>';
-                });
         });
     }
-
-    if (branchSelect && branchSelect.value) {
-        branchSelect.dispatchEvent(new Event('change'));
-    }
-
-    function formatDate(date) {
-        const d = new Date(date);
-        let month = '' + (d.getMonth() + 1);
-        let day = '' + d.getDate();
-        const year = d.getFullYear();
-
-        if (month.length < 2) month = '0' + month;
-        if (day.length < 2) day = '0' + day;
-
-        return [year, month, day].join('-');
-    }
-
-    // Function to set date range based on selection
-    window.setDateRange = function(range, event) {
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        
-        const today = new Date();
-        const fromDate = document.getElementById('from_date');
-        const toDate = document.getElementById('to_date');
-        
-        if (!fromDate || !toDate) return;
-        
-        switch(range) {
-            case 'today':
-                fromDate.value = formatDate(today);
-                toDate.value = formatDate(today);
-                break;
-                
-            case 'yesterday':
-                const yesterday = new Date(today);
-                yesterday.setDate(today.getDate() - 1);
-                fromDate.value = formatDate(yesterday);
-                toDate.value = formatDate(yesterday);
-                break;
-                
-            case 'this-month':
-                const firstDayThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                fromDate.value = formatDate(firstDayThisMonth);
-                toDate.value = formatDate(today);
-                break;
-                
-            case 'last-month':
-                const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                const lastDayLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-                fromDate.value = formatDate(firstDayLastMonth);
-                toDate.value = formatDate(lastDayLastMonth);
-                break;
-        }
-        
-        // Submit the main filter form, not the export form
-        const filterForm = document.querySelector('form[action*="reports.inout"]');
-        if (filterForm) {
-            // Add a small delay to ensure the values are set before submission
-            setTimeout(() => {
-                filterForm.submit();
-            }, 50);
-        }
-    };
 });
 </script>
 @endpush

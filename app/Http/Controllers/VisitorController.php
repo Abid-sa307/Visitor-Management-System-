@@ -22,6 +22,10 @@ use Illuminate\Validation\ValidationException;
 use App\Notifications\VisitorCreated;
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\NotificationHelper;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\VisitorNotificationMail;
+use App\Models\CompanyUser;
 
 
 class VisitorController extends Controller
@@ -38,31 +42,62 @@ class VisitorController extends Controller
     private function validateSecurityCheck($visitor, $action)
     {
         if (!$visitor->company || !$visitor->company->security_check_service) {
-            return null; // No security check required
+            return null; // No security check required if service is disabled
         }
 
         $securityType = $visitor->company->security_checkin_type;
-        $hasSecurityCheck = $visitor->securityChecks()->exists();
+        $hasCheckInSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkin')->exists();
+        $hasCheckOutSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkout')->exists();
         
-        // If no security check type is set, no validation needed
-        if (empty($securityType)) {
+        // If no security check type is set or type is 'none', no validation needed
+        if (empty($securityType) || $securityType === 'none') {
             return null;
         }
 
         // Check requirements based on action and security type
         if ($action === 'checking in') {
             // For check-in, require security check if type is 'checkin' or 'both'
-            if (in_array($securityType, ['checkin', 'both']) && !$hasSecurityCheck) {
+            if (in_array($securityType, ['checkin', 'both']) && !$hasCheckInSecurityCheck) {
                 return "Security check must be completed before checking in.";
             }
         } elseif ($action === 'checking out') {
             // For check-out, require security check if type is 'checkout' or 'both'
-            if (in_array($securityType, ['checkout', 'both']) && !$hasSecurityCheck) {
+            if (in_array($securityType, ['checkout', 'both']) && !$hasCheckOutSecurityCheck) {
                 return "Security check must be completed before checking out.";
             }
         }
 
-        return null;
+        return null; // No security check required
+    }
+
+    /**
+     * Undo security check-out
+     */
+    public function undoSecurityCheckout($id)
+    {
+        try {
+            $securityCheck = \App\Models\SecurityCheck::findOrFail($id);
+            
+            // Only allow undo if it's a checkout and within 30 minutes
+            if ($securityCheck->check_type !== 'checkout') {
+                return response()->json(['error' => 'Only security check-outs can be undone.'], 400);
+            }
+            
+            if (\Carbon\Carbon::parse($securityCheck->created_at)->diffInMinutes(now()) > 30) {
+                return response()->json(['error' => 'Undo is only available within 30 minutes of security check-out.'], 400);
+            }
+            
+            // Delete the security check
+            $securityCheck->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Security check-out has been undone successfully.'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error undoing security check-out: ' . $e->getMessage()], 500);
+        }
     }
 
     private function isSuper(): bool
@@ -177,7 +212,7 @@ class VisitorController extends Controller
 
     public function visitsIndex(Request $request)
     {
-        $query = $this->companyScope(Visitor::with(['company', 'branch', 'department'])->latest());
+        $query = $this->companyScope(Visitor::with(['company', 'branch', 'department', 'category'])->latest());
         
         // Apply search filter
         if ($request->filled('search')) {
@@ -190,8 +225,34 @@ class VisitorController extends Controller
             });
         }
         
+        // Apply filters
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+        
+        if ($request->filled('branch_id')) {
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
+        }
+        
+        if ($request->filled('department_id')) {
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereIn('department_id', $departmentIds);
+        }
+        
         $visitors = $query->paginate(10);
-        return view('visits.index', compact('visitors'));
+        
+        // Get filter data
+        $companies = $this->isSuper() ? Company::pluck('name', 'id') : [];
+        
+        $branches = [];
+        $departments = [];
+        if ($request->filled('company_id')) {
+            $branches = Branch::where('company_id', $request->company_id)->pluck('name', 'id');
+            $departments = Department::where('company_id', $request->company_id)->pluck('name', 'id');
+        }
+        
+        return view('visits.index', compact('visitors', 'companies', 'branches', 'departments'));
     }
 
     public function create()
@@ -228,7 +289,7 @@ class VisitorController extends Controller
                 'company_id'          => 'nullable|exists:companies,id',
                 'name'                => 'required|string|max:255|regex:' . self::NAME_REGEX,
                 'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-                'email'               => 'nullable|email:rfc,dns',
+                'email'               => 'nullable|email',
                 'phone'               => 'required|regex:' . self::PHONE_REGEX,
                 'photo'               => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'face_image'          => 'nullable|string', // base64 webcam photo
@@ -236,6 +297,7 @@ class VisitorController extends Controller
                 'department_id'       => 'nullable|exists:departments,id',
                 'purpose'             => 'nullable|string|max:255',
                 'person_to_visit'     => 'nullable|string|max:255',
+                'visit_date'          => 'nullable|date',
                 'documents'           => 'nullable|array',
                 'documents.*'         => 'file|mimes:pdf,doc,docx,jpeg,png,jpg|max:5120',
                 'visitor_company'     => 'nullable|string|max:255',
@@ -267,6 +329,29 @@ class VisitorController extends Controller
                 $validated['company_id'] = $u->company_id;
                 if (!empty($u->branch_id)) {
                     $validated['branch_id'] = $u->branch_id;
+                }
+            }
+
+            // ---------------------------
+            // Check face recognition requirement
+            // ---------------------------
+            if (!empty($validated['company_id'])) {
+                $company = \App\Models\Company::find($validated['company_id']);
+                \Log::info('Face recognition check', [
+                    'company_id' => $validated['company_id'],
+                    'company_name' => $company ? $company->name : 'not found',
+                    'face_recognition_enabled' => $company ? $company->face_recognition_enabled : 'null',
+                    'has_face_image' => $request->filled('face_image'),
+                    'has_face_encoding' => $request->filled('face_encoding')
+                ]);
+                
+                if ($company && $company->face_recognition_enabled) {
+                    if (!$request->filled('face_image') || !$request->filled('face_encoding')) {
+                        // Add validation error instead of throwing exception
+                        $validator = validator([], []);
+                        $validator->errors()->add('face_image', 'Face recognition is required for this company. Please use the camera to capture the visitor\'s face photo before submitting.');
+                        throw new \Illuminate\Validation\ValidationException($validator);
+                    }
                 }
             }
 
@@ -332,6 +417,11 @@ class VisitorController extends Controller
             // Create visitor
             $visitor = Visitor::create($validated);
 
+            // Only create notification for visitor created if not auto-approved (normal workflow)
+            if (!$visitor->approved_at) {
+                NotificationHelper::visitorCreated($visitor);
+            }
+
             // Attach documents if any
             if (isset($validated['documents'])) {
                 foreach ($validated['documents'] as $documentPath) {
@@ -368,6 +458,28 @@ class VisitorController extends Controller
                     foreach ($recipients as $user) {
                         $user->notify(new VisitorCreated($visitor));
                     }
+                    
+                    // Send emails to company users based on branch assignment
+                    $companyUsers = CompanyUser::where('company_id', $visitor->company_id)->get();
+                        
+                    foreach ($companyUsers as $companyUser) {
+                        // Check if company user should receive notification for this branch
+                        $shouldNotify = true;
+                        
+                        // If visitor has a specific branch and company user has branch_id set
+                        if (!empty($visitor->branch_id) && !empty($companyUser->branch_id)) {
+                            // Only notify if company user is assigned to the same branch
+                            $shouldNotify = $companyUser->branch_id == $visitor->branch_id;
+                        }
+                        
+                        if ($shouldNotify) {
+                            try {
+                                Mail::to($companyUser->email)->send(new VisitorNotificationMail($visitor, $companyUser, 'created'));
+                            } catch (\Exception $e) {
+                                \Log::warning('Failed to send visitor notification email to company user: ' . $e->getMessage());
+                            }
+                        }
+                    }
                 }
             } catch (\Throwable $e) {
                 \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
@@ -380,7 +492,8 @@ class VisitorController extends Controller
                 : 'Visitor registered successfully. Pending approval.';
 
             return redirect()->route($route)->with('success', $message)
-                ->with('play_notification', true);
+                ->with('play_notification', true)
+                ->with('visitor_name', $visitor->name);
         });
     }
 
@@ -443,6 +556,15 @@ class VisitorController extends Controller
                 return redirect()->back()->with('error', $message);
             }
 
+            // Prevent undo if security check-in has occurred or visitor is checked in
+            if ($visitor->security_checkin_time || $visitor->in_time) {
+                $message = 'Cannot undo status after security check-in or visitor check-in.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+                return redirect()->back()->with('error', $message);
+            }
+
             $currentStatus = $visitor->status;
             $visitor->status = 'Pending';
             $visitor->last_status = $currentStatus;
@@ -491,6 +613,9 @@ class VisitorController extends Controller
             if ($newStatus === 'Approved') {
                 $visitor->approved_by = auth()->id();
                 $visitor->approved_at = now();
+                
+                // Create notification for visitor approval
+                NotificationHelper::visitorApproved($visitor);
             } 
             // Clear approval data when status changes from Approved
             elseif ($previousStatus === 'Approved') {
@@ -506,6 +631,34 @@ class VisitorController extends Controller
                     \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
                 } catch (\Throwable $e) {
                     \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
+                }
+            }
+            
+            // Send approval notification emails to company users
+            if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
+                try {
+                    $companyUsers = CompanyUser::where('company_id', $visitor->company_id)->get();
+                        
+                    foreach ($companyUsers as $companyUser) {
+                        // Check if company user should receive notification for this branch
+                        $shouldNotify = true;
+                        
+                        // If visitor has a specific branch and company user has branch_id set
+                        if (!empty($visitor->branch_id) && !empty($companyUser->branch_id)) {
+                            // Only notify if company user is assigned to the same branch
+                            $shouldNotify = $companyUser->branch_id == $visitor->branch_id;
+                        }
+                        
+                        if ($shouldNotify) {
+                            try {
+                                Mail::to($companyUser->email)->send(new VisitorNotificationMail($visitor, $companyUser, 'approved'));
+                            } catch (\Exception $e) {
+                                \Log::warning('Failed to send visitor approval email to company user: ' . $e->getMessage());
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to send visitor approval notifications: ' . $e->getMessage());
                 }
             }
 
@@ -537,6 +690,7 @@ class VisitorController extends Controller
             'department_id'       => 'nullable|exists:departments,id',
             'purpose'             => 'nullable|string|max:255',
             'person_to_visit'     => 'nullable|string|max:255',
+            'visit_date'          => 'nullable|date',
             'in_time'             => 'nullable|date',
             'out_time'            => 'nullable|date',
             'status'              => 'required|in:Pending,Approved,Rejected,Completed',
@@ -622,6 +776,34 @@ class VisitorController extends Controller
                 \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
             }
         }
+        
+        // Send approval notification emails to company users
+        if ($isBeingApproved) {
+            try {
+                $companyUsers = CompanyUser::where('company_id', $visitor->company_id)->get();
+                    
+                foreach ($companyUsers as $companyUser) {
+                    // Check if company user should receive notification for this branch
+                    $shouldNotify = true;
+                    
+                    // If visitor has a specific branch and company user has branch_id set
+                    if (!empty($visitor->branch_id) && !empty($companyUser->branch_id)) {
+                        // Only notify if company user is assigned to the same branch
+                        $shouldNotify = $companyUser->branch_id == $visitor->branch_id;
+                    }
+                    
+                    if ($shouldNotify) {
+                        try {
+                            Mail::to($companyUser->email)->send(new VisitorNotificationMail($visitor, $companyUser, 'approved'));
+                        } catch (\Exception $e) {
+                            \Log::warning('Failed to send visitor approval email to company user: ' . $e->getMessage());
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Failed to send visitor approval notifications: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route($this->panelRoute('visitors.index'))
             ->with('success', 'Visitor updated successfully!');
@@ -641,10 +823,12 @@ class VisitorController extends Controller
                 $q->where('company_id', $request->company_id);
             })
             ->when($request->filled('branch_id'), function($q) use ($request) {
-                $q->where('branch_id', $request->branch_id);
+                $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+                $q->whereIn('branch_id', $branchIds);
             })
             ->when($request->filled('department_id'), function($q) use ($request) {
-                $q->where('department_id', $request->department_id);
+                $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+                $q->whereIn('department_id', $departmentIds);
             });
 
         // Apply date range filter
@@ -690,6 +874,18 @@ class VisitorController extends Controller
         $visitor = Visitor::findOrFail($id);
         $this->authorizeVisitor($visitor);
 
+        // Check if visitor has already completed the visit form (and it hasn't been undone)
+        if ($visitor->visit_completed_at && ($visitor->department_id || $visitor->person_to_visit || $visitor->purpose)) {
+            return redirect()->route('visitors.entry.page')
+                ->with('error', 'Visitor has already completed the visit form.');
+        }
+
+        // Check if visitor is approved before allowing visit form completion
+        if ($visitor->status !== 'Approved') {
+            return redirect()->route('visitors.entry.page')
+                ->with('error', 'Visitor must be approved before completing the visit form.');
+        }
+
         $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
         $isSuper = $this->isSuper();
         
@@ -711,6 +907,11 @@ class VisitorController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $canUndoVisit = $visitor->visit_completed_at && 
+                        Carbon::parse($visitor->visit_completed_at)->gt(now()->subMinutes(30)) &&
+                        !$visitor->in_time &&
+                        ($visitor->department_id || $visitor->person_to_visit || $visitor->purpose);
+
         return view('visitors.visit', [
             'visitor' => $visitor,
             'departments' => $departments,
@@ -720,6 +921,7 @@ class VisitorController extends Controller
             'isSuper' => $isSuper,
             'user' => $user,
             'selectedBranchId' => $selectedBranchId,
+            'canUndoVisit' => $canUndoVisit,
         ]);
     }
 
@@ -811,6 +1013,10 @@ class VisitorController extends Controller
 
                 // Update the visitor
                 $visitor->update($updateData);
+                
+                // Mark visit form as completed
+                $visitor->visit_completed_at = now();
+                $visitor->save();
 
                 // Commit the transaction
                 \DB::commit();
@@ -865,9 +1071,67 @@ class VisitorController extends Controller
         }
     }
 
-    public function entryPage()
+    public function undoVisit($id)
     {
-        $visitors = $this->companyScope(Visitor::query()->with(['company', 'branch', 'department', 'securityChecks'])->latest('created_at'))->paginate(10);
+        $visitor = $this->companyScope(Visitor::findOrFail($id));
+        $this->authorizeVisitor($visitor);
+
+        // Check if visit form was completed
+        if (!$visitor->visit_completed_at) {
+            return redirect()->back()->with('error', 'No visit form submission to undo.');
+        }
+
+        // Convert to Carbon if it's a string
+        $visitCompletedAt = is_string($visitor->visit_completed_at) 
+            ? \Carbon\Carbon::parse($visitor->visit_completed_at) 
+            : $visitor->visit_completed_at;
+
+        // Check if within 30-minute window
+        if ($visitCompletedAt->lt(now()->subMinutes(30))) {
+            return redirect()->back()->with('error', 'Undo window expired (30 minutes).');
+        }
+
+        // Prevent undo if visitor has checked in
+        if ($visitor->in_time) {
+            return redirect()->back()->with('error', 'Cannot undo visit form after visitor has checked in.');
+        }
+
+        // Clear visit form data
+        $visitor->update([
+            'visit_completed_at' => null,
+            'department_id' => null,
+            'visitor_category_id' => null,
+            'person_to_visit' => null,
+            'purpose' => null,
+            'visitor_company' => null,
+            'visitor_website' => null,
+            'vehicle_type' => null,
+            'vehicle_number' => null,
+            'goods_in_car' => null,
+            'workman_policy' => null,
+            'workman_policy_photo' => null,
+        ]);
+
+        return redirect()->route(auth()->guard('company')->check() ? 'company.visitors.visit.form' : 'visitors.visit.form', $visitor->id)
+            ->with('success', 'Visit form submission undone successfully. All visit details have been cleared.');
+    }
+
+    public function entryPage(Request $request)
+    {
+        $visitors = $this->companyScope(Visitor::query()->with(['company', 'branch', 'department', 'securityChecks'])
+            ->whereIn('status', ['Approved', 'Completed'])
+            ->when($request->filled('company_id'), function($q) use ($request) {
+                $q->where('company_id', $request->company_id);
+            })
+            ->when($request->filled('branch_id'), function($q) use ($request) {
+                $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+                $q->whereIn('branch_id', $branchIds);
+            })
+            ->when($request->filled('department_id'), function($q) use ($request) {
+                $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+                $q->whereIn('department_id', $departmentIds);
+            })
+            ->latest('created_at'))->paginate(10);
         $isCompany = $this->isCompany();
         
         // Get companies for superadmin
@@ -887,9 +1151,41 @@ class VisitorController extends Controller
                 $departments = Department::where('company_id', request('company_id'))->pluck('name', 'id');
             }
         } else if ($this->isCompany()) {
-            // For company users, get their company's branches and departments
-            $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
-            $departments = Department::where('company_id', $user->company_id)->pluck('name', 'id');
+            // For company users, get their assigned branches and departments
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Filter branches by user's assigned branches
+                $branches = Branch::whereIn('id', $userBranchIds)->pluck('name', 'id');
+                
+                // Get user's assigned department IDs from the pivot table
+                $userDepartmentIds = $user->departments()->pluck('departments.id')->toArray();
+                
+                if (!empty($userDepartmentIds)) {
+                    // Filter departments by user's assigned departments
+                    $departments = Department::whereIn('id', $userDepartmentIds)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id');
+                } else {
+                    // Fallback: filter departments by user's assigned branches
+                    $departments = Department::whereIn('branch_id', $userBranchIds)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id');
+                }
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->pluck('name', 'id');
+                    $departments = Department::where('branch_id', $user->branch_id)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id');
+                } else {
+                    // If no branches assigned, get all company branches/departments
+                    $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+                    $departments = Department::where('company_id', $user->company_id)->pluck('name', 'id');
+                }
+            }
             
             // If company has no branches, show empty collection
             if ($branches->isEmpty()) {
@@ -939,6 +1235,9 @@ class VisitorController extends Controller
                 // Only update check-in time, don't modify the status
                 $visitor->in_time = now();
                 
+                // Create notification for visitor check-in
+                NotificationHelper::visitorCheckIn($visitor);
+                
                 // If auto-approval is enabled and status is Pending, update to Approved
                 if ($companyAuto && $visitor->status === 'Pending') {
                     $visitor->status = 'Approved';
@@ -955,6 +1254,10 @@ class VisitorController extends Controller
                 }
                 
                 $visitor->out_time = now();
+                
+                // Create notification for visitor check-out
+                NotificationHelper::visitorCheckOut($visitor);
+                
                 // Only update status to Completed if it's currently Approved
                 if ($visitor->status === 'Approved') {
                     $visitor->status = 'Completed';
@@ -1014,6 +1317,19 @@ class VisitorController extends Controller
         $visitor = Visitor::findOrFail($id);
         $this->authorizeVisitor($visitor);
 
+        // Check if this is a QR flow visitor and if the company allows mark in/out in QR flow
+        $isPublicRequest = request()->has('public') || 
+                          (request()->header('referer') && str_contains(request()->header('referer'), '/public/')) ||
+                          (request()->query('public') == '1');
+        
+        if ($isPublicRequest && !$visitor->company->mark_in_out_in_qr_flow) {
+            $message = 'Mark in/out is not allowed for QR flow visitors for this company.';
+            if (request()->ajax()) {
+                return response()->json(['error' => $message], 403);
+            }
+            return back()->with('error', $message);
+        }
+
         // Check if this is a face verification request
         $isFaceVerification = request()->has('face_verification') && request()->input('face_verification') === '1';
         $skipFaceVerification = request()->has('skip_face_verification') && request()->input('skip_face_verification') === '1';
@@ -1045,7 +1361,16 @@ class VisitorController extends Controller
                         return response()->json(['error' => $message], 400);
                     }
                     return back()->with('error', $message);
+                }                
+                // Prevent undo if security check-in has occurred
+                if ($visitor->security_checkin_time) {
+                    $message = 'Cannot undo check-in after security check-in.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
                 }
+                
                 $visitor->in_time = null;
                 $visitor->status = 'Pending';
                 $message = 'Check-in has been undone successfully.';
@@ -1063,6 +1388,26 @@ class VisitorController extends Controller
                 $message = 'Check-out has been undone successfully.';
                 
             } elseif ($action === 'in' || !$visitor->in_time) {
+                // Check if visitor has completed visit form (check both visit_completed_at and required fields)
+                $hasCompletedVisitForm = $visitor->visit_completed_at || ($visitor->department_id && $visitor->purpose);
+                
+                if (!$hasCompletedVisitForm) {
+                    $message = 'Visitor must complete visit form before checking in.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                
+                // Check if visitor is approved first
+                if ($visitor->status !== 'Approved') {
+                    $message = 'Visitor must be approved before checking in.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                
                 // Check security requirements
                 $securityError = $this->validateSecurityCheck($visitor, 'checking in');
                 if ($securityError) {
@@ -1073,24 +1418,39 @@ class VisitorController extends Controller
                 }
                 
                 // Original check-in logic
-                $companyAuto = (bool) optional($visitor->company)->auto_approve_visitors;
-                if (!$companyAuto && $visitor->status !== 'Approved') {
-                    $message = 'Visitor must be approved before checking in.';
+                if ($visitor->in_time) {
+                    $message = 'Visitor has already been checked in.';
                     if (request()->ajax()) {
                         return response()->json(['error' => $message], 400);
                     }
                     return back()->with('error', $message);
                 }
+                
                 $visitor->in_time = now();
-                if ($companyAuto && $visitor->status === 'Pending') {
-                    $visitor->status = 'Approved';
-                    $visitor->approved_by = auth()->id();
-                    $visitor->approved_at = now();
-                }
                 $message = 'Visitor checked in successfully.';
                 $playNotification = true;
                 
             } elseif ($action === 'out' || ($visitor->in_time && !$visitor->out_time)) {
+                // Check if visitor has completed visit form (check both visit_completed_at and required fields)
+                $hasCompletedVisitForm = $visitor->visit_completed_at || ($visitor->department_id && $visitor->purpose);
+                
+                if (!$hasCompletedVisitForm) {
+                    $message = 'Visitor must complete visit form before checking out.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                
+                // Check if visitor is approved first
+                if ($visitor->status !== 'Approved') {
+                    $message = 'Visitor must be approved before checking out.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+                
                 // Check security requirements
                 $securityError = $this->validateSecurityCheck($visitor, 'checking out');
                 if ($securityError) {
@@ -1140,11 +1500,35 @@ class VisitorController extends Controller
                 ]);
             }
 
-            // Check if this is a public visitor request
-            if (request()->has('public') || request()->header('referer') && str_contains(request()->header('referer'), '/public/')) {
-                return redirect()->route('public.visitor.index', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
-                    ->with('success', $message)
-                    ->with('play_notification', $playNotification ?? false);
+            // Update status history if status changed
+            if ($visitor->isDirty('status')) {
+                $visitor->last_status = $originalStatus;
+                $visitor->status_changed_at = now();
+            }
+            
+            $visitor->save();
+            DB::commit();
+            
+            // Check if this is a public visitor request (AFTER all updates)
+            $isPublicRequest = request()->has('public') || 
+                               (request()->header('referer') && str_contains(request()->header('referer'), '/public/')) ||
+                               (request()->query('public') == '1');
+            
+            if ($isPublicRequest) {
+                // If visitor has completed their visit (checked out), clear session and show fresh public index
+                if ($visitor->out_time && $visitor->status === 'Completed') {
+                    // Clear the visitor from session so they see a fresh public index
+                    session()->forget('current_visitor_id');
+                    
+                    return redirect()->route('qr.scan', ['company' => $visitor->company_id])
+                        ->with('success', $message)
+                        ->with('play_notification', $playNotification ?? false)
+                        ->with('visit_completed', true);
+                } else {
+                    return redirect()->route('public.visitor.index', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
+                        ->with('success', $message)
+                        ->with('play_notification', $playNotification ?? false);
+                }
             }
 
             return redirect()->route('visitors.entry.page')
@@ -1173,11 +1557,11 @@ class VisitorController extends Controller
 
         // Debugging company data before checking status
         if (!$visitor->company) {
-            // Log if the company is missing or null
+            // Log if company is missing or null
             \Log::warning('Visitor does not have a company', ['visitor_id' => $visitor->id]);
         }
 
-        if ($visitor->status !== 'Approved') {
+        if ($visitor->status !== 'Approved' && $visitor->status !== 'Completed') {
             return redirect()->back()->with('error', 'Pass not available.');
         }
 
@@ -1218,7 +1602,8 @@ class VisitorController extends Controller
             'vehicle_type'       => $v->vehicle_type,
             'vehicle_number'     => $v->vehicle_number,
             'goods_in_car'       => $v->goods_in_car,
-            // Intentionally exclude any photo fields
+            'security_checkin_time' => $v->security_checkin_time,
+            'security_checkout_time' => $v->security_checkout_time
         ]);
     }
 
@@ -1266,12 +1651,14 @@ class VisitorController extends Controller
 
         // Apply department filter if provided
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereIn('department_id', $departmentIds);
         }
         
         // Apply branch filter if provided
         if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
         }
 
         // Get companies for filter dropdown
@@ -1308,7 +1695,7 @@ class VisitorController extends Controller
     }
     public function inOutReport(Request $request)
     {
-        $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch']);
+        $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch', 'logs']);
 
         if ($request->filled('from') || $request->filled('to')) {
             $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
@@ -1330,12 +1717,14 @@ class VisitorController extends Controller
 
         // Apply department filter
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereIn('department_id', $departmentIds);
         }
 
         // Apply branch filter
         if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
         }
 
         $visits = $query->latest('in_time')->paginate(20);
@@ -1801,6 +2190,10 @@ class VisitorController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
         if ($request->filled('department_id')) {
             $query->where('department_id', $request->department_id);
         }
@@ -1810,9 +2203,20 @@ class VisitorController extends Controller
         $departments = Department::when(
             !$this->isSuper(),
             fn($q) => $q->where('company_id', auth()->user()->company_id)
+        )->when(
+            $request->filled('company_id'),
+            fn($q) => $q->where('company_id', $request->company_id)
         )->orderBy('name')->get();
 
-        return view('visitors.approvals', compact('visitors', 'departments'));
+        // Prepare data for view
+        $isSuper = $this->isSuper();
+        $companies = [];
+        
+        if ($isSuper) {
+            $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
+        }
+
+        return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies'));
     }
 
     /**

@@ -46,6 +46,21 @@
                 <p><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">{{ $visitor->status }}</span></p>
             </div>
 
+            <div style="background: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0ea5e9;">
+                <h3 style="margin: 0 0 10px 0; color: #0c4a6e;">Your Visitor Portal</h3>
+                <p style="margin: 0 0 15px 0;">You can track your visit status and manage your information through your personal visitor portal:</p>
+                <div style="text-align: center;">
+                    <a href="{{ route('public.visitor.index', ['company' => $visitor->company_id, 'visitor' => $visitor->id]) }}" 
+                       style="background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                        View Your Visitor Portal
+                    </a>
+                </div>
+                <p style="margin: 15px 0 0 0; font-size: 12px; color: #64748b;">
+                    Click the button above or copy this link: <br>
+                    <span style="word-break: break-all;">{{ route('public.visitor.index', ['company' => $visitor->company_id, 'visitor' => $visitor->id]) }}</span>
+                </p>
+            </div>
+
             <p>You will receive another email once your visit is approved.</p>
         </div>
 

@@ -243,12 +243,7 @@
                     </div>
                 </div>
                 
-                <div class="detail-row">
-                    <div class="detail-label">Name:</div>
-                    <div class="detail-value">
-                        {{ $visitor->name ?? 'N/A' }}
-                    </div>
-                </div>
+              
 
 
                 <div class="detail-row">
@@ -269,6 +264,13 @@
                     <div class="detail-label">purpose:</div>
                     <div class="detail-value">
                         {{ $visitor->purpose ?? 'N/A' }}
+                    </div>
+                </div>
+                <hr>
+                  <div class="detail-row">
+                    <div class="detail-label">Name:</div>
+                    <div class="detail-value">
+                        {{ $visitor->name ?? 'N/A' }}
                     </div>
                 </div>
 

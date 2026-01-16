@@ -7,10 +7,17 @@
             $isCompany = Auth::guard('company')->check();
             $dashUrl = $isCompany ? route('company.dashboard') : (Route::has('dashboard') ? route('dashboard') : url('/'));
             $user = $isCompany ? Auth::guard('company')->user() : Auth::user();
+            if ($isCompany) {
+                $brandLabel = $user->company->name ?? $user->name ?? 'Company Workspace';
+            } elseif ($user && in_array($user->role ?? null, ['super_admin', 'superadmin'], true)) {
+                $brandLabel = 'Super Admin';
+            } else {
+                $brandLabel = 'VMS';
+            }
         @endphp
         <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ $dashUrl }}">
             <img src="{{ asset('images/logo.png') }}" alt="Logo" height="30" class="me-2">
-            VMS
+            {{ $brandLabel }}
         </a>
 
         <div id="right-topbar">
@@ -59,6 +66,11 @@
             @endphp
             @if($user)
                 <ul class="navbar-nav">
+                    <!-- Notifications -->
+                    <!-- @if($isCompany && $user->visitor_notifications_enabled)
+                        @include('components.notifications')
+                    @endif -->
+                    
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                             role="button" data-bs-toggle="dropdown" aria-expanded="false">

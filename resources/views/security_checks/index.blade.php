@@ -2,48 +2,59 @@
 
 @section('content')
 <div class="container py-4">
-    <div class="bg-white shadow-sm rounded-4 p-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-            <h2 class="fw-bold text-primary m-0">Security Checks </h2>
+    @php
+        $isCompanyContext = request()->is('company/*');
+        $createSecurityRoute = $isCompanyContext
+            ? (Route::has('company.security-checks.create') ? 'company.security-checks.create' : null)
+            : (Route::has('security-checks.create') ? 'security-checks.create' : null);
+        $checkoutSecurityRoute = $isCompanyContext
+            ? (Route::has('company.security-checks.create-checkout') ? 'company.security-checks.create-checkout' : null)
+            : (Route::has('security-checks.create-checkout') ? 'security-checks.create-checkout' : null);
+    @endphp
+    <div class="page-heading mb-4">
+        <div>
+            <div class="page-heading__eyebrow">Access Control</div>
+            <h1 class="page-heading__title">Security Check Console</h1>
+            <div class="page-heading__meta">
+                Track live check-ins and check-outs, triage alerts, and keep your perimeter audit-ready.
+            </div>
         </div>
+        <div class="page-heading__actions">
+            {{-- Security Check-In and Check-Out buttons removed as they require visitorId parameter --}}
+        </div>
+    </div>
 
-        <form method="GET" id="filterForm" class="mb-4">
-            <div class="row g-3 align-items-end">
-                {{-- Date Range --}}
-                <div class="col-lg-4 col-md-6"> 
-                    <label class="form-label">Date Range</label>
-                    <div class="input-group mb-2">
-                        @php
-                            $fromDate = request('from', now()->startOfMonth()->format('Y-m-d'));
-                            $toDate = request('to', now()->endOfMonth()->format('Y-m-d'));
-                        @endphp
-                        <input type="date" name="from" id="from_date" class="form-control"
-                               value="{{ $fromDate }}">
-                        <span class="input-group-text">to</span>
-                        <input type="date" name="to" id="to_date" class="form-control"
-                               value="{{ $toDate }}">
+    <div class="bg-white shadow-sm rounded-4 p-4">
+
+        {{-- =================== FILTERS CARD =================== --}}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="section-heading mb-3">
+                    <div class="section-heading__title">
+                        <i class="fas fa-filter"></i> Security Filters
                     </div>
-                    <div class="d-flex flex-wrap gap-1">
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="today" type="button">
-                            Today
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="yesterday" type="button">
-                            Yesterday
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="this-month" type="button">
-                            This Month
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary quick-range" data-range="last-month" type="button">
-                            Last Month
-                        </button>
+                    <div class="section-heading__meta">
+                        Quickly narrow activity by date, company, branch, and department to focus your response.
                     </div>
                 </div>
+                <form method="GET" id="securityFilterForm">
+                    <div class="row g-3 align-items-end">
 
-                {{-- Company Dropdown (superadmin only) --}}
-                @if($isSuper)
+                        {{-- 1️⃣ Date Range (first) --}}
+                        <div class="col-lg-4 col-md-6"> 
+                            @php
+                                $from = request('from', now()->format('Y-m-d'));
+                                $to = request('to', now()->format('Y-m-d'));
+                            @endphp
+                            <label class="form-label fw-semibold">Date Range</label>
+                            @include('components.basic_date_range', ['from' => $from, 'to' => $to])
+                        </div>
+
+                        {{-- 2️⃣ Company (superadmin only) --}}
+                    @if(auth()->user()->role === 'superadmin')
                     <div class="col-lg-3 col-md-6">
                         <label for="company_id" class="form-label">Company</label>
-                        <select name="company_id" id="company_id" class="form-select" data-is-super="1">
+                        <select name="company_id" id="company_id" class="form-select">
                             <option value="">All Companies</option>
                             @foreach($companies as $id => $name)
                                 <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
@@ -52,55 +63,75 @@
                             @endforeach
                         </select>
                     </div>
-                @endif
+                    @endif
 
-                {{-- Branch Dropdown --}}
-                <div class="col-lg-3 col-md-6">
-                    <label for="branch_id" class="form-label">Branch</label>
-                    <select name="branch_id" id="branch_id" class="form-select"
-                            @if($isSuper && !request('company_id')) disabled @endif>
-                        <option value="">All Branches</option>
-                        @if(!empty($branches))
-                            @foreach($branches as $id => $name)
-                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
+                        {{-- 3️⃣ Branch --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label">Branch</label>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                                <span id="branchText">All Branches</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="branchDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllBranches" onchange="toggleAllBranches()">
+                                    <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="branchOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
+                    </div>
 
-                {{-- Department Dropdown --}}
-                <div class="col-lg-2 col-md-6">
-                    <label for="department_id" class="form-label">Department</label>
-                    <select name="department_id" id="department_id" class="form-select"
-                            @if($isSuper && !request('company_id')) disabled @endif>
-                        <option value="">All Departments</option>
-                        @if(!empty($departments))
-                            @foreach($departments as $id => $name)
-                                <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
+                        {{-- 4️⃣ Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label">Department</label>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                                <span id="departmentText">All Departments</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="departmentDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllDepartments" onchange="toggleAllDepartments()">
+                                    <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('departmentDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
+                    </div>
 
-                {{-- Buttons --}}
-                <div class="col-12 d-flex flex-wrap gap-2 mt-3">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-1"></i> Apply
-                    </button>
-                    <a href="{{ route('security-checks.index') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-undo me-1"></i> Reset
-                    </a>
-                </div>
+                        {{-- Buttons row --}}
+                        <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i> Apply
+                            </button>
+                            <a href="{{ route('security-checks.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo me-1"></i> Reset
+                            </a>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
 
         @if($visitors->isEmpty())
             <div class="alert alert-info mb-0">No visitors found for the selected criteria.</div>
         @else
+            <div class="section-heading mb-3">
+                <div class="section-heading__title">
+                    <i class="fas fa-user-shield"></i> Live Check Activity
+                </div>
+                <div class="section-heading__meta">
+                    Review every visitor’s status, initiate actions, and keep handoffs coordinated.
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle text-center">
                     <thead class="table-light">
@@ -132,6 +163,9 @@
                                 $hasSecurityCheckout = $visitor->security_checkout_time !== null;
                                 $canUndoCheckin = $hasSecurityCheckin && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
                                 $canUndoCheckout = $hasSecurityCheckout && \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) <= 30;
+                                $securityCheckinType = $visitor->company ? $visitor->company->security_checkin_type : 'both';
+                                $showCheckinButton = in_array($securityCheckinType, ['checkin', 'both']);
+                                $showCheckoutButton = in_array($securityCheckinType, ['checkout', 'both']);
                             @endphp
                             <tr>
                                 <td class="fw-semibold">{{ $visitor->name }}</td>
@@ -155,7 +189,7 @@
                                     @endif
                                 </td>
                                 <td class="d-flex gap-2">
-                                    @if(!$hasSecurityCheckin)
+                                    @if(!$hasSecurityCheckin && $showCheckinButton)
                                         {{-- Security Check-in Button --}}
                                         <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
                                             @csrf
@@ -164,23 +198,16 @@
                                                 <i class="fas fa-sign-in-alt me-1"></i> Check In
                                             </button>
                                         </form>
-                                    @elseif(!$hasSecurityCheckout)
+                                    @elseif(!$hasSecurityCheckout && $showCheckoutButton)
                                         {{-- Security Check-out Button --}}
                                         @if($visitor->in_time && !$visitor->out_time)
                                             <a href="{{ route($checkoutRoute, $visitor->id) }}" class="btn btn-sm btn-warning" title="Security Check-out Form">
-                                                <i class="fas fa-clipboard-check me-1"></i> Security Check-Out
+                                                <i class="fas fa-clipboard-check me-1"></i> Check Out
                                             </a>
                                         @endif
-                                        <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <input type="hidden" name="action" value="checkout">
-                                            <button type="submit" class="btn btn-sm btn-warning" title="Quick Security Check-out">
-                                                <i class="fas fa-sign-out-alt me-1"></i> Quick Out
-                                            </button>
-                                        </form>
                                         
                                         {{-- Undo Check-in Button --}}
-                                        @if($canUndoCheckin)
+                                        @if($canUndoCheckin && $showCheckinButton)
                                             <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 <input type="hidden" name="action" value="undo_checkin">
@@ -189,7 +216,7 @@
                                                 </button>
                                             </form>
                                         @endif
-                                    @else
+                                    @elseif($hasSecurityCheckout)
                                         {{-- Both completed - show undo checkout if available --}}
                                         @if($canUndoCheckout)
                                             <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
@@ -202,6 +229,8 @@
                                         @else
                                             <span class="text-success">Completed</span>
                                         @endif
+                                    @else
+                                        <span class="text-muted">—</span>
                                     @endif
                                 </td>
                             </tr>
@@ -223,73 +252,6 @@
         const companySelect = document.getElementById('company_id');
         const branchSelect = document.getElementById('branch_id');
         const departmentSelect = document.getElementById('department_id');
-        const fromInput = document.getElementById('from_date');
-        const toInput = document.getElementById('to_date');
-        const quickRangeButtons = document.querySelectorAll('.quick-range');
-        const filterForm = document.getElementById('filterForm');
-
-        // Format date as YYYY-MM-DD
-        function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Get the first day of the month
-        function getFirstDayOfMonth(date) {
-            return new Date(date.getFullYear(), date.getMonth(), 1);
-        }
-
-        // Get the last day of the month
-        function getLastDayOfMonth(date) {
-            return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        }
-
-        // Set initial dates if not set
-        if (fromInput && toInput && !fromInput.value && !toInput.value) {
-            const today = new Date();
-            fromInput.value = formatDate(getFirstDayOfMonth(today));
-            toInput.value = formatDate(getLastDayOfMonth(today));
-        }
-
-        // Handle quick range buttons
-        quickRangeButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const range = this.dataset.range;
-                const today = new Date();
-                let from, to;
-
-                switch(range) {
-                    case 'today':
-                        from = to = new Date();
-                        break;
-                    case 'yesterday':
-                        const yesterday = new Date();
-                        yesterday.setDate(today.getDate() - 1);
-                        from = to = yesterday;
-                        break;
-                    case 'this-month':
-                        from = getFirstDayOfMonth(today);
-                        to = getLastDayOfMonth(today);
-                        break;
-                    case 'last-month':
-                        const lastMonth = new Date(today);
-                        lastMonth.setMonth(today.getMonth() - 1);
-                        from = getFirstDayOfMonth(lastMonth);
-                        to = getLastDayOfMonth(lastMonth);
-                        break;
-                }
-
-                // Update input fields
-                if (from && to) {
-                    fromInput.value = formatDate(from);
-                    toInput.value = formatDate(to);
-                    filterForm.submit();
-                }
-            });
-        });
 
         // Function to handle API errors
         function handleApiError(error) {
@@ -497,8 +459,132 @@
                 document.getElementById('filterForm').submit();
             });
         }
+
+        // Handle security check-in/out forms with notifications
+        document.querySelectorAll('form[action*="security-checks"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                console.log('DEBUG: Security check-in/out form submitted');
+                e.preventDefault();
+                
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                const action = form.querySelector('input[name="action"]').value;
+                
+                console.log('DEBUG: Form action:', form.action);
+                console.log('DEBUG: Action value:', action);
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    console.log('DEBUG: Fetch response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('DEBUG: Fetch response data:', data);
+                    if (data.success) {
+                        console.log('DEBUG: Security check-in/out successful');
+                        // Show notification for check-in/out
+                        const visitorName = form.closest('tr').querySelector('td:first-child').textContent.trim();
+                        const location = '{{ auth()->user()->company->name ?? "Security" }}';
+                        
+                        console.log('DEBUG: Action:', action);
+                        console.log('DEBUG: Visitor name:', visitorName);
+                        console.log('DEBUG: Location:', location);
+                        
+                        if (action === 'checkin') {
+                            console.log('DEBUG: Triggering check-in notification');
+                            showPersistentNotification('Visitor Checked In', {
+                                visitorName: visitorName,
+                                location: location
+                            });
+                        } else if (action === 'checkout') {
+                            console.log('DEBUG: Triggering check-out notification');
+                            showPersistentNotification('Visitor Checked Out', {
+                                visitorName: visitorName,
+                                location: location
+                            });
+                        }
+                        
+                        // Reload page to show updated status
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        alert(data.message || 'An error occurred');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing request');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
+        });
     });
 </script>
 @endpush
 
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
+<script>
+window.toggleAllBranches = function() {
+    const selectAll = document.getElementById('selectAllBranches');
+    const checkboxes = document.querySelectorAll('.branch-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    window.updateBranchText();
+};
+
+window.toggleAllDepartments = function() {
+    const selectAll = document.getElementById('selectAllDepartments');
+    const checkboxes = document.querySelectorAll('.department-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    window.updateDepartmentText();
+};
+
+window.updateBranchText = function() {
+    const checkboxes = document.querySelectorAll('.branch-checkbox:checked');
+    const text = document.getElementById('branchText');
+    if (checkboxes.length === 0) {
+        text.textContent = 'All Branches';
+    } else if (checkboxes.length === 1) {
+        text.textContent = checkboxes[0].nextElementSibling.textContent;
+    } else {
+        text.textContent = `${checkboxes.length} branches selected`;
+    }
+};
+
+window.updateDepartmentText = function() {
+    const checkboxes = document.querySelectorAll('.department-checkbox:checked');
+    const text = document.getElementById('departmentText');
+    if (checkboxes.length === 0) {
+        text.textContent = 'All Departments';
+    } else if (checkboxes.length === 1) {
+        text.textContent = checkboxes[0].nextElementSibling.textContent;
+    } else {
+        text.textContent = `${checkboxes.length} departments selected`;
+    }
+};
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.position-relative')) {
+        const branchMenu = document.getElementById('branchDropdownMenu');
+        const deptMenu = document.getElementById('departmentDropdownMenu');
+        if (branchMenu) branchMenu.style.display = 'none';
+        if (deptMenu) deptMenu.style.display = 'none';
+    }
+});
+</script>
+@endpush

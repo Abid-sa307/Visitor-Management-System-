@@ -31,7 +31,7 @@ class OtpService
             ]);
 
             // Send OTP via email
-Mail::to($user->email)->send(new OtpVerificationMail($otp));
+            Mail::to($user->email)->send(new OtpVerificationMail($otp));
             
             Log::info('OTP email sent successfully', [
                 'user_id' => $user->id,
@@ -66,11 +66,13 @@ Mail::to($user->email)->send(new OtpVerificationMail($otp));
             'otp_type' => gettype($user->otp),
             'otp_length' => $user->otp ? strlen($user->otp) : 0,
             'otp_match' => $user->otp === $otp,
-            'not_expired' => $user->otp_expires_at && $user->otp_expires_at > now()
+            'not_expired' => $user->otp_expires_at && (is_string($user->otp_expires_at) ? \Carbon\Carbon::parse($user->otp_expires_at) : $user->otp_expires_at)->isFuture()
         ]);
 
         // Check if OTP matches and is not expired
-        if ($user->otp === $otp && $user->otp_expires_at && $user->otp_expires_at->isFuture()) {
+        $expiresAt = is_string($user->otp_expires_at) ? \Carbon\Carbon::parse($user->otp_expires_at) : $user->otp_expires_at;
+        
+        if ($user->otp === $otp && $expiresAt && $expiresAt->isFuture()) {
             // Clear the OTP and mark as verified
             $user->update([
                 'otp' => null,
@@ -96,7 +98,7 @@ Mail::to($user->email)->send(new OtpVerificationMail($otp));
             'reason' => $reason,
             'stored_otp' => $user->otp,
             'provided_otp' => $otp,
-            'is_expired' => $user->otp_expires_at ? $user->otp_expires_at->isPast() : 'no expiry set'
+            'is_expired' => $user->otp_expires_at ? (is_string($user->otp_expires_at) ? \Carbon\Carbon::parse($user->otp_expires_at) : $user->otp_expires_at)->isPast() : 'no expiry set'
         ]);
         
         return false;

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @if(auth()->check() && auth()->user()->company_id)
+        <meta name="company-id" content="{{ auth()->user()->company_id }}">
+    @endif
     <title>{{ $title ?? 'Dashboard' }} - VMS</title>
 
     <!-- SB Admin 2 CSS -->
@@ -11,6 +14,7 @@
     <link href="{{ asset('sb-admin/css/sb-admin-2.min.css') }}" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
+    @include('layouts.partials.theme')
     @stack('styles')
     
     <!-- Face API JS -->
@@ -36,93 +40,9 @@
         });
     </script>
 
-    <style>
-    body {
-        overflow-x: hidden;
-    }
-    
-    /* Desktop sidebar */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        height: 100vh;
-        overflow-y: auto;
-        z-index: 1050;
-        width: 250px;
-        transition: transform 0.3s ease;
-    }
-
-    /* Content wrapper */
-    #content-wrapper {
-        margin-left: 250px;
-        min-height: 100vh;
-        transition: margin-left 0.3s ease;
-    }
-
-    #content {
-        padding-top: 1rem;
-    }
-
-    /* Mobile overlay - hidden by default */
-    .sidebar-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1040;
-        display: none;
-        transition: all 0.3s ease;
-    }
-
-    /* Desktop - overlay never shows */
-    @media (min-width: 992px) {
-        .sidebar-overlay {
-            display: none !important;
-        }
-    }
-
-    /* Mobile styles - Override SB Admin */
-    @media (max-width: 991.98px) {
-        #accordionSidebar {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 250px !important;
-            height: 100vh !important;
-            z-index: 1050 !important;
-            transform: translateX(0) !important;
-        }
-
-        #accordionSidebar.mobile-hidden {
-            transform: translateX(-100%) !important;
-        }
-
-        .sidebar-overlay.show {
-            display: block;
-        }
-
-        #content-wrapper {
-            margin-left: 0;
-        }
-
-        /* Sticky topbar on mobile */
-        .navbar {
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 1040 !important;
-            background: white !important;
-        }
-
-        /* Allow normal scrolling */
-    }
-    </style>
 </head>
 
-<body id="page-top">
+<body id="page-top" class="has-sidebar">
 @php
     /**
      * Normalize & gate page access for the current user
@@ -185,6 +105,17 @@
                       </div>
                     @endif
 
+                    {{-- Flash success messages --}}
+                    @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill mr-2"></i>
+                        {{ session('success') }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    @endif
+
                     @yield('content')
                 </div>
                 <!-- End Page Content -->
@@ -196,7 +127,7 @@
             <footer class="sticky-footer bg-white mt-auto">
                 <div class="container my-auto">
                     <div class="text-center my-auto">
-                        <span>&copy; 2025 Visitor Management System  <a href="https://www.nntsoftware.com" target="_blank">(Developed By N&T Software)</a></span>
+                        <span>&copy; 2025 Visitor Management System  <br> <a href="https://www.nntsoftware.com" target="_blank">(Developed By N&T Software)</a></span>
                     </div>
                 </div>
             </footer>
@@ -211,14 +142,576 @@
     <!-- Scroll to Top Button-->
     <a class="scroll-to-top rounded" href="#page-top"><i class="fas fa-angle-up"></i></a>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const body = document.body;
+            const sidebarShell = document.getElementById('sidebarShell');
+            const sidebarOverlay = document.querySelector('.sidebar-overlay');
+            const openTrigger = document.getElementById('sidebarToggle');
+            const closeTrigger = document.getElementById('sidebarClose');
+
+            const toggleSidebar = (forceOpen = null) => {
+                const shouldOpen = typeof forceOpen === 'boolean'
+                    ? forceOpen
+                    : !sidebarShell.classList.contains('is-open');
+
+                if (shouldOpen) {
+                    sidebarShell.classList.add('is-open');
+                    sidebarOverlay.classList.add('show');
+                    body.classList.add('sidebar-open');
+                } else {
+                    sidebarShell.classList.remove('is-open');
+                    sidebarOverlay.classList.remove('show');
+                    body.classList.remove('sidebar-open');
+                }
+            };
+
+            openTrigger?.addEventListener('click', () => toggleSidebar(true));
+            closeTrigger?.addEventListener('click', () => toggleSidebar(false));
+            sidebarOverlay?.addEventListener('click', () => toggleSidebar(false));
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    toggleSidebar(false);
+                }
+            });
+
+            const collapseOnMobile = (callback) => {
+                if (window.matchMedia('(max-width: 991.98px)').matches) {
+                    callback();
+                }
+            };
+
+            document.querySelectorAll('[data-sidebar-link]').forEach((link) => {
+                link.addEventListener('click', () => collapseOnMobile(() => toggleSidebar(false)));
+            });
+
+            document.querySelectorAll('[data-sidebar-toggle]').forEach((toggleBtn) => {
+                const targetId = toggleBtn.getAttribute('data-sidebar-toggle');
+                const target = document.getElementById(targetId);
+                const parentItem = toggleBtn.closest('.sidebar-item');
+
+                toggleBtn.addEventListener('click', () => {
+                    const isOpen = parentItem?.classList.toggle('is-open');
+                    toggleBtn.classList.toggle('is-active', Boolean(isOpen));
+                    target?.classList.toggle('show', Boolean(isOpen));
+                });
+            });
+        });
+    </script>
+
+    <!-- Modern Date Range Picker Styles -->
+    <style>
+        /* Modern Form Select Dropdowns */
+        .form-select {
+            background: #007bff;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            padding: 12px 40px 12px 16px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            cursor: pointer;
+            position: relative;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+        
+        .form-select::after {
+            content: '▼';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        
+        .form-select:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+        
+        .form-select:hover::after {
+            color: white;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3), 0 6px 20px rgba(0, 123, 255, 0.4);
+            border-color: transparent;
+        }
+        
+        .form-select:focus::after {
+            color: white;
+        }
+        
+        .form-select:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none;
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+        }
+        
+        .form-select:disabled::after {
+            color: white;
+        }
+        
+        .form-select option {
+            background: white;
+            color: #495057;
+            padding: 10px;
+            font-weight: 500;
+        }
+        
+        .form-select option:hover {
+            background: #f8f9fa;
+            color: #495057;
+        }
+        
+        .form-select option:checked {
+            background: #007bff;
+            color: white;
+        }
+        
+        /* Modern Date Range Picker Button */
+        .date-range-picker {
+            background: #007bff;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .date-range-picker::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .date-range-picker:hover::before {
+            left: 100%;
+        }
+        
+        .date-range-picker:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+        
+        .date-range-picker:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3), 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+        
+        .date-range-picker i {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .date-range-picker i.fa-chevron-down {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .date-range-picker[aria-expanded="true"] i.fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        
+        /* Modern Dropdown */
+        #dateRangeDropdown {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            animation: dropIn 0.3s ease-out;
+        }
+        
+        @keyframes dropIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Modern Section Headers */
+        #dateRangeDropdown .small.text-muted.fw-semibold {
+            color: #007bff !important;
+            font-weight: 600 !important;
+            font-size: 0.75rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1px !important;
+            margin-bottom: 12px !important;
+        }
+        
+        /* Modern Preset Buttons */
+        #dateRangeDropdown .date-preset {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            color: #495057;
+            font-weight: 500;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+        
+        #dateRangeDropdown .date-preset:hover {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+        
+        #dateRangeDropdown .date-preset:active {
+            transform: translateY(0);
+        }
+        
+        /* Modern Date Inputs */
+        #dateRangeDropdown .form-control {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        #dateRangeDropdown .form-control:focus {
+            background: white;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+        
+        /* Modern Action Buttons */
+        #dateRangeDropdown .btn-outline-secondary {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+        }
+        
+        #dateRangeDropdown .btn-outline-secondary:hover {
+            background: #6c757d;
+            border-color: #6c757d;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+        
+        #dateRangeDropdown .btn-primary {
+            background: #007bff;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+        }
+        
+        #dateRangeDropdown .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .date-range-picker {
+                font-size: 0.875rem;
+                padding: 10px 14px;
+            }
+            
+            #dateRangeDropdown {
+                min-width: 260px;
+                margin-left: -10px;
+                margin-right: -10px;
+            }
+        }
+    </style>
+
+    <!-- Dashboard Visual System -->
+    <style>
+
+        .dashboard-hero {
+            background: var(--brand-primary);
+            color: white;
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 24px;
+            box-shadow: 0 12px 30px rgba(0, 123, 255, 0.25);
+        }
+
+        .hero-eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.85rem;
+            opacity: 0.75;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-hero h1 {
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .hero-subtitle {
+            opacity: 0.9;
+            max-width: 520px;
+            margin: 0;
+        }
+
+        .hero-metrics {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .metric-chip {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 16px 18px;
+            min-width: 160px;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .modern-panel {
+            background: var(--surface);
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+        }
+
+        .filter-card__header {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .filter-card__icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: rgba(0, 123, 255, 0.1);
+            color: var(--brand-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .filter-card__body label {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        .stat-card__icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: var(--brand-primary);
+            background: rgba(0, 123, 255, 0.12);
+        }
+
+        .stat-card__label {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-card__value {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .stat-card__subtext {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .accent-success .stat-card__icon { color: #198754; background: rgba(25,135,84,0.12); }
+        .accent-warning .stat-card__icon { color: #ffb300; background: rgba(255,179,0,0.12); }
+        .accent-danger .stat-card__icon  { color: #dc3545; background: rgba(220,53,69,0.12); }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .panel-eyebrow {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .panel-count {
+            font-weight: 600;
+            color: var(--brand-primary);
+            background: rgba(0,123,255,0.1);
+            padding: 6px 14px;
+            border-radius: 999px;
+        }
+
+        .modern-table table {
+            border-collapse: separate;
+            border-spacing: 0 12px;
+        }
+
+        .modern-table thead th {
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            border: none;
+        }
+
+        .modern-table tbody tr {
+            box-shadow: inset 0 0 0 1px var(--border-color);
+            border-radius: 14px;
+        }
+
+        .modern-table tbody tr td {
+            background: var(--surface);
+            border-top: none;
+            border-bottom: none;
+        }
+
+        .modern-table tbody tr td:first-child { border-radius: 14px 0 0 14px; }
+        .modern-table tbody tr td:last-child { border-radius: 0 14px 14px 0; }
+
+        .avatar-chip {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--surface-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--brand-primary);
+        }
+
+        .status-pill {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: capitalize;
+        }
+        .status-approved { background: rgba(25,135,84,0.15); color: #0f5132; }
+        .status-pending  { background: rgba(255,193,7,0.2); color: #7a5200; }
+        .status-rejected { background: rgba(220,53,69,0.15); color: #842029; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 2.8rem;
+            color: var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-hero {
+                flex-direction: column;
+            }
+            .hero-metrics {
+                width: 100%;
+            }
+        }
+    </style>
+    
     <!-- SB Admin 2 Scripts -->
     <script src="{{ asset('sb-admin/vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
     <script src="{{ asset('sb-admin/js/sb-admin-2.min.js') }}"></script>
     
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <!-- Visitor Notification System -->
-    <script src="{{ asset('js/visitor-notification.js') }}"></script>
+    <script src="{{ asset('js/visitor-notifications.js') }}"></script>
     @include('partials.visitor-notification')
 
     <script>
@@ -445,6 +938,213 @@
 
         observer.observe(document.body, { childList: true, subtree: true });
     });
+
+    // Play notification sound and show visual effect when visitor is created
+    @if(session('play_notification'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Play notification sound (using browser's built-in notification sound)
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                } catch (e) {
+                    console.log('Audio notification not supported');
+                }
+                
+                // Create beautiful notification box
+                const notification = document.createElement('div');
+                notification.className = 'visitor-notification';
+                notification.innerHTML = `
+                    <div class="notification-icon">
+                        <div class="icon-circle">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </div>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">New Visitor Registered!</div>
+                        <div class="notification-message">A visitor has been successfully registered in the system</div>
+                        <div class="notification-time">Just now</div>
+                    </div>
+                    <div class="notification-close">
+                        <button type="button" class="close-btn">&times;</button>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Add close functionality
+                const closeBtn = notification.querySelector('.close-btn');
+                closeBtn.addEventListener('click', () => {
+                    notification.classList.add('notification-exit');
+                    setTimeout(() => notification.remove(), 300);
+                });
+                
+                // Auto-remove after 6 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.classList.add('notification-exit');
+                        setTimeout(() => notification.remove(), 300);
+                    }
+                }, 6000);
+            });
+        </script>
+        
+        // Add beautiful CSS styles
+        <style>
+        .visitor-notification {
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 9999 !important;
+            min-width: 350px !important;
+            max-width: 400px !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-radius: 16px !important;
+            padding: 0 !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+            display: flex !important;
+            align-items: center !important;
+            animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+            transition: all 0.3s ease !important;
+            color: white !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        
+        .visitor-notification:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        .notification-icon {
+            padding: 20px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .icon-circle {
+            width: 50px !important;
+            height: 50px !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            backdrop-filter: blur(10px) !important;
+            border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        .icon-circle i {
+            font-size: 24px !important;
+            color: white !important;
+        }
+        
+        .notification-content {
+            flex: 1 !important;
+            padding: 20px 20px 20px 0 !important;
+        }
+        
+        .notification-title {
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            margin-bottom: 4px !important;
+            color: #ffffff !important;
+        }
+        
+        .notification-message {
+            font-size: 14px !important;
+            opacity: 0.9 !important;
+            margin-bottom: 4px !important;
+            line-height: 1.4 !important;
+        }
+        
+        .notification-time {
+            font-size: 12px !important;
+            opacity: 0.7 !important;
+        }
+        
+        .notification-close {
+            padding: 20px !important;
+            padding-left: 0 !important;
+        }
+        
+        .close-btn {
+            background: none !important;
+            border: none !important;
+            color: white !important;
+            font-size: 20px !important;
+            cursor: pointer !important;
+            opacity: 0.7 !important;
+            transition: opacity 0.2s !important;
+            padding: 0 !important;
+            width: 24px !important;
+            height: 24px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .close-btn:hover {
+            opacity: 1 !important;
+        }
+        
+        .notification-exit {
+            animation: slideOutRight 0.3s ease-in forwards !important;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        /* Pulse animation for icon */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .visitor-notification .icon-circle {
+            animation: pulse 2s infinite;
+        }
+        </style>
+    @endif
     </script>
 
     @stack('scripts')

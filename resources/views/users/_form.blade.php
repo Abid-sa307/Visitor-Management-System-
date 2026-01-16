@@ -213,7 +213,7 @@
         $moduleGroups = [
             'Main' => ['dashboard'],
             'Management' => ['departments', 'employees', 'users'],
-            'Visitors' => ['visitors', 'security_checks', 'approvals', 'visitor_inout', 'visitor_history', 'visitor_categories'],
+            'Visitors' => ['visitors', 'visit_details', 'security_checks', 'approvals', 'visitor_inout', 'visitor_history', 'visitor_categories', 'security_questions'],
             'QR Code' => ['qr_scanner'],
             'Reports' => ['reports'],
         ];
@@ -237,10 +237,12 @@
                                        {{ in_array($module, $selectedPages, true) ? 'checked' : '' }}>
                                 <label class="form-check-label text-capitalize" for="mp-{{ $module }}">
                                     @switch($module)
+                                        @case('visit_details') Visit Details @break
                                         @case('visitor_inout') Visitor In & Out @break
                                         @case('visitor_history') Visitor History @break
                                         @case('visitor_categories') Visitor Categories @break
                                         @case('security_checks') Security Checks @break
+                                        @case('security_questions') Security Questions @break
                                         @case('qr_scanner') QR Codes @break
                                         @default {{ str_replace('_', ' ', ucfirst($module)) }}
                                     @endswitch

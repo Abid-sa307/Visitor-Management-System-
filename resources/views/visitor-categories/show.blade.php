@@ -9,13 +9,15 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">Visitor Category Details</h4>
-                        <div class="btn-group">
+                        <div class="d-flex gap-2">
                             @can('update', $category)
-                                <a href="{{ route('visitor-categories.edit', $category) }}" class="btn btn-primary btn-sm">
+                                <a href="{{ route('visitor-categories.edit', $category) }}"
+                                   class="action-btn action-btn--edit">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
                             @endcan
-                            <a href="{{ route('visitor-categories.index') }}" class="btn btn-secondary btn-sm">
+                            <a href="{{ route('visitor-categories.index') }}"
+                               class="action-btn action-btn--view">
                                 <i class="fas fa-arrow-left"></i> Back to List
                             </a>
                         </div>

@@ -62,18 +62,10 @@
 <div class="container-fluid px-4">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-shield-alt text-primary me-2"></i>Security Check Reports
-        </h1>
-        <div>
-            <a href="{{ route('reports.security.export', request()->query()) }}" 
-               class="btn btn-success export-btn">
-                <i class="fas fa-file-excel me-1"></i> Export
-            </a>
-        </div>
+        <h2 class="h3 text-gray-800">Security Check Reports</h2>
     </div>
 
-    <!-- Filter Section -->
+    {{-- =================== FILTERS CARD =================== --}}
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white py-3">
             <h6 class="m-0 font-weight-bold text-primary">
@@ -81,45 +73,32 @@
             </h6>
         </div>
         <div class="card-body">
-            <form method="GET" id="filterForm">
-                <div class="row g-3">
-                    @if(auth()->user()->role === 'superadmin')
-                    <div class="col-md-12">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label class="form-label">Company</label>
-                                <select name="company_id" id="company_id" class="form-select form-select-sm">
-                                    <option value="">All Companies</option>
-                                    @foreach($companies as $id => $name)
-                                        <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
-                                            {{ $name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-8">
-                                @include('components.date_range')
-                            </div>
-                        </div>
+            <form method="GET" id="reportsFilterForm">
+                <div class="row g-3 align-items-end">
+                    {{-- 1️⃣ Date Range (first) --}}
+                    <div class="col-lg-4 col-md-6">
+                        @include('components.basic_date_range')
                     </div>
-                    @endif
-
-                    <div class="col-md-4">
-                        <label class="form-label">Department</label>
-                        <select name="department_id" id="department_id" class="form-select form-select-sm" 
-                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                            <option value="">All Departments</option>
-                            @foreach($departments as $id => $name)
-                                <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
+                    
+                    {{-- 2️⃣ Company (superadmin only) --}}
+                    @if(auth()->user()->role === 'superadmin')
+                    <div class="col-lg-3 col-md-6">
+                        <label for="company_id" class="form-label fw-semibold">Company</label>
+                        <select name="company_id" id="company_id" class="form-select form-select-lg">
+                            <option value="">All Companies</option>
+                            @foreach($companies as $id => $name)
+                                <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
                                     {{ $name }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
+                    @endif
 
-                    <div class="col-md-4">
-                        <label class="form-label">Branch</label>
-                        <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
+                    {{-- 3️⃣ Branch --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label for="branch_id" class="form-label fw-semibold">Branch</label>
+                        <select name="branch_id" id="branch_id" class="form-select form-select-lg" 
                             {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
                             <option value="">All Branches</option>
                             @foreach($branches ?? [] as $id => $name)
@@ -130,11 +109,26 @@
                         </select>
                     </div>
 
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary btn-sm me-2">
-                            <i class="fas fa-filter me-1"></i> Apply Filters
+                    {{-- 4️⃣ Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label for="department_id" class="form-label fw-semibold">Department</label>
+                        <select name="department_id" id="department_id" class="form-select form-select-lg" 
+                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                            <option value="">All Departments</option>
+                            @foreach($departments as $id => $name)
+                                <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Buttons row --}}
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i> Apply
                         </button>
-                        <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>

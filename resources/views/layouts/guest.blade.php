@@ -14,6 +14,8 @@
 
         <!-- Bootstrap 5.3 CSS -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        @include('layouts.partials.theme')
         @stack('styles')
     </head>
     <body class="bg-light">

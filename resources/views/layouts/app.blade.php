@@ -26,6 +26,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    @include('layouts.partials.theme')
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
@@ -47,7 +48,8 @@
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-            background-color: #f8f9fc;
+            background: var(--surface-muted);
+            color: var(--text-color);
         }
 
         .sidebar {
@@ -57,7 +59,7 @@
             left: 0;
             top: 0;
             z-index: 1050;
-            background: #4e73df;
+            background: var(--sidebar-bg, #1e3a8a);
             color: white;
             transition: transform 0.3s ease;
         }
@@ -113,7 +115,7 @@
             left: 0;
             top: 0;
             z-index: 1050;
-            background: #4e73df;
+            background: var(--sidebar-bg, #1e3a8a);
             color: white;
             transition: transform 0.3s ease;
         }
@@ -154,13 +156,13 @@
 
 
         .sidebar a {
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--sidebar-link, rgba(255, 255, 255, 0.85));
             text-decoration: none;
             transition: all 0.3s;
         }
 
         .sidebar a:hover {
-            color: white;
+            color: var(--sidebar-link-hover, #fff);
             text-decoration: none;
         }
 

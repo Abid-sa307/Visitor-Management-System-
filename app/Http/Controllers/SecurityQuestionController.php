@@ -31,7 +31,8 @@ class SecurityQuestionController extends Controller
         }
         
         if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
         }
         
         $questions = $query->orderBy('sort_order')->paginate(10);

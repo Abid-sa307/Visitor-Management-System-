@@ -19,11 +19,11 @@
             <form action="{{ route('reports.visitors') }}" method="GET" class="form-inline">
                 <div class="form-group mr-3 mb-2">
                     <label for="from" class="mr-2">From:</label>
-                    <input type="date" class="form-control" id="from" name="from" value="{{ request('from') }}">
+                    <input type="date" class="form-control" id="from" name="from" value="{{ request('from', now()->format('Y-m-d')) }}">
                 </div>
                 <div class="form-group mr-3 mb-2">
                     <label for="to" class="mr-2">To:</label>
-                    <input type="date" class="form-control" id="to" name="to" value="{{ request('to') }}">
+                    <input type="date" class="form-control" id="to" name="to" value="{{ request('to', now()->format('Y-m-d')) }}">
                 </div>
                 <div class="form-group mr-3 mb-2">
                     <label for="company_id" class="mr-2">Company:</label>
@@ -36,26 +36,52 @@
                 </div>
                 @if(isset($branches) && count($branches) > 0)
                 <div class="form-group mr-3 mb-2">
-                    <label for="branch_id" class="mr-2">Branch:</label>
-                    <select class="form-control" id="branch_id" name="branch_id" 
-                        {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
-                        <option value="">All Branches</option>
-                        @foreach($branches as $id => $name)
-                            <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                        @endforeach
-                    </select>
+                    <label class="mr-2">Branch:</label>
+                    <div class="position-relative d-inline-block">
+                        <button class="btn btn-outline-secondary" type="button" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <span id="branchText">All Branches</span>
+                            <i class="fas fa-chevron-down ms-2"></i>
+                        </button>
+                        <div class="border rounded bg-white position-absolute p-2" id="branchDropdownMenu" style="min-width: 200px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllBranches" onchange="toggleAllBranches()">
+                                <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
+                            </div>
+                            <hr class="my-1">
+                            @foreach($branches as $id => $name)
+                                <div class="form-check">
+                                    <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="{{ $id }}" id="branch_{{ $id }}" 
+                                           {{ in_array($id, (array)request('branch_id', [])) ? 'checked' : '' }} onchange="updateBranchText()">
+                                    <label class="form-check-label" for="branch_{{ $id }}">{{ $name }}</label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
                 @endif
                 @if(isset($departments) && count($departments) > 0)
                 <div class="form-group mr-3 mb-2">
-                    <label for="department_id" class="mr-2">Department:</label>
-                    <select class="form-control" id="department_id" name="department_id" 
-                        {{ auth()->user()->role === 'superadmin' && !request('company_id') ? 'disabled' : '' }}>
-                        <option value="">All Departments</option>
-                        @foreach($departments as $id => $name)
-                            <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                        @endforeach
-                    </select>
+                    <label class="mr-2">Department:</label>
+                    <div class="position-relative d-inline-block">
+                        <button class="btn btn-outline-secondary" type="button" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <span id="departmentText">All Departments</span>
+                            <i class="fas fa-chevron-down ms-2"></i>
+                        </button>
+                        <div class="border rounded bg-white position-absolute p-2" id="departmentDropdownMenu" style="min-width: 200px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllDepartments" onchange="toggleAllDepartments()">
+                                <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
+                            </div>
+                            <hr class="my-1">
+                            @foreach($departments as $id => $name)
+                                <div class="form-check">
+                                    <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="{{ $id }}" id="department_{{ $id }}" 
+                                           {{ in_array($id, (array)request('department_id', [])) ? 'checked' : '' }} onchange="updateDepartmentText()">
+                                    <label class="form-check-label" for="department_{{ $id }}">{{ $name }}</label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
                 @endif
                 <button type="submit" class="btn btn-primary mb-2">Filter</button>
@@ -122,80 +148,161 @@
 </div>
 
 @push('scripts')
+<script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const companySelect = document.getElementById('company_id');
-    const departmentSelect = document.getElementById('department_id');
-    const branchSelect = document.getElementById('branch_id');
+    
+    // Multi-select functions
+    function toggleAllBranches() {
+        const selectAll = document.getElementById('selectAllBranches');
+        const checkboxes = document.querySelectorAll('.branch-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBranchText();
+    }
+
+    function toggleAllDepartments() {
+        const selectAll = document.getElementById('selectAllDepartments');
+        const checkboxes = document.querySelectorAll('.department-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateDepartmentText();
+    }
+
+    function updateBranchText() {
+        const checkboxes = document.querySelectorAll('.branch-checkbox:checked');
+        const text = document.getElementById('branchText');
+        if (checkboxes.length === 0) {
+            text.textContent = 'All Branches';
+        } else if (checkboxes.length === 1) {
+            text.textContent = checkboxes[0].nextElementSibling.textContent;
+        } else {
+            text.textContent = `${checkboxes.length} branches selected`;
+        }
+    }
+
+    function updateDepartmentText() {
+        const checkboxes = document.querySelectorAll('.department-checkbox:checked');
+        const text = document.getElementById('departmentText');
+        if (checkboxes.length === 0) {
+            text.textContent = 'All Departments';
+        } else if (checkboxes.length === 1) {
+            text.textContent = checkboxes[0].nextElementSibling.textContent;
+        } else {
+            text.textContent = `${checkboxes.length} departments selected`;
+        }
+    }
+
+    // Initialize text on page load
+    updateBranchText();
+    updateDepartmentText();
+    
+    // Set initial select all states
+    const branchCheckboxes = document.querySelectorAll('.branch-checkbox');
+    const departmentCheckboxes = document.querySelectorAll('.department-checkbox');
+    const selectAllBranches = document.getElementById('selectAllBranches');
+    const selectAllDepartments = document.getElementById('selectAllDepartments');
+    
+    if (branchCheckboxes.length > 0 && selectAllBranches) {
+        selectAllBranches.checked = Array.from(branchCheckboxes).every(cb => cb.checked);
+    }
+    if (departmentCheckboxes.length > 0 && selectAllDepartments) {
+        selectAllDepartments.checked = Array.from(departmentCheckboxes).every(cb => cb.checked);
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown') && !e.target.closest('.position-relative')) {
+            const branchMenu = document.getElementById('branchDropdownMenu');
+            const deptMenu = document.getElementById('departmentDropdownMenu');
+            if (branchMenu) branchMenu.style.display = 'none';
+            if (deptMenu) deptMenu.style.display = 'none';
+        }
+    });
+
+    // Make functions global
+    window.toggleAllBranches = toggleAllBranches;
+    window.toggleAllDepartments = toggleAllDepartments;
+    window.updateBranchText = updateBranchText;
+    window.updateDepartmentText = updateDepartmentText;
     
     if (companySelect) {
         companySelect.addEventListener('change', function() {
             const companyId = this.value;
             
-            // Reset department and branch dropdowns
-            departmentSelect.innerHTML = '<option value="">All Departments</option>';
-            if (branchSelect) {
-                branchSelect.innerHTML = '<option value="">All Branches</option>';
+            // Reset branch and department options
+            const branchContainer = document.querySelector('#branchDropdown')?.closest('.form-group');
+            const departmentContainer = document.querySelector('#departmentDropdown')?.closest('.form-group');
+            
+            if (branchContainer) {
+                const branchOptions = branchContainer.querySelector('.dropdown-menu');
+                branchOptions.innerHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllBranches" onchange="toggleAllBranches()">
+                        <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
+                    </div>
+                    <hr class="my-1">
+                `;
             }
             
-            // Enable/disable dropdowns based on company selection
-            departmentSelect.disabled = !companyId;
-            if (branchSelect) branchSelect.disabled = !companyId;
+            if (departmentContainer) {
+                const departmentOptions = departmentContainer.querySelector('.dropdown-menu');
+                departmentOptions.innerHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllDepartments" onchange="toggleAllDepartments()">
+                        <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
+                    </div>
+                    <hr class="my-1">
+                `;
+            }
             
             if (companyId) {
                 // Load branches for selected company
-                if (branchSelect) {
-                    fetch(`/api/companies/${companyId}/branches`)
-                        .then(response => response.json())
-                        .then(branches => {
+                fetch(`/api/companies/${companyId}/branches`)
+                    .then(response => response.json())
+                    .then(branches => {
+                        if (branchContainer) {
+                            const branchOptions = branchContainer.querySelector('.dropdown-menu');
+                            const selectedBranches = @json(request('branch_id', []));
                             branches.forEach(branch => {
-                                const option = document.createElement('option');
-                                option.value = branch.id;
-                                option.textContent = branch.name;
-                                branchSelect.appendChild(option);
+                                const div = document.createElement('div');
+                                div.className = 'form-check';
+                                const isChecked = selectedBranches.includes(branch.id.toString()) ? 'checked' : '';
+                                div.innerHTML = `
+                                    <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${branch.id}" id="branch_${branch.id}" ${isChecked} onchange="updateBranchText()">
+                                    <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
+                                `;
+                                branchOptions.appendChild(div);
                             });
-                        })
-                        .catch(error => console.error('Error loading branches:', error));
-                }
+                            updateBranchText();
+                        }
+                    }))
+                    .catch(error => console.error('Error loading branches:', error));
                 
                 // Load departments for selected company
                 fetch(`/api/companies/${companyId}/departments`)
                     .then(response => response.json())
                     .then(departments => {
-                        departments.forEach(dept => {
-                            const option = document.createElement('option');
-                            option.value = dept.id;
-                            option.textContent = dept.name;
-                            departmentSelect.appendChild(option);
-                        });
-                    })
+                        if (departmentContainer) {
+                            const departmentOptions = departmentContainer.querySelector('.dropdown-menu');
+                            const selectedDepartments = @json(request('department_id', []));
+                            departments.forEach(dept => {
+                                const div = document.createElement('div');
+                                div.className = 'form-check';
+                                const isChecked = selectedDepartments.includes(dept.id.toString()) ? 'checked' : '';
+                                div.innerHTML = `
+                                    <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" ${isChecked} onchange="updateDepartmentText()">
+                                    <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
+                                `;
+                                departmentOptions.appendChild(div);
+                            });
+                            updateDepartmentText();
+                        }
+                    }))
                     .catch(error => console.error('Error loading departments:', error));
             }
-        });
-    }
-    
-    // Handle branch change to load departments
-    if (branchSelect) {
-        branchSelect.addEventListener('change', function() {
-            const branchId = this.value;
             
-            // Reset department dropdown
-            departmentSelect.innerHTML = '<option value="">All Departments</option>';
-            
-            if (branchId) {
-                // Load departments for selected branch
-                fetch(`/api/branches/${branchId}/departments`)
-                    .then(response => response.json())
-                    .then(departments => {
-                        departments.forEach(dept => {
-                            const option = document.createElement('option');
-                            option.value = dept.id;
-                            option.textContent = dept.name;
-                            departmentSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error loading departments:', error));
-            }
+            updateBranchText();
+            updateDepartmentText();
         });
     }
 });

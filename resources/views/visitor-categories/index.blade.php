@@ -13,23 +13,38 @@
 
 @section('content')
 <div class="container">
+    <div class="page-heading mb-4">
+        <div>
+            <div class="page-heading__eyebrow">Visitor Experience</div>
+            <h1 class="page-heading__title">Category Management</h1>
+            <div class="page-heading__meta">
+                Standardize visitor types across companies and branches to drive tailored approvals and journeys.
+            </div>
+        </div>
+        <div class="page-heading__actions">
+            <a href="{{ route('visitor-categories.create') }}" class="btn btn-primary btn-lg shadow-sm">
+                <i class="fas fa-plus me-2"></i> Add Category
+            </a>
+        </div>
+    </div>
+
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
-            <h5 class="mb-0">
-                <i class="fas fa-tags me-2 text-primary"></i>Visitor Categories
-            </h5>
-            <a href="{{ route('visitor-categories.create') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-1"></i> Add New
-            </a>
+            <div class="section-heading w-100">
+                <div class="section-heading__title">
+                    <i class="fas fa-tags text-primary"></i> Visitor Categories
+                </div>
+                <p class="section-heading__meta mb-0">Review tenant-specific types, descriptions, and status controls.</p>
+            </div>
         </div>
 
         <div class="card-body">
-            @if (session('success'))
+            <!-- @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            @endif
+            @endif -->
             
             @if (session('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -68,32 +83,34 @@
                                 </span>
                             </td>
                             <td class="action-buttons">
-                                <a href="{{ route('visitor-categories.edit', $category) }}" 
-                                   class="btn btn-sm btn-primary" 
-                                   data-bs-toggle="tooltip" 
-                                   title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('visitor-categories.destroy', $category) }}" 
-                                      method="POST" 
-                                      class="d-inline"
-                                      onsubmit="return confirm('Are you sure you want to delete this category? This action cannot be undone.');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" 
-                                            class="btn btn-sm btn-danger"
-                                            data-bs-toggle="tooltip"
-                                            title="Delete"
-                                            {{ $category->visitors()->exists() ? 'disabled' : '' }}>
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                                @if($category->visitors()->exists())
-                                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" 
-                                      title="Cannot delete: This category has associated visitors">
-                                    <i class="fas fa-info-circle text-muted ms-1"></i>
-                                </span>
-                                @endif
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="{{ route('visitor-categories.edit', $category) }}" 
+                                       class="action-btn action-btn--edit action-btn--icon" 
+                                       data-bs-toggle="tooltip" 
+                                       title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('visitor-categories.destroy', $category) }}" 
+                                          method="POST" 
+                                          class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this category? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="action-btn action-btn--delete action-btn--icon"
+                                                data-bs-toggle="tooltip"
+                                                title="Delete"
+                                                {{ $category->visitors()->exists() ? 'disabled' : '' }}>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    @if($category->visitors()->exists())
+                                    <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" 
+                                          title="Cannot delete: This category has associated visitors">
+                                        <i class="fas fa-info-circle text-muted ms-1"></i>
+                                    </span>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @endforeach

@@ -23,13 +23,25 @@
             </div>
         @endif
 
-<form id="visitorForm" method="POST" action="{{ route('qr.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
+        @if(isset($canUndoVisit) && $canUndoVisit)
+            <div class="alert alert-warning text-center mb-4">
+                <i class="fas fa-undo me-2"></i>
+                <strong>Visit Form Recently Submitted</strong>
+                <p class="mb-2 mt-2">The visit form was submitted recently. You can undo this submission within 30 minutes.</p>
+                <form action="{{ route('public.visitor.visit.undo', ['company' => $company, 'visitor' => $visitor]) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to undo the visit form submission?')">
+                        <i class="fas fa-undo me-1"></i> Undo Visit Form Submission
+                    </button>
+                </form>
+            </div>
+        @endif
+
+<form id="visitorForm" method="POST" action="{{ route('public.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
     @csrf
-    @method('POST')
     @if(isset($visitor) && $visitor->exists)
-        <input type="hidden" name="status" value="{{ $visitor->status ?? 'Pending' }}">
-    @else
-        <input type="hidden" name="status" value="Pending">
+        @method('PUT')
     @endif
             {{-- Department & Visitor Category --}}
             <div class="row mb-3">

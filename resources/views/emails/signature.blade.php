@@ -100,7 +100,7 @@
                     <li style="display: flex; align-items: center; gap: 6px;">✅ Security & Firewall Management</li>
                     <li style="display: flex; align-items: center; gap: 6px;">✅ Database Management & Hosting</li>
 
-                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">INDUSTIES We Served</h4>
+                <h4 style="margin: 0; font-size: 14px; font-weight: bold;">INDUSTRIES We Served</h4>
 
                 <li style="display: flex; align-items: center; gap: 6px;">✅ Healthcare Solutions</li>
                 <li style="display: flex; align-items: center; gap: 6px;">✅ Logistics Optimization</li>

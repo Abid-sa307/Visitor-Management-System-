@@ -27,14 +27,20 @@
     <form action="{{ route('qr.visitor.store', $company) }}" method="POST" enctype="multipart/form-data" id="visitorForm">
       @csrf
       
+      <!-- Hidden inputs for face recognition -->
+      <input type="hidden" name="face_image" id="faceImageInput">
+      <input type="hidden" name="face_encoding" id="faceEncodingInput">
+      
       <div class="row">
         <!-- Left Column -->
         <div class="col-md-6">
           <!-- Phone -->
           <div class="mb-3">
             <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
-            <input type="text" name="phone" id="phoneInput" class="form-control @error('phone') is-invalid @enderror" required 
-                   value="{{ old('phone') }}" placeholder="Enter mobile number" autofocus>
+            <input type="tel" name="phone" id="phoneInput" class="form-control @error('phone') is-invalid @enderror" required 
+                   value="{{ old('phone') }}" placeholder="Enter mobile number" pattern="[0-9]{10,15}" 
+                   maxlength="15" autofocus oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <div class="form-text">Enter 10-15 digit mobile number (numbers only)</div>
             @error('phone')
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
@@ -289,7 +295,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   await checkFaceRecognitionRequirement();
   
   const form = document.getElementById('visitorForm');
-  let faceImageInput, faceEncodingInput;
+  const faceImageInput = document.getElementById('faceImageInput');
+  const faceEncodingInput = document.getElementById('faceEncodingInput');
   
   form.addEventListener('submit', function(e) {
     if (faceRecognitionRequired) {
@@ -297,13 +304,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         e.preventDefault();
         alert('Please capture your face photo before submitting.');
         return false;
-      }
-      
-      if (!faceImageInput.parentNode) {
-        form.appendChild(faceImageInput);
-      }
-      if (faceEncodingInput && !faceEncodingInput.parentNode) {
-        form.appendChild(faceEncodingInput);
       }
     }
   });
@@ -442,12 +442,6 @@ document.addEventListener('DOMContentLoaded', async function() {
       video.classList.add('d-none');
       capturedPhoto.classList.remove('d-none');
       
-      if (!faceImageInput) {
-        faceImageInput = document.createElement('input');
-        faceImageInput.type = 'hidden';
-        faceImageInput.name = 'face_image';
-        faceImageInput.id = 'faceImageInput';
-      }
       faceImageInput.value = imageData;
       
       const detections = await faceapi.detectAllFaces(
@@ -459,20 +453,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         const detection = detections[0];
         faceDescriptor = Array.from(detection.descriptor);
         
-        if (!faceEncodingInput) {
-          faceEncodingInput = document.createElement('input');
-          faceEncodingInput.type = 'hidden';
-          faceEncodingInput.name = 'face_encoding';
-          faceEncodingInput.id = 'faceEncodingInput';
-        }
         faceEncodingInput.value = JSON.stringify(faceDescriptor);
         
-        statusElement.textContent = 'Photo captured successfully!';
+        statusElement.textContent = 'Face captured successfully!';
+        startCameraBtn.classList.remove('d-none');
+        startCameraBtn.textContent = 'Retake Photo';
+        retakePhotoBtn.classList.add('d-none');
+        faceOverlay.classList.remove('face-detected');
+        
+        isFaceDetected = false;
       } else {
-        throw new Error('No face found in the captured photo');
+        statusElement.textContent = 'No face detected. Please try again.';
+        video.classList.remove('d-none');
+        capturedPhoto.classList.add('d-none');
       }
-      
-      retakePhotoBtn.classList.remove('d-none');
       
       stream.getTracks().forEach(track => track.stop());
       

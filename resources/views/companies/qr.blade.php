@@ -2,52 +2,55 @@
 
 @section('content')
 <div class="container-fluid px-4">
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    @if(isset($branch) && $branch)
-                        <i class="fas fa-code-branch me-2"></i> {{ $branch->name }}
-                        <small class="text-muted ms-2">({{ $company->name }})</small>
-                    @else
-                        <i class="fas fa-building me-2"></i> {{ $company->name }}
-                    @endif
-                </h5>
-                <div>
-                    <a href="{{ route('qr-management.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i> Back to List
-                    </a>
-                    @php
-                        $routeName = isset($branch) && $branch ? 'companies.branches.qr.download' : 'companies.qr.download';
-                        $routeParams = isset($branch) && $branch ? ['company' => $company, 'branch' => $branch] : $company;
-                    @endphp
-                    <a href="{{ route($routeName, $routeParams) }}" 
-                       class="btn btn-sm btn-primary ms-2">
-                        <i class="fas fa-download me-1"></i> Download QR
-                    </a>
-                    @php
-                        $publicRoute = isset($branch) && $branch 
-                            ? route('companies.branches.public.qr', ['company' => $company, 'branch' => $branch])
-                            : route('companies.public.qr', $company);
-                    @endphp
-                    <button class="btn btn-sm btn-success ms-2" 
-                            onclick="copyToClipboard('{{ $publicRoute }}')"
-                            data-bs-toggle="tooltip" 
-                            data-bs-placement="top" 
-                            title="Copy public link to clipboard">
-                        <i class="fas fa-link me-1"></i> Copy Public Link
-                    </button>
-                    <a href="{{ $publicRoute }}" 
-                       class="btn btn-sm btn-outline-secondary ms-2"
-                       target="_blank"
-                       data-bs-toggle="tooltip"
-                       data-bs-placement="top"
-                       title="Open public QR code page in new tab">
-                        <i class="fas fa-external-link-alt me-1"></i> View Public
-                    </a>
-                </div>
+    <div class="page-heading mb-4">
+        <div>
+            <div class="page-heading__eyebrow">Integrity</div>
+            <h1 class="page-heading__title">
+                @if(isset($branch) && $branch)
+                    {{ $branch->name }} QR Access
+                @else
+                    {{ $company->name }} QR Access
+                @endif
+            </h1>
+            <div class="page-heading__meta">
+                Generate, download, and share the live check-in link for this location with zero friction.
             </div>
         </div>
+        <div class="page-heading__actions">
+            <a href="{{ route('qr-management.index') }}" class="btn btn-outline-secondary btn-lg shadow-sm">
+                <i class="fas fa-arrow-left me-2"></i> Back to List
+            </a>
+            @php
+                $routeName = isset($branch) && $branch ? 'companies.branches.qr.download' : 'companies.qr.download';
+                $routeParams = isset($branch) && $branch ? ['company' => $company, 'branch' => $branch] : $company;
+            @endphp
+            <a href="{{ route($routeName, $routeParams) }}" class="btn btn-primary btn-lg shadow-sm">
+                <i class="fas fa-download me-2"></i> Download QR
+            </a>
+            @php
+                $publicRoute = isset($branch) && $branch 
+                    ? route('companies.branches.public.qr', ['company' => $company, 'branch' => $branch])
+                    : route('companies.public.qr', $company);
+            @endphp
+            <button class="btn btn-success btn-lg shadow-sm" 
+                    onclick="copyToClipboard('{{ $publicRoute }}')"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top" 
+                    title="Copy public link to clipboard">
+                <i class="fas fa-link me-2"></i> Copy Public Link
+            </button>
+            <a href="{{ $publicRoute }}" 
+               class="btn btn-outline-primary btn-lg shadow-sm"
+               target="_blank"
+               data-bs-toggle="tooltip"
+               data-bs-placement="top"
+               title="Open public QR code page in new tab">
+                <i class="fas fa-external-link-alt me-2"></i> View Public
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
         <div class="card-body text-center py-5">
             <div class="mb-4">
                 {!! $qrCode !!}

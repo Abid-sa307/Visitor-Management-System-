@@ -15,22 +15,36 @@ Route::get('/test', function () {
 });
 
 // Get branches for a company
-Route::get('/companies/{company}/branches', function (Company $company) {
-    $branches = $company->branches()->get(['id', 'name']);
-    return $branches->pluck('name', 'id');
+Route::get('/companies/{company}/branches', function (\App\Models\Company $company) {
+    return $company->branches()->get(['id', 'name']);
+});
+
+// Get departments for a company
+Route::get('/companies/{company}/departments', function (\App\Models\Company $company) {
+    return $company->departments()->get(['id', 'name']);
 });
 
 // Get departments for a branch
 Route::get('/branches/{branch}/departments', function (Branch $branch) {
-    return $branch->departments()
-        ->select('id', 'name')
-        ->orderBy('name')
-        ->get();
+    return $branch->departments()->get(['id', 'name']);
 });
 
 // Get face recognition setting for a company
-Route::get('/companies/{company}/face-recognition', function (Company $company) {
+Route::get('/companies/{company}/face-recognition', function (\App\Models\Company $company) {
     return response()->json([
         'enabled' => (bool) $company->face_recognition_enabled
+    ]);
+});
+
+// Get notification preference for a company
+Route::get('/companies/{company}/notification-preference', function (\App\Models\Company $company) {
+    return response()->json([
+        'enable_visitor_notifications' => (bool) $company->enable_visitor_notifications,
+        'company_name' => $company->name,
+        'debug' => [
+            'company_id' => $company->id,
+            'enable_visitor_notifications_raw' => $company->enable_visitor_notifications,
+            'enable_visitor_notifications_cast' => (bool) $company->enable_visitor_notifications
+        ]
     ]);
 });

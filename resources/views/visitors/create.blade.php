@@ -1,11 +1,37 @@
 @extends('layouts.sb')
 
 @section('content')
-<div class="container d-flex justify-content-center mt-5">
-  <div class="card shadow-lg p-4 w-100" style="max-width: 800px;">
-    <h3 class="mb-4 text-center fw-bold text-primary">
-      Register New Visitor
-    </h3>
+
+<div class="page-heading mb-4">
+    <div>
+        <p class="page-heading__eyebrow">Visitor Operations</p>
+        <h1 class="page-heading__title">Register New Visitor</h1>
+        <div class="page-heading__meta">
+            Capture visitor details, assign them to the correct company/branch, and collect the mandatory face snapshot in one streamlined flow.
+        </div>
+    </div>
+    <div class="page-heading__actions">
+        <a href="{{ route('visitors.index') }}" class="action-btn action-btn--view">
+            <i class="bi bi-people"></i>
+            View Visitors
+        </a>
+        <!-- <a href="{{ route('security-checks.index') }}" class="action-btn action-btn--edit">
+            <i class="bi bi-shield-lock"></i>
+            Security Checks
+        </a> -->
+    </div>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-12 col-xl-10">
+    <div class="modern-panel p-4">
+      <div class="section-heading mb-4">
+        <div class="section-heading__title">
+          <i class="bi bi-person-plus"></i>
+          Visitor & Visit Details
+        </div>
+        <div class="section-heading__meta">Provide contact information, visit preferences, and any supporting documents.</div>
+      </div>
 
     @if ($errors->any())
       <div class="alert alert-danger">
@@ -18,10 +44,20 @@
       </div>
     @endif
 
-    <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}" 
+    <!-- Face Recognition Requirement Notice -->
+    <div id="faceRecognitionNotice" class="alert alert-warning d-none" role="alert">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+        <div>
+          <h6 class="alert-heading mb-1">Face Recognition Required</h6>
+          <p class="mb-0">This company requires face recognition for all visitors. Please capture the visitor's face photo using the camera below before submitting the form.</p>
+        </div>
+      </div>
+    </div>
+
+    <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}"
         method="POST" enctype="multipart/form-data" id="visitorForm">
       @csrf
-      
 
       <div class="row">
         <!-- Left Column -->
@@ -149,6 +185,13 @@
 
         <!-- Right Column -->
         <div class="col-md-6">
+          <div class="section-heading mt-3 mt-md-0 mb-3">
+            <div class="section-heading__title">
+              <i class="bi bi-camera-video"></i>
+              Face Capture
+            </div>
+            <div class="section-heading__meta">Record a clear face photo to enable quick check-ins.</div>
+          </div>
           <!-- Face Capture Section -->
           <div class="mb-3" id="faceCaptureSection">
             <label class="form-label fw-semibold">Face Capture <span class="text-danger" id="faceRequired">*</span></label>
@@ -184,13 +227,15 @@
 
       <!-- Submit Button -->
       <div class="d-grid gap-2 mt-4">
-        <button type="submit" class="btn btn-primary btn-lg">
+        <button type="submit" class="action-btn action-btn--view w-100 justify-content-center">
           <i class="fas fa-user-plus me-2"></i>Register Visitor
         </button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
+
+@endsection
 
 @push('styles')
 <style>
@@ -388,16 +433,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     const faceRequired = document.getElementById('faceRequired');
     const faceCaptureSection = document.getElementById('faceCaptureSection');
     const statusElement = document.getElementById('status');
+    const faceRecognitionNotice = document.getElementById('faceRecognitionNotice');
     
     if (required) {
       faceRequired.style.display = 'inline';
       if (statusElement) {
         statusElement.textContent = 'Face capture is required - Position your face inside the circle';
       }
+      if (faceRecognitionNotice) {
+        faceRecognitionNotice.classList.remove('d-none');
+      }
     } else {
       faceRequired.style.display = 'none';
       if (statusElement) {
         statusElement.textContent = 'Face capture is optional - Position your face inside the circle';
+      }
+      if (faceRecognitionNotice) {
+        faceRecognitionNotice.classList.add('d-none');
       }
     }
   }
@@ -425,7 +477,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   } else {
     // For non-super users, check current company's face recognition setting
-    updateFaceRequirement(false); // Default to optional for company users
+    const companyId = {{ auth()->user()->company_id ?? 'null' }};
+    if (companyId) {
+      checkFaceRecognitionRequirement(companyId);
+    } else {
+      updateFaceRequirement(false);
+    }
   }
 
   // DOM Elements
@@ -659,7 +716,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 });
+
+// Trigger notification when visitor is successfully created
+@if(session('success') && session('play_notification'))
+document.addEventListener('DOMContentLoaded', function() {
+    showVisitorNotification('visitor_added', {
+        visitorName: 'New Visitor',
+        companyName: 'ABCEFGH Industries'
+    });
+});
+@endif
 </script>
 @endpush
-
-@endsection

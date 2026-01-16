@@ -2,12 +2,6 @@
 
 @push('styles')
 <style>
-    .filter-section {
-        background-color: #f8f9fc;
-        padding: 1.5rem;
-        border-radius: 0.35rem;
-        margin-bottom: 1.5rem;
-    }
     .table th {
         white-space: nowrap;
         font-size: 0.85rem;
@@ -44,31 +38,16 @@
     .action-buttons {
         white-space: nowrap;
     }
-    .filter-card {
-        margin-bottom: 1.5rem;
-        border: 1px solid #e3e6f0;
-        border-radius: 0.35rem;
-    }
-    .filter-card .card-header {
-        background-color: #f8f9fc;
-        border-bottom: 1px solid #e3e6f0;
-        padding: 0.75rem 1.25rem;
-    }
-    .filter-card .card-body {
-        padding: 1.25rem;
-    }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-shield-alt text-primary me-2"></i>Security Check Reports
-        </h1>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800">Security Check Reports</h2>
         <div class="d-flex gap-2">
             <a href="{{ route('reports.security.export', request()->query()) }}" 
-               class="btn btn-success btn-sm" 
+               class="btn btn-success" 
                data-bs-toggle="tooltip" 
                title="Export to Excel">
                 <i class="fas fa-file-excel me-1"></i> Export
@@ -81,101 +60,84 @@
         <div class="card-body">
             <form method="GET" action="{{ route('reports.security') }}" id="filterForm">
                 <div class="row g-3 align-items-end">
-                    {{-- Date Range --}}
+                    {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
+                        @php
+                            $from = request('from', now()->subDays(30)->format('Y-m-d'));
+                            $to = request('to', now()->format('Y-m-d'));
+                        @endphp
                         <label class="form-label">Date Range</label>
-                        <div class="input-group mb-2">
-                            @php
-                                $fromDate = request('from') ?? now()->subDays(30)->format('Y-m-d');
-                                $toDate = request('to') ?? now()->format('Y-m-d');
-                            @endphp
-                            <input type="date" name="from" id="from_date" class="form-control"
-                                   value="{{ $fromDate }}" max="{{ date('Y-m-d') }}">
-                            <span class="input-group-text">to</span>
-                            <input type="date" name="to" id="to_date" class="form-control"
-                                   value="{{ $toDate }}" max="{{ date('Y-m-d') }}">
-                        </div>
-                        <div class="d-flex flex-wrap gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="today">
-                                Today
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="yesterday">
-                                Yesterday
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="this-month">
-                                This Month
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary quick-date" data-range="last-month">
-                                Last Month
-                            </button>
-                        </div>
+                        @include('components.basic_date_range', ['from' => $from, 'to' => $to])
                     </div>
 
-                    {{-- Company (superadmin only) --}}
+                    {{-- 2️⃣ Company (superadmin only) --}}
                     @if(auth()->user()->role === 'superadmin')
-                        <div class="col-lg-3 col-md-6">
-                            <label for="company_id" class="form-label">Company</label>
-                            <select name="company_id" id="company_id" class="form-select">
-                                <option value="">All Companies</option>
-                                @foreach($companies as $company)
-                                    <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
-                                        {{ $company->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="company_id" class="form-label">Company</label>
+                        <select name="company_id" id="company_id" class="form-select">
+                            <option value="">All Companies</option>
+                            @foreach(\App\Models\Company::orderBy('name')->get() as $company)
+                                <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
+                                    {{ $company->name }}
+                                    @if($company->branch_start_date && $company->branch_end_date)
+                                        - {{ \Carbon\Carbon::parse($company->branch_start_date)->format('d M y') }} - {{ \Carbon\Carbon::parse($company->branch_end_date)->format('d M y') }}
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     @endif
 
-                    {{-- Branch --}}
-                    <div class="col-lg-3 col-md-6">
-                        <label for="branch_id" class="form-label">Branch</label>
-                        <select name="branch_id" id="branch_id"
-                                class="form-select"
-                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
-                            <option value="">All Branches</option>
-                            @if(isset($branches) && count($branches) > 0)
-                                @foreach($branches as $id => $name)
-                                    <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
-                                        {{ $name }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-                    </div>
-
-                    {{-- Department --}}
+                    {{-- 3️⃣ Branch --}}
                     <div class="col-lg-2 col-md-6">
-                        <label for="department_id" class="form-label">Department</label>
-                        <select name="department_id" id="department_id"
-                                class="form-select"
-                                @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled @endif>
-                            <option value="">All Departments</option>
-                            @if(isset($departments) && count($departments) > 0)
-                                @foreach($departments as $id => $name)
-                                    <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
-                                        {{ $name }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
+                        <label class="form-label">Branch</label>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchBtn" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
+                                <span id="branchText">All Branches</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="branchDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllBranches" onchange="toggleAllBranches()">
+                                    <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="branchOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
                     </div>
 
-                    {{-- Action Buttons --}}
+                    {{-- 4️⃣ Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label">Department</label>
+                        <div class="position-relative">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="departmentBtn" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                                <span id="departmentText">All Departments</span>
+                                <i class="fas fa-chevron-down float-end mt-1"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 p-2" id="departmentDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllDepartments" onchange="toggleAllDepartments()">
+                                    <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
+                                </div>
+                                <hr class="my-1">
+                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <hr class="my-1">
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('departmentDropdownMenu').style.display='none'">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Buttons row --}}
                     <div class="col-12 d-flex flex-wrap gap-2 mt-3">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-filter me-1"></i> Apply Filters
+                            <i class="fas fa-filter me-1"></i> Apply
                         </button>
                         <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-undo me-1"></i> Reset
                         </a>
-                        @if(request()->hasAny(['company_id', 'branch_id', 'department_id', 'from', 'to']))
-                            <a href="{{ route('reports.security.export', request()->query()) }}" 
-                               class="btn btn-success ms-auto" 
-                               data-bs-toggle="tooltip" 
-                               title="Export to Excel">
-                                <i class="fas fa-file-excel me-1"></i> Export
-                            </a>
-                        @endif
                     </div>
                 </div>
             </form>
@@ -310,324 +272,178 @@
 
 @push('scripts')
 <script>
-// Initialize tooltips
+function toggleAllBranches() {
+    const selectAll = document.getElementById('selectAllBranches');
+    const checkboxes = document.querySelectorAll('.branch-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateBranchText();
+    loadDepartmentsByBranches();
+}
+
+function toggleAllDepartments() {
+    const selectAll = document.getElementById('selectAllDepartments');
+    const checkboxes = document.querySelectorAll('.department-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateDepartmentText();
+}
+
+function updateBranchText() {
+    const checkboxes = document.querySelectorAll('.branch-checkbox:checked');
+    const text = document.getElementById('branchText');
+    if (checkboxes.length === 0) text.textContent = 'All Branches';
+    else if (checkboxes.length === 1) text.textContent = checkboxes[0].nextElementSibling.textContent;
+    else text.textContent = `${checkboxes.length} branches selected`;
+}
+
+function updateDepartmentText() {
+    const checkboxes = document.querySelectorAll('.department-checkbox:checked');
+    const text = document.getElementById('departmentText');
+    if (checkboxes.length === 0) text.textContent = 'All Departments';
+    else if (checkboxes.length === 1) text.textContent = checkboxes[0].nextElementSibling.textContent;
+    else text.textContent = `${checkboxes.length} departments selected`;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Get form elements
-    const filterForm = document.getElementById('filterForm');
     const companySelect = document.getElementById('company_id');
-    const branchSelect = document.getElementById('branch_id');
-    const departmentSelect = document.getElementById('department_id');
-    const fromDate = document.getElementById('from_date');
-    const toDate = document.getElementById('to_date');
-
-    // Quick date range buttons
-    document.querySelectorAll('.quick-date').forEach(button => {
-        button.addEventListener('click', function() {
-            const range = this.dataset.range;
-            const today = new Date();
-            const from = new Date();
+    const branchBtn = document.querySelector('[data-dropdown="branch"]');
+    const departmentBtn = document.querySelector('[data-dropdown="department"]');
+    const branchOptions = document.getElementById('branchOptions');
+    const departmentOptions = document.getElementById('departmentOptions');
+    
+    let allBranches = @json($branches ?? []);
+    let allDepartments = @json($departments ?? []);
+    
+    function initBranches(skipDeptLoad = false) {
+        branchOptions.innerHTML = '';
+        const branches = Array.isArray(allBranches) ? allBranches : Object.entries(allBranches).map(([id, name]) => ({id: parseInt(id), name}));
+        let selectedBranches = @json(request('branch_id', []));
+        selectedBranches = Array.isArray(selectedBranches) ? selectedBranches.map(String) : [String(selectedBranches)];
+        branches.forEach(branch => {
+            const isChecked = selectedBranches.includes(String(branch.id));
+            const div = document.createElement('div');
+            div.className = 'form-check';
+            const checkbox = document.createElement('input');
+            checkbox.className = 'form-check-input branch-checkbox';
+            checkbox.type = 'checkbox';
+            checkbox.name = 'branch_id[]';
+            checkbox.value = branch.id;
+            checkbox.id = `branch_${branch.id}`;
+            checkbox.checked = isChecked;
+            checkbox.onchange = function() { updateBranchText(); loadDepartmentsByBranches(); };
             
-            switch(range) {
-                case 'today':
-                    fromDate.valueAsDate = today;
-                    toDate.valueAsDate = today;
-                    break;
-                    
-                case 'yesterday':
-                    const yesterday = new Date(today);
-                    yesterday.setDate(today.getDate() - 1);
-                    fromDate.valueAsDate = yesterday;
-                    toDate.valueAsDate = yesterday;
-                    break;
-                    
-                case 'this-month':
-                    from.setDate(1); // First day of current month
-                    toDate.valueAsDate = today;
-                    fromDate.valueAsDate = from;
-                    break;
-                    
-                case 'last-month':
-                    const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                    const lastDayLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-                    fromDate.valueAsDate = firstDayLastMonth;
-                    toDate.valueAsDate = lastDayLastMonth;
-                    break;
-            }
+            const label = document.createElement('label');
+            label.className = 'form-check-label';
+            label.htmlFor = `branch_${branch.id}`;
+            label.textContent = branch.name;
             
-            filterForm.submit();
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            branchOptions.appendChild(div);
         });
-    });
-
-    // Company change handler
-    if (companySelect) {
-        companySelect.addEventListener('change', function() {
-            const companyId = this.value;
-            const isSuperAdmin = {{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }};
-            
-            // Reset and disable dependent dropdowns
-            if (departmentSelect) {
-                departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
-                departmentSelect.disabled = true;
-            }
-            
-            if (branchSelect) {
-                branchSelect.innerHTML = '<option value="">Loading branches...</option>';
-                branchSelect.disabled = !companyId;
-            }
-
-            // If no company selected, reset the form
-            if (!companyId) {
-                if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
-                    departmentSelect.disabled = true;
-                }
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">All Branches</option>';
-                    branchSelect.disabled = isSuperAdmin ? true : false;
-                }
-                return;
-            }
-
-            // Load branches for the selected company
-            fetch(`/api/companies/${companyId}/branches`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const branches = Array.isArray(data)
-                        ? data
-                        : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
-
-                    if (branchSelect) {
-                        branchSelect.innerHTML = '<option value="">All Branches</option>';
-                        branches.forEach(branch => {
-                            const option = new Option(branch.name, branch.id);
-                            branchSelect.add(option);
-                        });
-                        branchSelect.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading branches:', error);
-                    if (branchSelect) {
-                        branchSelect.innerHTML = '<option value="">Error loading branches</option>';
-                    }
-                });
-        });
-    }
-
-    // Form validation
-    if (filterForm) {
-        filterForm.addEventListener('submit', function(e) {
-            const from = fromDate.value ? new Date(fromDate.value) : null;
-            const to = toDate.value ? new Date(toDate.value) : null;
-            
-            if (from && to && from > to) {
-                e.preventDefault();
-                alert('End date must be after start date');
-                return false;
-            }
-            return true;
-        });
-    }
-});
-// Enable Bootstrap tooltips
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Handle company change for dynamic loading of departments and branches
-    const companySelect = document.getElementById('company_id');
-    const departmentSelect = document.getElementById('department_id');
-    const branchSelect = document.getElementById('branch_id');
-    const fromDate = document.getElementById('from_date');
-    const toDate = document.getElementById('to_date');
-    const filterForm = document.getElementById('filterForm');
-
-    // Quick date range buttons
-    document.querySelectorAll('.quick-date').forEach(button => {
-        button.addEventListener('click', function() {
-            const days = parseInt(this.dataset.days);
-            const today = new Date();
-            
-            toDate.valueAsDate = today;
-            
-            if (days > 0) {
-                const from = new Date();
-                from.setDate(today.getDate() - days);
-                fromDate.valueAsDate = from;
-            } else {
-                fromDate.valueAsDate = today;
-            }
-            
-            filterForm.submit();
-        });
-    });
-
-    // Company change handler
-    if (companySelect) {
-        companySelect.addEventListener('change', function() {
-            const companyId = this.value;
-            const isSuperAdmin = {{ auth()->user()->role === 'superadmin' ? 'true' : 'false' }};
-            
-            // Reset and disable dependent dropdowns
-            if (departmentSelect) {
-                departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
-                departmentSelect.disabled = true;
-            }
-            
-            if (branchSelect) {
-                branchSelect.innerHTML = '<option value="">Loading branches...</option>';
-                branchSelect.disabled = !companyId;
-            }
-
-            // If no company selected, reset the form
-            if (!companyId) {
-                if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
-                    departmentSelect.disabled = true;
-                }
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">All Branches</option>';
-                    branchSelect.disabled = !isSuperAdmin;
-                }
-                return;
-            }
-
-            // Load branches for the selected company
-            fetch(`/api/companies/${companyId}/branches`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const branches = Array.isArray(data)
-                        ? data
-                        : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
-
-                    if (branchSelect) {
-                        branchSelect.innerHTML = '<option value="">All Branches</option>';
-                        branches.forEach(branch => {
-                            const option = new Option(branch.name, branch.id);
-                            branchSelect.add(option);
-                        });
-                        branchSelect.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading branches:', error);
-                    if (branchSelect) {
-                        branchSelect.innerHTML = '<option value="">Error loading branches</option>';
-                    }
-                });
-        });
-    }
-
-    // Form validation
-    if (filterForm) {
-        filterForm.addEventListener('submit', function(e) {
-            const from = fromDate.value ? new Date(fromDate.value) : null;
-            const to = toDate.value ? new Date(toDate.value) : null;
-            
-            if (from && to && from > to) {
-                e.preventDefault();
-                alert('End date must be after start date');
-                return false;
-            }
-            return true;
-        });
-    }
-});
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Get DOM elements
-    const companySelect = document.getElementById('company_id');
-    const departmentSelect = document.getElementById('department_id');
-    const branchSelect = document.getElementById('branch_id');
-    const filterForm = document.getElementById('filterForm');
-
-    // Function to load departments based on company
-    async function loadDepartments(companyId) {
-        departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
-        departmentSelect.disabled = true;
-    }
-
-    // Function to load branches based on company
-    async function loadBranches(companyId) {
-        if (!companyId) {
-            branchSelect.innerHTML = '<option value="">All Branches</option>';
-            branchSelect.disabled = true;
-            return;
+        updateBranchText();
+        if (branches.length > 0) {
+            branchBtn.disabled = false;
+            branchBtn.style.opacity = '1';
+            branchBtn.style.cursor = 'pointer';
         }
+        if (!skipDeptLoad && selectedBranches.length > 0 && deptCount === 0) {
+            loadDepartmentsByBranches();
+        }
+    }
+    
+    function initDepartments() {
+        departmentOptions.innerHTML = '';
+        const departments = Array.isArray(allDepartments) ? allDepartments : Object.entries(allDepartments).map(([id, name]) => ({id: parseInt(id), name}));
+        let selectedDepartments = @json(request('department_id', []));
+        selectedDepartments = Array.isArray(selectedDepartments) ? selectedDepartments.map(String) : [String(selectedDepartments)];
+        departments.forEach(dept => {
+            const isChecked = selectedDepartments.includes(String(dept.id));
+            const div = document.createElement('div');
+            div.className = 'form-check';
+            div.innerHTML = `
+                <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
+                <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
+            `;
+            departmentOptions.appendChild(div);
+        });
+        updateDepartmentText();
+        if (departments.length > 0) {
+            departmentBtn.disabled = false;
+            departmentBtn.style.opacity = '1';
+            departmentBtn.style.cursor = 'pointer';
+        }
+    }
+    
+    const branchCount = Array.isArray(allBranches) ? allBranches.length : Object.keys(allBranches).length;
+    const deptCount = Array.isArray(allDepartments) ? allDepartments.length : Object.keys(allDepartments).length;
+    if (branchCount > 0) initBranches(true);
+    if (deptCount > 0) initDepartments();
+    
+    window.loadDepartmentsByBranches = function() {
+        const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
+        
+        departmentOptions.innerHTML = '';
+        departmentBtn.disabled = true;
+        departmentBtn.style.opacity = '0.5';
+        departmentBtn.style.cursor = 'not-allowed';
+        document.getElementById('departmentText').textContent = 'All Departments';
+        
+        if (selectedBranches.length === 0) return;
 
-        try {
-            const response = await fetch(`/api/companies/${companyId}/branches`);
-            const branches = await response.json();
-            
-            let options = '<option value="">All Branches</option>';
-            branches.forEach(branch => {
-                const selected = branchSelect.dataset.selected == branch.id ? 'selected' : '';
-                options += `<option value="${branch.id}" ${selected}>${branch.name}</option>`;
+        Promise.all(selectedBranches.map(branchId => 
+            fetch(`/api/branches/${branchId}/departments`).then(r => r.json())
+        )).then(results => {
+            const deptMap = [];
+            results.forEach(depts => {
+                depts.forEach(dept => {
+                    if (!deptMap.find(d => d.id == dept.id)) {
+                        deptMap.push(dept);
+                    }
+                });
             });
-            
-            branchSelect.innerHTML = options;
-            branchSelect.disabled = false;
-        } catch (error) {
-            console.error('Error loading branches:', error);
-        }
-    }
-
-    // Company change event
+            allDepartments = deptMap;
+            initDepartments();
+        }).catch(error => console.error('Error loading departments:', error));
+    };
+    
     if (companySelect) {
         companySelect.addEventListener('change', function() {
             const companyId = this.value;
-            loadDepartments(companyId);
-            loadBranches(companyId);
-        });
-    }
-
-    // Date validation
-    const fromDateInput = document.getElementById('from');
-    const toDateInput = document.getElementById('to');
-
-    if (fromDateInput && toDateInput) {
-        fromDateInput.addEventListener('change', function() {
-            if (this.value && toDateInput.value && new Date(this.value) > new Date(toDateInput.value)) {
-                alert('Start date cannot be after end date');
-                this.value = '';
+            
+            branchOptions.innerHTML = '';
+            departmentOptions.innerHTML = '';
+            document.getElementById('branchText').textContent = 'All Branches';
+            document.getElementById('departmentText').textContent = 'All Departments';
+            
+            if (!companyId) {
+                branchBtn.disabled = true;
+                branchBtn.style.opacity = '0.5';
+                branchBtn.style.cursor = 'not-allowed';
+                departmentBtn.disabled = true;
+                departmentBtn.style.opacity = '0.5';
+                departmentBtn.style.cursor = 'not-allowed';
+                return;
             }
+            
+            fetch(`/api/companies/${companyId}/branches`)
+                .then(response => response.json())
+                .then(data => {
+                    allBranches = data;
+                    if (data.length > 0) {
+                        initBranches();
+                    } else {
+                        branchBtn.disabled = true;
+                        branchBtn.style.opacity = '0.5';
+                        branchBtn.style.cursor = 'not-allowed';
+                    }
+                })
+                .catch(error => console.error('Error loading branches:', error));
         });
-
-        toDateInput.addEventListener('change', function() {
-            if (this.value && fromDateInput.value && new Date(this.value) < new Date(fromDateInput.value)) {
-                alert('End date cannot be before start date');
-                this.value = '';
-            }
-        });
-    }
-
-    // Set initial state if company is selected
-    if (companySelect && companySelect.value) {
-        loadDepartments(companySelect.value);
-        loadBranches(companySelect.value);
     }
 });
 </script>

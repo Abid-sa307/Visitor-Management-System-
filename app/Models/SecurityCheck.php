@@ -9,6 +9,7 @@ class SecurityCheck extends Model
 {
     protected $fillable = [
         'visitor_id', 
+        'check_type',
         'questions', 
         'responses', 
         'security_officer_name'

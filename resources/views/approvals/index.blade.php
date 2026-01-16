@@ -2,8 +2,21 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Visitor Approvals</h1>
+    <div class="page-heading mb-4">
+        <div>
+            <div class="page-heading__eyebrow">Governance</div>
+            <h1 class="page-heading__title">Visitor Approvals</h1>
+            <div class="page-heading__meta">
+                Oversee every pending entry request, align reviewers, and clear visitors with full accountability.
+            </div>
+        </div>
+        <div class="page-heading__actions">
+            @if(Route::has('visitors.create'))
+                <a href="{{ route('visitors.create') }}" class="btn btn-primary btn-lg shadow-sm">
+                    <i class="fas fa-user-plus me-2"></i> New Visitor
+                </a>
+            @endif
+        </div>
     </div>
 
     @if(session('success'))
@@ -14,10 +27,15 @@
 
     {{-- FILTER FORM --}}
     <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Filter Approvals</h6>
-        </div>
         <div class="card-body">
+            <div class="section-heading">
+                <div class="section-heading__title">
+                    <i class="fas fa-filter"></i> Filter Approvals
+                </div>
+                <div class="section-heading__meta">
+                    Narrow requests by company, branch, and department to act faster.
+                </div>
+            </div>
             <form method="GET" class="row g-3 align-items-end">
                 @if(auth()->user()->role === 'superadmin')
                 <div class="col-md-3">
@@ -69,10 +87,15 @@
     </div>
 
     <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Pending Approvals</h6>
-        </div>
         <div class="card-body">
+            <div class="section-heading">
+                <div class="section-heading__title">
+                    <i class="fas fa-clipboard-list"></i> Pending Approvals
+                </div>
+                <div class="section-heading__meta">
+                    Review visitor intent, confirm details, and approve or reject with context.
+                </div>
+            </div>
             @if($visitors->isEmpty())
                 <div class="alert alert-info">No pending approvals found.</div>
             @else

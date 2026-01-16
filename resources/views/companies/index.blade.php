@@ -2,19 +2,27 @@
 
 @section('content')
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h4 text-gray-800">All Companies</h1>
-        <a href="{{ route('companies.create') }}" class="btn btn-primary btn-sm shadow-sm">
-            <i class="fas fa-plus me-1"></i> Add Company
-        </a>
+    <div class="page-heading mb-4">
+        <div>
+            <div class="page-heading__eyebrow">Directory</div>
+            <h1 class="page-heading__title">Company Overview</h1>
+            <div class="page-heading__meta">
+                Monitor tenant organizations, onboarding progress, and compliance controls from a single dashboard.
+            </div>
+        </div>
+        <div class="page-heading__actions">
+            <a href="{{ route('companies.create') }}" class="btn btn-primary btn-lg shadow-sm">
+                <i class="fas fa-plus me-2"></i> Add Company
+            </a>
+        </div>
     </div>
 
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle-fill me-1"></i> {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    @endif -->
 
     <!-- Search Bar -->
     <div class="card shadow-sm mb-4">
@@ -58,6 +66,7 @@
                             <th>Face Verification</th>
                             <th>Website</th>
                             <th>Security Check</th>
+                            <th>Notification</th>
                             <th style="width: 120px;">Actions</th>
                         </tr>
                     </thead>
@@ -103,35 +112,52 @@
                             </td>
                             <td class="text-capitalize">
                                 @php
-                                    $securityCheck = $company->security_checkin_type ?? '';
-                                    $displayText = [
-                                        '' => 'None',
-                                        'checkin' => 'Check-in',
-                                        'checkout' => 'Check-out',
-                                        'both' => 'Both Check-in/out'
-                                    ][$securityCheck] ?? 'None';
-                                    $badgeClass = [
-                                        '' => 'bg-secondary',
-                                        'checkin' => 'bg-info',
-                                        'checkout' => 'bg-warning',
-                                        'both' => 'bg-success'
-                                    ][$securityCheck] ?? 'bg-secondary';
+                                    $securityServiceEnabled = (int)($company->security_check_service ?? 0);
+                                    $securityCheckType = $company->security_checkin_type ?? '';
+                                    
+                                    if (!$securityServiceEnabled) {
+                                        $displayText = 'Disabled';
+                                        $badgeClass = 'bg-secondary';
+                                    } else {
+                                        $displayText = [
+                                            'checkin' => 'Check-in',
+                                            'checkout' => 'Check-out',
+                                            'both' => 'Both Check-in/out'
+                                        ][$securityCheckType] ?? 'Both Check-in/out';
+                                        
+                                        $badgeClass = [
+                                            'checkin' => 'bg-info',
+                                            'checkout' => 'bg-warning',
+                                            'both' => 'bg-success'
+                                        ][$securityCheckType] ?? 'bg-success';
+                                    }
                                 @endphp
                                 <span class="badge {{ $badgeClass }}">
                                     {{ $displayText }}
                                 </span>
                             </td>
                             <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ route('companies.branches', $company) }}" class="btn btn-sm btn-primary me-1" title="View Branches">
+                                @php $notificationsEnabled = (int)($company->enable_visitor_notifications ?? 0); @endphp
+                                <span class="badge bg-{{ $notificationsEnabled ? 'success' : 'secondary' }}">{{ $notificationsEnabled ? 'On' : 'Off' }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a href="{{ route('companies.branches', $company) }}"
+                                       class="action-btn action-btn--view action-btn--icon"
+                                       title="View Branches">
                                         <i class="fas fa-code-branch"></i>
                                     </a>
-                                    <a href="{{ route('companies.edit', $company->id) }}" class="btn btn-sm btn-warning me-1" title="Edit">
+                                    <a href="{{ route('companies.edit', $company->id) }}"
+                                       class="action-btn action-btn--edit action-btn--icon"
+                                       title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('companies.destroy', $company->id) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('companies.destroy', $company->id) }}"
+                                          method="POST"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Delete this company?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this company?')" title="Delete">
+                                        <button class="action-btn action-btn--delete action-btn--icon" title="Delete">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>

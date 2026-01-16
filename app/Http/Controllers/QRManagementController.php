@@ -130,6 +130,7 @@ public function __construct()
         'name' => 'required|string|max:255',
         'email' => 'required|email|max:255',
         'phone' => 'required|string|max:20',
+        'visit_date' => 'nullable|date',
     ];
     
     // Only add face validation if face recognition is enabled
@@ -146,6 +147,7 @@ public function __construct()
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
+            'visit_date' => $validated['visit_date'] ?? now()->format('Y-m-d'),
             'status' => 'Pending',
         ];
         
@@ -262,13 +264,15 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             'department_id' => 'required|exists:departments,id',
             'purpose' => 'required|string',
             'visitor_company' => 'nullable|string|max:255',
-            'branch_id' => 'nullable|exists:branches,id'
+            'branch_id' => 'nullable|exists:branches,id',
+            'visit_date' => 'nullable|date',
         ]);
         
         // Update visitor with visit details
         $visitor->fill([
             'department_id'        => $validated['department_id'],
             'purpose'              => $validated['purpose'],
+            'visit_date'           => $validated['visit_date'] ?? $visitor->visit_date ?? now()->format('Y-m-d'),
             'status'               => $visitor->status === 'Approved' ? 'Approved' : 'Pending',
             'visitor_company'      => $validated['visitor_company'] ?? null,
             'branch_id'            => $validated['branch_id'] ?? null,

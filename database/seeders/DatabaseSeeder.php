@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,14 +15,18 @@ class DatabaseSeeder extends Seeder
      */
    public function run(): void
 {
-    // ✅ First seed companies and other master data
+    // ✅ First create roles and permissions
+    $this->call([
+        RoleAndPermissionSeeder::class,
+    ]);
+
+    // ✅ Then seed companies and other master data
     $this->call([
         CompanySeeder::class,
         DepartmentSeeder::class,
-        VisitorCategorySeeder::class,
     ]);
 
-    // ✅ Then seed the default users
+    // ✅ Finally seed the default users
     $this->call([
         UserSeeder::class,
         DefaultSeeder::class,
