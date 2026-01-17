@@ -10,6 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
 <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -37,113 +38,85 @@
             line-height: 1.6;
         }
         
-        /* Terms Hero Section */
-        .terms-hero {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 120px 0 80px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .terms-hero:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,122.7C672,128,768,160,864,170.7C960,181,1056,171,1152,165.3C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
-            background-size: cover;
-            background-position: center bottom;
-        }
-        
-        .terms-hero-content {
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Section Headings */
-        h2 {
-            position: relative;
-            padding-bottom: 1rem;
-            margin-bottom: 2rem;
-            font-weight: 700;
-        }
-        
-        h2:after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 80px;
-            height: 4px;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            border-radius: 2px;
-        }
-        
-        /* Terms Content Section */
-        .terms-content {
+        /* Privacy Policy Content */
+        .privacy-policy {
             background-color: #fff;
-            padding: 80px 0;
-        }
-        
-        .terms-card {
-            background: white;
-            border-radius: 15px;
+            margin: 2rem auto;
             padding: 3rem;
+            border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(78, 115, 223, 0.1);
         }
-        
-        .section-title {
-            color: var(--primary);
-            font-weight: 600;
-            margin-top: 2.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .terms-list {
-            margin-left: 1.5rem;
+
+        .privacy-policy h1 {
+            color: var(--dark);
             margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 0.5rem;
+            font-weight: 700;
         }
-        
-        .terms-list li {
-            margin-bottom: 0.8rem;
-        }
-        
-        .highlight-box {
-            background-color: rgba(78, 115, 223, 0.05);
-            border-left: 4px solid var(--primary);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 0 8px 8px 0;
-        }
-        
-        .warning-box {
-            background-color: rgba(247, 194, 62, 0.1);
-            border-left: 4px solid var(--warning);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 0 8px 8px 0;
-        }
-        
-        .success-box {
-            background-color: rgba(28, 200, 138, 0.1);
-            border-left: 4px solid var(--success);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 0 8px 8px 0;
-        }
-        
+
         .last-updated {
-            color: #666;
-            font-style: italic;
+            font-size: 0.9rem;
+            color: #777;
             margin-bottom: 2rem;
             padding: 10px 15px;
             background-color: rgba(28, 200, 138, 0.1);
             border-radius: 5px;
             display: inline-block;
+        }
+
+        .policy-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .policy-section h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            position: relative;
+            padding-left: 1rem;
+        }
+        
+        .policy-section h2:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.3rem;
+            height: 1.5rem;
+            width: 4px;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        .policy-section ul {
+            margin-left: 1.5rem;
+        }
+
+        .policy-section ul li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 0.5rem;
+        }
+        
+        .policy-section ul li:before {
+            content: '•';
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: -0.8rem;
+        }
+
+        .contact-info a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .contact-info a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
         }
         
         /* Responsive adjustments */
@@ -307,10 +280,15 @@
     </div>
 </section>
 
+<br>
+<br>
+
  <!-- Footer -->
     @include('layouts.footer')
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+@stack('scripts')
 </body>
 </html>

@@ -78,7 +78,7 @@
                   Warehouse & Cold Storage
                 </a>
                 <a class="dropdown-item" href="{{ route('school-and-colleges') }}">
-                  School, Colleges & Universities
+                  Educational Institutes
                 </a>
                 <a class="dropdown-item" href="{{ route('resident-societies') }}">
                   Residents' Societies
@@ -96,7 +96,7 @@
                   Malls & Event
                 </a>
                 <a class="dropdown-item" href="{{ route('temple-and-dargah') }}">
-                  Temple & Dargah
+                  Holy Places
                 </a>
               </div>
             </div>
@@ -203,7 +203,7 @@
             <a class="mobile-solutions-link {{ request()->is('school-and-colleges') ? 'text-primary fw-semibold' : '' }}"
               href="{{ route('school-and-colleges') }}"
               style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
-              School, Colleges & Universities
+              Educational Institutes
             </a>
 
             <a class="mobile-solutions-link {{ request()->is('resident-societies') ? 'text-primary fw-semibold' : '' }}"
@@ -239,7 +239,7 @@
             <a class="mobile-solutions-link {{ request()->is('temple-and-dargah') ? 'text-primary fw-semibold' : '' }}"
               href="{{ route('temple-and-dargah') }}"
               style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
-              Temple & Dargah
+              Holy Places
             </a>
           </div>
         </li>
@@ -346,6 +346,10 @@
     // MOBILE: Solutions accordion (custom JS)
     const mobileSolToggle = document.getElementById("mobileSolutionsToggle");
     const mobileSolMenu   = document.getElementById("mobileSolutions");
+    
+    // MOBILE: Company accordion (About + Blog) - declare first
+    const mobileCompanyToggle = document.getElementById("mobileCompanyToggle");
+    const mobileCompanyMenu   = document.getElementById("mobileCompany");
 
     if (mobileSolToggle && mobileSolMenu) {
       let solOpen = mobileSolToggle.getAttribute("aria-expanded") === "true"
@@ -354,6 +358,11 @@
       function setMobSolOpen(open) {
         solOpen = open;
         if (solOpen) {
+          // Close Company when Solutions opens
+          if (mobileCompanyToggle && mobileCompanyMenu) {
+            mobileCompanyMenu.classList.remove("show");
+            mobileCompanyToggle.setAttribute("aria-expanded", "false");
+          }
           mobileSolMenu.classList.add("show");
           mobileSolToggle.setAttribute("aria-expanded", "true");
         } else {
@@ -371,10 +380,6 @@
       });
     }
 
-    // MOBILE: Company accordion (About + Blog)
-    const mobileCompanyToggle = document.getElementById("mobileCompanyToggle");
-    const mobileCompanyMenu   = document.getElementById("mobileCompany");
-
     if (mobileCompanyToggle && mobileCompanyMenu) {
       let companyOpen = mobileCompanyToggle.getAttribute("aria-expanded") === "true"
         || mobileCompanyMenu.classList.contains("show");
@@ -382,6 +387,11 @@
       function setMobCompanyOpen(open) {
         companyOpen = open;
         if (companyOpen) {
+          // Close Solutions when Company opens
+          if (mobileSolToggle && mobileSolMenu) {
+            mobileSolMenu.classList.remove("show");
+            mobileSolToggle.setAttribute("aria-expanded", "false");
+          }
           mobileCompanyMenu.classList.add("show");
           mobileCompanyToggle.setAttribute("aria-expanded", "true");
         } else {

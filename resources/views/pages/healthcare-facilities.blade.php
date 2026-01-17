@@ -13,6 +13,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
 <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -20,12 +21,40 @@
 {{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
 <link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> 
     <style>
+        :root {
+            --primary: #4e73df;
+            --primary-dark: #224abe;
+            --secondary: #6f42c1;
+            --light: #f8f9fc;
+            --dark: #5a5c69;
+            --accent: #36b9cc;
+            --success: #1cc88a;
+            --warning: #f6c23e;
+            --info: #36b9cc;
+            --danger: #e74a3b;
+        }
         body {font-family: 'Poppins', sans-serif; background:#f8f9fa; color:#333;}
         .hero {
-            background:linear-gradient(135deg, rgba(30,60,114,.85), rgba(42,82,152,.85)),
-                       url('{{ asset('images/healthcare-hero.jpg') }}') center/cover;
-            padding:150px 0 100px; color:#fff; text-align:center;
-            border-radius:0 0 40px 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 150px 0 100px;
+            color: #fff;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            margin-bottom: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,122.7C672,128,768,160,864,170.7C960,181,1056,171,1152,165.3C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+            background-size: cover;
+            background-position: center bottom;
         }
         .hero h1 {font-size:3rem; font-weight:800;}
 
@@ -35,7 +64,7 @@
         }
         .section-title h2::after {
             content:''; position:absolute; width:80px; height:5px;
-            background:linear-gradient(to right,#1e3c72,#00b894);
+            background:linear-gradient(to right,var(--primary),var(--secondary));
             bottom:-10px; left:50%; transform:translateX(-50%); border-radius:4px;
         }
 
@@ -43,15 +72,15 @@
             background:#fff; border-radius:20px; padding:40px 30px;
             height:100%; box-shadow:0 10px 30px rgba(0,0,0,0.08);
             transition:all .4s; text-align:center;
-            border-top:5px solid #00b894;
+            border-top:5px solid var(--primary);
         }
         .feature-card:hover {transform:translateY(-10px); box-shadow:0 20px 40px rgba(0,0,0,0.15);}
         .feature-icon {
-            width:80px; height:80px; background:rgba(30,60,114,.1);
+            width:80px; height:80px; background:rgba(78, 115, 223,.1);
             border-radius:20px; display:flex; align-items:center; justify-content:center;
-            font-size:36px; color:#1e3c72; margin:0 auto 25px; transition:all .3s;
+            font-size:36px; color:var(--primary); margin:0 auto 25px; transition:all .3s;
         }
-        .feature-card:hover .feature-icon {background:#1e3c72; color:#fff;}
+        .feature-card:hover .feature-icon {background:var(--primary); color:#fff;}
     </style>
 </head>
 <body>
@@ -71,47 +100,47 @@
 
 <!-- FEATURES -->
 <section id="features" class="py-5 bg-light">
-    <div class="container">
-        <div class="section-title text-center mb-5">
-            <h2>Healthcare-Focused Features</h2>
-            <p>Designed to protect patient data, maintain infection control and streamline visitor flows.</p>
+  <div class="container">
+    <div class="section-title text-center mb-5">
+      <h2>Healthcare-Focused Features</h2>
+      <p>Designed to protect patient data, maintain infection control and streamline visitor flows For Healthcare Visitor Management System.</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Analytics Dashboard -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-bar-chart-line"></i>
+          </div>
+          <h4>Analytics Dashboard</h4>
+          <p>Get real-time insights into patient and visitor activity with interactive dashboards For Healthcare Visitor Management System.</p>
         </div>
+      </div>
 
-        <div class="row g-4">
-            <!-- Analytics Dashboard -->
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-bar-chart-line"></i>
-                    </div>
-                    <h4>Analytics Dashboard</h4>
-                    <p>Get real-time insights into patient and visitor activity with interactive dashboards.</p>
-                </div>
-            </div>
+      <!-- Hourly Visitor Analysis -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <h4>Hourly Visitor Analysis</h4>
+          <p>Monitor visitor inflow/outflow by hour to improve staffing, safety and patient flow efficiency For Healthcare Visitor Management System.</p>
+        </div>
+      </div>
 
-            <!-- Hourly Visitor Analysis -->
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-clock-history"></i>
-                    </div>
-                    <h4>Hourly Visitor Analysis</h4>
-                    <p>Monitor visitor inflow/outflow by hour to improve staffing, safety and patient flow efficiency.</p>
-                </div>
-            </div>
+      <!-- Advanced Reporting -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <h4>Advanced Reporting</h4>
+          <p>Generate compliance-ready audit trails and detailed reports for regulatory needs For Healthcare Visitor Management System.</p>
+        </div>
+      </div>
 
-            <!-- Advanced Reporting -->
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-file-earmark-text"></i>
-                    </div>
-                    <h4>Advanced Reporting</h4>
-                    <p>Generate compliance-ready audit trails and detailed reports for regulatory needs.</p>
-                </div>
-            </div>
-
-           <!-- Safety Compliance -->
+      <!-- Safety Compliance -->
       <div class="col-md-4">
         <div class="feature-card">
           <div class="feature-icon">
@@ -120,14 +149,12 @@
           <h4>Safety Compliance Tracking</h4>
           <p>
             Ensure all visitors complete safety inductions and acknowledge
-            facility rules before entry.
+            facility rules before entry For Healthcare Visitor Management System.
           </p>
         </div>
       </div>
 
-
-
-            <!-- User Wise Control -->
+      <!-- User Wise Control -->
       <div class="col-md-4">
         <div class="feature-card">
           <div class="feature-icon">
@@ -136,23 +163,23 @@
           <h4>User-Wise Control</h4>
           <p>
             Role-based access ensures every department has the right level of
-            control and visibility.
+            control and visibility For Healthcare Visitor Management System.
           </p>
         </div>
       </div>
 
-            <!-- Patient Visitor Scheduling -->
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-people"></i>
-                    </div>
-                    <h4>Patient Visitor Scheduling</h4>
-                    <p>Book visiting slots to avoid overcrowding and streamline patient visits.</p>
-                </div>
-            </div>
+      <!-- Patient Visitor Scheduling -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h4>Patient Visitor Scheduling</h4>
+          <p>Book visiting slots to avoid overcrowding and streamline patient visits For Healthcare Visitor Management System.</p>
+        </div>
+      </div>
 
-           <!-- Face Recognition -->
+      <!-- Face Recognition -->
       <div class="col-md-4">
         <div class="feature-card">
           <div class="feature-icon">
@@ -161,12 +188,12 @@
           <h4>Face Recognition Technology</h4>
           <p>
             Ensure secure, touchless entry with AI-powered facial recognition
-            authentication.
+            authentication For Healthcare Visitor Management System.
           </p>
         </div>
       </div>
 
-                 <!-- Notifications -->
+      <!-- Notifications -->
       <div class="col-md-4">
         <div class="feature-card">
           <div class="feature-icon">
@@ -175,12 +202,12 @@
           <h4>Instant Notifications</h4>
           <p>
             Get notified instantly via WhatsApp and Email when a visitor arrives
-            or requests access.
+            or requests access For Healthcare Visitor Management System.
           </p>
         </div>
       </div>
 
-            <!-- Print Visitor Pass -->
+      <!-- Print Visitor Pass -->
       <div class="col-md-4">
         <div class="feature-card">
           <div class="feature-icon">
@@ -189,23 +216,23 @@
           <h4>Print Visitor Pass</h4>
           <p>
             Generate and print visitor passes instantly, including dynamic passes
-            with QR codes.
+            with QR codes For Healthcare Visitor Management System.
           </p>
         </div>
       </div>
 
-            <!-- Pre-Approval & Auto Approval -->
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-check-circle"></i>
-                    </div>
-                    <h4>Pre-Approval</h4>
-                    <p>Streamline visitor access with optional auto-approval rules for healthcare staff and guests.</p>
-                </div>
-            </div>
+      <!-- Pre-Approval & Auto Approval -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <h4>Pre-Approval</h4>
+          <p>Streamline visitor access with optional auto-approval rules for healthcare staff and guests For Healthcare Visitor Management System.</p>
+        </div>
+      </div>
 
-            <!-- Approval Process -->
+      <!-- Approval Process -->
       <div class="col-md-4">
         <div class="feature-card">
           <div class="feature-icon">
@@ -214,29 +241,30 @@
           <h4>Auto Approval Process</h4>
           <p>
             Department-wise visitor approval workflows with optional
-            auto-approval rules.
+            auto-approval rules For Healthcare Visitor Management System.
           </p>
         </div>
       </div>
 
-            <!-- Visitor In-Out Entry -->
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="bi bi-person-bounding-box"></i>
-                    </div>
-                    <h4>Visitor In-Out Tracking</h4>
-                    <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods:</p>
-                    <ul class="list-unstyled mt-3">
-                        <li class="mb-2"><i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry</li>
-                        <li class="mb-2"><i class="bi bi-person-bounding-box text-success me-2"></i> Face Recognition Entry</li>
-                        <li class="mb-2"><i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access</li>
-                    </ul>
-                </div>
-            </div>
+      <!-- Visitor In-Out Entry -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-person-bounding-box"></i>
+          </div>
+          <h4>Visitor In-Out Tracking</h4>
+          <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods: For Healthcare Visitor Management System.</p>
+          <ul class="list-unstyled mt-3">
+            <li class="mb-2"><i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry</li>
+            <li class="mb-2"><i class="bi bi-person-bounding-box text-success me-2"></i> Face Recognition Entry</li>
+            <li class="mb-2"><i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access</li>
+          </ul>
         </div>
+      </div>
     </div>
+  </div>
 </section>
+
 
 
 <!-- BENEFITS -->
@@ -272,7 +300,7 @@
 </section>
 
 <section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
-           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+           background:linear-gradient(135deg,#4e73df 0%,#224abe 50%,#6f42c1 100%);">
 
     {{-- Radial glow background --}}
     <div style="position:absolute;inset:0;opacity:0.35;
@@ -311,7 +339,7 @@
                         justify-content:center;
                         border-radius:999px;
                         background:#ffffff;
-                        color:#4338ca;
+                        color:#4e73df;
                         font-weight:800;
                         letter-spacing:0.04em;
                         padding:0.9rem 2.3rem;
@@ -333,52 +361,48 @@
     </div>
   </section>
 
-
-
-
-
 <!-- FAQ Section -->
 <section id="faq" class="py-5 bg-light">
   <div class="container">
     <div class="section-title text-center mb-5">
       <h2>Frequently Asked Questions</h2>
-      <p>Find answers to common questions about our Industrial Visitor Management System</p>
+      <p>Find answers to common questions about our Healthcare Visitor Management System</p>
     </div>
     <div class="row justify-content-center">
       <div class="col-lg-8">
 
-        <!-- Analytics Dashboard -->
+        <!-- 1) Analytics Dashboard -->
         <div class="faq-item border-bottom py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>Does the system provide analytics and reports?</span>
+            <span>Does the system provide analytics and reports for Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
             <p>
-              Yes, the system includes an interactive analytics dashboard and advanced reporting tools 
-              to monitor visitor trends, inflow/outflow analysis and compliance requirements in real-time.
+              Yes, the Healthcare Visitor Management System includes an interactive analytics dashboard and advanced reporting tools 
+              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real time.
             </p>
           </div>
         </div>
 
-        <!-- Hourly Visitor Analysis -->
+        <!-- 2) Hourly Visitor Analysis -->
         <div class="faq-item border-bottom py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>Can we track visitors on an hourly basis?</span>
+            <span>Can we track visitors on an hourly basis in Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
             <p>
-              Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics 
+              Absolutely! The Hourly Visitor Analysis feature in the Healthcare Visitor Management System provides detailed inflow/outflow statistics 
               segmented by the hour, helping optimize staffing and enhance security monitoring.
             </p>
           </div>
         </div>
 
-        <!-- Safety Compliance -->
+        <!-- 3) Safety Compliance -->
         <div class="faq-item border-bottom py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>How does the system ensure visitor safety compliance?</span>
+            <span>How does the system ensure visitor safety compliance in Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
@@ -389,52 +413,52 @@
           </div>
         </div>
 
-        <!-- Face Recognition -->
+        <!-- 4) Face Recognition (NO CHANGE) -->
         <div class="faq-item border-bottom py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>Does the system support face recognition for entry?</span>
+            <span>Does the system support face recognition for entry in Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
             <p>
-              Yes, AI-powered face recognition ensures secure, touchless and fast entry authentication 
+              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication 
               for visitors, reducing manual verification needs.
             </p>
           </div>
         </div>
 
-        <!-- Notifications -->
+        <!-- 5) Notifications -->
         <div class="faq-item border-bottom py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>Will we get notified when visitors arrive?</span>
+            <span>Will we get notified when visitors arrive in Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
             <p>
-              Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access 
+              Instant notifications are sent to hosts via WhatsApp and Email through our Healthcare Visitor Management System whenever a visitor requests access 
               or checks in at the facility.
             </p>
           </div>
         </div>
 
-        <!-- Visitor Pass -->
+        <!-- 6) Visitor Pass -->
         <div class="faq-item border-bottom py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>Can we generate visitor passes directly from the system?</span>
+            <span>Can we generate visitor passes directly from the system for Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
             <p>
-              Yes, the system allows you to instantly generate and print visitor passes, 
+              Yes, the Healthcare Visitor Management System allows you to instantly generate and print visitor passes, 
               including QR code-enabled dynamic passes for quick access.
             </p>
           </div>
         </div>
 
-        <!-- Pre-Approval -->
+        <!-- 7) Pre-Approval (NO CHANGE) -->
         <div class="faq-item border-bottom py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>Is there a visitor pre-approval process?</span>
+            <span>Is there a visitor pre-approval process in Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
@@ -445,16 +469,16 @@
           </div>
         </div>
 
-        <!-- Visitor Entry Options -->
+        <!-- 8) Visitor Entry Options -->
         <div class="faq-item py-3">
           <div class="faq-question d-flex justify-content-between align-items-center">
-            <span>What methods are available for visitor check-in and check-out?</span>
+            <span>What methods are available for visitor check-in and check-out in Healthcare Visitor Management System?</span>
             <i class="bi bi-chevron-down"></i>
           </div>
           <div class="faq-answer mt-2 d-none">
             <p>
-              The system supports multiple entry options including manual entry by security staff, 
-              face recognition and QR code scanning for seamless visitor management.
+              The system supports multiple entry options in the Healthcare Visitor Management System including manual entry by security staff, 
+              face recognition, and QR code scanning for seamless visitor management.
             </p>
           </div>
         </div>
@@ -487,7 +511,12 @@
     </div>
 </section>
 
+@include('components.home-contact-section')
+@stack('styles')
+
 @include('layouts.footer')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+@stack('scripts')
 </body>
 </html>

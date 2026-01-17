@@ -18,6 +18,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -51,7 +52,7 @@
 
         /* Combined Hero Section */
         .combined-hero {
-            background: linear-gradient(135deg, var(--industrial) 0%, var(--cold-storage) 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             padding: 120px 0 80px;
             position: relative;
@@ -84,11 +85,11 @@
         }
 
         h2.industrial:after {
-            background: linear-gradient(to right, var(--industrial), var(--primary));
+            background: linear-gradient(to right, var(--primary), var(--secondary));
         }
 
         h2.cold-storage:after {
-            background: linear-gradient(to right, var(--cold-storage), var(--info));
+            background: linear-gradient(to right, var(--primary), var(--secondary));
         }
 
         h2:after {
@@ -118,12 +119,12 @@
         }
 
         .nav-pills .nav-link.industrial {
-            background: linear-gradient(135deg, var(--industrial) 0%, #1f6b4a 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
         }
 
         .nav-pills .nav-link.cold-storage {
-            background: linear-gradient(135deg, var(--cold-storage) 0%, #2a5a8c 100%);
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
             color: white;
         }
 
@@ -151,11 +152,11 @@
         }
 
         .feature-card.industrial {
-            border: 1px solid rgba(46, 139, 87, 0.1);
+            border: 1px solid rgba(78, 115, 223, 0.1);
         }
 
         .feature-card.cold-storage {
-            border: 1px solid rgba(70, 130, 180, 0.1);
+            border: 1px solid rgba(78, 115, 223, 0.1);
         }
 
         .feature-card:hover {
@@ -177,11 +178,11 @@
         }
 
         .feature-icon.industrial {
-            background: linear-gradient(135deg, var(--industrial) 0%, #1f6b4a 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         }
 
         .feature-icon.cold-storage {
-            background: linear-gradient(135deg, var(--cold-storage) 0%, #2a5a8c 100%);
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
         }
 
         /* Safety Requirements */
@@ -199,11 +200,11 @@
         }
 
         .safety-card.industrial {
-            border-left: 4px solid var(--industrial);
+            border-left: 4px solid var(--primary);
         }
 
         .safety-card.cold-storage {
-            border-left: 4px solid var(--cold-storage);
+            border-left: 4px solid var(--secondary);
         }
 
         .requirement-list {
@@ -229,7 +230,7 @@
         /* Stats Section */
         .stats-section {
             padding: 80px 0;
-            background: linear-gradient(135deg, var(--industrial) 0%, var(--cold-storage) 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
         }
 
@@ -246,26 +247,30 @@
         }
 
         .btn-industrial {
-            background: linear-gradient(135deg, var(--industrial) 0%, #1f6b4a 100%);
+            background: white;
             border: none;
-            color: white;
+            color: #333;
             padding: 12px 30px;
             font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
         }
 
         .btn-cold-storage {
-            background: linear-gradient(135deg, var(--cold-storage) 0%, #2a5a8c 100%);
+            background: white;
             border: none;
-            color: white;
+            color: #333;
             padding: 12px 30px;
             font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
         }
 
         .btn-industrial:hover,
         .btn-cold-storage:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+            color: #333;
         }
 
         /* Tab Content */
@@ -332,7 +337,7 @@
                     <div class="mt-4">
                         <a href="#industrial" class="btn btn-light btn-lg px-4 me-3 industrial-tab-btn">Warehouse
                             Solutions</a>
-                        <a href="#cold-storage" class="btn btn-outline-light btn-lg px-4 cold-storage-tab-btn">Cold
+                        <a href="#cold-storage" class="btn btn-light btn-lg px-4 me-3 industrial-tab-btn">Cold
                             Storage Solutions</a>
                     </div>
                 </div>
@@ -369,7 +374,6 @@
         <div class="tab-pane fade show active" id="industrial" role="tabpanel" aria-labelledby="industrial-tab">
 
             <!-- Industrial Features -->
-            <!-- Industrial Features -->
             <section class="features-section">
                 <div class="container">
                     <h2 class="text-center fw-bold mb-5 industrial">Warehouse-Grade Features</h2>
@@ -384,7 +388,8 @@
                                 <h4 class="fw-bold">Analytics Dashboard</h4>
                                 <p>
                                     Get real-time insights with interactive dashboards to monitor visitor
-                                    activity and trends across your industrial facility.
+                                    activity and trends across your industrial facility For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -398,7 +403,7 @@
                                 <h4 class="fw-bold">Hourly Visitor Analysis</h4>
                                 <p>
                                     Analyze visitor inflow and outflow by hour to optimize manpower,
-                                    shift planning and gate congestion.
+                                    shift planning and gate congestion For Warehouse Visitor Management System.
                                 </p>
                             </div>
                         </div>
@@ -412,7 +417,7 @@
                                 <h4 class="fw-bold">Advanced Reporting</h4>
                                 <p>
                                     Generate detailed MIS, audit reports and compliance-ready logs for
-                                    safety, security and management reviews.
+                                    safety, security and management reviews For Warehouse Visitor Management System.
                                 </p>
                             </div>
                         </div>
@@ -426,7 +431,8 @@
                                 <h4 class="fw-bold">Safety Compliance Tracking</h4>
                                 <p>
                                     Ensure all visitors and contractors complete safety inductions and
-                                    acknowledge plant rules before entering critical zones.
+                                    acknowledge plant rules before entering critical zones For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -440,7 +446,8 @@
                                 <h4 class="fw-bold">User-Wise Control</h4>
                                 <p>
                                     Role-based access for security, HR, admin and HSE teams with
-                                    controlled visibility and permissions.
+                                    controlled visibility and permissions For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -454,7 +461,8 @@
                                 <h4 class="fw-bold">Auto Approval Process</h4>
                                 <p>
                                     Department-wise approval workflows with configurable auto-approval
-                                    rules for frequent and low-risk visitors.
+                                    rules for frequent and low-risk visitors For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -468,7 +476,8 @@
                                 <h4 class="fw-bold">Visitor In-Out Tracking</h4>
                                 <p>
                                     Track every visitor’s entry and exit in real-time with accurate
-                                    time-stamped logs and gate records.
+                                    time-stamped logs and gate records For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -482,7 +491,8 @@
                                 <h4 class="fw-bold">Instant Notifications</h4>
                                 <p>
                                     Notify hosts and security via WhatsApp, SMS or Email when a visitor
-                                    arrives, checks in or requests access.
+                                    arrives, checks in or requests access For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -496,7 +506,8 @@
                                 <h4 class="fw-bold">Face Recognition Technology</h4>
                                 <p>
                                     Enable secure, touchless entry with AI-powered facial recognition,
-                                    ideal for sensitive and high-risk areas.
+                                    ideal for sensitive and high-risk areas For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -510,7 +521,8 @@
                                 <h4 class="fw-bold">Print Visitor Pass</h4>
                                 <p>
                                     Print visitor passes with photos, QR codes, validity timings and
-                                    department details for better control at gates.
+                                    department details for better control at gates For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -524,7 +536,8 @@
                                 <h4 class="fw-bold">Pre-Approval</h4>
                                 <p>
                                     Hosts can pre-approve visitors and contractors so that check-in at
-                                    gate becomes faster and more secure.
+                                    gate becomes faster and more secure For Warehouse Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -536,7 +549,10 @@
                                     <i class="bi bi-shield-lock"></i>
                                 </div>
                                 <h4 class="fw-bold">Multiple Entry Methods</h4>
-                                <p>Manage check-ins and check-outs using:</p>
+                                <p>
+                                    Manage check-ins and check-outs using: For Warehouse Visitor
+                                    Management System.
+                                </p>
                                 <ul class="list-unstyled mt-3">
                                     <li class="mb-2">
                                         <i class="bi bi-pencil-square me-2"></i> Manual Entry at Security Desk
@@ -554,6 +570,7 @@
                     </div>
                 </div>
             </section>
+
 
 
 
@@ -577,7 +594,8 @@
                                 <h4>Analytics Dashboard</h4>
                                 <p>
                                     Get real-time insights with interactive dashboards to monitor visitor
-                                    activity and trends.
+                                    activity and trends For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -591,7 +609,9 @@
                                 <h4>Hourly Visitor Analysis</h4>
                                 <p>
                                     Get detailed reports of visitor inflow and outflow segmented by hours,
-                                    helping management optimize staffing and improve security efficiency.
+                                    helping management optimize staffing and improve security efficiency For Cold
+                                    Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -605,7 +625,8 @@
                                 <h4>Advanced Reporting</h4>
                                 <p>
                                     Comprehensive audit trails and compliance reports for regulatory
-                                    requirements.
+                                    requirements For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -619,7 +640,8 @@
                                 <h4>Safety Compliance Tracking</h4>
                                 <p>
                                     Ensure all visitors complete safety inductions and acknowledge
-                                    facility rules before entry.
+                                    facility rules before entry For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -633,7 +655,8 @@
                                 <h4>User-Wise Control</h4>
                                 <p>
                                     Role-based access ensures every department has the right level of
-                                    control and visibility.
+                                    control and visibility For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -647,7 +670,8 @@
                                 <h4>Auto Approval Process</h4>
                                 <p>
                                     Department-wise visitor approval workflows with optional
-                                    auto-approval rules.
+                                    auto-approval rules For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -661,7 +685,8 @@
                                 <h4>Visitor In-Out Tracking</h4>
                                 <p>
                                     Track every visitor’s entry and exit in real-time with accurate logs
-                                    and time-stamps.
+                                    and time-stamps For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -675,7 +700,8 @@
                                 <h4>Instant Notifications</h4>
                                 <p>
                                     Get notified instantly via WhatsApp and Email when a visitor arrives
-                                    or requests access.
+                                    or requests access For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -689,7 +715,8 @@
                                 <h4>Face Recognition Technology</h4>
                                 <p>
                                     Ensure secure, touchless entry with AI-powered facial recognition
-                                    authentication.
+                                    authentication For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -703,7 +730,8 @@
                                 <h4>Print Visitor Pass</h4>
                                 <p>
                                     Generate and print visitor passes instantly, including dynamic passes
-                                    with QR codes.
+                                    with QR codes For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -717,7 +745,8 @@
                                 <h4>Pre-Approval</h4>
                                 <p>
                                     Visitors can be pre-approved by hosts to save time and speed up
-                                    entry.
+                                    entry For Cold Storage Visitor
+                                    Management System.
                                 </p>
                             </div>
                         </div>
@@ -729,7 +758,9 @@
                                     <i class="bi bi-people"></i>
                                 </div>
                                 <h4>Visitor In-Out Entry</h4>
-                                <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods:</p>
+                                <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods: For
+                                    Cold Storage Visitor
+                                    Management System</p>
                                 <ul class="list-unstyled mt-3">
                                     <li class="mb-2">
                                         <i class="bi bi-pencil-square me-2"></i> Manual Entry
@@ -749,8 +780,86 @@
             </section>
         </div>
     </div>
+
+    <!-- Benefits Section -->
+    <section id="benefits" class="py-5" style="background:#fff;">
+        <div class="container">
+            <div class="section-title text-center mb-4">
+                <h2 class="fw-bold">Key Benefits for Warehouses & Cold Storage</h2>
+                <p>Security, faster gate flow, audit-ready logs, and better control—powered by your VMS features.</p>
+            </div>
+
+            <div class="row g-4">
+                <!-- 1 -->
+                <div class="col-lg-6">
+                    <div class="benefit-item d-flex align-items-start p-4 rounded-4 shadow-sm bg-white h-100">
+                        <div class="benefit-icon me-3">
+                            <i class="bi bi-shield-check" style="font-size:2rem;color:#4e73df;"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h4 class="fw-bold mb-2">Stronger Security with Verified Entry</h4>
+                            <p class="mb-0">
+                                Prevent unauthorized access using face recognition, QR-based entry, visitor pass printing,
+                                and real-time in-out tracking with instant alerts.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2 -->
+                <div class="col-lg-6">
+                    <div class="benefit-item d-flex align-items-start p-4 rounded-4 shadow-sm bg-white h-100">
+                        <div class="benefit-icon me-3">
+                            <i class="bi bi-check-circle" style="font-size:2rem;color:#4e73df;"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h4 class="fw-bold mb-2">Faster Approvals & Less Gate Congestion</h4>
+                            <p class="mb-0">
+                                Speed up check-in with pre-approval, auto-approval rules, and multiple entry methods
+                                (manual, face terminal, QR scan) to keep operations smooth.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3 -->
+                <div class="col-lg-6">
+                    <div class="benefit-item d-flex align-items-start p-4 rounded-4 shadow-sm bg-white h-100">
+                        <div class="benefit-icon me-3">
+                            <i class="bi bi-file-earmark-text" style="font-size:2rem;color:#4e73df;"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h4 class="fw-bold mb-2">Audit-Ready Logs & Advanced Reporting</h4>
+                            <p class="mb-0">
+                                Maintain complete, time-stamped visitor records with advanced MIS and compliance-ready reports
+                                for audits, safety reviews, and management decisions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 -->
+                <div class="col-lg-6">
+                    <div class="benefit-item d-flex align-items-start p-4 rounded-4 shadow-sm bg-white h-100">
+                        <div class="benefit-icon me-3">
+                            <i class="bi bi-person-gear" style="font-size:2rem;color:#4e73df;"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h4 class="fw-bold mb-2">Role-Based Control + Instant Notifications</h4>
+                            <p class="mb-0">
+                                Keep operations controlled with user-wise permissions and instant WhatsApp/SMS/Email alerts
+                                for visitor arrival, approvals, and gate updates.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
     <section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
-           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+           background:linear-gradient(135deg,#4e73df 0%,#224abe 50%,#6f42c1 100%);">
 
         {{-- Radial glow background --}}
         <div style="position:absolute;inset:0;opacity:0.35;
@@ -790,7 +899,7 @@
                         justify-content:center;
                         border-radius:999px;
                         background:#ffffff;
-                        color:#4338ca;
+                        color:#4e73df;
                         font-weight:800;
                         letter-spacing:0.04em;
                         padding:0.9rem 2.3rem;
@@ -812,32 +921,6 @@
         </div>
     </section>
 
-
-
-    <!-- Combined Stats Section -->
-    <section class="stats-section text-center">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-3 col-6 mb-4 mb-md-0">
-                    <div class="stat-number">500+</div>
-                    <div class="stat-label">Industrial Visits Managed</div>
-                </div>
-                <div class="col-md-3 col-6 mb-4 mb-md-0">
-                    <div class="stat-number">8K+</div>
-                    <div class="stat-label">Cold Storage Visits</div>
-                </div>
-                <div class="col-md-3 col-6">
-                    <div class="stat-number">99.8%</div>
-                    <div class="stat-label">Safety Compliance Rate</div>
-                </div>
-                <div class="col-md-3 col-6">
-                    <div class="stat-number">70+</div>
-                    <div class="stat-label">Specialized Facilities</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Combined CTA Section -->
     <section class="cta-section text-center">
         <div class="container">
@@ -848,21 +931,25 @@
                 <div class="col-md-6 mb-3">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h4 class="card-title fw-bold" style="color: var(--industrial);">Warehouse Solution</h4>
+                            <h4 class="card-title fw-bold" style="color: var(--primary);">Warehouse Solution</h4>
                             <p class="card-text">Perfect for manufacturing plants, factories and industrial facilities
                             </p>
-                            <a href="{{ url('/contact') }}" class="btn btn-industrial">Register Warehouse Visit</a>
+                            <a href="{{ url('/contact') }}" class="btn btn-industrial"
+                                style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 12px 30px; font-size: 1.1rem; border-radius: 50px; border: none; font-weight: 600; transition: all 0.3s ease;">Contact
+                                Us</a>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h4 class="card-title fw-bold" style="color: var(--cold-storage);">Cold Storage Solution
+                            <h4 class="card-title fw-bold" style="color: var(--secondary);">Cold Storage Solution
                             </h4>
                             <p class="card-text">Ideal for refrigerated warehouses, cold storage units and freezer
                                 facilities</p>
-                            <a href="{{ url('/contact') }}" class="btn btn-cold-storage">Register Cold Storage Visit</a>
+                            <a href="{{ url('/contact') }}" class="btn btn-industrial"
+                                style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 12px 30px; font-size: 1.1rem; border-radius: 50px; border: none; font-weight: 600; transition: all 0.3s ease;">Contact
+                                Us</a>
                         </div>
                     </div>
                 </div>
@@ -870,10 +957,14 @@
         </div>
     </section>
 
+    @include('components.home-contact-section')
+    @stack('styles')
+
     {{-- Footer --}}
     @include('layouts.footer')
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
         // Smooth scroll for tab buttons
         document.querySelectorAll('.industrial-tab-btn').forEach(button => {
@@ -906,6 +997,7 @@
             e.target.classList.add('active');
         });
     </script>
+    @stack('scripts')
 </body>
 
 </html>

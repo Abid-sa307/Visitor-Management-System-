@@ -15,6 +15,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
   <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
   <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -25,13 +26,16 @@
   <style>
     /* --- Custom CSS from your original --- */
     :root {
-      --mall-primary: #9c27b0;
-      --mall-secondary: #673ab7;
-      --mall-accent: #e91e63;
-      --mall-light: #f3e5f5;
-      --mall-dark: #4a148c;
-      --mall-warning: #ff9800;
-      --mall-success: #4caf50;
+      --primary: #4e73df;
+      --primary-dark: #224abe;
+      --secondary: #6f42c1;
+      --light: #f8f9fc;
+      --dark: #5a5c69;
+      --accent: #36b9cc;
+      --success: #1cc88a;
+      --warning: #f6c23e;
+      --info: #36b9cc;
+      --danger: #e74a3b;
     }
 
     body {
@@ -44,11 +48,7 @@
 
     /* Hero Section */
     .mall-hero {
-      background: linear-gradient(135deg, rgba(156, 39, 176, 0.9) 0%, rgba(103, 58, 183, 0.9) 100%),
-        url('https://images.unsplash.com/photo-1563013541-5b0a0a7e6c1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       color: white;
       padding: 150px 0 100px;
       text-align: center;
@@ -63,20 +63,11 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/></svg>");
-      animation: float 20s infinite linear;
-    }
-
-    @keyframes float {
-      0% {
-        transform: translate(0, 0);
-      }
-
-      100% {
-        transform: translate(-100px, -100px);
-      }
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,122.7C672,128,768,160,864,170.7C960,181,1056,171,1152,165.3C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center bottom;
     }
 
     .mall-hero h1 {
@@ -96,37 +87,24 @@
     }
 
     .btn-mall {
-      background: linear-gradient(to right, var(--mall-primary), var(--mall-secondary));
-      color: white;
+      background: white;
+      color: #333;
       border: none;
       padding: 15px 35px;
       border-radius: 50px;
       font-weight: 600;
       transition: all 0.3s;
-      box-shadow: 0 5px 15px rgba(156, 39, 176, 0.4);
+      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
       position: relative;
       overflow: hidden;
-    }
-
-    .btn-mall:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(to right, var(--mall-secondary), var(--mall-primary));
-      transition: all 0.5s;
-      z-index: -1;
+      z-index: 1;
     }
 
     .btn-mall:hover {
+      background: white;
       transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(156, 39, 176, 0.6);
-    }
-
-    .btn-mall:hover:before {
-      width: 100%;
+      box-shadow: 0 10px 25px rgba(255, 255, 255, 0.4);
+      color: #333;
     }
 
     /* Section Titles */
@@ -138,7 +116,7 @@
 
     .section-title h2 {
       font-weight: 800;
-      color: var(--mall-dark);
+      color: var(--dark);
       display: inline-block;
       padding-bottom: 15px;
       font-size: 2.5rem;
@@ -149,7 +127,7 @@
       position: absolute;
       width: 80px;
       height: 5px;
-      background: linear-gradient(to right, var(--mall-primary), var(--mall-accent));
+      background: linear-gradient(to right, var(--primary), var(--secondary));
       bottom: 0;
       left: 50%;
       transform: translateX(-50%);
@@ -171,9 +149,10 @@
       padding: 40px 30px;
       height: 100%;
       transition: all 0.4s;
-      border-top: 5px solid var(--mall-accent);
+      border-top: 5px solid var(--primary);
       position: relative;
       overflow: hidden;
+      z-index: 1;
     }
 
     .feature-card:before {
@@ -183,7 +162,7 @@
       left: 0;
       width: 100%;
       height: 0;
-      background: linear-gradient(to bottom, var(--mall-light), white);
+      background: linear-gradient(to bottom, var(--light), white);
       transition: all 0.4s;
       z-index: -1;
     }
@@ -200,26 +179,26 @@
     .feature-icon {
       width: 80px;
       height: 80px;
-      background: rgba(156, 39, 176, 0.1);
+      background: rgba(78, 115, 223, 0.1);
       border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 25px;
       font-size: 35px;
-      color: var(--mall-primary);
+      color: var(--primary);
       transition: all 0.3s;
     }
 
     .feature-card:hover .feature-icon {
-      background: var(--mall-primary);
+      background: var(--primary);
       color: white;
       transform: rotateY(180deg);
     }
 
     .feature-card h4 {
       font-weight: 700;
-      color: var(--mall-dark);
+      color: var(--dark);
       margin-bottom: 15px;
     }
 
@@ -608,205 +587,204 @@
   </section>
 
   <!-- Features Section -->
-  <section id="features" class="py-5 bg-light">
-    <div class="container">
-      <div class="section-title text-center mb-5">
-        <h2>Specialized Features for Malls & Events</h2>
-        <p>
-          Our system is designed to handle high-volume visitor traffic while
-          maintaining security and enhancing the visitor experience
-        </p>
+ <section id="features" class="py-5 bg-light">
+  <div class="container">
+    <div class="section-title text-center mb-5">
+      <h2>Specialized Features for Malls & Events</h2>
+      <p>
+        Our system is designed to handle high-volume visitor traffic while
+        maintaining security and enhancing the visitor experience For Mall And Events Visitor Management System.
+      </p>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- Analytics Dashboard -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-bar-chart-line"></i>
+          </div>
+          <h4>Analytics Dashboard</h4>
+          <p>
+            Get real-time insights with interactive dashboards to monitor visitor
+            activity and trends For Mall And Events Visitor Management System.
+          </p>
+        </div>
       </div>
 
-      <div class="row g-4">
-
-
-        <!-- Analytics Dashboard -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-bar-chart-line"></i>
-            </div>
-            <h4>Analytics Dashboard</h4>
-            <p>
-              Get real-time insights with interactive dashboards to monitor visitor
-              activity and trends.
-            </p>
+      <!-- Hourly Based Visitor Analysis -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-bar-chart-line"></i>
           </div>
+          <h4>Hourly Visitor Analysis</h4>
+          <p>
+            Get detailed reports of visitor inflow and outflow segmented by hours,
+            helping management optimize staffing and improve security efficiency For Mall And Events Visitor Management System.
+          </p>
         </div>
-        <!-- Hourly Based Visitor Analysis -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-bar-chart-line"></i>
-            </div>
-            <h4>Hourly Visitor Analysis</h4>
-            <p>
-              Get detailed reports of visitor inflow and outflow segmented by hours,
-              helping management optimize staffing and improve security efficiency.
-            </p>
+      </div>
+
+      <!-- Advanced Reporting -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-file-earmark-text"></i>
           </div>
+          <h4>Advanced Reporting</h4>
+          <p>
+            Comprehensive audit trails and compliance reports for regulatory
+            requirements For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-
-        <!-- Advanced Reporting -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-file-earmark-text"></i>
-            </div>
-            <h4>Advanced Reporting</h4>
-            <p>
-              Comprehensive audit trails and compliance reports for regulatory
-              requirements.
-            </p>
+      <!-- Safety Compliance -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-shield-check"></i>
           </div>
+          <h4>Safety Compliance Tracking</h4>
+          <p>
+            Ensure all visitors complete safety inductions and acknowledge
+            facility rules before entry For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-
-
-        <!-- Safety Compliance -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-shield-check"></i>
-            </div>
-            <h4>Safety Compliance Tracking</h4>
-            <p>
-              Ensure all visitors complete safety inductions and acknowledge
-              facility rules before entry.
-            </p>
+      <!-- User Wise Control -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-person-gear"></i>
           </div>
+          <h4>User-Wise Control</h4>
+          <p>
+            Role-based access ensures every department has the right level of
+            control and visibility For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-
-        <!-- User Wise Control -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-person-gear"></i>
-            </div>
-            <h4>User-Wise Control</h4>
-            <p>
-              Role-based access ensures every department has the right level of
-              control and visibility.
-            </p>
+      <!-- Approval Process -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-diagram-3"></i>
           </div>
+          <h4>Auto Approval Process</h4>
+          <p>
+            Department-wise visitor approval workflows with optional
+            auto-approval rules For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Approval Process -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-diagram-3"></i>
-            </div>
-            <h4>Auto Approval Process</h4>
-            <p>
-              Department-wise visitor approval workflows with optional
-              auto-approval rules.
-            </p>
+      <!-- Visitor In-Out Tracking -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-people"></i>
           </div>
+          <h4>Visitor In-Out Tracking</h4>
+          <p>
+            Track every visitor’s entry and exit in real-time with accurate logs
+            and time-stamps For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Visitor In-Out Tracking -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-people"></i>
-            </div>
-            <h4>Visitor In-Out Tracking</h4>
-            <p>
-              Track every visitor’s entry and exit in real-time with accurate logs
-              and time-stamps.
-            </p>
+      <!-- Notifications -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-bell"></i>
           </div>
+          <h4>Instant Notifications</h4>
+          <p>
+            Get notified instantly via WhatsApp and Email when a visitor arrives
+            or requests access For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Notifications -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-bell"></i>
-            </div>
-            <h4>Instant Notifications</h4>
-            <p>
-              Get notified instantly via WhatsApp and Email when a visitor arrives
-              or requests access.
-            </p>
+      <!-- Face Recognition -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-camera"></i>
           </div>
+          <h4>Face Recognition Technology</h4>
+          <p>
+            Ensure secure, touchless entry with AI-powered facial recognition
+            authentication For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Face Recognition -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-camera"></i>
-            </div>
-            <h4>Face Recognition Technology</h4>
-            <p>
-              Ensure secure, touchless entry with AI-powered facial recognition
-              authentication.
-            </p>
+      <!-- Print Visitor Pass -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-printer"></i>
           </div>
+          <h4>Print Visitor Pass</h4>
+          <p>
+            Generate and print visitor passes instantly, including dynamic passes
+            with QR codes For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Print Visitor Pass -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-printer"></i>
-            </div>
-            <h4>Print Visitor Pass</h4>
-            <p>
-              Generate and print visitor passes instantly, including dynamic passes
-              with QR codes.
-            </p>
+      <!-- Pre-Approval -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-check-circle"></i>
           </div>
+          <h4>Pre-Approval</h4>
+          <p>
+            Visitors can be pre-approved by hosts to save time and speed up
+            entry For Mall And Events Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Pre-Approval -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-check-circle"></i>
-            </div>
-            <h4>Pre-Approval</h4>
-            <p>
-              Visitors can be pre-approved by hosts to save time and speed up
-              entry.
-            </p>
+      <!-- Visitor In-Out Entry -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-people"></i>
           </div>
+          <h4>Visitor In-Out Entry</h4>
+          <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods: For Mall And Events Visitor Management System.</p>
+          <ul class="list-unstyled mt-3">
+            <li class="mb-2">
+              <i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-person-bounding-box text-success me-2"></i> Face Recognition Entry
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access
+            </li>
+          </ul>
         </div>
-        <!-- Visitor In-Out Entry -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-people"></i>
-            </div>
-            <h4>Visitor In-Out Entry</h4>
-            <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods:</p>
-            <ul class="list-unstyled mt-3">
-              <li class="mb-2">
-                <i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry
-              </li>
-              <li class="mb-2">
-                <i class="bi bi-person-bounding-box text-success me-2"></i> Face Recognition Entry
-              </li>
-              <li class="mb-2">
-                <i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access
-              </li>
-            </ul>
-          </div>
-        </div>
+      </div>
 
+    </div>
+  </div>
+</section>
 
-  </section>
 
   <!-- Benefits Section -->
-  <section class="benefits-section py-5 bg-light">
+  <section class="benefits-section py-5">
     <div class="container">
       <div class="section-title mb-5 text-center">
-        <h2>Key Benefits of Our Visitor Management System</h2>
+        <h2>Key Benefits of Visitor Management Systems for Malls and Events</h2>
         <p>Discover how our solution makes visitor management smarter, faster and more secure</p>
       </div>
 
@@ -815,7 +793,7 @@
         <div class="col-md-4">
           <div class="benefit-card p-4 h-100 shadow-sm bg-white rounded">
             <div class="benefit-icon mb-3">
-              <i class="bi bi-shield-lock text-primary fs-1"></i>
+              <i class="bi bi-shield-lock" style="color: #4e73df !important; font-size: 3rem;"></i>
             </div>
             <h5>Enhanced Security</h5>
             <p>Keep your premises safe with real-time monitoring, access control and instant alerts.</p>
@@ -826,7 +804,7 @@
         <div class="col-md-4">
           <div class="benefit-card p-4 h-100 shadow-sm bg-white rounded">
             <div class="benefit-icon mb-3">
-              <i class="bi bi-stopwatch text-success fs-1"></i>
+              <i class="bi bi-stopwatch" style="color: #4e73df !important; font-size: 3rem;"></i>
             </div>
             <h5>Time Efficiency</h5>
             <p>Speed up visitor check-ins with QR codes, face recognition and automated workflows.</p>
@@ -837,7 +815,7 @@
         <div class="col-md-4">
           <div class="benefit-card p-4 h-100 shadow-sm bg-white rounded">
             <div class="benefit-icon mb-3">
-              <i class="bi bi-bar-chart-line text-danger fs-1"></i>
+              <i class="bi bi-bar-chart-line" style="color: #4e73df !important; font-size: 3rem;"></i>
             </div>
             <h5>Data Insights</h5>
             <p>Get detailed analytics on visitor traffic, peak hours and reports to optimize operations.</p>
@@ -848,7 +826,7 @@
         <div class="col-md-4">
           <div class="benefit-card p-4 h-100 shadow-sm bg-white rounded">
             <div class="benefit-icon mb-3">
-              <i class="bi bi-people text-warning fs-1"></i>
+              <i class="bi bi-people" style="color: #4e73df !important; font-size: 3rem;"></i>
             </div>
             <h5>Better Visitor Experience</h5>
             <p>Provide a seamless, hassle-free check-in process that enhances visitor satisfaction.</p>
@@ -859,7 +837,7 @@
         <div class="col-md-4">
           <div class="benefit-card p-4 h-100 shadow-sm bg-white rounded">
             <div class="benefit-icon mb-3">
-              <i class="bi bi-gear text-info fs-1"></i>
+              <i class="bi bi-gear" style="color: #4e73df !important; font-size: 3rem;"></i>
             </div>
             <h5>Customizable Rules</h5>
             <p>Set up event-specific, department-based, or zone-based access rules easily.</p>
@@ -870,7 +848,7 @@
         <div class="col-md-4">
           <div class="benefit-card p-4 h-100 shadow-sm bg-white rounded">
             <div class="benefit-icon mb-3">
-              <i class="bi bi-phone text-secondary fs-1"></i>
+              <i class="bi bi-phone" style="color: #4e73df !important; font-size: 3rem;"></i>
             </div>
             <h5>Mobile Friendly</h5>
             <p>Manage visitor logs and approvals anytime, anywhere with mobile access support.</p>
@@ -881,7 +859,7 @@
   </section>
 
   <section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
-           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+           background:linear-gradient(135deg,#4e73df 0%,#224abe 50%,#6f42c1 100%);">
 
     {{-- Radial glow background --}}
     <div style="position:absolute;inset:0;opacity:0.35;
@@ -920,7 +898,7 @@
                         justify-content:center;
                         border-radius:999px;
                         background:#ffffff;
-                        color:#4338ca;
+                        color:#4e73df;
                         font-weight:800;
                         letter-spacing:0.04em;
                         padding:0.9rem 2.3rem;
@@ -943,159 +921,153 @@
   </section>
 
   <!-- FAQ Section -->
-  <section id="faq" class="faq-section py-5 bg-light">
-    <div class="container">
-      <div class="section-title mb-5 text-center">
-        <h2>Frequently Asked Questions</h2>
-        <p>Find answers to common questions about our Industrial Visitor Management System</p>
-      </div>
-
-      <div class="accordion" id="faqAccordion">
-
-        <!-- FAQ 1 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingOne">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1"
-              aria-expanded="false" aria-controls="faq1">
-              Does the system provide analytics and reports?
-            </button>
-          </h2>
-          <div id="faq1" class="accordion-collapse collapse" aria-labelledby="headingOne"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              Yes, the system includes an interactive analytics dashboard and advanced reporting tools
-              to monitor visitor trends, inflow/outflow analysis and compliance requirements in real-time.
-            </div>
-          </div>
-        </div>
-
-        <!-- FAQ 2 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingTwo">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2"
-              aria-expanded="false" aria-controls="faq2">
-              Can we track visitors on an hourly basis?
-            </button>
-          </h2>
-          <div id="faq2" class="accordion-collapse collapse" aria-labelledby="headingTwo"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics
-              segmented by the hour, helping optimize staffing and enhance security monitoring.
-            </div>
-          </div>
-        </div>
-
-        <!-- FAQ 3 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingThree">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3"
-              aria-expanded="false" aria-controls="faq3">
-              How does the system ensure visitor safety compliance?
-            </button>
-          </h2>
-          <div id="faq3" class="accordion-collapse collapse" aria-labelledby="headingThree"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              Visitors must complete safety inductions and acknowledge compliance rules before entry.
-              The system tracks and records all safety acknowledgments for audit purposes.
-            </div>
-          </div>
-        </div>
-
-        <!-- FAQ 4 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingFour">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4"
-              aria-expanded="false" aria-controls="faq4">
-              Does the system support face recognition for entry?
-            </button>
-          </h2>
-          <div id="faq4" class="accordion-collapse collapse" aria-labelledby="headingFour"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              Yes, AI-powered face recognition ensures secure, touchless and fast entry authentication
-              for visitors, reducing manual verification needs.
-            </div>
-          </div>
-        </div>
-
-        <!-- FAQ 5 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingFive">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5"
-              aria-expanded="false" aria-controls="faq5">
-              Will we get notified when visitors arrive?
-            </button>
-          </h2>
-          <div id="faq5" class="accordion-collapse collapse" aria-labelledby="headingFive"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access
-              or checks in at the facility.
-            </div>
-          </div>
-        </div>
-
-        <!-- FAQ 6 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingSix">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6"
-              aria-expanded="false" aria-controls="faq6">
-              Can we generate visitor passes directly from the system?
-            </button>
-          </h2>
-          <div id="faq6" class="accordion-collapse collapse" aria-labelledby="headingSix"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              Yes, the system allows you to instantly generate and print visitor passes,
-              including QR code-enabled dynamic passes for quick access.
-            </div>
-          </div>
-        </div>
-
-        <!-- FAQ 7 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingSeven">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7"
-              aria-expanded="false" aria-controls="faq7">
-              Is there a visitor pre-approval process?
-            </button>
-          </h2>
-          <div id="faq7" class="accordion-collapse collapse" aria-labelledby="headingSeven"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              Visitors can be pre-approved by hosts through the system, enabling faster entry
-              and minimizing wait times at the gate.
-            </div>
-          </div>
-        </div>
-
-        <!-- FAQ 8 -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingEight">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8"
-              aria-expanded="false" aria-controls="faq8">
-              What methods are available for visitor check-in and check-out?
-            </button>
-          </h2>
-          <div id="faq8" class="accordion-collapse collapse" aria-labelledby="headingEight"
-            data-bs-parent="#faqAccordion">
-            <div class="accordion-body">
-              The system supports multiple entry options including manual entry by security staff,
-              face recognition and QR code scanning for seamless visitor management.
-            </div>
-          </div>
-        </div>
-
-      </div>
+<section id="faq" class="faq-section py-5 bg-light">
+  <div class="container">
+    <div class="section-title mb-5 text-center">
+      <h2>Frequently Asked Questions</h2>
+      <p>Find answers to common questions about our Mall And Events Visitor Management System</p>
     </div>
-  </section>
+
+    <div class="accordion" id="faqAccordion">
+
+      <!-- FAQ 1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1"
+            aria-expanded="false" aria-controls="faq1">
+           Does the system provide analytics and reports for Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq1" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Yes, the Mall And Events Visitor Management System includes an interactive analytics dashboard and advanced reporting tools
+            to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real time.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingTwo">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2"
+            aria-expanded="false" aria-controls="faq2">
+            Can we track visitors on an hourly basis in Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq2" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Absolutely! The Hourly Visitor Analysis feature in the Mall And Events Visitor Management System provides detailed inflow/outflow statistics
+            segmented by the hour, helping optimize staffing and enhance security monitoring.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingThree">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3"
+            aria-expanded="false" aria-controls="faq3">
+            How does the system ensure visitor safety compliance in Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq3" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Visitors must complete safety inductions and acknowledge compliance rules before entry.
+            The system tracks and records all safety acknowledgments for audit purposes.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 4 (NO CHANGE) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFour">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4"
+            aria-expanded="false" aria-controls="faq4">
+           Does the system support face recognition for entry in Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq4" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication
+            for visitors, reducing manual verification needs.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 5 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingFive">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5"
+            aria-expanded="false" aria-controls="faq5">
+            Will we get notified when visitors arrive in Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq5" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Instant notifications are sent to hosts via WhatsApp and Email through our Mall And Events Visitor Management System whenever a visitor requests access
+            or checks in at the facility.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 6 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSix">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6"
+            aria-expanded="false" aria-controls="faq6">
+           Can we generate visitor passes directly from the system for Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq6" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Yes, the Mall And Events Visitor Management System allows you to instantly generate and print visitor passes,
+            including QR code-enabled dynamic passes for quick access.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 7 (NO CHANGE) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSeven">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7"
+            aria-expanded="false" aria-controls="faq7">
+            Is there a visitor pre-approval process in Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq7" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            Visitors can be pre-approved by hosts through the system, enabling faster entry
+            and minimizing wait times at the gate.
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ 8 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingEight">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8"
+            aria-expanded="false" aria-controls="faq8">
+            What methods are available for visitor check-in and check-out in Mall And Events Visitor Management System?
+          </button>
+        </h2>
+        <div id="faq8" class="accordion-collapse collapse" aria-labelledby="headingEight" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">
+            The system supports multiple entry options in the Mall And Events Visitor Management System including manual entry by security staff,
+            face recognition, and QR code scanning for seamless visitor management.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 
 
   <!-- Call to Action -->
-  <section class="cta-section">
-    <div class="container cta-content">
+  <section class="cta-section" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 100px 20px; border-radius: 30px; margin: 60px 0; text-align: center; position: relative; overflow: hidden;">
+    <div style="content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1440 320\'%3E%3Cpath fill=\'%23ffffff\' fill-opacity=\'0.1\' d=\'M0,128L48,117.3C96,107,192,85,288,112C384,139,480,213,576,224C672,235,768,181,864,170.7C960,160,1056,192,1152,192C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z\'%3E%3C/path%3E%3C/svg%3E') repeat; background-size: cover; opacity: 0.1;"></div>
+    <div class="container cta-content" style="position: relative; z-index: 1;">
       <h2>Ready to Transform Your Visitor Management?</h2>
       <p>Contact us today to request a demo and see how our system can streamline your operations and elevate visitor
         experiences.</p>
@@ -1103,9 +1075,13 @@
     </div>
   </section>
 
+  @include('components.home-contact-section')
+  @stack('styles')
+
   <!-- Footer -->
   @include('layouts.footer')
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
 
   <!-- Optional: Smooth scroll -->
@@ -1117,6 +1093,7 @@
       });
     });
   </script>
+  @stack('scripts')
 </body>
 
 </html>

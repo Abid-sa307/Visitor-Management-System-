@@ -18,6 +18,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+    
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -174,6 +177,47 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
+        /* Review Box */
+        .review-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            height: 250px;
+        }
+
+        .review-img-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 14px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10);
+            border: 1px solid rgba(78, 115, 223, 0.12);
+        }
+
+        .review-slide-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 14px;
+        }
+
+        .review-readmore-btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .review-readmore-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(78, 115, 223, 0.3);
+            color: white;
+        }
+
         @media (max-width: 768px) {
             .contact-info {
                 padding: 30px;
@@ -298,16 +342,55 @@
             </div>
         </div>
 
-        <!-- Map (inside same container) -->
+        <!-- Map & Reviews -->
         <div class="row justify-content-center mb-5">
             <div class="col-lg-10">
-                <h3 class="text-center mb-4">Find Us Here</h3>
-                <div class="map-container">
-                    <iframe
-                        src="https://www.google.com/maps?q=N%20%26%20T%20Software%20Private%20Limited%2C%20Chhapi%2C%20Gujarat&hl=en&z=18&output=embed"
-                        title="N&T Software Private Limited" width="100%" height="100%" style="border:0;"
-                        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
+                <h3 class="text-center mb-4">Find Us Here & Customer Reviews</h3>
+                <div class="row g-4">
+                    <!-- Map -->
+                    <div class="col-md-7">
+                        <div class="map-container">
+                            <iframe
+                                src="https://www.google.com/maps?q=N%20%26%20T%20Software%20Private%20Limited%2C%20Chhapi%2C%20Gujarat&hl=en&z=18&output=embed"
+                                title="N&T Software Private Limited" width="100%" height="100%" style="border:0;"
+                                allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+                    </div>
+                    
+                    <!-- Reviews -->
+                    <div class="col-md-5">
+                        <div class="review-box">
+                            <div class="swiper homeReviewSwiper">
+                                <div class="swiper-wrapper">
+                                    <div class="swiper-slide">
+                                        <div class="review-img-card">
+                                            <img src="{{ asset('images/reviews/rev-1.png') }}" alt="Customer review 1"
+                                                class="review-slide-img">
+                                        </div>
+                                    </div>
+                                    <div class="swiper-slide">
+                                        <div class="review-img-card">
+                                            <img src="{{ asset('images/reviews/rev-2.png') }}" alt="Customer review 2"
+                                                class="review-slide-img">
+                                        </div>
+                                    </div>
+                                    <div class="swiper-slide">
+                                        <div class="review-img-card">
+                                            <img src="{{ asset('images/reviews/rev-3.png') }}" alt="Customer review 3"
+                                                class="review-slide-img">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="https://www.google.com/search?q=Visitor+Management+System+(VMS)&stick=H4sIAAAAAAAA_-NgU1I1qDC2NE1OMzZKTU1JMTNPNrS0MqgwMTVMSjQ0tjBJTUkySjW3WMQqH5ZZnFmSX6Tgm5iXmJ6am5pXohBcWVySmqugEeYbrAkA5O3CSEsAAAA&hl=en&mat=CRfS4DxciUKjElUBTVDHnq6SMtASKowHvrlIGIeOIBwEFheQvDqRNThX4DXnO15dRW2M5dYnMLR95R6PdvYVwRVhMj9q1-9ZRTcKoN9KQUd8GecUvTNbjosjtoUN6Vro&authuser=0#mpd=~11764116205896520215/customers/reviews&lrd=0x395cf32eedd67c19:0x451ba1384edb2e78,1"
+                                    target="_blank" rel="noopener" class="btn review-readmore-btn">
+                                    Read more reviews
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -318,6 +401,9 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
     <!-- EmailJS Script -->
     <script>
@@ -345,6 +431,17 @@
                     form.insertAdjacentHTML('beforebegin', errorAlert);
                     setTimeout(() => document.querySelector('.alert')?.remove(), 5000);
                 });
+        });
+        
+        // Initialize Swiper for reviews
+        new Swiper('.homeReviewSwiper', {
+            slidesPerView: 1,
+            spaceBetween: 10,
+            loop: true,
+            autoplay: {
+                delay: 3000,
+                disableOnInteraction: false,
+            },
         });
     </script>
 </body>
