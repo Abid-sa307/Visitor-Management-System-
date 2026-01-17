@@ -1,15 +1,35 @@
 @extends('layouts.sb')
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="mb-0 fw-bold text-primary">Edit Visitor</h3>
-        <a href="{{ route('visitors.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-1"></i> Back to List
+
+<div class="page-heading mb-4">
+    <div>
+        <p class="page-heading__eyebrow">Visitor Operations</p>
+        <h1 class="page-heading__title">Edit Visitor Record</h1>
+        <div class="page-heading__meta">
+            Update contact info, visit preferences, and supporting documents to keep this visitor profile accurate.
+        </div>
+    </div>
+    <div class="page-heading__actions">
+        <a href="{{ route('visitors.index') }}" class="action-btn action-btn--view">
+            <i class="bi bi-people"></i>
+            All Visitors
+        </a>
+        <a href="{{ route('visitors.create') }}" class="action-btn action-btn--edit">
+            <i class="bi bi-person-plus"></i>
+            New Visitor
         </a>
     </div>
+</div>
 
-    <div class="card shadow-lg p-4">
+<div class="modern-panel p-4">
+    <div class="section-heading mb-4">
+        <div class="section-heading__title">
+            <i class="bi bi-person-badge"></i>
+            Visitor Details
+        </div>
+        <div class="section-heading__meta">Update profile information, contact methods, and visit metadata.</div>
+    </div>
 
     @if ($errors->any())
       <div class="alert alert-danger">
@@ -97,6 +117,28 @@
         @enderror
       </div>
 
+      <!-- Visit Date -->
+      <div class="mb-3">
+        <label for="visitDateInput" class="form-label fw-semibold">
+            Visit Date <span class="text-muted">(optional)</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+            <input type="date" 
+                   name="visit_date" 
+                   id="visitDateInput" 
+                   class="form-control @error('visit_date') is-invalid @enderror" 
+                   value="{{ old('visit_date', $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('Y-m-d') : '') }}"
+                   min="{{ date('Y-m-d') }}" 
+                   max="{{ date('Y-m-d', strtotime('+30 days')) }}"
+                   aria-describedby="visitDateHelp">
+        </div>
+        <div id="visitDateHelp" class="form-text">Select the scheduled visit date (up to 30 days in advance)</div>
+        @error('visit_date')
+          <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
+      </div>
+
       <!-- Photo -->
       <div class="mb-3">
         <label class="form-label fw-semibold">Photo</label>
@@ -156,22 +198,22 @@
       </div>
 
       <!-- Form Actions -->
-      <div class="d-flex justify-content-between mt-4 border-top pt-3">
-        <a href="{{ route('visitors.index') }}" class="btn btn-outline-secondary">
+      <div class="d-flex flex-wrap gap-2 mt-4 border-top pt-3 justify-content-between align-items-center">
+        <a href="{{ route('visitors.index') }}" class="action-btn action-btn--view">
             <i class="fas fa-times me-1"></i> Cancel
         </a>
-        <div class="btn-group" role="group">
-            <button type="button" 
-                    class="btn btn-outline-danger"
-                    data-bs-toggle="modal" 
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button"
+                    class="action-btn action-btn--delete"
+                    data-bs-toggle="modal"
                     data-bs-target="#deleteConfirmationModal">
                 <i class="fas fa-trash-alt me-1"></i> Delete
             </button>
-            <button type="submit" class="btn btn-primary px-4">
+            <button type="submit" class="action-btn action-btn--view">
                 <i class="fas fa-save me-1"></i> Update Visitor
             </button>
         </div>
-      </div>
+      
 
       <!-- Delete Confirmation Modal -->
       <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-hidden="true">
@@ -201,7 +243,7 @@
   </div>
 </div>
 
-@push('scripts')
+@push('styles')
 <script>
 (function(){
   // Camera functionality

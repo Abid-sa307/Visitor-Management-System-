@@ -1,11 +1,37 @@
 @extends('layouts.sb')
 
 @section('content')
-<div class="container d-flex justify-content-center mt-5">
-  <div class="card shadow-lg p-4 w-100" style="max-width: 800px;">
-    <h3 class="mb-4 text-center fw-bold text-primary">
-      Register New Visitor
-    </h3>
+
+<div class="page-heading mb-4">
+    <div>
+        <p class="page-heading__eyebrow">Visitor Operations</p>
+        <h1 class="page-heading__title">Register New Visitor</h1>
+        <div class="page-heading__meta">
+            Capture visitor details, assign them to the correct company/branch, and collect the mandatory face snapshot in one streamlined flow.
+        </div>
+    </div>
+    <div class="page-heading__actions">
+        <a href="{{ route('visitors.index') }}" class="action-btn action-btn--view">
+            <i class="bi bi-people"></i>
+            View Visitors
+        </a>
+        <!-- <a href="{{ route('security-checks.index') }}" class="action-btn action-btn--edit">
+            <i class="bi bi-shield-lock"></i>
+            Security Checks
+        </a> -->
+    </div>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-12 col-xl-10">
+    <div class="modern-panel p-4">
+      <div class="section-heading mb-4">
+        <div class="section-heading__title">
+          <i class="bi bi-person-plus"></i>
+          Visitor & Visit Details
+        </div>
+        <div class="section-heading__meta">Provide contact information, visit preferences, and any supporting documents.</div>
+      </div>
 
     @if ($errors->any())
       <div class="alert alert-danger">
@@ -18,14 +44,77 @@
       </div>
     @endif
 
-    <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}" 
+    <!-- Face Recognition Requirement Notice -->
+    <div id="faceRecognitionNotice" class="alert alert-warning d-none" role="alert">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+        <div>
+          <h6 class="alert-heading mb-1">Face Recognition Required</h6>
+          <p class="mb-0">This company requires face recognition for all visitors. Please capture the visitor's face photo using the camera below before submitting the form.</p>
+        </div>
+      </div>
+    </div>
+
+    <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}"
         method="POST" enctype="multipart/form-data" id="visitorForm">
       @csrf
-      
 
       <div class="row">
         <!-- Left Column -->
         <div class="col-md-6">
+          <!-- Company & Branch -->
+          <div class="row mb-3">
+            <div class="col">
+              <label class="form-label fw-semibold">Company <span class="text-danger">*</span></label>
+              @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'super' || auth()->user()->role === 'admin')
+                <select name="company_id" id="companySelect" class="form-select" required>
+                  <option value="">-- Select Company --</option>
+                  @if(isset($companies) && $companies->count() > 0)
+                    @foreach($companies as $company)
+                      <option value="{{ $company->id }}" 
+                          {{ old('company_id') == $company->id ? 'selected' : '' }}>
+                          {{ $company->name ?? 'Unnamed Company' }}
+                      </option>
+                    @endforeach
+                  @else
+                    <option value="" disabled>No companies available</option>
+                  @endif
+                </select>
+              @else
+                <input type="hidden" name="company_id" value="{{ auth()->user()->company_id }}">
+                <input type="text" class="form-control" value="{{ auth()->user()->company->name }}" readonly>
+              @endif
+            </div>
+            <div class="col">
+              <label class="form-label fw-semibold">Branch</label>
+              @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'super' || auth()->user()->role === 'admin')
+                <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
+                  <option value="">-- Select Branch --</option>
+                </select>
+                @error('branch_id')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+              @else
+                @if(isset($branches) && $branches->count() > 1)
+                  <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
+                    <option value="">-- Select Branch --</option>
+                    @foreach($branches as $id => $name)
+                      <option value="{{ $id }}" 
+                          {{ old('branch_id') == $id ? 'selected' : '' }}>
+                          {{ $name }}
+                      </option>
+                    @endforeach
+                  </select>
+                  @error('branch_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
+                @else
+                  <input type="text" class="form-control" value="{{ $branches->first() ?? 'No branches' }}" readonly>
+                @endif
+              @endif
+            </div>
+          </div>
+
           <!-- Phone -->
           <div class="mb-3">
             <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
@@ -59,6 +148,19 @@
               <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
           </div>
+
+          <!-- Visit Date -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Visit Date</label>
+            <input type="date" name="visit_date" class="form-control @error('visit_date') is-invalid @enderror" 
+                   value="{{ old('visit_date', date('Y-m-d')) }}" 
+                   min="{{ date('Y-m-d') }}" 
+                   max="{{ date('Y-m-d', strtotime('+7 days')) }}">
+            <div class="form-text">You can book a visit up to 7 days in advance</div>
+            @error('visit_date')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </div>
           
           <!-- Document Upload -->
           <div class="mb-3">
@@ -83,12 +185,19 @@
 
         <!-- Right Column -->
         <div class="col-md-6">
+          <div class="section-heading mt-3 mt-md-0 mb-3">
+            <div class="section-heading__title">
+              <i class="bi bi-camera-video"></i>
+              Face Capture
+            </div>
+            <div class="section-heading__meta">Record a clear face photo to enable quick check-ins.</div>
+          </div>
           <!-- Face Capture Section -->
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Face Capture <span class="text-danger">*</span></label>
+          <div class="mb-3" id="faceCaptureSection">
+            <label class="form-label fw-semibold">Face Capture <span class="text-danger" id="faceRequired">*</span></label>
             <div class="face-capture-container mb-2">
               <div class="face-detection-box">
-                <video id="video" width="320" height="240" autoplay playsinline></video>
+                <video id="video" width="480" height="360" autoplay playsinline></video>
                 <div class="face-overlay">
                   <div class="circle"></div>
                 </div>
@@ -118,18 +227,20 @@
 
       <!-- Submit Button -->
       <div class="d-grid gap-2 mt-4">
-        <button type="submit" class="btn btn-primary btn-lg">
+        <button type="submit" class="action-btn action-btn--view w-100 justify-content-center">
           <i class="fas fa-user-plus me-2"></i>Register Visitor
         </button>
       </div>
-    </form>
+    </div>
   </div>
 </div>
+
+@endsection
 
 @push('styles')
 <style>
 .face-capture-container {
-  max-width: 320px;
+  max-width: 480px;
   margin: 0 auto;
   position: relative;
 }
@@ -137,7 +248,7 @@
 .face-detection-box {
   position: relative;
   width: 100%;
-  height: 240px;
+  height: 360px;
   overflow: hidden;
   border-radius: 8px;
   background-color: #f8f9fa;
@@ -175,15 +286,14 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
 }
 
 #photoPreview {
   max-width: 100%;
-  max-height: 240px;
+  max-height: 360px;
   display: block;
   margin: 0 auto;
 }
@@ -240,6 +350,141 @@ if (documentUploadBtn && documentUpload) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+  // Branch loading for super users
+  const companySelect = document.getElementById('companySelect');
+  const branchSelect = document.getElementById('branchSelect');
+
+  // Function to load branches via AJAX
+  function loadBranches(companyId) {
+    if (!companyId || !branchSelect) {
+      if (branchSelect) {
+        branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+      }
+      return;
+    }
+    
+    branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+    branchSelect.disabled = true;
+    
+    fetch(`/api/companies/${companyId}/branches`)
+      .then(response => response.json())
+      .then(branches => {
+        branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+        branchSelect.disabled = false;
+        
+        if (Array.isArray(branches) && branches.length === 0) {
+          branchSelect.innerHTML = '<option value="">No branches available</option>';
+          branchSelect.disabled = true;
+        } else if (typeof branches === 'object' && Object.keys(branches).length === 0) {
+          branchSelect.innerHTML = '<option value="">No branches available</option>';
+          branchSelect.disabled = true;
+        } else {
+          // Handle both array and object formats
+          if (Array.isArray(branches)) {
+            branches.forEach(branch => {
+              const option = document.createElement('option');
+              option.value = branch.id;
+              option.textContent = branch.name;
+              branchSelect.appendChild(option);
+            });
+          } else {
+            for (const [id, name] of Object.entries(branches)) {
+              const option = document.createElement('option');
+              option.value = id;
+              option.textContent = name;
+              branchSelect.appendChild(option);
+            }
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error loading branches:', error);
+        branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+        branchSelect.disabled = false;
+      });
+  }
+
+  // Function to check face recognition requirement
+  function checkFaceRecognitionRequirement(companyId) {
+    if (!companyId) {
+      // Default to optional when no company selected
+      updateFaceRequirement(false);
+      return;
+    }
+    
+    fetch(`/api/companies/${companyId}/face-recognition`)
+      .then(response => response.json())
+      .then(data => {
+        updateFaceRequirement(data.enabled || false);
+      })
+      .catch(error => {
+        console.error('Error checking face recognition:', error);
+        updateFaceRequirement(false);
+      });
+  }
+
+  // Form submission
+  const form = document.getElementById('visitorForm');
+  let faceRecognitionRequired = false;
+  
+  // Function to update face requirement UI
+  function updateFaceRequirement(required) {
+    faceRecognitionRequired = required;
+    const faceRequired = document.getElementById('faceRequired');
+    const faceCaptureSection = document.getElementById('faceCaptureSection');
+    const statusElement = document.getElementById('status');
+    const faceRecognitionNotice = document.getElementById('faceRecognitionNotice');
+    
+    if (required) {
+      faceRequired.style.display = 'inline';
+      if (statusElement) {
+        statusElement.textContent = 'Face capture is required - Position your face inside the circle';
+      }
+      if (faceRecognitionNotice) {
+        faceRecognitionNotice.classList.remove('d-none');
+      }
+    } else {
+      faceRequired.style.display = 'none';
+      if (statusElement) {
+        statusElement.textContent = 'Face capture is optional - Position your face inside the circle';
+      }
+      if (faceRecognitionNotice) {
+        faceRecognitionNotice.classList.add('d-none');
+      }
+    }
+  }
+  
+  // Form validation
+  form.addEventListener('submit', function(e) {
+    const faceImageInput = document.getElementById('faceImageInput');
+    
+    if (faceRecognitionRequired && !faceImageInput.value) {
+      e.preventDefault();
+      alert('Please capture your face photo before submitting.');
+      return false;
+    }
+  });
+  // Add event listeners
+  if (companySelect) {
+    companySelect.addEventListener('change', function() {
+      loadBranches(this.value);
+      checkFaceRecognitionRequirement(this.value);
+    });
+    // Trigger change event on page load if a company is already selected
+    if (companySelect.value) {
+      loadBranches(companySelect.value);
+      checkFaceRecognitionRequirement(companySelect.value);
+    }
+  } else {
+    // For non-super users, check current company's face recognition setting
+    const companyId = {{ auth()->user()->company_id ?? 'null' }};
+    if (companyId) {
+      checkFaceRecognitionRequirement(companyId);
+    } else {
+      updateFaceRequirement(false);
+    }
+  }
+
   // DOM Elements
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
@@ -451,23 +696,15 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   retakePhotoBtn.addEventListener('click', retakePhoto);
   
-  // Form submission
-  const form = document.getElementById('visitorForm');
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      if (!faceImageInput.value || !faceEncodingInput.value) {
-        e.preventDefault();
-        alert('Please capture a photo before submitting.');
-        return false;
-      }
-      
-      const submitButton = this.querySelector('button[type="submit"]');
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-      }
-    });
-  }
+  // Clean up on page unload
+  window.addEventListener('beforeunload', () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    if (detectionInterval) {
+      clearInterval(detectionInterval);
+    }
+  });
   
   // Clean up on page unload
   window.addEventListener('beforeunload', () => {
@@ -479,7 +716,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 });
+
+// Trigger notification when visitor is successfully created
+@if(session('success') && session('play_notification'))
+document.addEventListener('DOMContentLoaded', function() {
+    showVisitorNotification('visitor_added', {
+        visitorName: 'New Visitor',
+        companyName: 'ABCEFGH Industries'
+    });
+});
+@endif
 </script>
 @endpush
-
-@endsection

@@ -8,6 +8,7 @@ use App\Models\VisitorCategory;
 use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class QRController extends Controller
@@ -27,7 +28,7 @@ class QRController extends Controller
         $visitor = Visitor::find(session('current_visitor_id'));
         
         // Check if visitor exists and is checked out
-        if ($visitor && $visitor->status === 'checked_out') {
+        if ($visitor && $visitor->status === 'Completed' && $visitor->out_time) {
             // Clear the visitor from session
             $request->session()->forget('current_visitor_id');
             $visitor = null;
@@ -67,8 +68,13 @@ class QRController extends Controller
         // Get departments for the company
         $departments = $company->departments()->get();
         
-        // Get branches for the company
-        $branches = $company->branches()->get();
+        // If a specific branch QR was scanned, only show that branch
+        // Otherwise show all branches of the company
+        if ($branchModel) {
+            $branches = collect([$branchModel]); // Only the scanned branch
+        } else {
+            $branches = $company->branches()->get(); // All branches
+        }
         
         return view('visitors.public-visit', [
             'company' => $company,
@@ -135,17 +141,30 @@ class QRController extends Controller
      */
     public function storeVisitor(Request $request, Company $company)
     {
-        // Validate the request
-        $validated = $request->validate([
+        // Check if face recognition is enabled for this company
+        $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
+        
+        // Build validation rules dynamically
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|numeric|digits_between:10,15',
             'purpose' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
-            'face_encoding' => 'nullable',
-            'face_image' => 'nullable',
             'document' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
-        ]);
+        ];
+        
+        // Only add face validation if face recognition is enabled
+        if ($faceRecognitionEnabled) {
+            $rules['face_encoding'] = 'required';
+            $rules['face_image'] = 'required';
+        } else {
+            $rules['face_encoding'] = 'nullable';
+            $rules['face_image'] = 'nullable';
+        }
+        
+        // Validate the request
+        $validated = $request->validate($rules);
         
         // Set default values for required fields if they're empty
         $validated['name'] = $validated['name'] ?? 'Guest Visitor';
@@ -219,7 +238,8 @@ class QRController extends Controller
             return redirect()
                 ->route('qr.scan', $company)
                 ->with('success', 'Visitor registered successfully!' . 
-                    ($company->auto_approve_visitors ? ' Your visit has been approved.' : ' Please wait for approval.'));
+                    ($company->auto_approve_visitors ? ' Your visit has been approved.' : ' Please wait for approval.'))
+                ->with('play_notification', true);
                 
         } catch (\Exception $e) {
             return back()
@@ -249,8 +269,10 @@ public function storeVisit(Request $request, Company $company, $branch = null)
         'person_to_visit' => $validated['person_to_visit'],
         'purpose' => $validated['purpose'],
         'vehicle_number' => $validated['vehicle_number'] ?? null,
-        'status' => 'checked_in',
-        'in_time' => now(),
+        'status' => 'Approved',
+        'approved_by' => null, // Public form, so no admin approval
+        'approved_at' => now(),
+        'visit_completed_at' => now(),
     ]);
 
     // Handle document uploads if any
@@ -268,18 +290,18 @@ public function storeVisit(Request $request, Company $company, $branch = null)
         $visitor->save();
     }
 
-    // Redirect to the scan page with the company ID
-    return redirect()->route('qr.scan', ['company' => $company->id])->with('success', 'Visit details submitted successfully!');
+    // Redirect to entry page to show updated status
+    return redirect()->route('visitors.entry.page')->with('success', 'Visit details submitted successfully! You can now mark in/out.');
 }
 
-        /**
-         * Show the public visit form (no auth required)
-         */
-        public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
-        {
-            $request = $request ?? request(); // Get the request instance if not injected
-            
-            $branchModel = null;
+/**
+ * Show the public visit form (no auth required)
+ */
+public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
+{
+    $request = $request ?? request(); // Get the request instance if not injected
+    
+    $branchModel = null;
             if ($branch) {
                 $branchModel = $company->branches()->find($branch);
             }
@@ -300,14 +322,21 @@ public function storeVisit(Request $request, Company $company, $branch = null)
             // Store visitor ID in session
             session(['current_visitor_id' => $visitor->id]);
             
-            // Get departments, branches and visitor categories
+            // Get departments and visitor categories
             $departments = $company->departments()->get();
-            $branches = $company->branches()->get();
             
             // Get visitor categories for the company
             $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
                 ->orderBy('name')
                 ->get();
+            
+            // If a specific branch QR was scanned, only show that branch
+            // Otherwise show all branches of the company
+            if ($branchModel) {
+                $branches = collect([$branchModel]); // Only the scanned branch
+            } else {
+                $branches = $company->branches()->get(); // All branches
+            }
             
             return view('visitors.public-visit', [
                 'company' => $company,
@@ -328,10 +357,9 @@ public function storeVisit(Request $request, Company $company, $branch = null)
             $visitorId = $visitorId ?? $request->route('visitor');
             
             $validated = $request->validate([
-                'company_id' => 'required|exists:companies,id',
                 'department_id' => 'required|exists:departments,id',
                 'branch_id' => 'nullable|exists:branches,id',
-                'visitor_category_id' => 'required|exists:visitor_categories,id',
+                'visitor_category_id' => 'nullable|exists:visitor_categories,id',
                 'person_to_visit' => 'required|string|max:255',
                 'purpose' => 'required|string',
                 'visitor_company' => 'nullable|string',
@@ -342,6 +370,9 @@ public function storeVisit(Request $request, Company $company, $branch = null)
                 'workman_policy' => 'nullable|in:Yes,No',
                 'workman_policy_photo' => 'nullable|image|max:2048',
             ]);
+
+            // Add company_id to validated data since it's available from route
+            $validated['company_id'] = $company->id;
 
             try {
                 // Start a database transaction
@@ -363,7 +394,7 @@ public function storeVisit(Request $request, Company $company, $branch = null)
                     }
                     
                     // Update only the allowed fields
-                    $visitor->update([
+                    $updateData = [
                         'department_id' => $validated['department_id'],
                         'branch_id' => $validated['branch_id'] ?? null,
                         'visitor_category_id' => $validated['visitor_category_id'],
@@ -376,8 +407,27 @@ public function storeVisit(Request $request, Company $company, $branch = null)
                         'goods_in_car' => $validated['goods_in_car'] ?? null,
                         'workman_policy' => $validated['workman_policy'] ?? null,
                         'workman_policy_photo' => $validated['workman_policy_photo'] ?? $visitor->workman_policy_photo,
-                        // Status is not included here to preserve the existing value
-                    ]);
+                        'visit_completed_at' => now(), // Mark visit form as completed
+                    ];
+
+                    // Set visitor status based on company's auto-approval setting and QR flow flag
+                    // Preserve existing Approved status - don't revert approved visitors back to Pending
+                    if ($visitor->status === 'Approved') {
+                        // Visitor is already approved, keep them approved
+                        $updateData['status'] = 'Approved';
+                    } elseif ($company->auto_approve_visitors) {
+                        // Company auto-approves and visitor isn't already approved
+                        $updateData['status'] = 'Approved';
+                        $updateData['approved_at'] = now();
+                    } elseif (!$company->mark_in_out_in_qr_flow) {
+                        // If mark in/out is disabled in QR flow, keep as Pending
+                        $updateData['status'] = 'Pending';
+                    } else {
+                        // Company doesn't auto-approve and visitor isn't already approved
+                        $updateData['status'] = 'Pending';
+                    }
+
+                    $visitor->update($updateData);
 
                     // Redirect to the public visitor index page with success message
                     return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
@@ -423,6 +473,23 @@ public function storeVisit(Request $request, Company $company, $branch = null)
                 'departments' => $departments,
                 'branches' => $branches,
                 'visitorCategories' => $visitorCategories,
+            ]);
+        }
+
+        /**
+         * Track visitor status (public interface)
+         *
+         * @param  int  $visitorId  Visitor ID
+         * @return \Illuminate\View\View
+         */
+        public function trackVisitor($visitorId)
+        {
+            // Find the visitor with related data
+            $visitor = Visitor::with(['company', 'department', 'branch', 'securityChecks'])
+                ->findOrFail($visitorId);
+            
+            return view('visitors.public-track', [
+                'visitor' => $visitor
             ]);
         }
 }

@@ -79,6 +79,7 @@ class User extends Authenticatable implements AuthenticatableUserContract
         $labelsMap = [
             'dashboard' => 'Dashboard',
             'visitors' => 'Visitors',
+            'visit_details' => 'Visit Details',
             'visitor_history' => 'Visitor History',
             'visitor_inout' => 'Visitor In/Out',
             'approvals' => 'Approvals',
@@ -88,6 +89,7 @@ class User extends Authenticatable implements AuthenticatableUserContract
             'departments' => 'Departments',
             'users' => 'Users',
             'security_checks' => 'Security Checks',
+            'security_questions' => 'Security Questions',
             'visitor_checkup' => 'Visitor Checkup',
             'qr_code' => 'QR Code'
         ];

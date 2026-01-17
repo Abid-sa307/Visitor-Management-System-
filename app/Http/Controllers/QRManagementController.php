@@ -95,6 +95,16 @@ public function __construct()
      */
     public function createVisitor(Company $company)
     {
+        // Check if a specific branch was passed in the query string
+        $branchId = request()->query('branch') ?? session('scanned_branch_id');
+        $branchModel = null;
+        
+        if ($branchId) {
+            $branchModel = $company->branches()->find($branchId);
+            // Store branch ID in session for later use
+            session(['scanned_branch_id' => $branchId]);
+        }
+        
         // Get the necessary data for the form
         $visitorCategories = $company->visitorCategories()->orderBy('name')->get();
         $departments = $company->departments()->orderBy('name')->get();
@@ -102,6 +112,7 @@ public function __construct()
 
         return view('visitors.public-create', [
             'company' => $company,
+            'branch' => $branchModel,
             'visitorCategories' => $visitorCategories,
             'departments' => $departments,
             'employees' => $employees,
@@ -111,41 +122,77 @@ public function __construct()
 
     public function storeVisitor(Company $company, Request $request)
 {
-    $validated = $request->validate([
+    // Check if face recognition is enabled for this company
+    $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
+    
+    // Build validation rules dynamically
+    $rules = [
         'name' => 'required|string|max:255',
         'email' => 'required|email|max:255',
         'phone' => 'required|string|max:20',
-        'face_image' => 'required|string',
-        'face_encoding' => 'required|string',
-    ]);
+        'visit_date' => 'nullable|date',
+    ];
+    
+    // Only add face validation if face recognition is enabled
+    if ($faceRecognitionEnabled) {
+        $rules['face_image'] = 'required|string';
+        $rules['face_encoding'] = 'required|string';
+    }
+    
+    $validated = $request->validate($rules);
 
     try {
-        // Process the image data (remove data:image/jpeg;base64, prefix if present)
-        $imageData = $request->input('face_image');
-        if (strpos($imageData, ';base64,') !== false) {
-            $imageData = explode(';base64,', $imageData)[1];
-        }
-        
-        // Save the image
-        $imageName = 'visitor_photos/' . Str::random(40) . '.jpg';
-        Storage::disk('public')->put($imageName, base64_decode($imageData));
-
-        // Create visitor
-        $visitor = Visitor::create([
+        $visitorData = [
             'company_id' => $company->id,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
-            'photo' => $imageName,
-            'face_encoding' => $validated['face_encoding'],
+            'visit_date' => $validated['visit_date'] ?? now()->format('Y-m-d'),
             'status' => 'Pending',
-        ]);
+        ];
+        
+        // Only process face data if face recognition is enabled and data is provided
+        if ($faceRecognitionEnabled && isset($validated['face_image'])) {
+            // Process the image data (remove data:image/jpeg;base64, prefix if present)
+            $imageData = $validated['face_image'];
+            if (strpos($imageData, ';base64,') !== false) {
+                $imageData = explode(';base64,', $imageData)[1];
+            }
+            
+            // Save the image
+            $imageName = 'visitor_photos/' . Str::random(40) . '.jpg';
+            Storage::disk('public')->put($imageName, base64_decode($imageData));
+            
+            $visitorData['photo'] = $imageName;
+            $visitorData['face_encoding'] = $validated['face_encoding'];
+        }
 
+        // Create visitor
+        $visitor = Visitor::create($visitorData);
+
+        // Send email notification to visitor
+        try {
+            if (!empty($visitor->email)) {
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('VisitorCreated mail dispatch failed: '.$e->getMessage());
+        }
+
+        // Check if branch was stored in session
+        $branchId = session('scanned_branch_id');
+        
         // Redirect to the next step
-        return redirect()->route('public.visitor.index', [
+        $redirectUrl = route('public.visitor.index', [
             'company' => $company->id,
             'visitor' => $visitor->id
         ]);
+        
+        if ($branchId) {
+            $redirectUrl .= '?branch=' . $branchId;
+        }
+        
+        return redirect($redirectUrl);
 
     } catch (\Exception $e) {
         \Log::error('Error saving visitor: ' . $e->getMessage());
@@ -169,11 +216,22 @@ public function showVisitForm(Company $company, \App\Models\Visitor $visitor)
     $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)->get();
     $departments = \App\Models\Department::where('company_id', $company->id)->get();
     $employees = \App\Models\Employee::where('company_id', $company->id)->get();
-    $branches = $company->branches;
+    
+    // Check if a specific branch was passed in the request or session
+    $branchId = request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
+    $branchModel = null;
+    
+    if ($branchId) {
+        $branchModel = $company->branches()->find($branchId);
+        $branches = $branchModel ? collect([$branchModel]) : $company->branches;
+    } else {
+        $branches = $company->branches;
+    }
 
     return view('visitors.public-visit', [
         'company' => $company,
         'visitor' => $visitor,
+        'branch' => $branchModel,
         'visitorCategories' => $visitorCategories,
         'departments' => $departments,
         'employees' => $employees,
@@ -206,21 +264,38 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             'department_id' => 'required|exists:departments,id',
             'purpose' => 'required|string',
             'visitor_company' => 'nullable|string|max:255',
-            'branch_id' => 'nullable|exists:branches,id'
+            'branch_id' => 'nullable|exists:branches,id',
+            'visit_date' => 'nullable|date',
         ]);
         
         // Update visitor with visit details
         $visitor->fill([
-            'department_id' => $validated['department_id'],
-            'purpose' => $validated['purpose'],
-            'status' => 'Pending',
-            'visitor_company' => $validated['visitor_company'] ?? null,
-            'branch_id' => $validated['branch_id'] ?? null,
-            'visitor_category_id' => $request->input('visitor_category_id') ?: null,
-            'updated_at' => now()
+            'department_id'        => $validated['department_id'],
+            'purpose'              => $validated['purpose'],
+            'visit_date'           => $validated['visit_date'] ?? $visitor->visit_date ?? now()->format('Y-m-d'),
+            'status'               => $visitor->status === 'Approved' ? 'Approved' : 'Pending',
+            'visitor_company'      => $validated['visitor_company'] ?? null,
+            'branch_id'            => $validated['branch_id'] ?? null,
+            'visitor_category_id'  => $request->input('visitor_category_id') ?: null,
+            'person_to_visit'      => $request->input('person_to_visit') ?: null,
+            'vehicle_type'         => $request->input('vehicle_type') ?: null,
+            'vehicle_number'       => $request->input('vehicle_number') ?: null,
+            'goods_in_car'         => $request->input('goods_in_car') ?: null,
+            'visitor_website'      => $request->input('visitor_website') ?: null,
+            'workman_policy_photo' => $request->hasFile('workman_policy_photo') ? $visitor->workman_policy_photo : $visitor->workman_policy_photo,
+            'updated_at'           => now()
         ]);
         
         $visitor->save();
+
+        // Send approval email if visitor was auto-approved or status changed to approved
+        try {
+            if ($visitor->status === 'Approved' && !empty($visitor->email)) {
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('VisitorApproved mail dispatch failed: '.$e->getMessage());
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -231,7 +306,8 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
         }
 
         return redirect("/public/company/{$company->id}/visitor/{$visitor->id}")
-            ->with('success', 'Visit details updated successfully!');
+            ->with('success', 'Visit details updated successfully!')
+            ->with('show_pass_button', true);
 
     } catch (\Illuminate\Validation\ValidationException $e) {
         \Log::error('Validation error saving visit details: ' . $e->getMessage());
@@ -294,11 +370,22 @@ public function publicVisitorIndex(Company $company, $visitor = null)
         $visitorCategories = $company->visitorCategories()->orderBy('name')->get();
         $departments = $company->departments()->orderBy('name')->get();
         $employees = $company->employees()->orderBy('name')->get();
-        $branches = $company->branches;
+        
+        // Check if a specific branch was passed in the request or route
+        $branchId = request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
+        $branchModel = null;
+        
+        if ($branchId) {
+            $branchModel = $company->branches()->find($branchId);
+            $branches = $branchModel ? collect([$branchModel]) : $company->branches;
+        } else {
+            $branches = $company->branches;
+        }
         
         return view('visitors.public-index', [
             'company' => $company,
             'visitor' => $visitor,
+            'branch' => $branchModel,
             'visitorCategories' => $visitorCategories,
             'departments' => $departments,
             'employees' => $employees,
@@ -321,22 +408,34 @@ public function publicVisitorIndex(Company $company, $visitor = null)
      * @param  \App\Models\Branch|null  $branch
      * @return \Illuminate\View\View
      */
-    public function scan(Company $company, $visitor = null)
+    public function scan(Company $company, $branch = null)
 {
-    $visitor = $visitor ? \App\Models\Visitor::find($visitor) : null;
+    $branchModel = null;
+    if ($branch) {
+        $branchModel = $company->branches()->find($branch);
+        // Store branch ID in session for later use
+        session(['scanned_branch_id' => $branch]);
+    }
+    
+    // Get visitor from session if exists
+    $visitor = null;
+    if (session('current_visitor_id')) {
+        $visitor = \App\Models\Visitor::find(session('current_visitor_id'));
+    }
     
     // Get necessary data for the form
     $visitorCategories = $company->visitorCategories;
     $departments = $company->departments;
     $employees = $company->employees;
 
-    return view('visitors.public-index', compact(
-        'company',
-        'visitor',
-        'visitorCategories',
-        'departments',
-        'employees'
-    ));
+    return view('visitors.public-index', [
+        'company' => $company,
+        'visitor' => $visitor,
+        'branch' => $branchModel, // Pass the model, not the ID
+        'visitorCategories' => $visitorCategories,
+        'departments' => $departments,
+        'employees' => $employees
+    ]);
 }
 
     /**

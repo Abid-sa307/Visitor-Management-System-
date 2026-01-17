@@ -17,6 +17,7 @@ class Company extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
         'address',
         'contact_number',
         'logo',
@@ -24,9 +25,17 @@ class Company extends Authenticatable
         'website',
         'notification_settings',
         'face_recognition_enabled',
+        'mail_service_enabled',
+        'visitor_notifications_enabled',
+        'enable_visitor_notifications',
         'auto_approve_visitors',
+        'security_check_service',
+        'security_checkin_type',
+        'mark_in_out_in_qr_flow',
         'branch_start_date',
         'branch_end_date',
+        'operation_start_time',
+        'operation_end_time',
         'is_active',
     ];
 
@@ -39,7 +48,12 @@ class Company extends Authenticatable
         'email_verified_at' => 'datetime',
         'notification_settings' => 'array',
         'face_recognition_enabled' => 'boolean',
+        'mail_service_enabled' => 'boolean',
+        'visitor_notifications_enabled' => 'boolean',
+        'enable_visitor_notifications' => 'boolean',
         'auto_approve_visitors' => 'boolean',
+        'security_check_service' => 'boolean',
+        'mark_in_out_in_qr_flow' => 'boolean',
         'branch_start_date' => 'date',
         'branch_end_date' => 'date',
         'is_active' => 'boolean',
@@ -112,5 +126,24 @@ class Company extends Authenticatable
     public function employees()
     {
         return $this->hasMany(Employee::class);
+    }
+    
+    /**
+     * Check if a visitor is created outside operating hours
+     */
+    public function isVisitorOutsideOperatingHours($visitorCreatedAt = null)
+    {
+        // If no operating hours are set, return false
+        if (!$this->operation_start_time || !$this->operation_end_time) {
+            return false;
+        }
+        
+        $createdAt = $visitorCreatedAt ?: now();
+        $currentTime = $createdAt->format('H:i');
+        $startTime = $this->operation_start_time;
+        $endTime = $this->operation_end_time;
+        
+        // Check if current time is outside operating hours
+        return $currentTime < $startTime || $currentTime > $endTime;
     }
 }

@@ -81,10 +81,10 @@
                   Educational Institutes
                 </a>
                 <a class="dropdown-item" href="{{ route('resident-societies') }}">
-                  Residents' Societies
+                  Residential Societies
                 </a>
                 <a class="dropdown-item" href="{{ route('resident-buildings') }}">
-                  Residents' Buildings
+                  Residential Buildings
                 </a>
                 <a class="dropdown-item" href="{{ route('office-workplace-management') }}">
                   Offices Workplace Management

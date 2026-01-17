@@ -68,16 +68,6 @@
     </div>
 </div>
 
-                <!-- Status Filter -->
-                <div class="col-lg-2 col-md-6">
-                    <label for="status" class="form-label">Status</label>
-                    <select name="status" id="status" class="form-select">
-                        <option value="">All Status</option>
-                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                    </select>
-                </div>
-
                 <!-- Buttons -->
                 <div class="col-12 d-flex flex-wrap gap-2 mt-3">
                     <button type="submit" class="btn btn-primary">
@@ -90,12 +80,12 @@
             </div>
         </form>
 
-        @if(session('success'))
+        <!-- @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        @endif
+        @endif -->
 
         @if($users->isEmpty())
             <div class="alert alert-info mb-0">No users found matching your criteria.</div>
@@ -109,8 +99,6 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Company</th>
-                            <th>Status</th>
-                            <th>Last Login</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -133,23 +121,12 @@
                                 <span class="badge bg-{{ $color }} text-uppercase">{{ str_replace('_', ' ', $role) }}</span>
                             </td>
                             <td>{{ $user->company?->name ?? '—' }}</td>
-                            <td>
-                                @if($user->is_active)
-                                    <span class="badge bg-success">Active</span>
-                                @else
-                                    <span class="badge bg-secondary">Inactive</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($user->last_login_at)
-                                    {{ $user->last_login_at->diffForHumans() }}
-                                @else
-                                    Never
-                                @endif
-                            </td>
+
                             <td>
                                 <div class="d-flex gap-2">
-                                    <a href="{{ route($routeEdit, $user) }}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ route($routeEdit, $user) }}"
+                                       class="action-btn action-btn--edit action-btn--icon"
+                                       title="Edit User">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     @if($user->id !== auth()->id())
@@ -157,7 +134,9 @@
                                               onsubmit="return confirm('Are you sure you want to delete this user?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <button type="submit"
+                                                    class="action-btn action-btn--delete action-btn--icon"
+                                                    title="Delete User">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

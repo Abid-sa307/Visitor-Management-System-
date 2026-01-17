@@ -20,7 +20,7 @@ class EmployeeController extends Controller
 
         // Base query with relationships
         $employeeQuery = Employee::query()
-            ->with(['company', 'department'])
+            ->with(['company', 'department', 'branch', 'departments'])
             ->latest('created_at');
 
         // Apply date range filter if provided
@@ -87,9 +87,20 @@ class EmployeeController extends Controller
 
     public function create()
     {
-        $companies = Company::all();
-        $departments = Department::all();
-        return view('employees.create', compact('companies', 'departments'));
+        $user = auth()->user();
+        $isSuper = in_array($user->role, ['super_admin', 'superadmin'], true);
+        
+        if ($isSuper) {
+            $companies = Company::pluck('name', 'id');
+            $branches = [];
+            $departments = [];
+        } else {
+            $companies = [$user->company_id => $user->company->name];
+            $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+            $departments = [];
+        }
+        
+        return view('employees.create', compact('companies', 'branches', 'departments', 'isSuper'));
     }
 
     public function store(Request $request)
@@ -100,12 +111,15 @@ class EmployeeController extends Controller
         ];
 
         $validated = $request->validate([
-            'company_id'    => 'required|exists:companies,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'name'          => 'required|string|max:255|regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u',
-            'designation'   => 'nullable|string|max:255',
-            'email'         => 'nullable|email:rfc,dns',
-            'phone'         => 'nullable|regex:/^\+?[0-9]{7,15}$/',
+            'company_id'     => 'required|exists:companies,id',
+            'branch_id'      => 'nullable|exists:branches,id',
+            'department_id'  => 'nullable|exists:departments,id',
+            'department_ids' => 'nullable|array',
+            'department_ids.*' => 'exists:departments,id',
+            'name'           => 'required|string|max:255|regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u',
+            'designation'    => 'nullable|string|max:255',
+            'email'          => 'nullable|email:rfc,dns',
+            'phone'          => 'nullable|regex:/^\+?[0-9]{7,15}$/',
         ], $messages);
 
         $validated['name'] = Str::squish($validated['name']);
@@ -113,16 +127,32 @@ class EmployeeController extends Controller
             $validated['email'] = strtolower($validated['email']);
         }
 
-        Employee::create($validated);
+        $employee = Employee::create($validated);
+        
+        if (!empty($validated['department_ids'])) {
+            $employee->departments()->sync($validated['department_ids']);
+        }
 
         return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
     }
 
     public function edit(Employee $employee)
     {
-        $companies = Company::all();
-        $departments = Department::all();
-        return view('employees.edit', compact('employee', 'companies', 'departments'));
+        $user = auth()->user();
+        $isSuper = in_array($user->role, ['super_admin', 'superadmin'], true);
+        
+        if ($isSuper) {
+            $companies = Company::pluck('name', 'id');
+            $branches = Branch::where('company_id', $employee->company_id)->pluck('name', 'id');
+            $departments = Department::where('branch_id', $employee->branch_id)->pluck('name', 'id');
+        } else {
+            $companies = [$employee->company_id => $employee->company->name];
+            $branches = Branch::where('company_id', $employee->company_id)->pluck('name', 'id');
+            $departments = Department::where('branch_id', $employee->branch_id)->pluck('name', 'id');
+        }
+        
+        $employee->load('departments');
+        return view('employees.edit', compact('employee', 'companies', 'branches', 'departments', 'isSuper'));
     }
 
     public function update(Request $request, Employee $employee)
@@ -133,12 +163,15 @@ class EmployeeController extends Controller
         ];
 
         $validated = $request->validate([
-            'company_id'    => 'required|exists:companies,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'name'          => 'required|string|max:255|regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u',
-            'designation'   => 'nullable|string|max:255',
-            'email'         => 'nullable|email:rfc,dns',
-            'phone'         => 'nullable|regex:/^\+?[0-9]{7,15}$/',
+            'company_id'     => 'required|exists:companies,id',
+            'branch_id'      => 'nullable|exists:branches,id',
+            'department_id'  => 'nullable|exists:departments,id',
+            'department_ids' => 'nullable|array',
+            'department_ids.*' => 'exists:departments,id',
+            'name'           => 'required|string|max:255|regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u',
+            'designation'    => 'nullable|string|max:255',
+            'email'          => 'nullable|email:rfc,dns',
+            'phone'          => 'nullable|regex:/^\+?[0-9]{7,15}$/',
         ], $messages);
 
         $validated['name'] = Str::squish($validated['name']);
@@ -147,6 +180,12 @@ class EmployeeController extends Controller
         }
 
         $employee->update($validated);
+        
+        if (isset($validated['department_ids'])) {
+            $employee->departments()->sync($validated['department_ids']);
+        } else {
+            $employee->departments()->detach();
+        }
 
         return redirect()->route('employees.index')->with('success', 'Employee updated successfully.');
     }

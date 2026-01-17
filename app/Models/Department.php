@@ -14,6 +14,7 @@ class Department extends Model
     protected $fillable = [
         'name',
         'company_id',
+        'branch_id',
     ];
 
     // protected static function booted()
@@ -29,9 +30,14 @@ class Department extends Model
     //     });
     // }
 
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function company()
     {
-        return $this->belongsTo(Company::class);
+        return $this->branch?->company() ?? $this->belongsTo(Company::class);
     }
 
     public function visitors()

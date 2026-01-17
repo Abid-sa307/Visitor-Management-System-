@@ -23,21 +23,28 @@
             </div>
         @endif
 
-<form id="visitorForm" method="POST" action="{{ route('qr.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
+        @if(isset($canUndoVisit) && $canUndoVisit)
+            <div class="alert alert-warning text-center mb-4">
+                <i class="fas fa-undo me-2"></i>
+                <strong>Visit Form Recently Submitted</strong>
+                <p class="mb-2 mt-2">The visit form was submitted recently. You can undo this submission within 30 minutes.</p>
+                <form action="{{ route('public.visitor.visit.undo', ['company' => $company, 'visitor' => $visitor]) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to undo the visit form submission?')">
+                        <i class="fas fa-undo me-1"></i> Undo Visit Form Submission
+                    </button>
+                </form>
+            </div>
+        @endif
+
+<form id="visitorForm" method="POST" action="{{ route('public.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
     @csrf
-    @method('POST')
     @if(isset($visitor) && $visitor->exists)
-        <input type="hidden" name="status" value="{{ $visitor->status ?? 'Pending' }}">
-    @else
-        <input type="hidden" name="status" value="Pending">
+        @method('PUT')
     @endif
-            {{-- Company & Department --}}
+            {{-- Department & Visitor Category --}}
             <div class="row mb-3">
-                <div class="col">
-                    <label class="form-label fw-semibold">Company</label>
-                    <input type="hidden" name="company_id" value="{{ $company->id }}">
-                    <input type="text" class="form-control" value="{{ $company->name }}" readonly>
-                </div>
                 <div class="col">
                     <label class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
                     <select name="department_id" id="departmentSelect" class="form-select @error('department_id') is-invalid @enderror" required>
@@ -53,33 +60,6 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
-            </div>
-
-            {{-- Branch & Visitor Category --}}
-            <div class="row mb-3">
-                @if($branches->isNotEmpty())
-                <div class="col">
-                    <label class="form-label fw-semibold">Branch</label>
-                    @if($branches->count() === 1)
-                        <input type="hidden" name="branch_id" value="{{ $branches[0]->id }}">
-                        <input type="text" class="form-control" value="{{ $branches[0]->name }}" readonly>
-                    @else
-                        <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
-                            <option value="">-- Select Branch --</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" 
-                                    {{ old('branch_id', $visitor->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
-                                    {{ $branch->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('branch_id')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    @endif
-                </div>
-                @endif
-                
                 <div class="col">
                     <label class="form-label fw-semibold">Visitor Category</label>
                     <select name="visitor_category_id" class="form-select @error('visitor_category_id') is-invalid @enderror">
@@ -139,7 +119,7 @@
                 @enderror
             </div>
 
-            {{-- Vehicle Information --}}
+            {{-- Vehicle Type & Number --}}
             <div class="row mb-3">
                 <div class="col">
                     <label class="form-label fw-semibold">Vehicle Type</label>

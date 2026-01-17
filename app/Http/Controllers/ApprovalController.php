@@ -104,14 +104,52 @@ class ApprovalController extends Controller
                     ->toArray();
             }
         } else {
-            // Company user – only their company's branches & departments
-            $branches = Branch::where('company_id', $user->company_id)
-                ->pluck('name', 'id')
-                ->toArray();
+            // Company user – only their assigned branches & departments
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Filter branches by user's assigned branches
+                $branches = Branch::whereIn('id', $userBranchIds)
+                    ->pluck('name', 'id')
+                    ->toArray();
 
-            $departments = Department::where('company_id', $user->company_id)
-                ->pluck('name', 'id')
-                ->toArray();
+                // Get user's assigned department IDs from the pivot table
+                $userDepartmentIds = $user->departments()->pluck('departments.id')->toArray();
+                
+                if (!empty($userDepartmentIds)) {
+                    // Filter departments by user's assigned departments
+                    $departments = Department::whereIn('id', $userDepartmentIds)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                } else {
+                    // Fallback: filter departments by user's assigned branches
+                    $departments = Department::whereIn('branch_id', $userBranchIds)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                }
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                    $departments = Department::where('branch_id', $user->branch_id)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                } else {
+                    // If no branches assigned, get all company branches/departments
+                    $branches = Branch::where('company_id', $user->company_id)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                    $departments = Department::where('company_id', $user->company_id)
+                        ->pluck('name', 'id')
+                        ->toArray();
+                }
+            }
         }
 
         $visitors = $query->latest()->paginate(10)->withQueryString();

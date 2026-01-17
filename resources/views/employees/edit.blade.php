@@ -27,22 +27,23 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Company</label>
-                        <select name="company_id" class="form-select" required>
-                            @foreach($companies as $company)
-                                <option value="{{ $company->id }}" {{ $employee->company_id == $company->id ? 'selected' : '' }}>
-                                    {{ $company->name }}
+                        <label class="form-label fw-semibold">Company <span class="text-danger">*</span></label>
+                        <select name="company_id" id="company_id" class="form-select" required {{ !$isSuper ? 'readonly' : '' }}>
+                            @foreach($companies as $id => $name)
+                                <option value="{{ $id }}" {{ $employee->company_id == $id ? 'selected' : '' }}>
+                                    {{ $name }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Department</label>
-                        <select name="department_id" class="form-select">
-                            @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ $employee->department_id == $dept->id ? 'selected' : '' }}>
-                                    {{ $dept->name }}
+                        <label class="form-label fw-semibold">Branch</label>
+                        <select name="branch_id" id="branch_id" class="form-select">
+                            <option value="">-- Select Branch --</option>
+                            @foreach($branches as $id => $name)
+                                <option value="{{ $id }}" {{ $employee->branch_id == $id ? 'selected' : '' }}>
+                                    {{ $name }}
                                 </option>
                             @endforeach
                         </select>
@@ -50,8 +51,32 @@
                 </div>
 
                 <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-semibold">Departments</label>
+                        <div class="position-relative">
+                            <button type="button" class="btn btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center" id="departmentDropdownBtn">
+                                <span id="departmentDropdownText">{{ $employee->departments->count() }} department(s) selected</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="border rounded bg-white position-absolute w-100 shadow-sm" id="departmentCheckboxList" style="display: none; max-height: 250px; overflow-y: auto; z-index: 1000;">
+                                <div class="p-3">
+                                    @foreach($departments as $id => $name)
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input dept-checkbox" type="checkbox" name="department_ids[]" value="{{ $id }}" id="dept_{{ $id }}" {{ $employee->departments->contains($id) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="dept_{{ $id }}">
+                                                {{ $name }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Full Name</label>
+                        <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control" value="{{ old('name', $employee->name) }}" required>
                     </div>
 
@@ -82,4 +107,103 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    let selectedDepts = @json($employee->departments->pluck('id')->toArray());
+
+    function updateDropdownText() {
+        const text = selectedDepts.length === 0 ? 'Select Departments' : selectedDepts.length + ' department(s) selected';
+        $('#departmentDropdownText').text(text);
+    }
+
+    // Toggle dropdown
+    $('#departmentDropdownBtn').on('click', function(e) {
+        e.stopPropagation();
+        if (!$(this).prop('disabled')) {
+            $('#departmentCheckboxList').toggle();
+        }
+    });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#departmentCheckboxList, #departmentDropdownBtn').length) {
+            $('#departmentCheckboxList').hide();
+        }
+    });
+
+    // Prevent closing when clicking inside
+    $('#departmentCheckboxList').on('click', function(e) {
+        e.stopPropagation();
+    });
+
+    // Handle checkbox changes
+    $(document).on('change', '.dept-checkbox', function() {
+        const val = parseInt($(this).val());
+        if ($(this).is(':checked')) {
+            if (!selectedDepts.includes(val)) selectedDepts.push(val);
+        } else {
+            selectedDepts = selectedDepts.filter(id => id !== val);
+        }
+        updateDropdownText();
+    });
+
+    $('#company_id').on('change', function() {
+        const companyId = $(this).val();
+        $('#branch_id').empty().append('<option value="">-- Select Branch --</option>');
+        $('#departmentDropdownBtn').prop('disabled', true);
+        $('#departmentDropdownText').text('Select Branch First');
+        $('#departmentCheckboxList').hide().html('<div class="p-3"><p class="text-muted mb-0">Select a branch first</p></div>');
+        selectedDepts = [];
+        
+        if (companyId) {
+            $.get('/api/companies/' + companyId + '/branches', function(data) {
+                $.each(data, function(i, branch) {
+                    $('#branch_id').append('<option value="' + branch.id + '"' + (branch.id == {{ $employee->branch_id ?? 'null' }} ? ' selected' : '') + '>' + branch.name + '</option>');
+                });
+                @if($employee->branch_id)
+                    $('#branch_id').trigger('change');
+                @endif
+            });
+        }
+    });
+
+    $('#branch_id').on('change', function() {
+        const branchId = $(this).val();
+        
+        if (branchId) {
+            $('#departmentDropdownBtn').prop('disabled', false);
+            $('#departmentDropdownText').text('Loading...');
+            $.get('/api/branches/' + branchId + '/departments', function(data) {
+                let html = '<div class="p-3">';
+                if (data.length === 0) {
+                    html += '<p class="text-muted mb-0">No departments available</p>';
+                    $('#departmentDropdownBtn').prop('disabled', true);
+                    $('#departmentDropdownText').text('No Departments');
+                    selectedDepts = [];
+                } else {
+                    $.each(data, function(i, dept) {
+                        const isChecked = selectedDepts.includes(dept.id);
+                        html += '<div class="form-check mb-2">';
+                        html += '<input class="form-check-input dept-checkbox" type="checkbox" name="department_ids[]" value="' + dept.id + '" id="dept_' + dept.id + '"' + (isChecked ? ' checked' : '') + '>';
+                        html += '<label class="form-check-label" for="dept_' + dept.id + '">' + dept.name + '</label>';
+                        html += '</div>';
+                    });
+                }
+                html += '</div>';
+                $('#departmentCheckboxList').html(html);
+                updateDropdownText();
+            });
+        } else {
+            $('#departmentDropdownBtn').prop('disabled', true);
+            $('#departmentDropdownText').text('Select Branch First');
+            $('#departmentCheckboxList').hide().html('<div class="p-3"><p class="text-muted mb-0">Select a branch first</p></div>');
+            selectedDepts = [];
+            updateDropdownText();
+        }
+    });
+});
+</script>
+@endpush
 @endsection

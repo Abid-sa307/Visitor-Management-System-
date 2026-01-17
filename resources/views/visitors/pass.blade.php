@@ -225,15 +225,6 @@
                     {{ $company->name ?? 'Company Name' }}
                 </div>
             </div>
-
-            <div class="text-center">
-                <div class="visitor-name">
-                    {{ $visitor->name }}
-                </div>
-                <div class="visitor-id">
-                    {{ $visitor->phone }}
-                </div>
-            </div>
         </div>
 
         <!-- RIGHT SIDE: DETAILS -->
@@ -241,15 +232,22 @@
             <div class="pass-header">
                 <div>
                     <div class="pass-title">Visitor Pass</div>
-                    <div class="company-address">
-                        {{ $visitor->branch->name ?? 'N/A' }}
-                    </div>
                 </div>
             </div>
 
             <div class="details">
                 <div class="detail-row">
-                    <div class="detail-label">Department:</div>
+                    <div class="detail-label">branch:</div>
+                    <div class="detail-value">
+                        {{ $visitor->branch->name ?? 'N/A' }}
+                    </div>
+                </div>
+                
+              
+
+
+                <div class="detail-row">
+                    <div class="detail-label">department:</div>
                     <div class="detail-value">
                         {{ $visitor->department->name ?? 'N/A' }}
                     </div>
@@ -263,16 +261,30 @@
                 </div>
 
                 <div class="detail-row">
-                    <div class="detail-label">Purpose:</div>
+                    <div class="detail-label">purpose:</div>
                     <div class="detail-value">
                         {{ $visitor->purpose ?? 'N/A' }}
                     </div>
                 </div>
+                <hr>
+                  <div class="detail-row">
+                    <div class="detail-label">Name:</div>
+                    <div class="detail-value">
+                        {{ $visitor->name ?? 'N/A' }}
+                    </div>
+                </div>
 
                 <div class="detail-row">
-                    <div class="detail-label">Valid Until:</div>
+                    <div class="detail-label">mobile number:</div>
                     <div class="detail-value">
-                        {{ $visitor->valid_until ? \Carbon\Carbon::parse($visitor->valid_until)->format('d M Y h:i A') : 'N/A' }}
+                        {{ $visitor->phone ?? 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">valid_until:</div>
+                    <div class="detail-value">
+                        {{ $visitor->created_at ? $visitor->created_at->copy()->startOfDay()->format('d-m-Y h:i A') : 'N/A' }}
                     </div>
                 </div>
             </div>

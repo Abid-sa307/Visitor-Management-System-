@@ -75,6 +75,7 @@ class CheckMasterPageAccess
                 $routeToPageMap = [
                     'dashboard' => 'dashboard',
                     'visitors.index' => 'visitors',
+                    'visitors.show' => 'visit_details',
                     'visitors.history' => 'visitor_history',
                     'visitors.inout' => 'visitor_inout',
                     'approvals.index' => 'approvals',
@@ -84,6 +85,7 @@ class CheckMasterPageAccess
                     'departments.*' => 'departments',
                     'users.*' => 'users',
                     'security-checks.*' => 'security_checks',
+                    'security-questions.*' => 'security_questions',
                     'visitor-checkup.*' => 'visitor_checkup',
                     'qr-code.*' => 'qr_code',
                     'qr.scanner' => 'qr_scanner',

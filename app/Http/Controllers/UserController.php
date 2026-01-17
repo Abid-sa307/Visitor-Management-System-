@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CompanyUserCreatedMail;
 
 class UserController extends Controller
 {
@@ -44,6 +46,12 @@ class UserController extends Controller
     }
 
     $query = User::query()->with(['company', 'departments']);
+
+    // Filter by company for non-super admins
+    if (!$isSuper) {
+        $query->where('company_id', auth()->user()->company_id)
+              ->whereNotIn('role', ['super_admin', 'superadmin']);
+    }
 
     // Apply search
     if ($request->filled('search')) {
@@ -124,18 +132,18 @@ class UserController extends Controller
 
         $rules = [
             'name'        => ['required','string','max:255','regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u'],
-            'email'       => ['required','email:rfc,dns','unique:users,email'],
+            'email'       => ['required','email'],
             'password'    => ['required','string','min:8','confirmed'],
             'phone'       => ['nullable','regex:/^\+?[0-9]{7,15}$/'],
-            'master_pages'=> ['array'],
+            'master_pages'=> ['nullable','array'],
             'master_pages.*'=> ['string'],
             // accept either departments[] or department_ids[]
-            'departments'     => ['array'],
-            'departments.*'   => ['exists:departments,id'],
-            'department_ids'  => ['array'],
-            'department_ids.*'=> ['exists:departments,id'],
+            'departments'     => ['nullable','array'],
+            'departments.*'   => ['integer','exists:departments,id'],
+            'department_ids'  => ['nullable','array'],
+            'department_ids.*'=> ['integer','exists:departments,id'],
             'branch_ids'      => ['nullable', 'array'],
-            'branch_ids.*'    => ['exists:branches,id'],
+            'branch_ids.*'    => ['integer','exists:branches,id'],
             'branch_id'       => ['nullable','exists:branches,id'], // Keeping for backward compatibility
         ];
 
@@ -182,7 +190,12 @@ class UserController extends Controller
 
         // page access (array cast on model)
         $user->master_pages = $data['master_pages'] ?? [];
-        $user->save();
+        
+        try {
+            $user->save();
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            return back()->withErrors(['email' => 'The email address is already taken.'])->withInput();
+        }
 
         // Sync to company_users for company guard login if role is company
         if (in_array(($request->role ?? ''), ['company','company_user'], true)) {
@@ -201,10 +214,17 @@ class UserController extends Controller
                     $payload['branch_id'] = $user->branch_id;
                 }
 
-                CompanyUser::updateOrCreate(
+                $companyUser = CompanyUser::updateOrCreate(
                     ['email' => $user->email],
                     $payload
                 );
+                
+                // Send welcome email to company user
+                try {
+                    Mail::to($companyUser->email)->send(new CompanyUserCreatedMail($companyUser, $data['password']));
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to send company user creation email: ' . $e->getMessage());
+                }
             } catch (\Exception $e) {
                 // Log the error but don't fail the entire operation
                 \Log::error('Failed to sync user to company_users table: ' . $e->getMessage());
@@ -262,17 +282,17 @@ class UserController extends Controller
 
         $rules = [
             'name'        => ['required','string','max:255','regex:/^[A-Za-zÀ-ÖØ-öø-ÿ\s\'\-\.]+$/u'],
-            'email'       => ['required','email:rfc,dns','unique:users,email,'.$user->id],
+            'email'       => ['required','email'],
             'password'    => ['nullable','string','min:8','confirmed'],
             'phone'       => ['nullable','regex:/^\+?[0-9]{7,15}$/'],
-            'master_pages'=> ['array'],
+            'master_pages'=> ['nullable','array'],
             'master_pages.*'=> ['string'],
-            'departments'     => ['array'],
-            'departments.*'   => ['exists:departments,id'],
-            'department_ids'  => ['array'],
-            'department_ids.*'=> ['exists:departments,id'],
+            'departments'     => ['nullable','array'],
+            'departments.*'   => ['integer','exists:departments,id'],
+            'department_ids'  => ['nullable','array'],
+            'department_ids.*'=> ['integer','exists:departments,id'],
             'branch_ids'      => ['nullable', 'array'],
-            'branch_ids.*'    => ['exists:branches,id'],
+            'branch_ids.*'    => ['integer','exists:branches,id'],
             'branch_id'       => ['nullable','exists:branches,id'], // Keeping for backward compatibility
             // 'company_id' => $isSuper ? ['required','exists:companies,id'] : ['nullable'],
         ];

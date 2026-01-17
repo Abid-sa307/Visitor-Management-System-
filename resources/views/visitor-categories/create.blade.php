@@ -24,11 +24,13 @@
 
                 <div class="mb-3">
                     <label for="branch_id" class="form-label">Branch</label>
-                    <select name="branch_id" id="branch_id" class="form-select">
-                        <option value="">Select Branch (Optional)</option>
-                        @foreach($branches as $id => $name)
-                            <option value="{{ $id }}" {{ old('branch_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                        @endforeach
+                    <select name="branch_id" id="branch_id" class="form-select" {{ auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                        <option value="">{{ auth()->user()->role === 'superadmin' ? 'Select Company First' : 'Select Branch (Optional)' }}</option>
+                        @if(auth()->user()->role !== 'superadmin')
+                            @foreach($branches as $id => $name)
+                                <option value="{{ $id }}" {{ old('branch_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                            @endforeach
+                        @endif
                     </select>
                     <small class="form-text text-muted">Leave blank if this category applies to all branches</small>
                     @error('branch_id')
@@ -80,25 +82,34 @@
 <script>
     // Dynamic branch loading based on company selection
     $(document).ready(function() {
-        @if(auth()->user()->hasRole('superadmin'))
+        @if(auth()->user()->role === 'superadmin')
         $('#company_id').on('change', function() {
             var companyId = $(this).val();
             if (companyId) {
+                $('#branch_id').prop('disabled', false);
                 $.ajax({
-                    url: '{{ route("branches.by-company") }}',
+                    url: '/api/companies/' + companyId + '/branches',
                     type: 'GET',
-                    data: { company_id: companyId },
                     success: function(data) {
+                        console.log('Branch data:', data);
                         $('#branch_id').empty();
                         $('#branch_id').append('<option value="">Select Branch (Optional)</option>');
-                        $.each(data, function(key, value) {
-                            $('#branch_id').append('<option value="' + key + '">' + value + '</option>');
-                        });
+                        
+                        if (Array.isArray(data)) {
+                            $.each(data, function(index, branch) {
+                                $('#branch_id').append('<option value="' + branch.id + '">' + branch.name + '</option>');
+                            });
+                        } else {
+                            $.each(data, function(key, value) {
+                                $('#branch_id').append('<option value="' + key + '">' + value + '</option>');
+                            });
+                        }
                     }
                 });
             } else {
+                $('#branch_id').prop('disabled', true);
                 $('#branch_id').empty();
-                $('#branch_id').append('<option value="">Select Branch (Optional)</option>');
+                $('#branch_id').append('<option value="">Select Company First</option>');
             }
         });
         @endif

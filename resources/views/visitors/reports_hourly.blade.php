@@ -38,26 +38,29 @@
 @endphp
 
 <div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-        <h2 class="fw-bold text-primary m-0">Hourly Visitors Report</h2>
-        <form method="GET" action="{{ route($exportRoute) }}" class="d-flex gap-2" id="exportForm">
-            @foreach(request()->all() as $key => $value)
-                @if(!in_array($key, ['_token', 'page']))
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endif
-            @endforeach
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800">Hourly Visitor Reports</h2>
+        <form method="GET" action="{{ route('reports.hourly.export') }}" class="d-inline">
+            @csrf
             <button type="submit" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
             </button>
         </form>
     </div>
 
-    <form method="GET" class="filter-section mb-4">
-        <div class="row g-2">
-            @if(auth()->user()->role === 'superadmin')
-            <div class="col-md-12 mb-3">
-                <div class="row">
-                    <div class="col-md-4">
+    {{-- =================== FILTERS CARD =================== --}}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" id="hourlyFilterForm">
+                <div class="row g-3 align-items-end">
+                    {{-- 1️⃣ Date Range (first) --}}
+                    <div class="col-lg-4 col-md-6">
+                        @include('components.basic_date_range')
+                    </div>
+                    
+                    {{-- 2️⃣ Company (superadmin only) --}}
+                    @if(auth()->user()->role === 'superadmin')
+                    <div class="col-lg-3 col-md-6">
                         <label class="form-label">Company</label>
                         <select name="company_id" id="company_id" class="form-select form-select-sm">
                             <option value="">All Companies</option>
@@ -68,49 +71,49 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-8">
-                        <label class="form-label">Date Range</label>
-                        @include('components.date_range', ['inputId' => 'hourly_range'])
+                    @endif
+
+                    {{-- 3️⃣ Branch --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label">Branch</label>
+                        <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
+                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                            <option value="">All Branches</option>
+                            @foreach($branches ?? [] as $id => $name)
+                                <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- 4️⃣ Department --}}
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label">Department</label>
+                        <select name="department_id" id="department_id" class="form-select form-select-sm" 
+                            {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                            <option value="">All Departments</option>
+                            @foreach($departments as $id => $name)
+                                <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Buttons row --}}
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('reports.hourly') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i> Reset
+                        </a>
                     </div>
                 </div>
-            </div>
-            @endif
-
-            <div class="col-md-4">
-                <label class="form-label">Department</label>
-                <select name="department_id" id="department_id" class="form-select form-select-sm" 
-                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                    <option value="">All Departments</option>
-                    @foreach($departments as $id => $name)
-                        <option value="{{ $id }}" {{ request('department_id') == $id ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Branch</label>
-                <select name="branch_id" id="branch_id" class="form-select form-select-sm" 
-                    {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
-                    <option value="">All Branches</option>
-                    @foreach($branches ?? [] as $id => $name)
-                        <option value="{{ $id }}" {{ request('branch_id') == $id ? 'selected' : '' }}>
-                            {{ $name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-md-4 d-flex align-items-end">
-                <div class="w-100">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-funnel-fill me-1"></i> Apply Filters
-                    </button>
-                </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
 
   @if(!empty($series))
     @php

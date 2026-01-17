@@ -1,48 +1,35 @@
 @php
-    // ---------- Context ----------
+    use Illuminate\Support\Str;
+
     $isCompanyGuard = \Illuminate\Support\Facades\Auth::guard('company')->check();
     $authUser = $isCompanyGuard ? \Illuminate\Support\Facades\Auth::guard('company')->user() : auth()->user();
     $isCompany = $isCompanyGuard;
 
-    // Superadmins see everything
     $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
-    // Normalize master_pages to an array (supports casted array or legacy JSON string)
     $normalizeToArray = function ($value) {
-        if (is_array($value))
+        if (is_array($value)) {
             return $value;
+        }
         if (is_string($value) && $value !== '') {
             $decoded = json_decode($value, true);
             return is_array($decoded) ? $decoded : [];
         }
         return [];
     };
+
     $masterPages = $authUser
         ? ($authUser->master_pages_list ?? $normalizeToArray($authUser->master_pages ?? []))
         : [];
 
-    // Gate by page key: superadmins see all; company users must be permitted via master_pages
     $canPage = function (string $key) use ($isSuper, $masterPages) {
-        // Super admins can see everything
-        if ($isSuper)
+        if ($isSuper) {
             return true;
+        }
 
-        // For company users, check if the page is in their master_pages
         return in_array($key, $masterPages, true);
     };
 
-    // UI helpers
-    $active = function ($routes) {
-        foreach ((array) $routes as $route) {
-            if (request()->routeIs($route))
-                return 'active';
-        }
-        return '';
-    };
-
-    // ------------- Menu Model -------------
-    // Add a 'page' key for each item -> the value must match your middleware mapping:
-    // dashboard, visitors, visitor_inout, approvals, visitor_history, departments, employees, reports, users
     $menuItems = [
         [
             'title' => 'Dashboard',
@@ -50,7 +37,6 @@
             'route' => $isCompany ? 'company.dashboard' : 'dashboard',
             'page' => 'dashboard',
         ],
-
         [
             'title' => 'Companies',
             'icon' => 'bi-buildings',
@@ -58,29 +44,48 @@
             'page' => 'companies',
             'super_only' => true,
         ],
-
-
         [
             'title' => 'Departments',
             'icon' => 'bi-building',
             'route' => $isCompany ? 'company.departments.index' : 'departments.index',
             'page' => 'departments',
         ],
-
         [
             'title' => 'Visitors',
             'icon' => 'bi-person-lines-fill',
             'route' => $isCompany ? 'company.visitors.index' : 'visitors.index',
             'page' => 'visitors',
+            'dropdown' => [
+                [
+                    'title' => 'All Visitors',
+                    'route' => $isCompany ? 'company.visitors.index' : 'visitors.index',
+                    'icon' => 'fas fa-users',
+                ],
+                [
+                    'title' => 'Visit Details',
+                    'route' => $isCompany ? 'company.visits.index' : 'visits.index',
+                    'icon' => 'fas fa-calendar-check',
+                ],
+            ],
         ],
-
         [
-            'title' => 'Security Checks',
+            'title' => 'Security',
             'icon' => 'bi-shield-check',
             'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
             'page' => 'security_checks',
+            'dropdown' => [
+                [
+                    'title' => 'Check In & Check Out',
+                    'route' => $isCompany ? 'company.security-checks.index' : 'security-checks.index',
+                    'icon' => 'fas fa-shield-alt',
+                ],
+                [
+                    'title' => 'Security Questions',
+                    'route' => $isCompany ? 'company.security-questions.index' : 'security-questions.index',
+                    'icon' => 'fas fa-question-circle',
+                ],
+            ],
         ],
-
         [
             'title' => 'Visitor Approvals',
             'icon' => 'bi-check2-circle',
@@ -93,7 +98,6 @@
             'route' => $isCompany ? 'company.visitors.entry.page' : 'visitors.entry.page',
             'page' => 'visitor_inout',
         ],
-
         [
             'title' => 'Visitor History',
             'icon' => 'bi-clock-history',
@@ -106,9 +110,6 @@
             'route' => $isCompany ? 'company.qr.scanner' : 'qr.scanner',
             'page' => 'qr_scanner',
         ],
-
-        // Companies (superadmin only; never visible to company users)
-
         [
             'title' => 'Employees',
             'icon' => 'bi-person-workspace',
@@ -117,205 +118,198 @@
         ],
     ];
 
-    $reportItems = [
-        ['title' => '👥 Visitor Report', 'route' => 'reports.visitors', 'page' => 'reports'],
-        ['title' => '🚪 In/Out Report', 'route' => 'reports.inout', 'page' => 'reports'],
-        ['title' => '🛡️ Security Checkpoints', 'route' => 'reports.security', 'page' => 'reports'],
-        ['title' => '✅ Approval Status', 'route' => 'reports.approval', 'page' => 'reports'],
-        ['title' => '⏰ Hourly Report', 'route' => 'reports.hourly', 'page' => 'reports']
-    ];
-    $reportActive = collect($reportItems)->contains(fn($i) => request()->routeIs($i['route']));
+    $reportItems = collect([
+        [
+            'title' => 'Visitor Report',
+            'icon' => 'fas fa-users',
+            'route' => $isCompany ? 'company.reports.visitors' : 'reports.visitors',
+        ],
+        [
+            'title' => 'In/Out Report',
+            'icon' => 'fas fa-door-open',
+            'route' => $isCompany ? 'company.reports.visits' : 'reports.inout',
+        ],
+        [
+            'title' => 'Security Checkpoints',
+            'icon' => 'fas fa-shield-alt',
+            'route' => $isCompany ? 'company.reports.security' : 'reports.security',
+            'flag' => 'security',
+        ],
+        [
+            'title' => 'Approval Status',
+            'icon' => 'fas fa-check-circle',
+            'route' => $isCompany ? 'company.reports.approval' : 'reports.approval',
+            'flag' => 'approval',
+        ],
+        [
+            'title' => 'Hourly Report',
+            'icon' => 'fas fa-clock',
+            'route' => $isCompany ? 'company.reports.hourly' : 'reports.hourly',
+        ],
+    ]);
 
-    // Users (superadmin only, or gate via page key 'users' if you want)
+    $company = $authUser->company ?? null;
+    $showApprovalReport = !$company || !$company->auto_approved;
+    $showSecurityReport = !$company || $company->security_check_service_type !== 'none';
+
+    $reportItems = $reportItems->filter(function ($item) use ($showApprovalReport, $showSecurityReport) {
+        if (($item['flag'] ?? null) === 'security') {
+            return $showSecurityReport;
+        }
+        if (($item['flag'] ?? null) === 'approval') {
+            return $showApprovalReport;
+        }
+        return true;
+    });
+
+    $reportActive = $reportItems->contains(function ($item) {
+        return Route::has($item['route']) && request()->routeIs($item['route']);
+    });
+
     $usersRoute = $isCompany ? 'company.users.index' : 'users.index';
 @endphp
 
-<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
-    <!-- Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center"
-        href="{{ $isCompany ? route('company.dashboard') : route('dashboard') }}">
-        <div class="sidebar-brand-icon"><i class="bi bi-columns-gap fs-4"></i></div>
-        <div class="sidebar-brand-text mx-2">VMS Panel</div>
-    </a>
-
-    <hr class="sidebar-divider my-0">
-
-    <!-- Main items (gated by master_pages) -->
-    @foreach($menuItems as $item)
-        @php $superOnly = $item['super_only'] ?? false; @endphp
-        @if(($superOnly ? $isSuper : true) && Route::has($item['route']) && $canPage($item['page']))
-            <li class="nav-item {{ $active($item['route']) }}">
-                <a class="nav-link" href="{{ route($item['route']) }}">
-                    <i class="bi {{ $item['icon'] }} me-2"></i>
-                    <span>{{ $item['title'] }}</span>
-                </a>
-            </li>
-        @endif
-    @endforeach
-
-    <!-- QR Codes Section -->
-    @if($isSuper || $canPage('qr_codes'))
-        <li class="nav-item {{ $active(['qr-management.*']) }}">
-            <a class="nav-link" href="{{ url('/qr-management') }}">
-                <i class="bi bi-qr-code-scan me-2"></i>
-                <span>QR Codes</span>
-            </a>
-        </li>
-    @endif
-
-    @if($isSuper || $canPage('visitor_categories'))
-        <li class="nav-item {{ $active('visitor-categories.*') }}">
-            <a class="nav-link" href="{{ route('visitor-categories.index') }}">
-                <i class="fas fa-tags me-2"></i>
-                <span>Visitor Categories</span>
-            </a>
-        </li>
-    @endif
-
-    <!-- Users (visible only if user has 'users' permission; superadmin always) -->
-    @if(Route::has($usersRoute) && ($isSuper || $canPage('users')))
-        <li class="nav-item {{ $active($usersRoute) }}">
-            <a class="nav-link" href="{{ route($usersRoute) }}">
-                <i class="bi bi-person-bounding-box me-2"></i>
-                <span>Users</span>
-            </a>
-        </li>
-    @endif
-
-    <!-- Reports (group visible only if user has "reports") -->
-     @if($canPage('reports'))
-        <li class="nav-item {{ $reportActive ? 'active' : '' }}">
-            <a class="nav-link {{ $reportActive ? '' : 'collapsed' }}"
-               href="#"
-               data-bs-toggle="collapse"
-               data-bs-target="#collapseReports"
-               aria-expanded="{{ $reportActive ? 'true' : 'false' }}"
-               aria-controls="collapseReports">
-                <i class="bi bi-bar-chart-line me-2"></i>
-                <span>Reports</span>
-                <span class="ms-auto chev"><i class="bi bi-chevron-down"></i></span>
-            </a>
-
-            <div id="collapseReports" class="collapse {{ $reportActive ? 'show' : '' }}" data-bs-parent="#accordionSidebar">
-                <div class="collapse-inner px-2">
-                    @foreach($reportItems as $report)
-                        <a class="collapse-item {{ $active($report['route']) }} text-white"
-                           href="{{ route($report['route']) }}">
-                           {{ $report['title'] }}
-                        </a>
-                    @endforeach
+<aside class="sidebar-shell" id="sidebarShell">
+    <div class="sidebar-shell__inner">
+        <div class="sidebar-brand">
+            <div class="d-flex align-items-center gap-3">
+                <div class="sidebar-brand__icon">
+                    <i class="bi bi-columns-gap"></i>
+                </div>
+                <div>
+                    <p class="sidebar-footer__eyebrow mb-1 text-white-50">Visitor OS</p>
+                    <p class="sidebar-brand__title mb-0">VMS Command</p>
                 </div>
             </div>
-        </li>
-    @endif
+            <button id="sidebarClose" class="btn btn-outline-light btn-sm d-lg-none" type="button" aria-label="Close sidebar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
 
+        <div class="sidebar-scroll">
+            <div class="sidebar-section">
+                <p class="sidebar-section__label">Navigation</p>
+                <ul class="sidebar-section__list">
+                    @foreach($menuItems as $item)
+                        @php
+                            $superOnly = $item['super_only'] ?? false;
+                            $isDropdown = isset($item['dropdown']);
+                            $canSee = ($superOnly ? $isSuper : $canPage($item['page']))
+                                && (Route::has($item['route']) || $item['title'] === 'Visitor Approvals' || $isDropdown);
 
+                            if (!$canSee) {
+                                continue;
+                            }
 
-    <hr class="sidebar-divider d-none d-md-block">
+                            $dropdownActive = $isDropdown
+                                ? collect($item['dropdown'])->contains(fn ($d) => Route::has($d['route']) && request()->routeIs($d['route']))
+                                : false;
+                            $linkIsActive = !$isDropdown && Route::has($item['route']) && request()->routeIs($item['route']);
+                            $subnavId = $isDropdown ? 'sidebar-subnav-' . Str::slug($item['title']) : null;
+                        @endphp
 
-</ul>
+                        <li class="sidebar-item {{ $isDropdown ? 'has-children' : '' }} {{ $dropdownActive ? 'is-open' : '' }}">
+                            @if($isDropdown)
+                                <button class="sidebar-link {{ $dropdownActive ? 'is-active' : '' }}" type="button" data-sidebar-toggle="{{ $subnavId }}">
+                                    <span class="sidebar-link__icon">
+                                        <i class="bi {{ $item['icon'] }}"></i>
+                                    </span>
+                                    <span>{{ $item['title'] }}</span>
+                                    <i class="bi bi-chevron-down sidebar-link__chevron"></i>
+                                </button>
+                                <div class="sidebar-subnav {{ $dropdownActive ? 'show' : '' }}" id="{{ $subnavId }}">
+                                    @foreach($item['dropdown'] as $subItem)
+                                        @if(Route::has($subItem['route']))
+                                            <a class="sidebar-sublink {{ request()->routeIs($subItem['route']) ? 'is-active' : '' }}" href="{{ route($subItem['route']) }}">
+                                                <i class="{{ $subItem['icon'] }} me-2"></i>{{ $subItem['title'] }}
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @else
+                                @php
+                                    $resolvedRoute = Route::has($item['route'])
+                                        ? route($item['route'])
+                                        : ($item['title'] === 'Visitor Approvals' ? url('/visitor-approvals') : '#');
+                                @endphp
+                                <a class="sidebar-link {{ $linkIsActive ? 'is-active' : '' }}" href="{{ $resolvedRoute }}" data-sidebar-link>
+                                    <span class="sidebar-link__icon">
+                                        <i class="bi {{ $item['icon'] }}"></i>
+                                    </span>
+                                    <span>{{ $item['title'] }}</span>
+                                </a>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
 
-<style>
-    /* Reports dropdown styling: keep white text and add dark translucent hover */
-    #accordionSidebar #collapseReports .collapse-inner .collapse-item {
-       
-        color: #fff !important;
-    }
+            <div class="sidebar-section">
+                <p class="sidebar-section__label">Workflows</p>
+                <ul class="sidebar-section__list">
+                    @if($isSuper || $canPage('qr_scanner'))
+                        <li class="sidebar-item">
+                            <a class="sidebar-link {{ request()->is('qr-management*') ? 'is-active' : '' }}" href="{{ url('/qr-management') }}" data-sidebar-link>
+                                <span class="sidebar-link__icon"><i class="bi bi-qr-code-scan"></i></span>
+                                <span>QR Codes</span>
+                            </a>
+                        </li>
+                    @endif
 
-    #accordionSidebar #collapseReports .collapse-inner .collapse-item:hover,
-    #accordionSidebar #collapseReports .collapse-inner .collapse-item:focus {
-        background-color: rgba(255, 255, 255, 0.12);
-        color: #fff !important;
-    }
+                    @if($isSuper || $canPage('visitor_categories'))
+                        <li class="sidebar-item">
+                            <a class="sidebar-link {{ request()->routeIs('visitor-categories.*') ? 'is-active' : '' }}" href="{{ route('visitor-categories.index') }}" data-sidebar-link>
+                                <span class="sidebar-link__icon"><i class="fas fa-tags"></i></span>
+                                <span>Visitor Categories</span>
+                            </a>
+                        </li>
+                    @endif
 
-    /* Hide the SB Admin footer */
-    .sidebar .text-center {
-        display: none !important;
-    }
+                    @if(Route::has($usersRoute) && ($isSuper || $canPage('users')))
+                        <li class="sidebar-item">
+                            <a class="sidebar-link {{ request()->routeIs($usersRoute) ? 'is-active' : '' }}" href="{{ route($usersRoute) }}" data-sidebar-link>
+                                <span class="sidebar-link__icon"><i class="bi bi-person-bounding-box"></i></span>
+                                <span>Users</span>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </div>
 
-    /* More specific selector if needed */
-    #accordionSidebar>.text-center:last-child {
-        display: none !important;
-    }
+            @if(($isSuper || $canPage('reports')) && $reportItems->isNotEmpty())
+                <div class="sidebar-section">
+                    <p class="sidebar-section__label">Insights & Reports</p>
+                    <ul class="sidebar-section__list">
+                        @php
+                            $reportsSubnavId = 'sidebar-subnav-reports';
+                        @endphp
+                        <li class="sidebar-item has-children {{ $reportActive ? 'is-open' : '' }}">
+                            <button class="sidebar-link {{ $reportActive ? 'is-active' : '' }}" type="button" data-sidebar-toggle="{{ $reportsSubnavId }}">
+                                <span class="sidebar-link__icon"><i class="bi bi-clipboard-data"></i></span>
+                                <span>Reports Hub</span>
+                                <i class="bi bi-chevron-down sidebar-link__chevron"></i>
+                            </button>
+                            <div class="sidebar-subnav {{ $reportActive ? 'show' : '' }}" id="{{ $reportsSubnavId }}">
+                                @foreach($reportItems as $report)
+                                    @if(Route::has($report['route']))
+                                        <a class="sidebar-sublink {{ request()->routeIs($report['route']) ? 'is-active' : '' }}" href="{{ route($report['route']) }}">
+                                            <i class="{{ $report['icon'] }} me-2"></i>{{ $report['title'] }}
+                                        </a>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            @endif
+        </div>
 
-    /* Target the specific text if needed */
-    #accordionSidebar>div:contains('SB Admin v7.0.7') {
-        display: none !important;
-    }
-
-    /* Mobile styles handled by parent layout */
-    #accordionSidebar {
-         
-        height: 100vh;
-        overflow-y: auto;
-    }
-@media (max-width: 768px) {
-  #accordionSidebar {
-    width: 135px !important;
-  }
-  
-  .nav-link span:not(.chev) {
-    display: none;
-  }
-  
-  #collapseReports {
-    position: fixed !important;
-    left: 135px !important;
-    background: #5a5c69 !important;
-    min-width: 220px !important;
-    border-radius: 0.35rem !important;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-    z-index: 99999 !important;
-  }
-  
-  #collapseReports .collapse-item {
-    padding: 0.75rem 1rem !important;
-    color: #fff !important;
-    font-size: 0.875rem !important;
-    display: block !important;
-    white-space: nowrap !important;
-  }
-}
-
-
-
-    
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle Reports dropdown toggle
-    const reportsToggle = document.querySelector('[data-bs-target="#collapseReports"]');
-    const reportsCollapse = document.getElementById('collapseReports');
-    
-    if (reportsToggle && reportsCollapse) {
-        reportsToggle.addEventListener('click', function(e) {
-            if (window.innerWidth <= 768) {
-                e.preventDefault();
-                
-                const isExpanded = reportsCollapse.classList.contains('show');
-                
-                if (isExpanded) {
-                    reportsCollapse.classList.remove('show');
-                    this.classList.add('collapsed');
-                    this.setAttribute('aria-expanded', 'false');
-                } else {
-                    const rect = this.getBoundingClientRect();
-                    reportsCollapse.style.top = rect.top + 'px';
-                    reportsCollapse.classList.add('show');
-                    this.classList.remove('collapsed');
-                    this.setAttribute('aria-expanded', 'true');
-                }
-            }
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!reportsToggle.contains(e.target) && !reportsCollapse.contains(e.target)) {
-                reportsCollapse.classList.remove('show');
-                reportsToggle.classList.add('collapsed');
-                reportsToggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-});
-</script>
+        <div class="sidebar-footer">
+            <p class="sidebar-footer__eyebrow mb-2">Signed In</p>
+            <p class="sidebar-footer__text mb-1">{{ $authUser->name ?? 'Guest User' }}</p>
+            <p class="sidebar-footer__text small text-white-50 mb-0">
+                {{ $isCompany ? 'Company Workspace' : ($authUser->role ?? 'Team Member') }}
+            </p>
+        </div>
+    </div>
+</aside>

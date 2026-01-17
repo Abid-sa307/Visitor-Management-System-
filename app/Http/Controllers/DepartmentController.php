@@ -4,23 +4,76 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Company;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
     public function index()
     {
-        // Super admin sees all, company users see only their company's departments
-        if (auth()->user()->role === 'superadmin') {
-            $departments = Department::with('company')->latest()->paginate(10);
-        } else {
-            $departments = Department::with('company')
-                ->where('company_id', auth()->user()->company_id)
-                ->latest()
-                ->paginate(10);
+        $user = auth()->user();
+        $isSuper = $user->role === 'superadmin';
+
+        $query = Department::with(['company', 'branch'])->latest();
+
+        if (!$isSuper) {
+            $query->where('company_id', $user->company_id);
         }
 
-        return view('departments.index', compact('departments'));
+        if ($isSuper && request()->filled('company_id')) {
+            $query->where('company_id', request('company_id'));
+        }
+
+        if (request()->filled('branch_id')) {
+            $query->where('branch_id', request('branch_id'));
+        }
+
+        if (request()->filled('search')) {
+            $search = request('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('branch', function ($b) use ($search) {
+                      $b->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('company', function ($c) use ($search) {
+                      $c->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $departments = $query->paginate(10)->appends(request()->query());
+
+        $companies = $isSuper
+            ? Company::orderBy('name')->get()
+            : Company::where('id', $user->company_id)->get();
+
+        $branches = collect();
+        if (request()->filled('company_id')) {
+            $branches = Branch::where('company_id', request('company_id'))->orderBy('name')->get();
+        } elseif (!$isSuper) {
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->orderBy('name')->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->orderBy('name')->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->orderBy('name')->get();
+                }
+            }
+        }
+
+        return view('departments.index', [
+            'departments' => $departments,
+            'companies' => $companies,
+            'branches' => $branches,
+            'isSuper' => $isSuper,
+        ]);
     }
 
     public function create()
@@ -28,11 +81,27 @@ class DepartmentController extends Controller
         // Super admin can choose any company, others only their own
         if (auth()->user()->role === 'superadmin') {
             $companies = Company::all();
+            $branches = collect();
         } else {
             $companies = Company::where('id', auth()->user()->company_id)->get();
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->get();
+                }
+            }
         }
 
-        return view('departments.create', compact('companies'));
+        return view('departments.create', compact('companies', 'branches'));
     }
 
     public function store(Request $request)
@@ -45,7 +114,29 @@ class DepartmentController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'company_id' => 'required|exists:companies,id',
+            'branch_id' => 'required|exists:branches,id',
         ]);
+
+        $branch = Branch::where('id', $validated['branch_id'])
+            ->where('company_id', $validated['company_id'])
+            ->first();
+
+        if (!$branch) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['branch_id' => 'Selected branch does not belong to the chosen company.']);
+        }
+
+        // Check for duplicate department name within the same branch
+        $exists = Department::where('branch_id', $validated['branch_id'])
+            ->whereRaw('LOWER(name) = ?', [strtolower($validated['name'])])
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['name' => 'A department with this name already exists in this branch.']);
+        }
 
         Department::create($validated);
 
@@ -61,11 +152,27 @@ class DepartmentController extends Controller
 
         if (auth()->user()->role === 'superadmin') {
             $companies = Company::all();
+            $branches = Branch::where('company_id', $department->company_id)->get();
         } else {
             $companies = Company::where('id', auth()->user()->company_id)->get();
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->get();
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->get();
+                } else {
+                    // If no branches assigned, filter by company
+                    $branches = Branch::where('company_id', $user->company_id)->get();
+                }
+            }
         }
 
-        return view('departments.edit', compact('department', 'companies'));
+        return view('departments.edit', compact('department', 'companies', 'branches'));
     }
 
     public function update(Request $request, Department $department)
@@ -81,7 +188,30 @@ class DepartmentController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'company_id' => 'required|exists:companies,id',
+            'branch_id' => 'required|exists:branches,id',
         ]);
+
+        $branch = Branch::where('id', $validated['branch_id'])
+            ->where('company_id', $validated['company_id'])
+            ->first();
+
+        if (!$branch) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['branch_id' => 'Selected branch does not belong to the chosen company.']);
+        }
+
+        // Check for duplicate department name within the same branch (excluding current department)
+        $exists = Department::where('branch_id', $validated['branch_id'])
+            ->where('id', '!=', $department->id)
+            ->whereRaw('LOWER(name) = ?', [strtolower($validated['name'])])
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['name' => 'A department with this name already exists in this branch.']);
+        }
 
         $department->update($validated);
 

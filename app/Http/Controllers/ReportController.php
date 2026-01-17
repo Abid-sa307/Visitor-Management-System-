@@ -39,8 +39,9 @@ class ReportController extends Controller
         $visitors = $query->latest()->paginate(20);
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
+        $branches = $this->getBranches($request);
 
-        return view('visitors.report', compact('visitors', 'companies', 'departments') + $filters);
+        return view('visitors.report', compact('visitors', 'companies', 'departments', 'branches') + $filters);
     }
 
     // Visit Reports (In/Out)
@@ -74,20 +75,22 @@ class ReportController extends Controller
     }
 
     public function securityChecks(Request $request)
-{
-    $query = SecurityCheck::with(['visitor' => function($q) {
-        $q->with(['company', 'department', 'branch']);
-    }, 'securityOfficer']);
+    {
+        $query = SecurityCheck::with(['visitor' => function($q) {
+            $q->with(['company', 'department', 'branch']);
+        }, 'securityOfficer']);
 
-    // Apply date range filter
-    if ($request->filled('from')) {
-        $query->whereDate('security_checks.created_at', '>=', $request->from);
-        $filters['from'] = $request->from;
-    }
-    if ($request->filled('to')) {
-        $query->whereDate('security_checks.created_at', '<=', $request->to);
-        $filters['to'] = $request->to;
-    }
+        $filters = [];
+        
+        // Apply date range filter
+        if ($request->filled('from')) {
+            $query->whereDate('security_checks.created_at', '>=', $request->from);
+            $filters['from'] = $request->from;
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('security_checks.created_at', '<=', $request->to);
+            $filters['to'] = $request->to;
+        }
 
     // Apply company filter
     if ($request->filled('company_id')) {
@@ -99,16 +102,18 @@ class ReportController extends Controller
 
     // Apply department filter
     if ($request->filled('department_id')) {
-        $query->whereHas('visitor', function($q) use ($request) {
-            $q->where('department_id', $request->department_id);
+        $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+        $query->whereHas('visitor', function($q) use ($departmentIds) {
+            $q->whereIn('department_id', $departmentIds);
         });
         $filters['department_id'] = $request->department_id;
     }
     
     // Apply branch filter
     if ($request->filled('branch_id')) {
-        $query->whereHas('visitor', function($q) use ($request) {
-            $q->where('branch_id', $request->branch_id);
+        $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+        $query->whereHas('visitor', function($q) use ($branchIds) {
+            $q->whereIn('branch_id', $branchIds);
         });
         $filters['branch_id'] = $request->branch_id;
     }
@@ -128,14 +133,7 @@ class ReportController extends Controller
     $securityChecks = $query->latest('security_checks.created_at')->paginate(20)->appends($request->query());
     $companies = $this->getCompanies();
     $departments = $this->getDepartments($request);
-    
-    // Get branches based on selected company
-    $branches = [];
-    if ($request->filled('company_id')) {
-        $branches = \App\Models\Branch::where('company_id', $request->company_id)
-            ->pluck('name', 'id')
-            ->toArray();
-    }
+    $branches = $this->getBranches($request);
     
     return view('reports.security_checks', compact(
         'securityChecks', 
@@ -149,7 +147,7 @@ class ReportController extends Controller
     public function approvals(Request $request)
     {
         $query = Visitor::whereNotNull('approved_at')
-            ->with(['company', 'department', 'approvedBy']);
+            ->with(['company', 'department', 'approvedBy', 'rejectedBy']);
         
         // Apply filters
         $filters = $this->applyCommonFilters($query, $request);
@@ -171,8 +169,9 @@ class ReportController extends Controller
         $approvals = $query->latest('approved_at')->paginate(20);
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
+        $branches = $this->getBranches($request);
 
-        return view('visitors.approval_status', compact('approvals', 'companies', 'departments') + $filters);
+        return view('visitors.approval_status', compact('approvals', 'companies', 'departments', 'branches') + $filters);
     }
 
     // Hourly Report
@@ -207,9 +206,16 @@ class ReportController extends Controller
             $query->where('company_id', $request->company_id);
         }
 
+        // Apply branch filter
+        if ($request->filled('branch_id')) {
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
+        }
+
         // Apply department filter
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereIn('department_id', $departmentIds);
         }
 
         $hourlyData = $query->groupBy('hour')
@@ -218,12 +224,14 @@ class ReportController extends Controller
 
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
+        $branches = $this->getBranches($request);
         
         return view('reports.hourly', [
             'hourlyData' => $hourlyData,
             'selectedDate' => $request->date ?? now()->format('Y-m-d'),
             'companies' => $companies,
             'departments' => $departments,
+            'branches' => $branches,
             'filters' => $request->all()
         ]);
     }
@@ -274,8 +282,15 @@ class ReportController extends Controller
             $filters['company_id'] = $request->company_id;
         }
         
+        if ($request->filled('branch_id')) {
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereIn('branch_id', $branchIds);
+            $filters['branch_id'] = $request->branch_id;
+        }
+        
         if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereIn('department_id', $departmentIds);
             $filters['department_id'] = $request->department_id;
         }
         
@@ -285,45 +300,17 @@ class ReportController extends Controller
         }
         
         return $filters;
-    
-        if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
-        }
-
-        // Apply department filter
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
-
-        $hourlyData = $query->groupBy('hour')
-            ->orderBy('hour')
-            ->get();
-
-        $companies = $this->getCompanies();
-        $departments = $this->getDepartments($request);
-        
-        return view('reports.hourly', [
-            'hourlyData' => $hourlyData,
-            'selectedDate' => $request->date ?? now()->format('Y-m-d'),
-            'companies' => $companies,
-            'departments' => $departments,
-            'filters' => $request->all()
-        ]);
     }
 
     // Helper Methods
     private function getCompanies()
     {
         if (auth()->user()->role === 'superadmin') {
-            return Company::pluck('name', 'id')->mapWithKeys(function ($name, $id) {
-                return [$id => $name];
-            })->toArray();
+            return Company::orderBy('name')->pluck('name', 'id')->toArray();
         } else {
             return Company::where('id', auth()->user()->company_id)
+                ->orderBy('name')
                 ->pluck('name', 'id')
-                ->mapWithKeys(function ($name, $id) {
-                    return [$id => $name];
-                })
                 ->toArray();
         }
     }
@@ -339,6 +326,36 @@ class ReportController extends Controller
             // If user has specific departments assigned
             if (auth()->user()->departments->isNotEmpty()) {
                 $query->whereIn('id', auth()->user()->departments->pluck('id'));
+            }
+        } elseif ($request->filled('company_id')) {
+            // For superadmins, filter by selected company if any
+            $query->where('company_id', $request->company_id);
+        }
+        // If superadmin and no company selected, return all departments
+        
+        return $query->pluck('name', 'id')->toArray();
+    }
+
+    private function getBranches($request)
+    {
+        $query = \App\Models\Branch::query();
+        
+        // For non-superadmins, filter by user's assigned branches
+        if (auth()->user()->role !== 'superadmin') {
+            $user = auth()->user();
+            // Get user's assigned branch IDs from the pivot table
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $query->whereIn('id', $userBranchIds);
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $query->where('id', $user->branch_id);
+                } else {
+                    // If no branches assigned, filter by company
+                    $query->where('company_id', $user->company_id);
+                }
             }
         } elseif ($request->filled('company_id')) {
             // For superadmins, filter by selected company if any

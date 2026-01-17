@@ -10,7 +10,7 @@ class Branch extends Model
     use HasFactory;
 
     protected $fillable = [
-        'company_id', 'name', 'address', 'phone', 'email', 'start_date', 'end_date'
+        'company_id', 'name', 'address', 'phone', 'email', 'start_date', 'end_date', 'start_time', 'end_time'
     ];
 
     protected $casts = [
@@ -31,5 +31,10 @@ class Branch extends Model
     public function visitors()
     {
         return $this->hasMany(Visitor::class);
+    }
+
+    public function departments()
+    {
+        return $this->hasMany(Department::class);
     }
 }

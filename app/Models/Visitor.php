@@ -14,12 +14,7 @@ class Visitor extends Model
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The relationships that should always be loaded.
-     *
-     * @var array
-     */
-    protected $with = ['company', 'department', 'branch', 'approvedBy', 'rejectedBy'];
+
 
     protected $fillable = [
         'company_id',
@@ -34,6 +29,11 @@ class Visitor extends Model
         'department_id',
         'purpose',
         'person_to_visit',
+        'visit_date',
+        'visitor_website',
+        'vehicle_type',
+        'vehicle_number',
+        'goods_in_car',
         'documents',
         'workman_policy',
         'workman_policy_photo',
@@ -46,7 +46,13 @@ class Visitor extends Model
         'approved_by',
         'approved_at',
         'rejected_by',
-        'reject_reason'
+        'reject_reason',
+        'vehicle_type',
+        'vehicle_number',
+        'goods_in_car',
+        'visitor_website',
+        'security_checkin_time',
+        'security_checkout_time'
     ];
     
     /**
@@ -81,7 +87,7 @@ class Visitor extends Model
         'out_time' => 'datetime',
         'status_changed_at' => 'datetime',
         'approved_at' => 'datetime',
-        'face_encoding' => 'array',
+        'visit_completed_at' => 'datetime',
     ];
     
     /**
@@ -94,32 +100,13 @@ class Visitor extends Model
         'out_time',
         'status_changed_at',
         'approved_at',
+        'visit_completed_at',
         'created_at',
         'updated_at',
         'deleted_at'
     ];
 
-    /**
-     * Get the face_encoding attribute.
-     *
-     * @param  mixed  $value
-     * @return mixed
-     */
-    public function getFaceEncodingAttribute($value)
-    {
-        if (empty($value)) {
-            return null;
-        }
 
-        // If it's already an array, return it as is
-        if (is_array($value)) {
-            return $value;
-        }
-
-        // If it's a JSON string, decode it
-        $decoded = json_decode($value, true);
-        return json_last_error() === JSON_ERROR_NONE ? $decoded : null;
-    }
 
     /**
      * Get the branch that the visitor belongs to.
@@ -191,6 +178,11 @@ class Visitor extends Model
     public function logs()
     {
         return $this->hasMany(VisitorLog::class);
+    }
+
+    public function securityChecks()
+    {
+        return $this->hasMany(SecurityCheck::class);
     }
 
     public function getCanUndoStatusAttribute(): bool

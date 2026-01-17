@@ -58,7 +58,7 @@ class CompanyLoginController extends Controller
             // Manually log in the user
             if (Auth::guard('company')->login($user, $remember)) {
                 $request->session()->regenerate();
-                return redirect()->intended(route('dashboard'));
+                return redirect()->route('company.dashboard');
             }
         }
 

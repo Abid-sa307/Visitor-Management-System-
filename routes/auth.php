@@ -26,8 +26,8 @@ Route::middleware('guest')->group(function () {
         ->name('superadmin.login.store');
 
     // Generic login name used by authentication middleware to redirect guests
-    // Point GET to home so logout/unauthenticated hits go to '/'
-    Route::get('login', fn() => redirect('/'))->name('login');
+    // Show company login form directly
+    Route::get('login', [\App\Http\Controllers\Auth\CompanyLoginController::class, 'showLoginForm'])->name('login');
     // Accept POST /login submissions from forms that use route('login')
     Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 

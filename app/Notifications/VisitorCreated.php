@@ -15,23 +15,18 @@ class VisitorCreated extends Notification
 
     public function via(object $notifiable): array
     {
-        // Database first; add 'mail' if you want emails too
-        return ['database'];
+        // Temporarily disable database notifications to focus on browser notifications
+        return [];
     }
 
-    public function toArray(object $notifiable): array
+    public function toDatabase(object $notifiable): array
     {
         $v = $this->visitor;
         return [
             'type'        => 'visitor_created',
             'visitor_id'  => $v->id,
-            'name'        => $v->name,
-            'phone'       => $v->phone,
-            'status'      => $v->status,
-            'company_id'  => $v->company_id,
-            'branch_id'   => $v->branch_id,
-            'created_at'  => optional($v->created_at)->toDateTimeString(),
             'message'     => "New visitor registered: {$v->name}",
+            'is_read'     => false,
         ];
     }
 }
