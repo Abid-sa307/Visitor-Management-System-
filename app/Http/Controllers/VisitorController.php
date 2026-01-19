@@ -258,7 +258,10 @@ class VisitorController extends Controller
     {
         $companies   = $this->getCompanies();
         $departments = $this->getDepartments();
-        $categories  = VisitorCategory::orderBy('name')->get();
+        $categories  = VisitorCategory::query()
+            ->when(!$this->isSuper(), fn($q) => $q->where('company_id', auth()->user()->company_id))
+            ->orderBy('name')
+            ->get();
         
         // Get branches for company users
         $branches = collect();
@@ -286,6 +289,7 @@ class VisitorController extends Controller
 
             $validated = $request->validate([
                 'company_id'          => 'nullable|exists:companies,id',
+                'branch_id'           => 'nullable|exists:branches,id',
                 'name'                => 'required|string|max:255|regex:' . self::NAME_REGEX,
                 'visitor_category_id' => 'nullable|exists:visitor_categories,id',
                 'email'               => 'nullable|email',
@@ -542,7 +546,10 @@ class VisitorController extends Controller
             })
             ->orderBy('name')
             ->get();
-        $categories = VisitorCategory::orderBy('name')->get();
+        $categories = VisitorCategory::query()
+            ->when(!$this->isSuper(), fn($q) => $q->where('company_id', auth()->user()->company_id))
+            ->orderBy('name')
+            ->get();
 
         return view('visitors.edit', compact('visitor', 'companies', 'departments', 'branches', 'categories'));
     }
@@ -917,7 +924,8 @@ class VisitorController extends Controller
         $departments = $selectedBranchId ? $this->getDepartments($selectedBranchId) : collect();
 
         $visitorCategories = VisitorCategory::query()
-            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+            ->when($companyId && !$selectedBranchId, fn($q) => $q->where('company_id', $companyId)->whereNull('branch_id'))
             ->orderBy('name')
             ->get(['id', 'name']);
 

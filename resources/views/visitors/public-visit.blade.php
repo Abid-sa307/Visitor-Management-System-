@@ -257,6 +257,39 @@ document.addEventListener('DOMContentLoaded', function() {
     const buttonText = document.getElementById('buttonText');
     const spinner = document.getElementById('spinner');
 
+    // Function to update visitor categories based on selected branch
+    function updateVisitorCategories(branchId) {
+        const categorySelect = document.querySelector('select[name="visitor_category_id"]');
+        if (!categorySelect) return;
+        
+        // Get current selected value
+        const currentSelected = categorySelect.value;
+        
+        // Fetch categories for the selected branch
+        fetch(`/api/branches/${branchId}/visitor-categories`)
+            .then(response => response.json())
+            .then(data => {
+                // Clear existing options
+                categorySelect.innerHTML = '<option value="">-- Select Category (Optional) --</option>';
+                
+                // Add new options
+                data.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    if (category.id == currentSelected) {
+                        option.selected = true;
+                    }
+                    categorySelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching visitor categories:', error);
+                // On error, keep the default option
+                categorySelect.innerHTML = '<option value="">-- Select Category (Optional) --</option>';
+            });
+    }
+
     if (form) {
         // Handle form submission - just show loading state, don't prevent default
         form.addEventListener('submit', function(e) {
@@ -282,6 +315,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+        
+        // Listen for branch changes
+        const branchSelect = document.querySelector('select[name="branch_id"]');
+        if (branchSelect) {
+            branchSelect.addEventListener('change', function() {
+                updateVisitorCategories(this.value);
+            });
+        }
     }
 });
 </script>

@@ -138,6 +138,7 @@
         <thead class="table-primary text-uppercase">
           <tr>
             <th>Visitor Name</th>
+            <th>Branch</th>
             <th>Department</th>
             <th>Visitor Category</th>
             <th>Person to Visit</th>
@@ -152,6 +153,7 @@
           @forelse($visitors as $visitor)
             <tr>
               <td class="fw-semibold">{{ $visitor->name }}</td>
+              <td>{{ $visitor->branch->name ?? '—' }}</td>
               <td>{{ $visitor->department->name ?? '—' }}</td>
               <td>{{ $visitor->category->name ?? '—' }}</td>
               <td>{{ $visitor->person_to_visit ?? '—' }}</td>

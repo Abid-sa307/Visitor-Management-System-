@@ -34,6 +34,25 @@
                 </div>
             @endif
 
+            {{-- Branch Selection --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Branch</label>
+                <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
+                    <option value="">-- Select Branch --</option>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" 
+                            {{ old('branch_id', $visitor->branch_id ?? $selectedBranchId ?? '') == $branch->id ? 'selected' : '' }}>
+                            {{ $branch->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('branch_id')
+                    <div class="invalid-feedback d-block">
+                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                    </div>
+                @enderror
+            </div>
+
             {{-- Department & Visitor Category --}}
             <div class="row mb-3">
                 <div class="col">
@@ -146,6 +165,106 @@
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('form');
     const submitBtn = document.getElementById('submitBtn');
+    
+    // Function to update departments based on selected branch
+    function updateDepartments(branchId) {
+        const departmentSelect = document.querySelector('select[name="department_id"]');
+        if (!departmentSelect) return;
+        
+        // Get current selected value
+        const currentSelected = departmentSelect.value;
+        
+        // Fetch departments for the selected branch
+        fetch(`/api/branches/${branchId}/departments`)
+            .then(response => response.json())
+            .then(departments => {
+                // Clear existing options
+                departmentSelect.innerHTML = '<option value="">-- Select Department --</option>';
+                
+                // Add new options
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    if (dept.id == currentSelected) {
+                        option.selected = true;
+                    }
+                    departmentSelect.appendChild(option);
+                });
+                
+                // If no departments available
+                if (departments.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No departments available';
+                    departmentSelect.appendChild(option);
+                }
+                
+                // Update visitor categories after departments are loaded
+                updateVisitorCategories(branchId);
+            })
+            .catch(error => {
+                console.error('Error fetching departments:', error);
+                // On error, show no departments available
+                departmentSelect.innerHTML = '<option value="">-- Select Department --</option><option value="" disabled>No departments available</option>';
+            });
+    }
+    
+    // Function to update visitor categories based on selected branch
+    function updateVisitorCategories(branchId) {
+        const categorySelect = document.querySelector('select[name="visitor_category_id"]');
+        if (!categorySelect) return;
+        
+        // Get current selected value
+        const currentSelected = categorySelect.value;
+        
+        // Fetch categories for the selected branch
+        fetch(`/api/branches/${branchId}/visitor-categories`)
+            .then(response => response.json())
+            .then(data => {
+                // Clear existing options
+                categorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+                
+                // Add new options
+                data.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    if (category.id == currentSelected) {
+                        option.selected = true;
+                    }
+                    categorySelect.appendChild(option);
+                });
+                
+                // If no categories available
+                if (data.categories.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No categories available';
+                    categorySelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching visitor categories:', error);
+                // On error, show no categories available
+                categorySelect.innerHTML = '<option value="">-- Select Category --</option><option value="" disabled>No categories available</option>';
+            });
+    }
+    
+    // Listen for branch changes
+    const branchSelect = document.querySelector('select[name="branch_id"]');
+    if (branchSelect) {
+        branchSelect.addEventListener('change', function() {
+            updateDepartments(this.value);
+        });
+        
+        // Load departments for initial branch if selected
+        if (branchSelect.value) {
+            updateDepartments(branchSelect.value);
+        }
+    }
     
     if (form) {
         form.addEventListener('submit', function(e) {

@@ -29,6 +29,17 @@ Route::get('/branches/{branch}/departments', function (Branch $branch) {
     return $branch->departments()->get(['id', 'name']);
 });
 
+// Get visitor categories for a branch
+Route::get('/branches/{branch}/visitor-categories', function (Branch $branch) {
+    $categories = \App\Models\VisitorCategory::where('branch_id', $branch->id)
+        ->orderBy('name')
+        ->get(['id', 'name']);
+    
+    return response()->json([
+        'categories' => $categories
+    ]);
+});
+
 // Get face recognition setting for a company
 Route::get('/companies/{company}/face-recognition', function (\App\Models\Company $company) {
     return response()->json([

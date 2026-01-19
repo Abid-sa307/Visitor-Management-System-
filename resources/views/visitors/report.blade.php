@@ -7,7 +7,7 @@
 
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-        <h2 class="fw-bold text-primary m-0">Visitor Report hehehe</h2>
+        <h2 class="fw-bold text-primary m-0">Visitor Report</h2>
         <form method="GET" action="{{ route($reportExportRoute) }}" class="d-flex gap-2">
             <button type="submit" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel

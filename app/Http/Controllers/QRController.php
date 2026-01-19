@@ -348,8 +348,10 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
     // Get departments and visitor categories
     $departments = $company->departments()->get();
     
-    // Get visitor categories for the company
-    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
+    // Get visitor categories for the company and branch
+    $visitorCategories = \App\Models\VisitorCategory::query()
+        ->when($branchModel, fn($q) => $q->where('branch_id', $branchModel->id))
+        ->when(!$branchModel, fn($q) => $q->where('company_id', $company->id)->whereNull('branch_id'))
         ->orderBy('name')
         ->get();
     
@@ -376,7 +378,47 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
             // Get visitor ID from route parameter
             $visitorId = $visitorId ?? $request->route('visitor');
             
-            // Simple redirect test - bypass everything
+            // Find the visitor
+            $visitor = Visitor::findOrFail($visitorId);
+            
+            // Verify visitor belongs to company
+            if ($visitor->company_id != $company->id) {
+                abort(403, 'This visitor does not belong to specified company.');
+            }
+            
+            // Validate the request
+            $validated = $request->validate([
+                'branch_id' => 'nullable|exists:branches,id',
+                'department_id' => 'required|exists:departments,id',
+                'visitor_category_id' => 'nullable|exists:visitor_categories,id',
+                'person_to_visit' => 'required|string|max:255',
+                'purpose' => 'required|string',
+                'visitor_company' => 'nullable|string|max:255',
+                'visitor_website' => 'nullable|url|max:255',
+                'vehicle_type' => 'nullable|string|max:20',
+                'vehicle_number' => 'nullable|string|max:50',
+                'goods_in_car' => 'nullable|string|max:255',
+                'workman_policy' => 'nullable|in:Yes,No',
+                'workman_policy_photo' => 'nullable|image|max:2048',
+            ]);
+
+            // Handle file upload
+            if ($request->hasFile('workman_policy_photo')) {
+                $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
+                $validated['workman_policy_photo'] = $path;
+            }
+
+            // Update visitor with validated data
+            $visitor->update($validated);
+            
+            // Mark visit as completed
+            $visitor->update([
+                'visit_completed_at' => now(),
+                'status' => 'Approved',
+                'approved_at' => now(),
+            ]);
+
+            // Redirect back with success message
             if ($branch) {
                 return redirect()->route('public.visitor.index.branch', [
                     'company' => $company->id, 
@@ -416,7 +458,9 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
             
             // Get necessary data for the form
             $departments = $company->departments()->get();
-            $visitorCategories = VisitorCategory::where('company_id', $company->id)
+            $visitorCategories = \App\Models\VisitorCategory::query()
+                ->when($branchModel, fn($q) => $q->where('branch_id', $branchModel->id))
+                ->when(!$branchModel, fn($q) => $q->where('company_id', $company->id)->whereNull('branch_id'))
                 ->orderBy('name')
                 ->get();
             
