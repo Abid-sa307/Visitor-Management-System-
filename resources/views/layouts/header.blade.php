@@ -15,7 +15,7 @@
     || request()->is('temple-and-dargah');
 @endphp
 
-<nav id="mainHeader" class="navbar navbar-expand-lg navbar-light sticky-top bg-white" style="z-index:1050;">
+<nav id="mainHeader" class="navbar navbar-expand-lg navbar-light sticky-top bg-white enhanced-header" style="z-index:1050; position: sticky; top: 0; backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95) !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); border-bottom: 1px solid rgba(0, 0, 0, 0.05);">
   <div class="container">
     <!-- Logo -->
     <a class="navbar-brand fw-bold d-flex align-items-center" href="/">

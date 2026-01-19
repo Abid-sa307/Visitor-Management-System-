@@ -15,8 +15,7 @@ class VisitorCreated extends Notification
 
     public function via(object $notifiable): array
     {
-        // Temporarily disable database notifications to focus on browser notifications
-        return [];
+        return ['database'];
     }
 
     public function toDatabase(object $notifiable): array

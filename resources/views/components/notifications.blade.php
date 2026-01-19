@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadNotifications() {
-    fetch('/api/notifications')
+    fetch('/notifications')
         .then(response => response.json())
         .then(data => {
             displayNotifications(data.notifications);
@@ -136,7 +136,7 @@ function updateNotificationBadge(count) {
 }
 
 function updateUnreadCount() {
-    fetch('/api/notifications/unread-count')
+    fetch('/notifications/unread-count')
         .then(response => response.json())
         .then(data => {
             updateNotificationBadge(data.unread_count);
@@ -145,7 +145,7 @@ function updateUnreadCount() {
 }
 
 function markNotificationsAsRead() {
-    fetch('/api/notifications/mark-read', {
+    fetch('/notifications/mark-read', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

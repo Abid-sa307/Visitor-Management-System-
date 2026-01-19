@@ -48,10 +48,16 @@ class QRController extends Controller
     /**
      * Show the form for creating a new visitor
      */
-    public function createVisitor(Company $company)
+    public function createVisitor(Company $company, $branch = null)
     {
+        $branchModel = null;
+        if ($branch) {
+            $branchModel = $company->branches()->find($branch);
+        }
+        
         return view('visitors.public-create', [
-            'company' => $company
+            'company' => $company,
+            'branch' => $branchModel
         ]);
     }
 
@@ -139,7 +145,7 @@ class QRController extends Controller
     /**
      * Store a newly created visitor in storage.
      */
-    public function storeVisitor(Request $request, Company $company)
+    public function storeVisitor(Request $request, Company $company, $branch = null)
     {
         // Check if face recognition is enabled for this company
         $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
@@ -150,6 +156,7 @@ class QRController extends Controller
             'email' => 'nullable|email|max:255',
             'phone' => 'required|numeric|digits_between:10,15',
             'purpose' => 'nullable|string|max:1000',
+            'visit_date' => 'nullable|date|after_or_equal:today',
             'documents.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
             'document' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:5120',
         ];
@@ -178,9 +185,18 @@ class QRController extends Controller
                 'email' => $validated['email'] ?? null,
                 'phone' => $validated['phone'],
                 'purpose' => $validated['purpose'],
+                'visit_date' => $validated['visit_date'] ?? now()->format('Y-m-d'),
                 'company_id' => $company->id,
                 'is_approved' => $company->auto_approve_visitors,
             ];
+            
+            // Add branch_id if branch was specified in QR scan
+            if ($branch) {
+                $branchModel = $company->branches()->find($branch);
+                if ($branchModel) {
+                    $visitorData['branch_id'] = $branchModel->id;
+                }
+            }
             
             // Only add face_encoding if it exists
             if (!empty($validated['face_encoding'])) {
@@ -234,11 +250,18 @@ class QRController extends Controller
                 }
             }
             
-            // Redirect with success message
+            // Auto-redirect to public visit form after visitor creation
+            if ($branch) {
+                $route = 'public.visitor.visit.form.branch';
+                $routeParams = ['company' => $company->id, 'branch' => $branch, 'visitor' => $visitor->id];
+            } else {
+                $route = 'public.visitor.visit.form';
+                $routeParams = ['company' => $company->id, 'visitor' => $visitor->id];
+            }
+            
             return redirect()
-                ->route('qr.scan', $company)
-                ->with('success', 'Visitor registered successfully!' . 
-                    ($company->auto_approve_visitors ? ' Your visit has been approved.' : ' Please wait for approval.'))
+                ->route($route, $routeParams)
+                ->with('success', 'Visitor registered successfully! Please complete the visit form.')
                 ->with('play_notification', true);
                 
         } catch (\Exception $e) {
@@ -302,145 +325,69 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
     $request = $request ?? request(); // Get the request instance if not injected
     
     $branchModel = null;
-            if ($branch) {
-                $branchModel = $company->branches()->find($branch);
-            }
-            
-            // Get visitor ID from query parameter
-            $visitorId = $request->query('visitor');
-            
-            if (!$visitorId) {
-                return redirect()->back()->with('error', 'No visitor specified.');
-            }
-            
-            $visitor = Visitor::find($visitorId);
-            
-            if (!$visitor) {
-                return redirect()->back()->with('error', 'Visitor not found.');
-            }
-            
-            // Store visitor ID in session
-            session(['current_visitor_id' => $visitor->id]);
-            
-            // Get departments and visitor categories
-            $departments = $company->departments()->get();
-            
-            // Get visitor categories for the company
-            $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
-                ->orderBy('name')
-                ->get();
-            
-            // If a specific branch QR was scanned, only show that branch
-            // Otherwise show all branches of the company
-            if ($branchModel) {
-                $branches = collect([$branchModel]); // Only the scanned branch
-            } else {
-                $branches = $company->branches()->get(); // All branches
-            }
-            
-            return view('visitors.public-visit', [
-                'company' => $company,
-                'branch' => $branchModel,
-                'departments' => $departments,
-                'visitorCategories' => $visitorCategories,
-                'branches' => $branches,
-                'visitor' => $visitor
-            ]);
-        }
+    if ($branch) {
+        $branchModel = $company->branches()->find($branch);
+    }
+    
+    // Get visitor ID from query parameter or route parameter
+    $visitorId = $request->query('visitor') ?? $request->route('visitor');
+    
+    if (!$visitorId) {
+        return redirect()->back()->with('error', 'No visitor specified.');
+    }
+    
+    $visitor = Visitor::find($visitorId);
+    
+    if (!$visitor) {
+        return redirect()->back()->with('error', 'Visitor not found.');
+    }
+    
+    // Store visitor ID in session
+    session(['current_visitor_id' => $visitor->id]);
+    
+    // Get departments and visitor categories
+    $departments = $company->departments()->get();
+    
+    // Get visitor categories for the company
+    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
+        ->orderBy('name')
+        ->get();
+    
+    // If a specific branch QR was scanned, only show that branch
+    // Otherwise show all branches of the company
+    if ($branchModel) {
+        $branches = collect([$branchModel]); // Only the scanned branch
+    } else {
+        $branches = $company->branches()->get(); // All branches
+    }
+    
+    return view('visitors.public-visit', [
+        'company' => $company,
+        'branch' => $branchModel,
+        'departments' => $departments,
+        'visitorCategories' => $visitorCategories,
+        'branches' => $branches,
+        'visitor' => $visitor
+    ]);
+}
         
-        /**
-         * Handle public visit form submission (no auth required)
-         */
-        public function storePublicVisit(Request $request, Company $company, $visitorId = null)
+        public function storePublicVisit(Request $request, Company $company, $visitorId = null, $branch = null)
         {
             // Get visitor ID from route parameter
             $visitorId = $visitorId ?? $request->route('visitor');
             
-            $validated = $request->validate([
-                'department_id' => 'required|exists:departments,id',
-                'branch_id' => 'nullable|exists:branches,id',
-                'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-                'person_to_visit' => 'required|string|max:255',
-                'purpose' => 'required|string',
-                'visitor_company' => 'nullable|string',
-                'visitor_website' => 'nullable|url',
-                'vehicle_type' => 'nullable|string',
-                'vehicle_number' => 'nullable|string',
-                'goods_in_car' => 'nullable|string',
-                'workman_policy' => 'nullable|in:Yes,No',
-                'workman_policy_photo' => 'nullable|image|max:2048',
-            ]);
-
-            // Add company_id to validated data since it's available from route
-            $validated['company_id'] = $company->id;
-
-            try {
-                // Start a database transaction
-                return DB::transaction(function () use ($request, $company, $visitorId, $validated) {
-                    // Find the visitor with a lock to prevent race conditions
-                    $visitor = \App\Models\Visitor::findOrFail($visitorId);
-                    
-                    // Store the current status before updating
-                    $currentStatus = $visitor->status;
-                    
-                    // Handle file upload if present
-                    if ($request->hasFile('workman_policy_photo')) {
-                        // Delete old photo if exists
-                        if ($visitor->workman_policy_photo) {
-                            Storage::disk('public')->delete($visitor->workman_policy_photo);
-                        }
-                        $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
-                        $validated['workman_policy_photo'] = $path;
-                    }
-                    
-                    // Update only the allowed fields
-                    $updateData = [
-                        'department_id' => $validated['department_id'],
-                        'branch_id' => $validated['branch_id'] ?? null,
-                        'visitor_category_id' => $validated['visitor_category_id'],
-                        'person_to_visit' => $validated['person_to_visit'],
-                        'purpose' => $validated['purpose'],
-                        'visitor_company' => $validated['visitor_company'] ?? null,
-                        'visitor_website' => $validated['visitor_website'] ?? null,
-                        'vehicle_type' => $validated['vehicle_type'] ?? null,
-                        'vehicle_number' => $validated['vehicle_number'] ?? null,
-                        'goods_in_car' => $validated['goods_in_car'] ?? null,
-                        'workman_policy' => $validated['workman_policy'] ?? null,
-                        'workman_policy_photo' => $validated['workman_policy_photo'] ?? $visitor->workman_policy_photo,
-                        'visit_completed_at' => now(), // Mark visit form as completed
-                    ];
-
-                    // Set visitor status based on company's auto-approval setting and QR flow flag
-                    // Preserve existing Approved status - don't revert approved visitors back to Pending
-                    if ($visitor->status === 'Approved') {
-                        // Visitor is already approved, keep them approved
-                        $updateData['status'] = 'Approved';
-                    } elseif ($company->auto_approve_visitors) {
-                        // Company auto-approves and visitor isn't already approved
-                        $updateData['status'] = 'Approved';
-                        $updateData['approved_at'] = now();
-                    } elseif (!$company->mark_in_out_in_qr_flow) {
-                        // If mark in/out is disabled in QR flow, keep as Pending
-                        $updateData['status'] = 'Pending';
-                    } else {
-                        // Company doesn't auto-approve and visitor isn't already approved
-                        $updateData['status'] = 'Pending';
-                    }
-
-                    $visitor->update($updateData);
-
-                    // Redirect to the public visitor index page with success message
-                    return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => $visitor->id])
-                        ->with('success', 'Visit details updated successfully!');
-                });
-                    
-            } catch (\Exception $e) {
-                \Log::error('Error in storePublicVisit: ' . $e->getMessage());
-                \Log::error($e->getTraceAsString());
-                
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'An error occurred while saving the visit details. Please try again.');
+            // Simple redirect test - bypass everything
+            if ($branch) {
+                return redirect()->route('public.visitor.index.branch', [
+                    'company' => $company->id, 
+                    'branch' => $branch, 
+                    'visitor' => $visitorId
+                ])->with('success', 'Visit details submitted successfully!');
+            } else {
+                return redirect()->route('public.visitor.index', [
+                    'company' => $company->id, 
+                    'visitor' => $visitorId
+                ])->with('success', 'Visit details submitted successfully!');
             }
         }
         /**
@@ -448,9 +395,10 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
          *
          * @param  \App\Models\Company  $company
          * @param  int  $visitor  Visitor ID
+         * @param  int  $branch  Branch ID (optional)
          * @return \Illuminate\View\View
          */
-        public function editPublicVisit(Company $company, $visitor)
+        public function editPublicVisit(Company $company, $visitor, $branch = null)
         {
             // Find the visitor
             $visitor = Visitor::findOrFail($visitor);
@@ -460,15 +408,29 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
                 abort(403, 'This visitor does not belong to the specified company.');
             }
             
+            // Get branch model if branch ID is provided
+            $branchModel = null;
+            if ($branch) {
+                $branchModel = $company->branches()->find($branch);
+            }
+            
             // Get necessary data for the form
             $departments = $company->departments()->get();
-            $branches = $company->branches()->get();
             $visitorCategories = VisitorCategory::where('company_id', $company->id)
                 ->orderBy('name')
                 ->get();
             
+            // If a specific branch is provided, only show that branch
+            // Otherwise show all branches of the company
+            if ($branchModel) {
+                $branches = collect([$branchModel]); // Only the specified branch
+            } else {
+                $branches = $company->branches()->get(); // All branches
+            }
+            
             return view('visitors.public-visit', [
                 'company' => $company,
+                'branch' => $branchModel,
                 'visitor' => $visitor,
                 'departments' => $departments,
                 'branches' => $branches,

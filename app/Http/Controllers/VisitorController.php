@@ -22,7 +22,6 @@ use Illuminate\Validation\ValidationException;
 use App\Notifications\VisitorCreated;
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Controllers\NotificationHelper;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VisitorNotificationMail;
 use App\Models\CompanyUser;
@@ -397,17 +396,18 @@ class VisitorController extends Controller
                     ->store('wpc_photos', 'public');
             }
 
-            // Auto-approval logic
+            // Auto-approval logic - but keep status as Pending until visit form is completed
             $status = 'Pending';
             $approvedAt = null;
 
-            if (!empty($validated['company_id'])) {
-                $company = Company::find($validated['company_id']);
-                if ($company && (int) $company->auto_approve_visitors === 1) {
-                    $status = 'Approved';
-                    $approvedAt = now();
-                }
-            }
+            // Don't auto-approve until visit form is completed
+            // if (!empty($validated['company_id'])) {
+            //     $company = Company::find($validated['company_id']);
+            //     if ($company && (int) $company->auto_approve_visitors === 1) {
+            //         $status = 'Approved';
+            //         $approvedAt = now();
+            //     }
+            // }
 
             $validated['status'] = $status;
             if (\Schema::hasColumn('visitors', 'approved_at')) {
@@ -417,9 +417,23 @@ class VisitorController extends Controller
             // Create visitor
             $visitor = Visitor::create($validated);
 
-            // Only create notification for visitor created if not auto-approved (normal workflow)
-            if (!$visitor->approved_at) {
-                NotificationHelper::visitorCreated($visitor);
+            // Send notification for visitor created
+            try {
+                if (!empty($visitor->company_id)) {
+                    $recipients = User::query()
+                        ->where('company_id', $visitor->company_id)
+                        ->when(!empty($visitor->branch_id), function ($q) use ($visitor) {
+                            $q->where(function ($qq) use ($visitor) {
+                                $qq->whereNull('branch_id')->orWhere('branch_id', $visitor->branch_id);
+                            });
+                        })
+                        ->get();
+                    foreach ($recipients as $user) {
+                        $user->notify(new VisitorCreated($visitor));
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
             }
 
             // Attach documents if any
@@ -485,13 +499,11 @@ class VisitorController extends Controller
                 \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
             }
 
-            // Redirect based on user type
-            $route = $this->isSuper() ? 'visitors.index' : 'company.visitors.index';
-            $message = $status === 'Approved' 
-                ? 'Visitor registered and auto-approved successfully.' 
-                : 'Visitor registered successfully. Pending approval.';
+            // Always redirect to visit form after visitor creation
+            $route = $this->isSuper() ? 'visitors.visit.form' : 'company.visitors.visit.form';
+            $message = 'Visitor registered successfully. Please complete the visit form.';
 
-            return redirect()->route($route)->with('success', $message)
+            return redirect()->route($route, $visitor->id)->with('success', $message)
                 ->with('play_notification', true)
                 ->with('visitor_name', $visitor->name);
         });
@@ -604,6 +616,15 @@ class VisitorController extends Controller
             $previousStatus = $visitor->status;
             $newStatus = $request->input('status');
             
+            // Check if visitor has completed visit form before allowing approval
+            if ($newStatus === 'Approved' && !$visitor->visit_completed_at && !($visitor->department_id && $visitor->purpose)) {
+                $message = 'Visitor must complete visit form before approval.';
+                if ($isAjax) {
+                    return response()->json(['success' => false, 'message' => $message], 422);
+                }
+                return redirect()->back()->with('error', $message);
+            }
+            
             // Update visitor status and track changes
             $visitor->last_status = $previousStatus;
             $visitor->status_changed_at = now();
@@ -613,9 +634,6 @@ class VisitorController extends Controller
             if ($newStatus === 'Approved') {
                 $visitor->approved_by = auth()->id();
                 $visitor->approved_at = now();
-                
-                // Create notification for visitor approval
-                NotificationHelper::visitorApproved($visitor);
             } 
             // Clear approval data when status changes from Approved
             elseif ($previousStatus === 'Approved') {
@@ -876,15 +894,11 @@ class VisitorController extends Controller
 
         // Check if visitor has already completed the visit form (and it hasn't been undone)
         if ($visitor->visit_completed_at && ($visitor->department_id || $visitor->person_to_visit || $visitor->purpose)) {
-            return redirect()->route('visitors.entry.page')
+            return redirect()->route('visitors.index')
                 ->with('error', 'Visitor has already completed the visit form.');
         }
 
-        // Check if visitor is approved before allowing visit form completion
-        if ($visitor->status !== 'Approved') {
-            return redirect()->route('visitors.entry.page')
-                ->with('error', 'Visitor must be approved before completing the visit form.');
-        }
+        // Allow visit form completion for Pending visitors (new flow)
 
         $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
         $isSuper = $this->isSuper();
@@ -1016,6 +1030,18 @@ class VisitorController extends Controller
                 
                 // Mark visit form as completed
                 $visitor->visit_completed_at = now();
+                
+                // Check if company has auto-approval and apply it after visit form completion
+                if (!empty($visitor->company_id)) {
+                    $company = Company::find($visitor->company_id);
+                    if ($company && $company->auto_approve_visitors && $visitor->status === 'Pending') {
+                        $updateData['status'] = 'Approved';
+                        $updateData['approved_by'] = auth()->id();
+                        $updateData['approved_at'] = now();
+                        $visitor->update($updateData);
+                    }
+                }
+                
                 $visitor->save();
 
                 // Commit the transaction
@@ -1235,9 +1261,6 @@ class VisitorController extends Controller
                 // Only update check-in time, don't modify the status
                 $visitor->in_time = now();
                 
-                // Create notification for visitor check-in
-                NotificationHelper::visitorCheckIn($visitor);
-                
                 // If auto-approval is enabled and status is Pending, update to Approved
                 if ($companyAuto && $visitor->status === 'Pending') {
                     $visitor->status = 'Approved';
@@ -1254,9 +1277,6 @@ class VisitorController extends Controller
                 }
                 
                 $visitor->out_time = now();
-                
-                // Create notification for visitor check-out
-                NotificationHelper::visitorCheckOut($visitor);
                 
                 // Only update status to Completed if it's currently Approved
                 if ($visitor->status === 'Approved') {

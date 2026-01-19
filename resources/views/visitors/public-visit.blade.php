@@ -38,11 +38,33 @@
             </div>
         @endif
 
-<form id="visitorForm" method="POST" action="{{ route('public.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
+<form id="visitorForm" method="POST" action="{{ isset($branch) && $branch ? route('public.visitor.visit.store.branch', ['company' => $company, 'branch' => $branch, 'visitor' => $visitor]) : route('public.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
     @csrf
-    @if(isset($visitor) && $visitor->exists)
-        @method('PUT')
-    @endif
+            {{-- Branch Selection (if multiple branches available) --}}
+            @if(isset($branches) && $branches->count() > 1)
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Branch <span class="text-danger">*</span></label>
+                <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror" required>
+                    <option value="">-- Select Branch --</option>
+                    @foreach($branches as $branchOption)
+                        <option value="{{ $branchOption->id }}" 
+                            {{ old('branch_id', $visitor->branch_id ?? (isset($branch) && $branch ? $branch->id : '')) == $branchOption->id ? 'selected' : '' }}>
+                            {{ $branchOption->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('branch_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            @elseif(isset($branch) && $branch)
+            {{-- Hidden field for single branch from QR scan --}}
+            <input type="hidden" name="branch_id" value="{{ $branch->id }}">
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-map-marker-alt me-2"></i>Branch: <strong>{{ $branch->name }}</strong>
+            </div>
+            @endif
+
             {{-- Department & Visitor Category --}}
             <div class="row mb-3">
                 <div class="col">
@@ -174,7 +196,7 @@
 
             {{-- Submit Button --}}
             <div class="d-grid gap-2 mt-4">
-                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
+                <a href="{{ isset($branch) && $branch ? route('qr.scan', [$company, $branch]) : route('qr.scan', $company) }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-2"></i> Back
                 </a>
                 <button type="submit" class="btn btn-primary" id="submitButton">
@@ -236,173 +258,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinner = document.getElementById('spinner');
 
     if (form) {
-        // Initialize form validation
-        form.classList.add('needs-validation');
-        
-        // Handle form submission
-        form.addEventListener('submit', function() {
+        // Handle form submission - just show loading state, don't prevent default
+        form.addEventListener('submit', function(e) {
             // Show loading state
             if (submitButton && buttonText && spinner) {
                 submitButton.disabled = true;
                 buttonText.textContent = 'Saving...';
                 spinner.classList.remove('d-none');
             }
-            
-            // Create FormData object and ensure all fields are included
-            const formData = new FormData(form);
-            
-            // Explicitly add visitor_category_id to formData if it exists in the form
-            const visitorCategory = form.querySelector('select[name="visitor_category_id"]');
-            if (visitorCategory) {
-                formData.set('visitor_category_id', visitorCategory.value || '');
-            }
-            
-            // Submit form via AJAX
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json, text/plain, */*'
-                },
-                credentials: 'same-origin'
-            })
-            .then(async response => {
-                const contentType = response.headers.get('content-type');
-                
-                if (!response.ok) {
-                    if (contentType && contentType.includes('application/json')) {
-                        const err = await response.json();
-                        throw err;
-                    } else {
-                        const text = await response.text();
-                        // Try to parse as JSON in case the content-type header was wrong
-                        try {
-                            const json = JSON.parse(text);
-                            throw json;
-                        } catch (e) {
-                            // If not JSON, create a generic error
-                            const error = new Error('Request failed with status ' + response.status);
-                            error.status = response.status;
-                            error.responseText = text;
-                            throw error;
-                        }
-                    }
-                }
-                
-                if (contentType && contentType.includes('application/json')) {
-                    return response.json();
-                } else {
-                    return response.text().then(text => ({})); // Return empty object for non-JSON responses
-                }
-            })
-            .then(data => {
-                // Show success message
-                const alertHtml = `
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        ${data.message || 'Visit information saved successfully!'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>`;
-                
-                // Insert alert at the top of the form
-                form.insertAdjacentHTML('afterbegin', alertHtml);
-                
-                // Scroll to top to show the message
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                
-                // If there's a redirect URL, redirect after a short delay
-                if (data.redirect) {
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 1500);
-                }
-            })
-            .catch(error => {
-                console.error('Form submission error:', error);
-                
-                // Default error message
-                let errorMessage = 'An error occurred while saving. Please try again.';
-                
-                // Check if it's a validation error
-                if (error.errors) {
-                    // Handle validation errors
-                    Object.keys(error.errors).forEach(field => {
-                        const input = form.querySelector(`[name="${field}"]`);
-                        if (input) {
-                            input.classList.add('is-invalid');
-                            let feedback = input.nextElementSibling;
-                            
-                            if (!feedback || !feedback.classList.contains('invalid-feedback')) {
-                                feedback = document.createElement('div');
-                                feedback.className = 'invalid-feedback';
-                                input.parentNode.insertBefore(feedback, input.nextSibling);
-                            }
-                            
-                            feedback.textContent = Array.isArray(error.errors[field]) ? 
-                                error.errors[field][0] : 
-                                error.errors[field];
-                            feedback.style.display = 'block';
-                        }
-                    });
-                    
-                    errorMessage = 'Please correct the errors in the form.';
-                } 
-                // Handle response text for non-JSON responses
-                else if (error.responseText) {
-                    try {
-                        // Try to parse as JSON in case it's a JSON string
-                        const errorData = JSON.parse(error.responseText);
-                        errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
-                    } catch (e) {
-                        // If not JSON, use the text as is
-                        errorMessage = error.responseText.length < 200 ? 
-                            error.responseText : 
-                            'An error occurred. Please check the console for details.';
-                    }
-                }
-                // Use error message if available
-                else if (error.message) {
-                    errorMessage = error.message;
-                }
-                
-                // Remove any existing alerts to prevent duplicates
-                const existingAlerts = form.querySelectorAll('.alert');
-                existingAlerts.forEach(alert => alert.remove());
-                
-                // Create and show error alert
-                const alertHtml = `
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        ${errorMessage.replace(/<[^>]*>?/gm, '')} <!-- Sanitize HTML -->
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>`;
-                
-                // Insert alert at the top of the form
-                form.insertAdjacentHTML('afterbegin', alertHtml);
-                
-                // Scroll to top to show the message
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                
-                // Re-enable the form in case of error
-                submitButton.disabled = false;
-                buttonText.textContent = 'Save Visit Info';
-                spinner.classList.add('d-none');
-            })
-            .finally(() => {
-                // Only reset button state if not in error case (error handling already resets it)
-                if (submitButton.disabled && !form.querySelector('.alert-danger')) {
-                    submitButton.disabled = false;
-                    buttonText.textContent = 'Save Visit Info';
-                    spinner.classList.add('d-none');
-                }
-            });
+            // Let the form submit normally - don't prevent default
         });
-        
-        // Ensure all form fields are included in FormData
-        form.addEventListener('submit', function(e) {
-            // This ensures all fields are included in the FormData
-        }, true);
         
         // Real-time validation
         const formInputs = form.querySelectorAll('input, select, textarea');
@@ -417,13 +282,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-    }
-
-    // Initialize date picker if needed
-    const dateInput = document.querySelector('input[type="date"]');
-    if (dateInput && !dateInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
     }
 });
 </script>

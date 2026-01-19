@@ -109,7 +109,9 @@ Route::prefix('qr')->name('qr.')->group(function () {
     // QR Code Management
     Route::get('/scan/{company}/{branch?}', [\App\Http\Controllers\QRController::class, 'scan'])->name('scan');
     Route::get('/{company}/visitor/create', [\App\Http\Controllers\QRController::class, 'createVisitor'])->name('visitor.create');
+    Route::get('/{company}/{branch}/visitor/create', [\App\Http\Controllers\QRController::class, 'createVisitor'])->name('visitor.create.branch');
     Route::post('/{company}/visitor', [\App\Http\Controllers\QRController::class, 'storeVisitor'])->name('visitor.store');
+    Route::post('/{company}/{branch}/visitor', [\App\Http\Controllers\QRController::class, 'storeVisitor'])->name('visitor.store.branch');
     // Route::get('/{company}/visitor/{visitor}/visit', [QRManagementController::class, 'showVisitForm'])->name('visitor.visit.form');
     Route::post('/{company}/visitor/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storeVisit'])->name('visitor.visit.store');
         
@@ -620,13 +622,25 @@ Route::prefix('public')->name('public.')->group(function () {
     Route::get('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
         ->name('visitor.visit.form');
     
+    // Show public visit form with branch (for branch-specific QR scans)
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
+        ->name('visitor.visit.form.branch');
+    
     // Handle public visit form submission (for new and existing visits)
     Route::match(['post', 'put'], '/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
         ->name('visitor.visit.store');
     
+    // Handle public visit form submission with branch (for branch-specific QR scans)
+    Route::match(['post', 'put'], '/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
+        ->name('visitor.visit.store.branch');
+    
     // Show edit form for existing visits
     Route::get('/companies/{company}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
         ->name('visitor.visit.edit');
+    
+    // Show edit form for existing visits with branch
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
+        ->name('visitor.visit.edit.branch');
     
     // Show visitor details
     Route::get('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRController::class, 'showPublicVisitor'])
@@ -652,7 +666,7 @@ Route::get('/robots.txt', function () {
 //////////////site map///////
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
 
-// Temporary fix for notification preference API
+Route::get('/api/companies/{company}/face-recognition', [VisitorController::class, 'checkFaceRecognition'])->name('api.companies.face-recognition');
 Route::get('/api/companies/{company}/notification-preference', function (\App\Models\Company $company) {
     return response()->json([
         'enable_visitor_notifications' => (bool) $company->enable_visitor_notifications,

@@ -161,13 +161,6 @@
                 </div>
 
                 <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="visitor_notifications_enabled" name="visitor_notifications_enabled" value="1"
-                        {{ old('visitor_notifications_enabled') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="visitor_notifications_enabled">Enable Visitor Notifications</label>
-                    <small class="form-text text-muted d-block">When enabled, notifications will be displayed throughout the software for visitor events (created, approved, check-in/out).</small>
-                </div>
-
-                <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="enable_visitor_notifications" name="enable_visitor_notifications" value="1"
                         {{ old('enable_visitor_notifications') ? 'checked' : '' }}>
                     <label class="form-check-label" for="enable_visitor_notifications">Enable Visitor Notifications</label>

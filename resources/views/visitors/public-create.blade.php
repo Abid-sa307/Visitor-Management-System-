@@ -24,7 +24,7 @@
       </div>
     @endif
 
-    <form action="{{ route('qr.visitor.store', $company) }}" method="POST" enctype="multipart/form-data" id="visitorForm">
+    <form action="{{ isset($branch) && $branch ? route('qr.visitor.store.branch', [$company, $branch]) : route('qr.visitor.store', $company) }}" method="POST" enctype="multipart/form-data" id="visitorForm">
       @csrf
       
       <!-- Hidden inputs for face recognition -->

@@ -346,9 +346,10 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
  *
  * @param  \App\Models\Company  $company
  * @param  int|string  $visitor  Visitor ID or 'create' to show creation form
+ * @param  int|null  $branch  Branch ID (optional)
  * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
  */
-public function publicVisitorIndex(Company $company, $visitor = null)
+public function publicVisitorIndex(Company $company, $visitor = null, $branch = null)
 {
     try {
         // If visitor is 'create', show the creation form
@@ -356,8 +357,9 @@ public function publicVisitorIndex(Company $company, $visitor = null)
             return $this->createVisitor($company);
         }
 
-        // Find the visitor
-        $visitor = \App\Models\Visitor::findOrFail($visitor);
+        // Find the visitor with relationships
+        $visitor = \App\Models\Visitor::with(['department', 'branch', 'visitorCategory'])
+            ->findOrFail($visitor);
         
         // Verify visitor belongs to company
         if ($visitor->company_id != $company->id) {
@@ -371,13 +373,15 @@ public function publicVisitorIndex(Company $company, $visitor = null)
         $departments = $company->departments()->orderBy('name')->get();
         $employees = $company->employees()->orderBy('name')->get();
         
-        // Check if a specific branch was passed in the request or route
-        $branchId = request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
+        // Handle branch - check route parameter, query parameter, or session
+        $branchId = $branch ?? request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
         $branchModel = null;
         
         if ($branchId) {
             $branchModel = $company->branches()->find($branchId);
             $branches = $branchModel ? collect([$branchModel]) : $company->branches;
+            // Store branch ID in session for later use
+            session(['scanned_branch_id' => $branchId]);
         } else {
             $branches = $company->branches;
         }

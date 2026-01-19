@@ -124,7 +124,7 @@
             <td>{{ $visitor->company->name ?? '—' }}</td>
             <td>{{ $visitor->branch->name ?? '—' }}</td>
             <td>{{ $visitor->email ?? '—' }}</td>
-            <td>{{ $visitor->visit_date ? 'Jan 08, 2026' : '—' }}</td>
+            <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
             <td>
                 <span class="badge bg-warning">{{ $visitor->status ?? 'Pending' }}</span>
             </td>

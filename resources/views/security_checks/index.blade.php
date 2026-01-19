@@ -161,7 +161,7 @@
                                 $toggleRoute = $isCompany ? 'company.security-checks.toggle' : 'security-checks.toggle';
                                 $hasSecurityCheckin = $visitor->security_checkin_time !== null;
                                 $hasSecurityCheckout = $visitor->security_checkout_time !== null;
-                                $canUndoCheckin = $hasSecurityCheckin && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
+                                $canUndoCheckin = $hasSecurityCheckin && !$visitor->in_time && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
                                 $canUndoCheckout = $hasSecurityCheckout && \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) <= 30;
                                 $securityCheckinType = $visitor->company ? $visitor->company->security_checkin_type : 'both';
                                 $showCheckinButton = in_array($securityCheckinType, ['checkin', 'both']);
@@ -198,16 +198,16 @@
                                                 <i class="fas fa-sign-in-alt me-1"></i> Check In
                                             </button>
                                         </form>
-                                    @elseif(!$hasSecurityCheckout && $showCheckoutButton)
-                                        {{-- Security Check-out Button --}}
-                                        @if($visitor->in_time && !$visitor->out_time)
+                                    @elseif($hasSecurityCheckin && !$hasSecurityCheckout)
+                                        {{-- Show Check-out and Undo Check-in buttons --}}
+                                        @if($showCheckoutButton && $visitor->in_time && !$visitor->out_time)
                                             <a href="{{ route($checkoutRoute, $visitor->id) }}" class="btn btn-sm btn-warning" title="Security Check-out Form">
                                                 <i class="fas fa-clipboard-check me-1"></i> Check Out
                                             </a>
                                         @endif
                                         
                                         {{-- Undo Check-in Button --}}
-                                        @if($canUndoCheckin && $showCheckinButton)
+                                        @if($canUndoCheckin)
                                             <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 <input type="hidden" name="action" value="undo_checkin">

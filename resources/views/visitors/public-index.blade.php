@@ -216,7 +216,7 @@
                                     </a>
                                 @endif
                                 @if($visitor->status === 'Approved')
-                                    <a href="{{ route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
+                                    <a href="{{ isset($branch) && $branch ? route('public.visitor.visit.edit.branch', ['company' => $company, 'branch' => $branch, 'visitor' => $visitor]) : route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
                                        class="btn btn-outline-primary px-4">
                                         <i class="bi bi-pencil-square me-2"></i> Update Visit Information
                                     </a>
@@ -246,10 +246,16 @@
                                                 <div class="text-muted small mb-1">Email Address</div>
                                                 <div class="fw-medium">{{ $visitor->email ?? 'N/A' }}</div>
                                             </div>
-                                            <div class="info-item">
+                                            <div class="info-item mb-3">
                                                 <div class="text-muted small mb-1">Phone Number</div>
                                                 <div class="fw-medium">{{ $visitor->phone }}</div>
                                             </div>
+                                            @if($visitor->visitor_company)
+                                            <div class="info-item">
+                                                <div class="text-muted small mb-1">Company</div>
+                                                <div class="fw-medium">{{ $visitor->visitor_company }}</div>
+                                            </div>
+                                            @endif
                                         </div>
                                         <div class="col-md-6">
                                             <div class="info-item mb-3">
@@ -260,10 +266,16 @@
                                                     </span>
                                                 </div>
                                             </div>
-                                            @if($visitor->visitor_company)
+                                            @if($visitor->department)
                                             <div class="info-item mb-3">
-                                                <div class="text-muted small mb-1">Company</div>
-                                                <div class="fw-medium">{{ $visitor->visitor_company }}</div>
+                                                <div class="text-muted small mb-1">Department</div>
+                                                <div class="fw-medium">{{ $visitor->department->name }}</div>
+                                            </div>
+                                            @endif
+                                            @if($visitor->branch)
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Branch</div>
+                                                <div class="fw-medium">{{ $visitor->branch->name }}</div>
                                             </div>
                                             @endif
                                             @if($visitor->status_changed_at)
@@ -276,6 +288,66 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Visit Details Card -->
+                            @if($visitor->purpose || $visitor->person_to_visit || $visitor->visitor_website)
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-light py-3">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-calendar-check me-2"></i>Visit Details
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        @if($visitor->purpose)
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Purpose of Visit</div>
+                                                <div class="fw-medium">{{ $visitor->purpose }}</div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        @if($visitor->person_to_visit)
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Person to Visit</div>
+                                                <div class="fw-medium">{{ $visitor->person_to_visit }}</div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        @if($visitor->visitor_website)
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Company Website</div>
+                                                <div class="fw-medium">
+                                                    <a href="{{ $visitor->visitor_website }}" target="_blank" class="text-decoration-none">
+                                                        {{ $visitor->visitor_website }}
+                                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        @if($visitor->visit_date)
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Visit Date</div>
+                                                <div class="fw-medium">{{ \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') }}</div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        @if($visitor->visitorCategory)
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-3">
+                                                <div class="text-muted small mb-1">Visitor Category</div>
+                                                <div class="fw-medium">{{ $visitor->visitorCategory->name }}</div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                             
                             <!-- Vehicle Information (if available) -->
                             @if($visitor->vehicle_number || $visitor->vehicle_type)
@@ -359,7 +431,7 @@
                                     </div>
                                     
                                     <div class="d-grid gap-3 col-lg-6 mx-auto">
-                                        <a href="{{ route('qr.visitor.create', ['company' => $company->id]) }}{{ isset($branch) && $branch ? '?branch=' . $branch->id : '' }}" 
+                                        <a href="{{ isset($branch) && $branch ? route('qr.visitor.create.branch', [$company->id, $branch->id]) : route('qr.visitor.create', $company->id) }}" 
                                            class="btn btn-primary btn-lg rounded-pill py-3">
                                             <i class="bi bi-person-plus me-2"></i> Register New Visit
                                         </a>
@@ -378,28 +450,14 @@
                                     <p class="lead text-muted mb-4">Please register as a visitor to continue your visit</p>
                                     
                                     <div class="d-grid gap-3 col-lg-6 mx-auto">
-                                        <a href="{{ route('qr.visitor.create', ['company' => $company->id]) }}{{ isset($branch) && $branch ? '?branch=' . $branch->id : '' }}" 
+                                        <a href="{{ isset($branch) && $branch ? route('qr.visitor.create.branch', [$company->id, $branch->id]) : route('qr.visitor.create', $company->id) }}" 
                                            class="btn btn-primary btn-lg rounded-pill py-3">
                                             <i class="bi bi-person-plus me-2"></i> Register as Visitor
                                         </a>
                                         @if(isset($branch) && $branch)
                                             <small class="text-muted">Branch: {{ $branch->name }}</small>
                                         @endif
-                                        
-                                        <div class="position-relative my-4">
-                                            <hr>
-                                            <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">OR</span>
-                                        </div>
-                                        
-                                        <div class="card border-0 shadow-sm">
-                                            <div class="card-body p-4">
-                                                <h5 class="h6 mb-3">Already registered?</h5>
-                                                <button class="btn btn-outline-secondary w-100" disabled>
-                                                    <i class="bi bi-box-arrow-in-right me-2"></i> Check In for Visit
-                                                </button>
-                                                <p class="small text-muted mt-2 mb-0">Check-in will be available after registration and approval.</p>
-                                            </div>
-                                        </div>
+                                       
                                     </div>
                                     
                                     <div class="alert alert-light border mt-5" role="alert">

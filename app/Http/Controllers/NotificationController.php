@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Notification;
-use App\Models\Company;
-use App\Http\Controllers\NotificationHelper;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -16,16 +13,12 @@ class NotificationController extends Controller
     {
         $user = auth()->user();
         
-        // For company users, get their company's notifications
-        if ($user instanceof \App\Models\Company) {
-            $company = $user;
-        } else {
-            // For admin users, you might want to handle differently
+        if (!$user || !$user->company_id) {
             return response()->json(['notifications' => [], 'unread_count' => 0]);
         }
 
-        $notifications = NotificationHelper::getRecentNotifications($company);
-        $unreadCount = NotificationHelper::getUnreadCount($company);
+        $notifications = $user->notifications()->latest()->take(10)->get();
+        $unreadCount = $user->unreadNotifications()->count();
 
         return response()->json([
             'notifications' => $notifications,
@@ -40,18 +33,16 @@ class NotificationController extends Controller
     {
         $user = auth()->user();
         
-        // For company users, mark their company's notifications as read
-        if ($user instanceof \App\Models\Company) {
-            $company = $user;
-            $count = NotificationHelper::markAsRead($company);
-            
-            return response()->json([
-                'success' => true,
-                'marked_read' => $count
-            ]);
+        if (!$user) {
+            return response()->json(['success' => false]);
         }
 
-        return response()->json(['success' => false]);
+        $user->unreadNotifications->markAsRead();
+        
+        return response()->json([
+            'success' => true,
+            'marked_read' => $user->unreadNotifications()->count()
+        ]);
     }
 
     /**
@@ -61,14 +52,12 @@ class NotificationController extends Controller
     {
         $user = auth()->user();
         
-        // For company users, get their company's unread count
-        if ($user instanceof \App\Models\Company) {
-            $company = $user;
-            $count = NotificationHelper::getUnreadCount($company);
-            
-            return response()->json(['unread_count' => $count]);
+        if (!$user) {
+            return response()->json(['unread_count' => 0]);
         }
 
-        return response()->json(['unread_count' => 0]);
+        $count = $user->unreadNotifications()->count();
+        
+        return response()->json(['unread_count' => $count]);
     }
 }
