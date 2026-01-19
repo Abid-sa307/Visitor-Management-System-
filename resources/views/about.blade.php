@@ -90,7 +90,7 @@
       left: 50%;
       transform: translateX(-50%);
       width: 80px;
-      height: 4px;
+      /* height: 4px; */
       background: linear-gradient(to right, var(--primary), var(--secondary));
       border-radius: 2px;
     }
@@ -650,6 +650,10 @@
     </div>
   </section>
 
+  @include('components.home-contact-section')
+  @stack('styles')
+
+
   {{-- Footer --}}
   @include('layouts.footer')
 
@@ -684,5 +688,6 @@
       });
     });
   </script>
+  @stack('scripts')
 </body>
 </html>

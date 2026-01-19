@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\VmsLandingController;
 use App\Http\Controllers\{
     ProfileController,
     VisitorController,
@@ -80,13 +81,14 @@ Route::get('/temple-and-dargah', fn() => view('pages.temple-and-dargah'))->name(
 Route::get('/privacy-policy', fn() => view('pages.privacy-policy'))->name('privacy-policy');
 Route::get('/terms-of-use', fn() => view('pages.terms-of-use'))->name('terms-of-use');
 Route::get('/refund-and-cancellation', fn() => view('pages.refund-and-cancellation'))->name('refund-and-cancellation');
-Route::get('/visitor-management-system-in-usa', fn() => view('pages.visitor-management-system-in-usa'))->name('visitor-management-system-in-usa');
-Route::get('/visitor-management-system-in-uk', fn() => view('pages.visitor-management-system-in-uk'))->name('visitor-management-system-in-uk');
 
 
 
 
 
+Route::get('/visitor-management-system-in-{country}', [VmsLandingController::class, 'country'])
+    ->where('country', '[A-Za-z\-]+')
+    ->name('vms.country');
 
 /*
 |--------------------------------------------------------------------------|

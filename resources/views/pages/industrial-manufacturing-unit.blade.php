@@ -15,6 +15,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
   <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
   <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -24,12 +25,16 @@
   <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
   <style>
     :root {
-      --industrial-primary: #2c3e50;
-      --industrial-secondary: #34495e;
-      --industrial-accent: #e74c3c;
-      --industrial-light: #ecf0f1;
-      --industrial-dark: #1a252f;
-      --industrial-warning: #f39c12;
+      --primary: #4e73df;
+      --primary-dark: #224abe;
+      --secondary: #6f42c1;
+      --light: #f8f9fc;
+      --dark: #5a5c69;
+      --accent: #36b9cc;
+      --success: #1cc88a;
+      --warning: #f6c23e;
+      --info: #36b9cc;
+      --danger: #e74a3b;
     }
 
     body {
@@ -43,11 +48,7 @@
 
     /* Hero Section */
     .industrial-hero {
-      background: linear-gradient(135deg, rgba(44, 62, 80, 0.9) 0%, rgba(52, 73, 94, 0.9) 100%),
-        url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       color: white;
       padding: 150px 0 100px;
       text-align: center;
@@ -62,20 +63,11 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-      animation: float 20s infinite linear;
-    }
-
-    @keyframes float {
-      0% {
-        transform: translate(0, 0);
-      }
-
-      100% {
-        transform: translate(-100px, -100px);
-      }
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,122.7C672,128,768,160,864,170.7C960,181,1056,171,1152,165.3C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center bottom;
     }
 
     .industrial-hero h1 {
@@ -95,39 +87,24 @@
     }
 
     .btn-industrial {
-      background: linear-gradient(to right, var(--industrial-primary), var(--industrial-secondary));
-      color: white;
+      background: white;
+      color: #333;
       border: none;
       padding: 15px 35px;
       border-radius: 50px;
       font-weight: 600;
       transition: all 0.3s;
-      box-shadow: 0 5px 15px rgba(44, 62, 80, 0.4);
+      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
       position: relative;
       overflow: hidden;
       z-index: 1;
     }
 
-    .btn-industrial:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(to right, var(--industrial-secondary), var(--industrial-primary));
-      transition: all 0.5s;
-      z-index: -1;
-    }
-
     .btn-industrial:hover {
+      background: white;
       transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(44, 62, 80, 0.6);
-      color: white;
-    }
-
-    .btn-industrial:hover:before {
-      width: 100%;
+      box-shadow: 0 10px 25px rgba(255, 255, 255, 0.4);
+      color: #333;
     }
 
     .section-title {
@@ -138,7 +115,7 @@
 
     .section-title h2 {
       font-weight: 800;
-      color: var(--industrial-dark);
+      color: var(--dark);
       display: inline-block;
       padding-bottom: 15px;
       font-size: 2.5rem;
@@ -149,7 +126,7 @@
       position: absolute;
       width: 80px;
       height: 5px;
-      background: linear-gradient(to right, var(--industrial-primary), var(--industrial-accent));
+      background: linear-gradient(to right, var(--primary), var(--secondary));
       bottom: 0;
       left: 50%;
       transform: translateX(-50%);
@@ -170,7 +147,7 @@
       padding: 40px 30px;
       height: 100%;
       transition: all 0.4s;
-      border-top: 5px solid var(--industrial-accent);
+      border-top: 5px solid var(--primary);
       position: relative;
       overflow: hidden;
       z-index: 1;
@@ -183,7 +160,7 @@
       left: 0;
       width: 100%;
       height: 0;
-      background: linear-gradient(to bottom, var(--industrial-light), white);
+      background: linear-gradient(to bottom, var(--light), white);
       transition: all 0.4s;
       z-index: -1;
     }
@@ -200,26 +177,26 @@
     .feature-icon {
       width: 80px;
       height: 80px;
-      background: rgba(44, 62, 80, 0.1);
+      background: rgba(78, 115, 223, 0.1);
       border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 25px;
       font-size: 35px;
-      color: var(--industrial-primary);
+      color: var(--primary);
       transition: all 0.3s;
     }
 
     .feature-card:hover .feature-icon {
-      background: var(--industrial-primary);
+      background: var(--primary);
       color: white;
       transform: rotateY(180deg);
     }
 
     .feature-card h4 {
       font-weight: 700;
-      color: var(--industrial-dark);
+      color: var(--dark);
       margin-bottom: 15px;
     }
 
@@ -248,7 +225,7 @@
       left: 0;
       width: 100%;
       height: 5px;
-      background: linear-gradient(to right, var(--industrial-primary), var(--industrial-accent));
+      background: linear-gradient(to right, var(--primary), var(--secondary));
       transition: all 0.4s;
       z-index: -1;
     }
@@ -264,7 +241,7 @@
 
     .industry-type i {
       font-size: 60px;
-      color: var(--industrial-primary);
+      color: var(--primary);
       margin-bottom: 25px;
       transition: all 0.3s;
     }
@@ -276,7 +253,7 @@
 
     .industry-type h3 {
       font-weight: 700;
-      color: var(--industrial-dark);
+      color: var(--dark);
       margin-bottom: 20px;
       transition: all 0.3s;
     }
@@ -314,7 +291,7 @@
       content: '✓';
       position: absolute;
       left: 0;
-      color: var(--industrial-primary);
+      color: var(--primary);
       font-weight: bold;
       transition: all 0.3s;
     }
@@ -342,27 +319,27 @@
     .benefit-icon {
       width: 70px;
       height: 70px;
-      background: rgba(44, 62, 80, 0.1);
+      background: rgba(78, 115, 223, 0.1);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-right: 25px;
       flex-shrink: 0;
-      color: var(--industrial-primary);
+      color: var(--primary);
       font-size: 25px;
       transition: all 0.3s;
     }
 
     .benefit-item:hover .benefit-icon {
-      background: var(--industrial-primary);
+      background: var(--primary);
       color: white;
       transform: scale(1.1);
     }
 
     .benefit-content h4 {
       font-weight: 700;
-      color: var(--industrial-dark);
+      color: var(--dark);
       margin-bottom: 10px;
     }
 
@@ -389,7 +366,7 @@
     .testimonial-card:before {
       content: '"';
       font-size: 100px;
-      color: rgba(44, 62, 80, 0.1);
+      color: rgba(78, 115, 223, 0.1);
       position: absolute;
       top: 10px;
       left: 20px;
@@ -420,18 +397,18 @@
       border-radius: 50%;
       object-fit: cover;
       margin-right: 15px;
-      border: 3px solid var(--industrial-light);
+      border: 3px solid var(--light);
     }
 
     .author-info h5 {
       margin-bottom: 5px;
-      color: var(--industrial-dark);
+      color: var(--dark);
       font-weight: 700;
     }
 
     .author-info p {
       margin-bottom: 0;
-      color: var(--industrial-primary);
+      color: var(--primary);
       font-size: 0.9rem;
     }
 
@@ -455,7 +432,7 @@
       left: 0;
       width: 100%;
       height: 0;
-      background: linear-gradient(to bottom, var(--industrial-light), white);
+      background: linear-gradient(to bottom, var(--light), white);
       transition: all 0.4s;
       z-index: -1;
     }
@@ -465,9 +442,9 @@
     }
 
     .pricing-card.featured {
-      border-color: var(--industrial-primary);
+      border-color: var(--primary);
       transform: scale(1.05);
-      box-shadow: 0 15px 40px rgba(44, 62, 80, 0.2);
+      box-shadow: 0 15px 40px rgba(78, 115, 223, 0.2);
     }
 
     .pricing-card.featured:before {
@@ -475,7 +452,7 @@
       position: absolute;
       top: 20px;
       right: -35px;
-      background: var(--industrial-primary);
+      background: var(--primary);
       color: white;
       padding: 8px 40px;
       transform: rotate(45deg);
@@ -485,7 +462,7 @@
     }
 
     .pricing-card h3 {
-      color: var(--industrial-secondary);
+      color: var(--secondary);
       font-weight: 700;
       margin-bottom: 20px;
     }
@@ -493,7 +470,7 @@
     .price {
       font-size: 3.5rem;
       font-weight: 800;
-      color: var(--industrial-primary);
+      color: var(--primary);
       margin: 25px 0;
       display: flex;
       align-items: flex-start;
@@ -525,7 +502,7 @@
     }
 
     .pricing-features li i {
-      color: var(--industrial-primary);
+      color: var(--primary);
       margin-right: 10px;
       font-size: 1.2rem;
     }
@@ -561,11 +538,11 @@
       align-items: center;
       transition: all 0.3s;
       font-size: 1.1rem;
-      color: var(--industrial-dark);
+      color: var(--dark);
     }
 
     .faq-question:hover {
-      background: var(--industrial-light);
+      background: var(--light);
     }
 
     .faq-question i {
@@ -581,7 +558,7 @@
     }
 
     .faq-item.active .faq-question {
-      background: var(--industrial-primary);
+      background: var(--primary);
       color: white;
     }
 
@@ -595,7 +572,7 @@
     }
 
     .cta-section {
-      background: linear-gradient(135deg, var(--industrial-primary) 0%, var(--industrial-secondary) 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       color: white;
       padding: 100px 0;
       border-radius: 30px;
@@ -610,10 +587,11 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-      animation: float 20s infinite linear;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,128L48,117.3C96,107,192,85,288,112C384,139,480,213,576,224C672,235,768,181,864,170.7C960,160,1056,192,1152,192C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center bottom;
     }
 
     .cta-content {
@@ -699,7 +677,7 @@
         <h2>Industrial-Grade Visitor Management Features</h2>
         <p>
           Our system is specifically designed to meet the rigorous demands of
-          manufacturing plants and industrial facilities
+          manufacturing plants and industrial facilities 
         </p>
       </div>
 
@@ -715,7 +693,7 @@
             <h4>Analytics Dashboard</h4>
             <p>
               Get real-time insights with interactive dashboards to monitor visitor
-              activity and trends.
+              activity and trends for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -728,7 +706,7 @@
             <h4>Hourly Visitor Analysis</h4>
             <p>
               Get detailed reports of visitor inflow and outflow segmented by hours,
-              helping management optimize staffing and improve security efficiency.
+              helping management optimize staffing and improve security efficiency for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -743,7 +721,7 @@
             <h4>Advanced Reporting</h4>
             <p>
               Comprehensive audit trails and compliance reports for regulatory
-              requirements.
+              requirements for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -759,7 +737,7 @@
             <h4>Safety Compliance Tracking</h4>
             <p>
               Ensure all visitors complete safety inductions and acknowledge
-              facility rules before entry.
+              facility rules before entry for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -774,7 +752,7 @@
             <h4>User-Wise Control</h4>
             <p>
               Role-based access ensures every department has the right level of
-              control and visibility.
+              control and visibility for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -788,7 +766,7 @@
             <h4>Auto Approval Process</h4>
             <p>
               Department-wise visitor approval workflows with optional
-              auto-approval rules.
+              auto-approval rules for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -802,7 +780,7 @@
             <h4>Visitor In-Out Tracking</h4>
             <p>
               Track every visitor’s entry and exit in real-time with accurate logs
-              and time-stamps.
+              and time-stamps for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -816,7 +794,7 @@
             <h4>Instant Notifications</h4>
             <p>
               Get notified instantly via WhatsApp and Email when a visitor arrives
-              or requests access.
+              or requests access for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -830,7 +808,7 @@
             <h4>Face Recognition Technology</h4>
             <p>
               Ensure secure, touchless entry with AI-powered facial recognition
-              authentication.
+              authentication for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -844,7 +822,7 @@
             <h4>Print Visitor Pass</h4>
             <p>
               Generate and print visitor passes instantly, including dynamic passes
-              with QR codes.
+              with QR codes for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -858,7 +836,7 @@
             <h4>Pre-Approval</h4>
             <p>
               Visitors can be pre-approved by hosts to save time and speed up
-              entry.
+              entry for Industrial  Visitor Management System.
             </p>
           </div>
         </div>
@@ -869,7 +847,7 @@
               <i class="bi bi-people"></i>
             </div>
             <h4>Visitor In-Out Entry</h4>
-            <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods:</p>
+            <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods for Industrial  Visitor Management System:</p>
             <ul class="list-unstyled mt-3">
               <li class="mb-2">
                 <i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry
@@ -885,8 +863,8 @@
         </div>
 
 
-  </section>
-
+  </section> 
+ 
   <!-- Industry Types Section -->
   <section id="solutions" class="py-5">
     <div class="container">
@@ -1012,7 +990,7 @@
 
 
   <section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
-           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+           background:linear-gradient(135deg,#4e73df 0%,#224abe 50%,#6f42c1 100%);">
 
     {{-- Radial glow background --}}
     <div style="position:absolute;inset:0;opacity:0.35;
@@ -1051,7 +1029,7 @@
                         justify-content:center;
                         border-radius:999px;
                         background:#ffffff;
-                        color:#4338ca;
+                        color:#4e73df;
                         font-weight:800;
                         letter-spacing:0.04em;
                         padding:0.9rem 2.3rem;
@@ -1088,12 +1066,12 @@
           <!-- Analytics Dashboard -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>Does the system provide analytics and reports?</span>
+              <span>Does the system provide analytics and reports for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
               <p>
-                Yes, the system includes an interactive analytics dashboard and advanced reporting tools
+                Yes, the Industrial visitor management system includes an interactive analytics dashboard and advanced reporting tools
                 to monitor visitor trends, inflow/outflow analysis and compliance requirements in real-time.
               </p>
             </div>
@@ -1102,13 +1080,13 @@
           <!-- Hourly Visitor Analysis -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>Can we track visitors on an hourly basis?</span>
+              <span>Can we track visitors on an hourly basis for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
               <p>
                 Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics
-                segmented by the hour, helping optimize staffing and enhance security monitoring.
+                segmented by the hour, helping optimize staffing and enhance security monitoring in Industrial visitor management system.
               </p>
             </div>
           </div>
@@ -1116,12 +1094,12 @@
           <!-- Safety Compliance -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>How does the system ensure visitor safety compliance?</span>
+              <span>How does the system ensure visitor safety compliance for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
               <p>
-                Visitors must complete safety inductions and acknowledge compliance rules before entry.
+               Industrial Visitors must complete safety inductions and acknowledge compliance rules before entry.
                 The system tracks and records all safety acknowledgments for audit purposes.
               </p>
             </div>
@@ -1130,7 +1108,7 @@
           <!-- Face Recognition -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>Does the system support face recognition for entry?</span>
+              <span>Does the system support face recognition for entry for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
@@ -1144,12 +1122,12 @@
           <!-- Notifications -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>Will we get notified when visitors arrive?</span>
+              <span>Will we get notified when visitors arrive for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
               <p>
-                Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access
+                Instant notifications are sent to hosts via WhatsApp and Email whenever a  Industrial visitor requests access
                 or checks in at the facility.
               </p>
             </div>
@@ -1158,12 +1136,12 @@
           <!-- Visitor Pass -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>Can we generate visitor passes directly from the system?</span>
+              <span>Can we generate visitor passes directly from the system for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
               <p>
-                Yes, the system allows you to instantly generate and print visitor passes,
+                Yes, the Industrial visitor management system allows you to instantly generate and print visitor passes,
                 including QR code-enabled dynamic passes for quick access.
               </p>
             </div>
@@ -1172,12 +1150,12 @@
           <!-- Pre-Approval -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>Is there a visitor pre-approval process?</span>
+              <span>Is there a visitor pre-approval process for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
               <p>
-                Visitors can be pre-approved by hosts through the system, enabling faster entry
+                Industrial Visitors can be pre-approved by hosts through the system, enabling faster entry
                 and minimizing wait times at the gate.
               </p>
             </div>
@@ -1186,13 +1164,13 @@
           <!-- Visitor Entry Options -->
           <div class="faq-item">
             <div class="faq-question">
-              <span>What methods are available for visitor check-in and check-out?</span>
+              <span>What methods are available for visitor check-in and check-out for industrial manufacturing unit?</span>
               <i class="bi bi-chevron-down"></i>
             </div>
             <div class="faq-answer">
               <p>
                 The system supports multiple entry options including manual entry by security staff,
-                face recognition and QR code scanning for seamless visitor management.
+                face recognition and QR code scanning for seamless industrial visitor management.
               </p>
             </div>
           </div>
@@ -1216,10 +1194,13 @@
     </div>
   </section>
 
+  @include('components.home-contact-section')
+  @stack('styles')
 
   <!-- Footer -->
   @include('layouts.footer')
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script>
     // Navbar scroll effect
     window.addEventListener('scroll', function () {
@@ -1257,6 +1238,7 @@
       });
     });
   </script>
+  @stack('scripts')
 </body>
 
 </html>

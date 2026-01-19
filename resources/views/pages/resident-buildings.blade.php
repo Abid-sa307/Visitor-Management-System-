@@ -14,6 +14,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
   <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
   <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -23,17 +24,22 @@
   <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
   <style>
     :root {
-      --residential-primary: #27ae60;
-      --residential-secondary: #2ecc71;
-      --residential-accent: #3498db;
-      --residential-dark: #2c3e50;
-      --residential-light: #f8f9fa;
-      --gradient-primary: linear-gradient(135deg, #27ae60, #2ecc71);
-      --gradient-secondary: linear-gradient(135deg, #3498db, #2ecc71);
-      --gradient-dark: linear-gradient(135deg, #2c3e50, #34495e);
-      --shadow-light: 0 5px 15px rgba(0, 0, 0, 0.08);
-      --shadow-medium: 0 10px 30px rgba(0, 0, 0, 0.12);
-      --shadow-heavy: 0 15px 40px rgba(0, 0, 0, 0.15);
+      --primary: #4e73df;
+      --primary-dark: #224abe;
+      --secondary: #6f42c1;
+      --light: #f8f9fc;
+      --dark: #5a5c69;
+      --accent: #36b9cc;
+      --success: #1cc88a;
+      --warning: #f6c23e;
+      --info: #36b9cc;
+      --danger: #e74a3b;
+      --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+      --residential-primary: var(--primary);
+      --residential-dark: var(--dark);
+      --shadow-light: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --shadow-heavy: 0 20px 40px rgba(0, 0, 0, 0.15);
     }
 
     * {
@@ -42,7 +48,7 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--residential-light);
+      background: var(--light);
       color: #333;
       overflow-x: hidden;
       line-height: 1.6;
@@ -58,18 +64,14 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: var(--residential-primary);
+      background: var(--primary);
       border-radius: 10px;
     }
 
     /* Hero Section */
     .hero {
       position: relative;
-      background: linear-gradient(135deg, rgba(39, 174, 96, 0.9), rgba(46, 204, 113, 0.9)),
-        url('https://images.unsplash.com/photo-1555854871-db0c4b7115e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       padding: 180px 0 120px;
       color: #fff;
       text-align: center;
@@ -82,10 +84,11 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-      opacity: 0.3;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,122.7C672,128,768,160,864,170.7C960,181,1056,171,1152,165.3C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center bottom;
     }
 
     .hero h1 {
@@ -113,9 +116,8 @@
       border-radius: 50px;
       border: none;
       font-weight: 600;
-      background: var(--gradient-primary);
-      color: #fff;
-      box-shadow: var(--shadow-medium);
+      background: white;
+      color: #333;
       transition: all 0.3s ease;
       position: relative;
       z-index: 1;
@@ -123,24 +125,10 @@
       font-size: 1.1rem;
     }
 
-    .btn-hero::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-      transition: 0.5s;
-    }
-
-    .btn-hero:hover::before {
-      left: 100%;
-    }
-
     .btn-hero:hover {
       transform: translateY(-3px);
-      box-shadow: var(--shadow-heavy);
+      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+      color: #333;
     }
 
     /* Section Headers */
@@ -222,12 +210,23 @@
     }
 
     .feature-icon {
-      font-size: 50px;
-      margin-bottom: 25px;
-      background: var(--gradient-primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      display: inline-block;
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 25px;
+      font-size: 35px;
+      transition: all 0.3s;
+      box-shadow: 0 5px 15px rgba(78, 115, 223, 0.2);
+    }
+
+    .feature-card:hover .feature-icon {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
     }
 
     .feature-card h4 {
@@ -468,6 +467,34 @@
   {{-- Header --}}
   @include('layouts.header')
 
+  <!-- ISCON Contact Section -->
+  <!-- <section class="iscon-contact" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); padding: 15px 0; color: white; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);"></div>
+    <div class="container" style="position: relative; z-index: 1;">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <div class="d-flex align-items-center">
+            <div class="me-4">
+              <i class="bi bi-telephone-fill" style="font-size: 1.5rem; color: white;"></i>
+            </div>
+            <div>
+              <h6 class="mb-1" style="font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem;">ISCON Contact</h6>
+              <p class="mb-0" style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0;">For immediate assistance and support</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+          <a href="tel:+911234567890" class="btn" style="background: white; color: var(--primary); border: none; padding: 8px 20px; border-radius: 25px; font-weight: 600; text-decoration: none; font-size: 0.9rem; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(255,255,255,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+            <i class="bi bi-telephone me-2"></i>Call Now
+          </a>
+          <a href="mailto:contact@iscon.com" class="btn ms-2" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 20px; border-radius: 25px; font-weight: 600; text-decoration: none; font-size: 0.9rem; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+            <i class="bi bi-envelope me-2"></i>Email
+          </a>
+        </div>
+      </div>
+    </div>
+  </section> -->
+
   <!-- Hero Section -->
   <section class="hero">
     <div class="container">
@@ -479,233 +506,205 @@
   </section>
 
   <!-- Features Section -->
-  <section class="features py-5">
-    <div class="container">
-      <div class="section-header text-center mb-4">
-        <h2>Why Choose Our VMS for Resident Buildings?</h2>
-        <p>
-          Designed to simplify entry management and provide peace of mind to residents & facility managers.
-        </p>
-      </div>
-
-      <div class="row g-4">
-        <!-- Analytics Dashboard -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-bar-chart-line"></i>
-            </div>
-            <h4>Analytics Dashboard</h4>
-            <p>
-              Get real-time insights with interactive dashboards to monitor visitor
-              activity and trends.
-            </p>
-          </div>
-        </div>
-
-        <!-- Hourly Based Visitor Analysis -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-bar-chart-line"></i>
-            </div>
-            <h4>Hourly Visitor Analysis</h4>
-            <p>
-              Get detailed reports of visitor inflow and outflow segmented by hours,
-              helping management optimize staffing and improve security efficiency.
-            </p>
-          </div>
-        </div>
-
-        <!-- Advanced Reporting -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-file-earmark-text"></i>
-            </div>
-            <h4>Advanced Reporting</h4>
-            <p>
-              Comprehensive audit trails and compliance reports for regulatory
-              requirements.
-            </p>
-          </div>
-        </div>
-
-        <!-- Safety Compliance -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-shield-check"></i>
-            </div>
-            <h4>Safety Compliance Tracking</h4>
-            <p>
-              Ensure all visitors complete safety inductions and acknowledge
-              facility rules before entry.
-            </p>
-          </div>
-        </div>
-
-        <!-- User Wise Control -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-person-gear"></i>
-            </div>
-            <h4>User-Wise Control</h4>
-            <p>
-              Role-based access ensures every department has the right level of
-              control and visibility.
-            </p>
-          </div>
-        </div>
-
-        <!-- Approval Process -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-diagram-3"></i>
-            </div>
-            <h4>Auto Approval Process</h4>
-            <p>
-              Department-wise visitor approval workflows with optional
-              auto-approval rules.
-            </p>
-          </div>
-        </div>
-
-        <!-- Visitor In-Out Tracking -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-people"></i>
-            </div>
-            <h4>Visitor In-Out Tracking</h4>
-            <p>
-              Track every visitor’s entry and exit in real-time with accurate logs
-              and time-stamps.
-            </p>
-          </div>
-        </div>
-
-        <!-- Notifications -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-bell"></i>
-            </div>
-            <h4>Instant Notifications</h4>
-            <p>
-              Get notified instantly via WhatsApp and Email when a visitor arrives
-              or requests access.
-            </p>
-          </div>
-        </div>
-
-        <!-- Face Recognition -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-camera"></i>
-            </div>
-            <h4>Face Recognition Technology</h4>
-            <p>
-              Ensure secure, touchless entry with AI-powered facial recognition
-              authentication.
-            </p>
-          </div>
-        </div>
-
-        <!-- Print Visitor Pass -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-printer"></i>
-            </div>
-            <h4>Print Visitor Pass</h4>
-            <p>
-              Generate and print visitor passes instantly, including dynamic passes
-              with QR codes.
-            </p>
-          </div>
-        </div>
-
-        <!-- Pre-Approval -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-check-circle"></i>
-            </div>
-            <h4>Pre-Approval</h4>
-            <p>
-              Visitors can be pre-approved by hosts to save time and speed up
-              entry.
-            </p>
-          </div>
-        </div>
-
-        <!-- Visitor In-Out Entry -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-people"></i>
-            </div>
-            <h4>Visitor In-Out Entry</h4>
-            <p>Seamlessly manage visitor check-ins and check-outs with multiple entry methods:</p>
-            <ul class="list-unstyled mt-3">
-              <li class="mb-2">
-                <i class="bi bi-pencil-square me-2"></i> Manual Entry
-              </li>
-              <li class="mb-2">
-                <i class="bi bi-person-bounding-box me-2"></i> Face Recognition Entry
-              </li>
-              <li class="mb-2">
-                <i class="bi bi-qr-code-scan me-2"></i> QR Code Access
-              </li>
-            </ul>
-          </div>
-        </div>
-
-      </div>
+ <section class="features py-5">
+  <div class="container">
+    <div class="section-header text-center mb-4">
+      <h2>Residential Buildings Visitor Management Features</h2>
+      <p>
+        Designed to simplify entry management and provide peace of mind to residents & facility managers For Resident Buildings Visitor Management System.
+      </p>
     </div>
-  </section>
 
-
-  </section>
-
-  <!-- Stats Section -->
-  <section class="stats">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-3 col-6">
-          <div class="stat-item">
-            <div class="stat-number">500+</div>
-            <div class="stat-label">Buildings Secured</div>
+    <div class="row g-4">
+      <!-- Analytics Dashboard -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-bar-chart-line"></i>
           </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-item">
-            <div class="stat-number">24/7</div>
-            <div class="stat-label">Security Monitoring</div>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-item">
-            <div class="stat-number">98%</div>
-            <div class="stat-label">Satisfaction Rate</div>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-item">
-            <div class="stat-number">10K+</div>
-            <div class="stat-label">Daily Check-ins</div>
-          </div>
+          <h4>Analytics Dashboard</h4>
+          <p>
+            Get real-time insights with interactive dashboards to monitor visitor
+            activity and trends For Resident Buildings Visitor Management System.
+          </p>
         </div>
       </div>
+
+      <!-- Hourly Based Visitor Analysis -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-bar-chart-line"></i>
+          </div>
+          <h4>Hourly Visitor Analysis</h4>
+          <p>
+            Get detailed reports of visitor inflow and outflow segmented by hours,
+            helping management optimize staffing and improve security efficiency For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Advanced Reporting -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <h4>Advanced Reporting</h4>
+          <p>
+            Comprehensive audit trails and compliance reports for regulatory
+            requirements For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Safety Compliance -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <h4>Safety Compliance Tracking</h4>
+          <p>
+            Ensure all visitors complete safety inductions and acknowledge
+            facility rules before entry For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- User Wise Control -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-person-gear"></i>
+          </div>
+          <h4>User-Wise Control</h4>
+          <p>
+            Role-based access ensures every department has the right level of
+            control and visibility For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Approval Process -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-diagram-3"></i>
+          </div>
+          <h4>Auto Approval Process</h4>
+          <p>
+            Department-wise visitor approval workflows with optional
+            auto-approval rules For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Visitor In-Out Tracking -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h4>Visitor In-Out Tracking</h4>
+          <p>
+            Track every visitor’s entry and exit in real-time with accurate logs
+            and time-stamps For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-bell"></i>
+          </div>
+          <h4>Instant Notifications</h4>
+          <p>
+            Get notified instantly via WhatsApp and Email when a visitor arrives
+            or requests access For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Face Recognition -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-camera"></i>
+          </div>
+          <h4>Face Recognition Technology</h4>
+          <p>
+            Ensure secure, touchless entry with AI-powered facial recognition
+            authentication For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Print Visitor Pass -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-printer"></i>
+          </div>
+          <h4>Print Visitor Pass</h4>
+          <p>
+            Generate and print visitor passes instantly, including dynamic passes
+            with QR codes For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Pre-Approval -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <h4>Pre-Approval</h4>
+          <p>
+            Visitors can be pre-approved by hosts to save time and speed up
+            entry For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <!-- Visitor In-Out Entry -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h4>Visitor In-Out Entry</h4>
+          <p>
+            Seamlessly manage visitor check-ins and check-outs with multiple entry methods: For Resident Buildings Visitor Management System.
+          </p>
+          <ul class="list-unstyled mt-3">
+            <li class="mb-2">
+              <i class="bi bi-pencil-square me-2"></i> Manual Entry
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-person-bounding-box me-2"></i> Face Recognition Entry
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-qr-code-scan me-2"></i> QR Code Access
+            </li>
+          </ul>
+        </div>
+      </div>
+
     </div>
+  </div>
+</section>
+
+
+
   </section>
 
+  
   <section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
-           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+           background:linear-gradient(135deg,#4e73df 0%,#224abe 50%,#6f42c1 100%);">
 
     {{-- Radial glow background --}}
     <div style="position:absolute;inset:0;opacity:0.35;
@@ -744,7 +743,7 @@
                         justify-content:center;
                         border-radius:999px;
                         background:#ffffff;
-                        color:#4338ca;
+                        color:#4e73df;
                         font-weight:800;
                         letter-spacing:0.04em;
                         padding:0.9rem 2.3rem;
@@ -796,7 +795,8 @@
   </section>
 
   <!-- CTA Section -->
-  <section class="cta">
+  <section class="cta" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: #fff; padding: 100px 20px; border-radius: 30px; text-align: center; margin: 100px 0; position: relative; overflow: hidden;">
+    <div style="content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%); animation: pulse 8s infinite linear;"></div>
     <div class="container">
       <div class="cta-content">
         <h2>Ready to Secure Your Resident Building?</h2>
@@ -806,10 +806,15 @@
     </div>
   </section>
 
+  @include('components.home-contact-section')
+  @stack('styles')
+
   <!-- Footer -->
   @include('layouts.footer')
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  @stack('scripts')
 
 </body>
 

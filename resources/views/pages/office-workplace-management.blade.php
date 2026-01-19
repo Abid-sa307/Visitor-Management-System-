@@ -18,6 +18,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
   <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
   <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -29,11 +30,16 @@
   <!-- Custom Styles -->
   <style>
     :root {
-      --office-primary: #1e3c72;
-      --office-secondary: #2a5298;
-      --office-accent: #00b894;
-      --office-light: #f1f3f6;
-      --office-dark: #1a1a1a;
+      --primary: #4e73df;
+      --primary-dark: #224abe;
+      --secondary: #6f42c1;
+      --light: #f8f9fc;
+      --dark: #5a5c69;
+      --accent: #36b9cc;
+      --success: #1cc88a;
+      --warning: #f6c23e;
+      --info: #36b9cc;
+      --danger: #e74a3b;
     }
 
     body {
@@ -45,14 +51,26 @@
 
     /* Hero */
     .office-hero {
-      background: linear-gradient(135deg, rgba(30, 60, 114, 0.85), rgba(42, 82, 152, 0.85)),
-        url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
-      background-size: cover;
-      background-position: center;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
       padding: 150px 0 100px;
-      color: #fff;
       text-align: center;
       border-radius: 0 0 40px 40px;
+      margin-bottom: 50px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .office-hero:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,224L48,213.3C96,203,192,181,288,160C384,139,480,117,576,122.7C672,128,768,160,864,170.7C960,181,1056,171,1152,165.3C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center bottom;
     }
 
     .office-hero h1 {
@@ -68,8 +86,8 @@
     }
 
     .btn-office {
-      background: linear-gradient(to right, var(--office-primary), var(--office-secondary));
-      color: #fff;
+      background: white;
+      color: #333;
       border: none;
       padding: 14px 34px;
       border-radius: 50px;
@@ -78,7 +96,9 @@
     }
 
     .btn-office:hover {
-      transform: translateY(-5px);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+      color: #333;
     }
 
     /* Section Titles */
@@ -89,7 +109,7 @@
 
     .section-title h2 {
       font-weight: 800;
-      color: var(--office-dark);
+      color: var(--dark);
       font-size: 2.5rem;
       position: relative;
       display: inline-block;
@@ -100,11 +120,11 @@
       position: absolute;
       width: 80px;
       height: 5px;
-      background: linear-gradient(to right, var(--office-primary), var(--office-accent));
+      background: linear-gradient(to right, var(--primary), var(--secondary));
       bottom: -10px;
       left: 50%;
       transform: translateX(-50%);
-      border-radius: 4px;
+      border-radius: 5px;
     }
 
     .section-title p {
@@ -123,40 +143,62 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       transition: all 0.4s;
       text-align: center;
-      border-top: 5px solid var(--office-accent);
+      border-top: 5px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .feature-card:before,
+    .benefit-item:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 0;
+      background: linear-gradient(to bottom, var(--light), white);
+      transition: all 0.4s;
+      z-index: -1;
     }
 
     .feature-card:hover,
     .benefit-item:hover {
-      transform: translateY(-12px);
+      transform: translateY(-15px);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .feature-card:hover:before,
+    .benefit-item:hover:before {
+      height: 100%;
     }
 
     .feature-icon,
     .benefit-icon {
       width: 80px;
       height: 80px;
-      background: rgba(30, 60, 114, 0.1);
+      background: rgba(78, 115, 223, 0.1);
       border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 36px;
-      color: var(--office-primary);
+      font-size: 35px;
+      color: var(--primary);
       margin: 0 auto 25px;
       transition: all 0.3s;
     }
 
     .feature-card:hover .feature-icon,
     .benefit-item:hover .benefit-icon {
-      background: var(--office-primary);
-      color: #fff;
+      background: var(--primary);
+      color: white;
+      transform: rotateY(180deg);
     }
 
     .benefit-content h4 {
       font-weight: 700;
       margin-bottom: 10px;
-      color: var(--office-dark);
+      color: var(--dark);
     }
 
     .benefit-content p {
@@ -187,7 +229,7 @@
       align-items: center;
       cursor: pointer;
       font-weight: 600;
-      color: var(--office-primary);
+      color: var(--primary);
       font-size: 1.1rem;
     }
 
@@ -231,173 +273,173 @@
       <h1>Smart Visitor Management System for Offices</h1>
       <p>Deliver a seamless check-in experience, ensure workplace safety and maintain professional security with our
         cutting-edge VMS tailored for offices and corporate campuses.</p>
-      <a href="/contact" class="btn btn-office btn-lg">Request a Demo</a>
+      <a href="/contact" class="btn btn-office btn-lg" style="pointer-events: auto; z-index: 999; position: relative;">Request a Demo</a>
     </div>
   </section>
 
   <!-- Features -->
-  <section class="py-5 bg-light" id="features">
-    <div class="container">
-      <div class="section-title">
-        <h2>Office-Friendly Features</h2>
-        <p>Everything you need to greet guests professionally and keep your workplace secure.</p>
+<section class="py-5 bg-light" id="features">
+  <div class="container">
+    <div class="section-title">
+      <h2>Office-Friendly Features</h2>
+      <p>Everything you need to greet guests professionally and keep your workplace secure For Office Workplace Visitor Management System.</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Analytics Dashboard -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
+          <h4>Analytics Dashboard</h4>
+          <p>
+            Real-time, interactive dashboards for monitoring visitor activity and
+            trends For Office Workplace Visitor Management System.
+          </p>
+        </div>
       </div>
 
-
-      <div class="row g-4">
-        <!-- Analytics Dashboard -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
-            <h4>Analytics Dashboard</h4>
-            <p>
-              Real-time, interactive dashboards for monitoring visitor activity and
-              trends.
-            </p>
-          </div>
+      <!-- Hourly Visitor Analysis -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
+          <h4>Hourly Visitor Analysis</h4>
+          <p>
+            Detailed inflow/outflow reports by the hour to optimize staffing and
+            strengthen security For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Hourly Visitor Analysis -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
-            <h4>Hourly Visitor Analysis</h4>
-            <p>
-              Detailed inflow/outflow reports by the hour to optimize staffing and
-              strengthen security.
-            </p>
-          </div>
+      <!-- Advanced Reporting -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-file-earmark-text"></i></div>
+          <h4>Advanced Reporting</h4>
+          <p>
+            Full audit trails and compliance-ready reports for regulatory
+            requirements For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Advanced Reporting -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-file-earmark-text"></i></div>
-            <h4>Advanced Reporting</h4>
-            <p>
-              Full audit trails and compliance-ready reports for regulatory
-              requirements.
-            </p>
-          </div>
+      <!-- Safety Compliance Tracking -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+          <h4>Safety Compliance Tracking</h4>
+          <p>
+            Ensure every visitor completes safety inductions and agrees to
+            facility rules before entry For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Safety Compliance Tracking -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-            <h4>Safety Compliance Tracking</h4>
-            <p>
-              Ensure every visitor completes safety inductions and agrees to
-              facility rules before entry.
-            </p>
-          </div>
+      <!-- User-Wise Control -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-person-gear"></i></div>
+          <h4>User-Wise Control</h4>
+          <p>
+            Role-based access gives each department the right level of control
+            and visibility For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- User-Wise Control -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-person-gear"></i></div>
-            <h4>User-Wise Control</h4>
-            <p>
-              Role-based access gives each department the right level of control
-              and visibility.
-            </p>
-          </div>
+      <!-- Auto Approval Process -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+          <h4>Auto Approval Process</h4>
+          <p>
+            Department-wise visitor approvals with optional auto-approval rules For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Auto Approval Process -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
-            <h4>Auto Approval Process</h4>
-            <p>
-              Department-wise visitor approvals with optional auto-approval rules.
-            </p>
-          </div>
+      <!-- Visitor In-Out Tracking -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-people"></i></div>
+          <h4>Visitor In-Out Tracking</h4>
+          <p>
+            Track every visitor’s entry and exit in real time with precise
+            time-stamped logs For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Visitor In-Out Tracking -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-people"></i></div>
-            <h4>Visitor In-Out Tracking</h4>
-            <p>
-              Track every visitor’s entry and exit in real time with precise
-              time-stamped logs.
-            </p>
-          </div>
+      <!-- Instant Notifications -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-bell"></i></div>
+          <h4>Instant Notifications</h4>
+          <p>
+            WhatsApp and email alerts the moment a visitor arrives or requests
+            access For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Instant Notifications -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-bell"></i></div>
-            <h4>Instant Notifications</h4>
-            <p>
-              WhatsApp and email alerts the moment a visitor arrives or requests
-              access.
-            </p>
-          </div>
+      <!-- Face Recognition -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-camera"></i></div>
+          <h4>Face Recognition Technology</h4>
+          <p>
+            Secure, touchless entry using advanced AI-powered facial recognition For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Face Recognition -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-camera"></i></div>
-            <h4>Face Recognition Technology</h4>
-            <p>
-              Secure, touchless entry using advanced AI-powered facial recognition.
-            </p>
-          </div>
+      <!-- Print Visitor Pass -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-printer"></i></div>
+          <h4>Print Visitor Pass</h4>
+          <p>
+            Instantly generate and print visitor passes, including QR-code
+            enabled dynamic passes For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Print Visitor Pass -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-printer"></i></div>
-            <h4>Print Visitor Pass</h4>
-            <p>
-              Instantly generate and print visitor passes, including QR-code
-              enabled dynamic passes.
-            </p>
-          </div>
+      <!-- Pre-Approval -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-check-circle"></i></div>
+          <h4>Pre-Approval</h4>
+          <p>
+            Hosts can pre-approve visitors to speed up entry and reduce wait
+            times For Office Workplace Visitor Management System.
+          </p>
         </div>
+      </div>
 
-        <!-- Pre-Approval -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-check-circle"></i></div>
-            <h4>Pre-Approval</h4>
-            <p>
-              Hosts can pre-approve visitors to speed up entry and reduce wait
-              times.
-            </p>
-          </div>
-        </div>
-
-        <!-- Visitor In-Out Entry Methods -->
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="bi bi-people"></i></div>
-            <h4>Visitor In-Out Entry</h4>
-            <p>Flexible check-in/check-out options:</p>
-            <ul class="list-unstyled mt-3">
-              <li class="mb-2">
-                <i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry
-              </li>
-              <li class="mb-2">
-                <i class="bi bi-person-bounding-box text-success me-2"></i> Face
-                Recognition
-              </li>
-              <li class="mb-2">
-                <i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access
-              </li>
-            </ul>
-          </div>
+      <!-- Visitor In-Out Entry Methods -->
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-people"></i></div>
+          <h4>Visitor In-Out Entry</h4>
+          <p>Flexible check-in/check-out options: For Office Workplace Visitor Management System.</p>
+          <ul class="list-unstyled mt-3">
+            <li class="mb-2">
+              <i class="bi bi-pencil-square text-primary me-2"></i> Manual Entry
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-person-bounding-box text-success me-2"></i> Face
+              Recognition
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-qr-code-scan text-danger me-2"></i> QR Code Access
+            </li>
+          </ul>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
+
 
 
   <!-- Benefits Section -->
@@ -458,7 +500,7 @@
   </section>
 
   <section id="final-contact-cta" style="position:relative;overflow:hidden;padding:60px 0 80px;color:#ffffff;
-           background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#db2777 100%);">
+           background:linear-gradient(135deg,#4e73df 0%,#224abe 50%,#6f42c1 100%);">
 
     {{-- Radial glow background --}}
     <div style="position:absolute;inset:0;opacity:0.35;
@@ -497,7 +539,7 @@
                         justify-content:center;
                         border-radius:999px;
                         background:#ffffff;
-                        color:#4338ca;
+                        color:#4e73df;
                         font-weight:800;
                         letter-spacing:0.04em;
                         padding:0.9rem 2.3rem;
@@ -520,131 +562,132 @@
   </section>
 
   <!-- FAQ Section -->
-  <section id="faq" class="py-5 bg-light">
-    <div class="container">
-      <div class="section-title text-center mb-5">
-        <h2>Frequently Asked Questions</h2>
-        <p>Find answers to common questions about our Industrial Visitor Management System</p>
-      </div>
-      <div class="row justify-content-center">
-        <div class="col-lg-8">
+<section id="faq" class="py-5 bg-light">
+  <div class="container">
+    <div class="section-title text-center mb-5">
+      <h2>Frequently Asked Questions</h2>
+      <p>Find answers to common questions about our Office Workplace Visitor Management System</p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
 
-          <!-- Analytics Dashboard -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>Does the system provide analytics and reports?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                Yes, the system includes an interactive analytics dashboard and advanced reporting tools
-                to monitor visitor trends, inflow/outflow analysis and compliance requirements in real-time.
-              </p>
-            </div>
+        <!-- 1) Analytics Dashboard -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system provide analytics and reports for Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
           </div>
-
-          <!-- Hourly Visitor Analysis -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>Can we track visitors on an hourly basis?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                Absolutely! The Hourly Visitor Analysis feature provides detailed inflow/outflow statistics
-                segmented by the hour, helping optimize staffing and enhance security monitoring.
-              </p>
-            </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the Office Workplace Visitor Management System includes an interactive analytics dashboard and advanced reporting tools
+              to monitor visitor trends, inflow/outflow analysis, and compliance requirements in real time.
+            </p>
           </div>
-
-          <!-- Safety Compliance -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>How does the system ensure visitor safety compliance?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                Visitors must complete safety inductions and acknowledge compliance rules before entry.
-                The system tracks and records all safety acknowledgments for audit purposes.
-              </p>
-            </div>
-          </div>
-
-          <!-- Face Recognition -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>Does the system support face recognition for entry?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                Yes, AI-powered face recognition ensures secure, touchless and fast entry authentication
-                for visitors, reducing manual verification needs.
-              </p>
-            </div>
-          </div>
-
-          <!-- Notifications -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>Will we get notified when visitors arrive?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                Instant notifications are sent to hosts via WhatsApp and Email whenever a visitor requests access
-                or checks in at the facility.
-              </p>
-            </div>
-          </div>
-
-          <!-- Visitor Pass -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>Can we generate visitor passes directly from the system?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                Yes, the system allows you to instantly generate and print visitor passes,
-                including QR code-enabled dynamic passes for quick access.
-              </p>
-            </div>
-          </div>
-
-          <!-- Pre-Approval -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>Is there a visitor pre-approval process?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                Visitors can be pre-approved by hosts through the system, enabling faster entry
-                and minimizing wait times at the gate.
-              </p>
-            </div>
-          </div>
-
-          <!-- Visitor Entry Options -->
-          <div class="faq-item">
-            <div class="faq-question">
-              <span>What methods are available for visitor check-in and check-out?</span>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="faq-answer">
-              <p>
-                The system supports multiple entry options including manual entry by security staff,
-                face recognition and QR code scanning for seamless visitor management.
-              </p>
-            </div>
-          </div>
-
         </div>
+
+        <!-- 2) Hourly Visitor Analysis -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we track visitors on an hourly basis in Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Absolutely! The Hourly Visitor Analysis feature in the Office Workplace Visitor Management System provides detailed inflow/outflow statistics
+              segmented by the hour, helping optimize staffing and enhance security monitoring.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3) Safety Compliance (NO CHANGE) -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does the system ensure visitor safety compliance in Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors must complete safety inductions and acknowledge compliance rules before entry.
+              The system tracks and records all safety acknowledgments for audit purposes.
+            </p>
+          </div>
+        </div>
+
+        <!-- 4) Face Recognition -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Does the system support face recognition for entry in Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, AI-powered face recognition ensures secure, touchless, and fast entry authentication
+              for visitors, reducing manual verification needs.
+            </p>
+          </div>
+        </div>
+
+        <!-- 5) Notifications -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Will we get notified when visitors arrive in Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Instant notifications are sent to hosts via WhatsApp and Email through the Office Workplace Visitor Management System whenever a visitor requests access
+              or checks in at the facility.
+            </p>
+          </div>
+        </div>
+
+        <!-- 6) Visitor Pass -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can we generate visitor passes directly from the system for Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes, the Office Workplace Visitor Management System allows you to instantly generate and print visitor passes,
+              including QR code-enabled dynamic passes for quick access.
+            </p>
+          </div>
+        </div>
+
+        <!-- 7) Pre-Approval (NO CHANGE) -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is there a visitor pre-approval process in Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Visitors can be pre-approved by hosts through the system, enabling faster entry
+              and minimizing wait times at the gate.
+            </p>
+          </div>
+        </div>
+
+        <!-- 8) Visitor Entry Options -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What methods are available for visitor check-in and check-out in Office Workplace Visitor Management System?</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The system supports multiple entry options in the Office Workplace Visitor Management System, including manual entry by security staff,
+              face recognition, and QR code scanning for seamless visitor management.
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
-  </section>
+  </div>
+</section>
+
 
   <!-- CTA / Request a Quote Section -->
   <section class="cta-section py-5"
@@ -665,10 +708,14 @@
   </section>
 
 
+  @include('components.home-contact-section')
+  @stack('styles')
+
   <!-- Footer -->
   @include('layouts.footer')
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script>
     // FAQ accordion toggle
     document.querySelectorAll('.faq-question').forEach(function (item) {
@@ -678,6 +725,7 @@
       });
     });
   </script>
+  @stack('scripts')
 </body>
 
 </html>

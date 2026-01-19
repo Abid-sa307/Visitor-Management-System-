@@ -70,6 +70,11 @@
 /* ===== Mega menu (desktop dropdown) ===== */
 .mega-menu {
   width: 300px; /* your single-column width */
+  display: none; /* Hidden by default */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
 }
 #companyDesktopMenu {
   width: 180px;   /* yahan apni desired width */

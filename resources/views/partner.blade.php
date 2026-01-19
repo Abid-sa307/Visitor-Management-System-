@@ -19,6 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('icons/icon-48x48.png') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('icons/icon-96x96.png') }}">
@@ -265,7 +266,27 @@
             /* allow space for arrow circle */
         }
 
+        /* Swiper Navigation Buttons Position */
+        .myPartnersSwiper .swiper-button-prev,
+        .myPartnersSwiper .swiper-button-next {
+            top: 20% !important;
+        }
 
+.partner-card{
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    min-height: 230px;
+  }
+  .myPartnersSwiper .swiper-button-prev,
+  .myPartnersSwiper .swiper-button-next{
+    color: #0d6efd;
+  }
+  .myPartnersSwiper .swiper-pagination-bullet{
+    opacity: .4;
+  }
+  .myPartnersSwiper .swiper-pagination-bullet-active{
+    opacity: 1;
+  }
 
 
         /* FAQ Section */
@@ -610,121 +631,100 @@
         </div>
     </section>
 
-    <!-- Our Partners Section -->
-    <section class="py-5" style="background-color: #4e73df;">
-        <div class="container">
-            <h2 class="text-center fw-bold mb-5 text-white">Our Partners</h2>
+ <!-- Our Partners Section -->
+<section class="py-5" style="background-color: #4e73df;">
+  <div class="container">
+    <h2 class="text-center fw-bold mb-5 text-white">Our Partners</h2>
 
-            <div id="partnersCarousel" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner">
+    <div class="swiper myPartnersSwiper">
+      <div class="swiper-wrapper">
+        @php
+          $partners = [
+            [
+              'name' => 'Nishant Badiyani',
+              'role' => 'Founder',
+              'company' => 'Richey Rich Infotech',
+              'description' => 'Nishant brings expertise in IT solutions and innovation, helping businesses adopt digital transformation strategies effectively.'
+            ],
+            [
+              'name' => 'Harish Manek',
+              'role' => 'Founder',
+              'company' => 'MultiSoft Team',
+              'description' => 'Harish specializes in software development and team management, focusing on scalable and user-friendly business solutions.'
+            ],
+            [
+              'name' => 'Harmit Ramoliya',
+              'role' => 'UK Based Partner',
+              'company' => 'Global Network',
+              'description' => 'Harmit manages UK operations, expanding international partnerships and ensuring seamless collaboration across regions.'
+            ],
+            [
+              'name' => 'Tanweer Ahmed Farooqui',
+              'role' => 'South Africa Based Partner',
+              'company' => 'Global Network',
+              'description' => 'Tanweer manages all client communications across South Africa and international markets, ensuring smooth coordination and long-term relationships with global clients.'
+            ],
+            [
+              'name' => 'Syed Muddassir',
+              'role' => 'South Based Partner',
+              'company' => 'Global Network',
+              'description' => 'Syed contributes to the global expansion strategy, leveraging business networks to build long-term international collaborations.'
+            ],
+            [
+              'name' => 'Abdulaziz Maru',
+              'role' => 'Ethiopia Strategic Partner',
+              'company' => 'Digital Transformation Expert',
+              'description' => 'Abdulaziz Maru is N&T Software\'s strategic partner for Ethiopia, bringing local expertise and insights to drive digital transformation across the region. He collaborates with N&T Software to deliver tailored technology solutions including websites, mobile apps, ERP/CRM, cloud hosting, Power BI analytics and on-demand tech teams.'
+            ]
+          ];
+        @endphp
 
-                    <!-- First slide: 3 cards -->
-                    <div class="carousel-item active">
-                        <div class="row justify-content-center g-4">
-                            <!-- Nishant Badiyani -->
-                            <div class="col-lg-4 col-md-6">
-                                <div class="partner-card text-center p-4 h-100 bg-white text-dark">
-                                    <h5 class="fw-bold mb-1">Nishant Badiyani</h5>
-                                    <p class="text-muted mb-1">Founder</p>
-                                    <p class="small text-secondary">Richey Rich Infotech</p>
-                                    <p class="mt-3 small">
-                                        Nishant brings expertise in IT solutions and innovation, helping
-                                        businesses adopt digital transformation strategies effectively.
-                                    </p>
-                                </div>
-                            </div>
-                            <!-- Harish Manek -->
-                            <div class="col-lg-4 col-md-6">
-                                <div class="partner-card text-center p-4 h-100 bg-white text-dark">
-                                    <h5 class="fw-bold mb-1">Harish Manek</h5>
-                                    <p class="text-muted mb-1">Founder</p>
-                                    <p class="small text-secondary">MultiSoft Team</p>
-                                    <p class="mt-3 small">
-                                        Harish specializes in software development and team management,
-                                        focusing on scalable and user-friendly business solutions.
-                                    </p>
-                                </div>
-                            </div>
-                            <!-- Harmit Ramoliya -->
-                            <div class="col-lg-4 col-md-6">
-                                <div class="partner-card text-center p-4 h-100 bg-white text-dark">
-                                    <h5 class="fw-bold mb-1">Harmit Ramoliya</h5>
-                                    <p class="text-muted mb-1">UK Based Partner</p>
-                                    <p class="small text-secondary">Global Network</p>
-                                    <p class="mt-3 small">
-                                        Harmit manages UK operations, expanding international partnerships
-                                        and ensuring seamless collaboration across regions.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Second slide: 3 cards -->
-                    <div class="carousel-item">
-                        <div class="row justify-content-center g-4">
-                            <!-- Tanweer Ahmed Farooqui -->
-                            <div class="col-lg-4 col-md-6">
-                                <div class="partner-card text-center p-4 h-100 bg-white text-dark">
-                                    <h5 class="fw-bold mb-1">Tanweer Ahmed Farooqui</h5>
-                                    <p class="text-muted mb-1">South Africa Based Partner</p>
-                                    <p class="small text-secondary">Global Network</p>
-                                    <p class="mt-3 small">
-                                        Tanweer manages all client communications across South Africa and
-                                        international markets, ensuring smooth coordination and long-term
-                                        relationships with global clients.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Syed Muddassir -->
-                            <div class="col-lg-4 col-md-6">
-                                <div class="partner-card text-center p-4 h-100 bg-white text-dark">
-                                    <h5 class="fw-bold mb-1">Syed Muddassir</h5>
-                                    <p class="text-muted mb-1">South Based Partner</p>
-                                    <p class="small text-secondary">Global Network</p>
-                                    <p class="mt-3 small">
-                                        Syed contributes to the global expansion strategy, leveraging
-                                        business networks to build long-term international collaborations.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Abdulaziz Maru -->
-                            <div class="col-lg-4 col-md-6">
-                                <div class="partner-card text-center p-4 h-100 bg-white text-dark">
-                                    <h5 class="fw-bold mb-1">Abdulaziz Maru</h5>
-                                    <p class="text-muted mb-1">Ethiopia Strategic Partner</p>
-                                    <p class="small text-secondary">Digital Transformation Expert</p>
-                                    <p class="mt-3 small">
-                                        Abdulaziz Maru is N&T Software’s strategic partner for Ethiopia,
-                                        bringing local expertise and insights to drive digital transformation
-                                        across the region. He collaborates with N&T Software to deliver tailored
-                                        technology solutions including websites, mobile apps, ERP/CRM,
-                                        cloud hosting, Power BI analytics and on-demand tech teams.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-
-                </div>
-
-                <!-- Carousel controls -->
-                <button class="carousel-control-prev" type="button" data-bs-target="#partnersCarousel"
-                    data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#partnersCarousel"
-                    data-bs-slide="next">
-                    <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
-                </button>
-
-
+        @foreach ($partners as $partner)
+          <div class="swiper-slide">
+            <div class="partner-card text-center p-4 h-100 bg-white text-dark">
+              <h5 class="fw-bold mb-1">{{ $partner['name'] }}</h5>
+              <p class="text-muted mb-1">{{ $partner['role'] }}</p>
+              <p class="small text-secondary">{{ $partner['company'] }}</p>
+              <p class="mt-3 small">{{ $partner['description'] }}</p>
             </div>
-        </div>
-    </section>
+          </div>
+        @endforeach
+      </div>
+
+      <!-- Swiper Controls -->
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-pagination mt-3"></div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- Swiper Init (make sure Swiper JS loaded) -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    new Swiper(".myPartnersSwiper", {
+      loop: true,
+      spaceBetween: 24,
+      slidesPerView: 3,
+      navigation: {
+        nextEl: ".myPartnersSwiper .swiper-button-next",
+        prevEl: ".myPartnersSwiper .swiper-button-prev",
+      },
+      pagination: {
+        el: ".myPartnersSwiper .swiper-pagination",
+        clickable: true,
+      },
+      breakpoints: {
+        0: { slidesPerView: 1 },
+        768: { slidesPerView: 2 },
+        992: { slidesPerView: 3 },
+      },
+    });
+  });
+</script>
+
 
     <!-- FAQ Section -->
     <section class="faq-section">
@@ -830,11 +830,44 @@
     </section>
 
 
+    @include('components.home-contact-section')
+@stack('styles')
+
+
     <!-- Footer -->
     @include('layouts.footer')
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new Swiper('.myPartnersSwiper', {
+                loop: true,
+                speed: 600,
+                autoplay: {
+                    delay: 3000,
+                    disableOnInteraction: false
+                },
+                slidesPerView: 1,
+                spaceBetween: 20,
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+                breakpoints: {
+                    640: { slidesPerView: 2 },
+                    992: { slidesPerView: 3 },
+                },
+            });
+        });
+    </script>
+    @stack('scripts')
 </body>
 
 </html>
