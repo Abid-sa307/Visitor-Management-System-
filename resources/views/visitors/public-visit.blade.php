@@ -102,10 +102,23 @@
             {{-- Person to Visit --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Person to Visit</label>
-                <input type="text" name="person_to_visit" class="form-control @error('person_to_visit') is-invalid @enderror" 
-                       value="{{ old('person_to_visit', $visitor->person_to_visit ?? '') }}">
+                <select name="person_to_visit" id="employeeSelect" class="form-select @error('person_to_visit') is-invalid @enderror">
+                    <option value="">-- Select Employee --</option>
+                    @foreach($employees as $employee)
+                        <option value="{{ $employee->name }}" 
+                            {{ old('person_to_visit', $visitor->person_to_visit ?? '') == $employee->name ? 'selected' : '' }}>
+                            {{ $employee->name }}{{ $employee->designation ? ' - ' . $employee->designation : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <div class="mt-2">
+                    <small class="text-muted">Or enter manually:</small>
+                    <input type="text" name="person_to_visit_manual" class="form-control form-control-sm mt-1" 
+                           placeholder="Enter name if not in list" 
+                           value="{{ old('person_to_visit_manual') }}">
+                </div>
                 @error('person_to_visit')
-                    <div class="invalid-feedback">{{ $message }}</div>
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
             </div>
 
@@ -289,6 +302,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 categorySelect.innerHTML = '<option value="">-- Select Category (Optional) --</option>';
             });
     }
+    
+    // Function to update employees based on selected branch
+    function updateEmployees(branchId) {
+        const employeeSelect = document.querySelector('select[name="person_to_visit"]');
+        if (!employeeSelect) return;
+        
+        // Get current selected value
+        const currentSelected = employeeSelect.value;
+        
+        // Fetch employees for the selected branch
+        fetch(`/api/branches/${branchId}/employees`)
+            .then(response => response.json())
+            .then(employees => {
+                // Clear existing options
+                employeeSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+                
+                // Add new options
+                employees.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.name;
+                    option.textContent = employee.name + (employee.designation ? ' - ' + employee.designation : '');
+                    if (employee.name == currentSelected) {
+                        option.selected = true;
+                    }
+                    employeeSelect.appendChild(option);
+                });
+                
+                // If no employees available
+                if (employees.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No employees available';
+                    employeeSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching employees:', error);
+                // On error, keep the default option
+                employeeSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+            });
+    }
 
     if (form) {
         // Handle form submission - just show loading state, don't prevent default
@@ -321,6 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (branchSelect) {
             branchSelect.addEventListener('change', function() {
                 updateVisitorCategories(this.value);
+                updateEmployees(this.value);
             });
         }
     }

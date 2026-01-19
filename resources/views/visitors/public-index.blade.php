@@ -209,11 +209,19 @@
                             <!-- Pass Button and Update Visit Button -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
                                 @if($visitor->status === 'Approved' || $visitor->status === 'Completed' || $visitor->visitor_pass || session('show_pass_button'))
-                                    <a href="{{ route('visitors.pass', $visitor->id) }}" 
-                                       class="btn btn-success px-4" 
-                                       target="_blank">
-                                        <i class="bi bi-download me-2"></i> Download Pass
-                                    </a>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('visitors.pass', $visitor->id) }}" 
+                                           class="btn btn-success px-3" 
+                                           target="_blank"
+                                           title="Print Pass">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+                                        <a href="{{ route('visitors.pass.pdf', $visitor->id) }}" 
+                                           class="btn btn-danger px-3"
+                                           title="Download PDF">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    </div>
                                 @endif
                                 @if($visitor->status === 'Approved')
                                     <a href="{{ isset($branch) && $branch ? route('public.visitor.visit.edit.branch', ['company' => $company, 'branch' => $branch, 'visitor' => $visitor]) : route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 

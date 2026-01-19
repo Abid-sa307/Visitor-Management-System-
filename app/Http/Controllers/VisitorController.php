@@ -929,6 +929,12 @@ class VisitorController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        // Get employees for the selected branch
+        $employees = \App\Models\Employee::query()
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+            ->orderBy('name')
+            ->get(['id', 'name', 'designation']);
+
         $canUndoVisit = $visitor->visit_completed_at && 
                         Carbon::parse($visitor->visit_completed_at)->gt(now()->subMinutes(30)) &&
                         !$visitor->in_time &&
@@ -940,6 +946,7 @@ class VisitorController extends Controller
             'companies' => $companies,
             'branches' => $branches,
             'visitorCategories' => $visitorCategories,
+            'employees' => $employees,
             'isSuper' => $isSuper,
             'user' => $user,
             'selectedBranchId' => $selectedBranchId,
@@ -1008,7 +1015,12 @@ class VisitorController extends Controller
                 }
 
                 // Get all input except the ones we don't want to update
-                $updateData = $request->except(['workman_policy_photo', '_token', '_method', 'status']);
+                $updateData = $request->except(['workman_policy_photo', '_token', '_method', 'status', 'person_to_visit_manual']);
+                
+                // Handle manual person_to_visit input if provided
+                if ($request->filled('person_to_visit_manual')) {
+                    $updateData['person_to_visit'] = $request->input('person_to_visit_manual');
+                }
                 
                 // Only update status if it's explicitly provided in the request
                 if ($request->has('status')) {
@@ -1597,6 +1609,41 @@ class VisitorController extends Controller
             'visitor' => $visitor,
             'company' => $visitor->company
         ]);
+    }
+
+    public function downloadPassPDF($id)
+    {
+        $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
+        $this->authorizeVisitor($visitor);
+
+        // Debugging company data before checking status
+        if (!$visitor->company) {
+            \Log::warning('Visitor does not have a company', ['visitor_id' => $visitor->id]);
+        }
+
+        if ($visitor->status !== 'Approved' && $visitor->status !== 'Completed') {
+            return redirect()->back()->with('error', 'Pass not available.');
+        }
+
+        // Generate PDF using the pass_pdf view
+        $pdf = \Barryvdh\DomPDF\PDF::loadView('visitors.pass_pdf', [
+            'visitor' => $visitor,
+            'company' => $visitor->company
+        ]);
+
+        // Configure PDF to maintain design
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOptions([
+            'defaultFont' => 'Arial',
+            'isRemoteEnabled' => true,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => true,
+            'enable_fontsubsetting' => true,
+            'font_dir' => public_path('fonts'),
+        ]);
+
+        // Download the PDF
+        return $pdf->download('visitor-pass-' . $visitor->id . '-' . str_replace(' ', '-', $visitor->name) . '.pdf');
     }
 
     // --------------------------- AJAX: Lookup by phone ---------------------------

@@ -206,6 +206,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
     Route::post('/undo-security-checkout/{id}', [VisitorController::class, 'undoSecurityCheckout'])->name('visitors.undo-security-checkout');
     Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+    Route::get('/visitors/{id}/pass/pdf', [VisitorController::class, 'downloadPassPDF'])->name('visitors.pass.pdf');
     Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
     Route::put('/visitors/{id}/visit/undo', [VisitorController::class, 'undoVisit'])->name('visitors.visit.undo');
@@ -286,6 +287,7 @@ Route::prefix('company')
         Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
         Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
         Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+        Route::get('/visitors/{id}/pass/pdf', [VisitorController::class, 'downloadPassPDF'])->name('visitors.pass.pdf');
         
         // Visits Management
         Route::get('/visits', [VisitorController::class, 'visitsIndex'])->name('company.visits.index');
@@ -679,5 +681,41 @@ Route::get('/api/companies/{company}/notification-preference', function (\App\Mo
             'enable_visitor_notifications_cast' => (bool) $company->enable_visitor_notifications
         ]
     ]);
+});
+
+// Test route for debugging
+Route::get('/test-data', function() {
+    $branches = \App\Models\Branch::with('company')->get();
+    $employees = \App\Models\Employee::with('branch')->get();
+    $categories = \App\Models\VisitorCategory::with('branch')->get();
+    
+    return [
+        'branches' => $branches->map(function($b) {
+            return [
+                'id' => $b->id,
+                'name' => $b->name,
+                'company_id' => $b->company_id,
+                'company_name' => $b->company ? $b->company->name : 'N/A'
+            ];
+        }),
+        'employees' => $employees->map(function($e) {
+            return [
+                'id' => $e->id,
+                'name' => $e->name,
+                'branch_id' => $e->branch_id,
+                'branch_name' => $e->branch ? $e->branch->name : 'N/A',
+                'company_id' => $e->company_id
+            ];
+        }),
+        'categories' => $categories->map(function($c) {
+            return [
+                'id' => $c->id,
+                'name' => $c->name,
+                'branch_id' => $c->branch_id,
+                'branch_name' => $c->branch ? $c->branch->name : 'N/A',
+                'company_id' => $c->company_id
+            ];
+        })
+    ];
 });
 

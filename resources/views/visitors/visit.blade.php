@@ -91,7 +91,28 @@
             {{-- Person to Visit --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Person to Visit</label>
-                <input type="text" name="person_to_visit" class="form-control" value="{{ old('person_to_visit', $visitor->person_to_visit) }}">
+                <select name="person_to_visit" id="employeeSelect" class="form-select @error('person_to_visit') is-invalid @enderror">
+                    <option value="">-- Select Employee --</option>
+                    @forelse($employees ?? [] as $employee)
+                        <option value="{{ $employee->name }}" 
+                            {{ old('person_to_visit', $visitor->person_to_visit ?? '') === $employee->name ? 'selected' : '' }}>
+                            {{ $employee->name }}{{ $employee->designation ? ' - ' . $employee->designation : '' }}
+                        </option>
+                    @empty
+                        <option value="" disabled>No employees available</option>
+                    @endforelse
+                </select>
+                <div class="mt-2">
+                    <small class="text-muted">Or enter manually:</small>
+                    <input type="text" name="person_to_visit_manual" class="form-control form-control-sm mt-1" 
+                           placeholder="Enter name if not in list" 
+                           value="{{ old('person_to_visit_manual') }}">
+                </div>
+                @error('person_to_visit')
+                    <div class="invalid-feedback d-block">
+                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                    </div>
+                @enderror
             </div>
 
             {{-- Purpose of Visit --}}
@@ -253,17 +274,58 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
     
+    // Function to update employees based on selected branch
+    function updateEmployees(branchId) {
+        const employeeSelect = document.querySelector('select[name="person_to_visit"]');
+        if (!employeeSelect) return;
+        
+        // Get current selected value
+        const currentSelected = employeeSelect.value;
+        
+        // Fetch employees for the selected branch
+        fetch(`/api/branches/${branchId}/employees`)
+            .then(response => response.json())
+            .then(employees => {
+                // Clear existing options
+                employeeSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+                
+                // Add new options
+                employees.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.name;
+                    option.textContent = employee.name + (employee.designation ? ' - ' + employee.designation : '');
+                    if (employee.name == currentSelected) {
+                        option.selected = true;
+                    }
+                    employeeSelect.appendChild(option);
+                });
+                
+                // If no employees available
+                if (employees.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No employees available';
+                    employeeSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching employees:', error);
+                // On error, show no employees available
+                employeeSelect.innerHTML = '<option value="">-- Select Employee --</option><option value="" disabled>No employees available</option>';
+            });
+    }
+    
     // Listen for branch changes
     const branchSelect = document.querySelector('select[name="branch_id"]');
     if (branchSelect) {
         branchSelect.addEventListener('change', function() {
             updateDepartments(this.value);
+            updateEmployees(this.value);
         });
         
-        // Load departments for initial branch if selected
-        if (branchSelect.value) {
-            updateDepartments(branchSelect.value);
-        }
+        // Don't call update functions on page load since data is already loaded from server
+        // Only call them when user actually changes the branch
     }
     
     if (form) {

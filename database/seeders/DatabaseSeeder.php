@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
     $this->call([
         CompanySeeder::class,
         DepartmentSeeder::class,
+        EmployeeSeeder::class,
+        VisitorCategorySeeder::class,
     ]);
 
     // ✅ Finally seed the default users

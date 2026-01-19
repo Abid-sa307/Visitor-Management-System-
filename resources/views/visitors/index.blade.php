@@ -3,6 +3,21 @@
 @push('styles')
 <style>
   .checkin-btn { min-width: 110px; }
+  .btn-group .action-btn {
+    border-radius: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.3) !important;
+  }
+  .btn-group .action-btn:last-child {
+    border-right: none !important;
+  }
+  .btn-group .action-btn:first-child {
+    border-top-left-radius: 6px !important;
+    border-bottom-left-radius: 6px !important;
+  }
+  .btn-group .action-btn:last-child {
+    border-top-right-radius: 6px !important;
+    border-bottom-right-radius: 6px !important;
+  }
   .face-verification-container {
     min-height: 300px;
     display: flex;
@@ -171,11 +186,18 @@
                       <i class="fas fa-print"></i>
                     </button>
                   @else
-                    <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
-                       class="action-btn action-btn--view action-btn--icon"
-                       title="Print Pass">
-                      <i class="fas fa-print"></i>
-                    </a>
+                    <div class="btn-group" role="group">
+                      <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
+                         class="action-btn action-btn--view action-btn--icon"
+                         title="Print Pass">
+                        <i class="fas fa-print"></i>
+                      </a>
+                      <a href="{{ route('visitors.pass.pdf', $visitor->id) }}"
+                         class="action-btn action-btn--view action-btn--icon"
+                         title="Download PDF">
+                        <i class="fas fa-file-pdf"></i>
+                      </a>
+                    </div>
                   @endif
 
                   {{-- Delete --}}

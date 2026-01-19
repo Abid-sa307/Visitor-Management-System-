@@ -11,7 +11,7 @@
     content="Learn about N&amp;T Software, the team behind our Smart Visitor Management System. Founded in 2022, we’re on a mission to create safer, smarter and fully paperless workplaces by replacing manual visitor logbooks with secure, automated VMS solutions for offices, factories, hospitals, schools, malls, residential communities, industrial units, cold storage, temples, kabrastan and more—across single and multi-location setups worldwide.">
 
   <meta name="keywords"
-    content="about N&amp;T Software, visitor management system company, VMS provider India, smart visitor management software team, paperless visitor logbook solution, digital visitor management company, workplace security and access software, multi location visitor system provider, industrial visitor management vendor, school and hospital visitor system company, residential society visitor app provider, N&amp;T Group visitor solutions, founder Talemahmad Tunvar, N&amp;T Software mission and vision, paperless workplace technology company">
+    content="about N&amp;T Software, visitor management system company, VMS provider World, smart visitor management software team, paperless visitor logbook solution, digital visitor management company, workplace security and access software, multi location visitor system provider, industrial visitor management vendor, school and hospital visitor system company, residential society visitor app provider, N&amp;T Group visitor solutions, founder Talemahmad Tunvar, N&amp;T Software mission and vision, paperless workplace technology company">
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -372,7 +372,7 @@
             <strong>Talemahmad Tunvar</strong>, the visionary Founder and
             Chairman of <strong>N&T Group Of Company</strong>,
             laid the foundation of the company with a mission to
-            transform India into a truly paperless nation.
+            transform World into a truly paperless nation.
           </p>
           <p>
             His dedication to building smart, secure and digital-first

@@ -40,6 +40,15 @@ Route::get('/branches/{branch}/visitor-categories', function (Branch $branch) {
     ]);
 });
 
+// Get employees for a branch
+Route::get('/branches/{branch}/employees', function (Branch $branch) {
+    $employees = \App\Models\Employee::where('branch_id', $branch->id)
+        ->orderBy('name')
+        ->get(['id', 'name', 'designation']);
+    
+    return response()->json($employees);
+});
+
 // Get face recognition setting for a company
 Route::get('/companies/{company}/face-recognition', function (\App\Models\Company $company) {
     return response()->json([

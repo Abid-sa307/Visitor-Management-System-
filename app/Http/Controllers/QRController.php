@@ -355,6 +355,12 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
         ->orderBy('name')
         ->get();
     
+    // Get employees for the branch
+    $employees = \App\Models\Employee::query()
+        ->when($branchModel, fn($q) => $q->where('branch_id', $branchModel->id))
+        ->orderBy('name')
+        ->get(['id', 'name', 'designation']);
+    
     // If a specific branch QR was scanned, only show that branch
     // Otherwise show all branches of the company
     if ($branchModel) {
@@ -368,6 +374,7 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
         'branch' => $branchModel,
         'departments' => $departments,
         'visitorCategories' => $visitorCategories,
+        'employees' => $employees,
         'branches' => $branches,
         'visitor' => $visitor
     ]);
@@ -406,6 +413,11 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
             if ($request->hasFile('workman_policy_photo')) {
                 $path = $request->file('workman_policy_photo')->store('wpc_photos', 'public');
                 $validated['workman_policy_photo'] = $path;
+            }
+
+            // Handle manual person_to_visit input if provided
+            if ($request->filled('person_to_visit_manual')) {
+                $validated['person_to_visit'] = $request->input('person_to_visit_manual');
             }
 
             // Update visitor with validated data
@@ -464,6 +476,12 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
                 ->orderBy('name')
                 ->get();
             
+            // Get employees for the branch
+            $employees = \App\Models\Employee::query()
+                ->when($branchModel, fn($q) => $q->where('branch_id', $branchModel->id))
+                ->orderBy('name')
+                ->get(['id', 'name', 'designation']);
+            
             // If a specific branch is provided, only show that branch
             // Otherwise show all branches of the company
             if ($branchModel) {
@@ -479,6 +497,7 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
                 'departments' => $departments,
                 'branches' => $branches,
                 'visitorCategories' => $visitorCategories,
+                'employees' => $employees,
             ]);
         }
 
