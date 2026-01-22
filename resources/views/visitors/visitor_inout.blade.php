@@ -224,25 +224,17 @@
                             @php
                                 $verificationMethod = 'Manual';
                                 
-                                // Check if face verification was used
+                                // Check if face verification was used - simplified logic
                                 if (!empty($visit->face_encoding) || !empty($visit->face_image)) {
-                                    // If face encoding exists and security check times match entry/exit times
-                                    if (($visit->security_checkin_time && $visit->in_time && 
-                                         \Carbon\Carbon::parse($visit->security_checkin_time)->format('Y-m-d H:i') === 
-                                         \Carbon\Carbon::parse($visit->in_time)->format('Y-m-d H:i')) ||
-                                        ($visit->security_checkout_time && $visit->out_time && 
-                                         \Carbon\Carbon::parse($visit->security_checkout_time)->format('Y-m-d H:i') === 
-                                         \Carbon\Carbon::parse($visit->out_time)->format('Y-m-d H:i'))) {
-                                        $verificationMethod = 'Face Verification';
-                                    }
+                                    $verificationMethod = 'Face Verification';
                                 }
                                 
                                 // Also check visitor logs for verification method
                                 if ($visit->logs && $visit->logs->isNotEmpty()) {
-                                    $latestLog = $visit->logs->sortByDesc('created_at')->first();
-                                    if ($latestLog && !empty($latestLog->verification_method)) {
-                                        if (stripos($latestLog->verification_method, 'face') !== false) {
+                                    foreach ($visit->logs as $log) {
+                                        if (isset($log->verification_method) && stripos($log->verification_method, 'face') !== false) {
                                             $verificationMethod = 'Face Verification';
+                                            break;
                                         }
                                     }
                                 }

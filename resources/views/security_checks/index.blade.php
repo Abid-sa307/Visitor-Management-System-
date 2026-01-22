@@ -198,12 +198,13 @@
                                                 <i class="fas fa-sign-in-alt me-1"></i> Check In
                                             </button>
                                         </form>
+                                    
                                     @elseif($hasSecurityCheckin && !$hasSecurityCheckout)
                                         {{-- Show Check-out and Undo Check-in buttons --}}
-                                        @if($showCheckoutButton && $visitor->in_time && !$visitor->out_time)
+                                        @if($showCheckoutButton && $visitor->security_checkin_time && !$visitor->security_checkout_time)
                                             <a href="{{ route($checkoutRoute, $visitor->id) }}" class="btn btn-sm btn-warning" title="Security Check-out Form">
                                                 <i class="fas fa-clipboard-check me-1"></i> Check Out
-                                            </a>
+                                            </a> 
                                         @endif
                                         
                                         {{-- Undo Check-in Button --}}
@@ -216,6 +217,11 @@
                                                 </button>
                                             </form>
                                         @endif
+                                    @elseif(!$hasSecurityCheckin && !$hasSecurityCheckout && $showCheckoutButton)
+                                        {{-- Check-out only mode - show check-out button without requiring check-in --}}
+                                        <a href="{{ route($checkoutRoute, $visitor->id) }}" class="btn btn-sm btn-warning" title="Security Check-out Form">
+                                            <i class="fas fa-clipboard-check me-1"></i> Check Out
+                                        </a>
                                     @elseif($hasSecurityCheckout)
                                         {{-- Both completed - show undo checkout if available --}}
                                         @if($canUndoCheckout)

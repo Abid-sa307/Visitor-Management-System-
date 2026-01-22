@@ -9,6 +9,7 @@ use Intervention\Image\Facades\Image;
 use App\Models\SecurityCheck;
 use App\Models\Visitor;
 use App\Models\Department;
+use App\Services\GoogleNotificationService;
 use Illuminate\Support\Str;
 
 class SecurityCheckController extends Controller
@@ -483,9 +484,25 @@ class SecurityCheckController extends Controller
             if ($action === 'checkin') {
                 $visitor->security_checkin_time = now();
                 $message = 'Visitor security check-in completed successfully.';
+                
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendSecurityCheckInNotification($visitor->company, $visitor);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send security check-in notification: ' . $e->getMessage());
+                }
             } elseif ($action === 'checkout') {
                 $visitor->security_checkout_time = now();
                 $message = 'Visitor security check-out completed successfully.';
+                
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendSecurityCheckOutNotification($visitor->company, $visitor);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send security check-out notification: ' . $e->getMessage());
+                }
             } elseif ($action === 'undo_checkin') {
                 if (!$visitor->security_checkin_time || \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) > 30) {
                     return redirect()->back()->with('error', 'Undo is only available within 30 minutes of security check-in.');

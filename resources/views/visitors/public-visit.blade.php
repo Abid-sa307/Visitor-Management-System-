@@ -38,7 +38,7 @@
             </div>
         @endif
 
-<form id="visitorForm" method="POST" action="{{ isset($branch) && $branch ? route('public.visitor.visit.store.branch', ['company' => $company, 'branch' => $branch, 'visitor' => $visitor]) : route('public.visitor.visit.store', ['company' => $company, 'visitor' => $visitor]) }}" enctype="multipart/form-data">
+<form id="visitorForm" method="POST" action="{{ isset($branch) && $branch ? route('public.visitor.visit.store.branch', ['company' => $company, 'branch' => $branch, 'visitor' => $visitor->id]) : route('public.visitor.visit.store', ['company' => $company, 'visitor' => $visitor->id]) }}" enctype="multipart/form-data">
     @csrf
             {{-- Branch Selection (if multiple branches available) --}}
             @if(isset($branches) && $branches->count() > 1)

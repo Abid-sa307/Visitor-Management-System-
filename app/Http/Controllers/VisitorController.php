@@ -9,6 +9,8 @@ use App\Models\Department;
 use App\Models\VisitorCategory;
 use App\Models\SecurityCheck;
 use App\Models\Branch;
+use App\Models\Employee;
+use App\Services\GoogleNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -391,7 +393,7 @@ class VisitorController extends Controller
             // Handle document upload
             if ($request->hasFile('document')) {
                 $documentPath = $request->file('document')->store('visitor_documents', 'public');
-                $validated['document_path'] = $documentPath;
+                $validated['documents'] = $documentPath;
             }
 
             // Workman policy photo
@@ -424,6 +426,15 @@ class VisitorController extends Controller
             // Send notification for visitor created
             try {
                 if (!empty($visitor->company_id)) {
+                    // Send Google notification if enabled
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendNotification(
+                        $visitor->company,
+                        'visitor_created',
+                        "New visitor {$visitor->name} has been created",
+                        $visitor
+                    );
+                    
                     $recipients = User::query()
                         ->where('company_id', $visitor->company_id)
                         ->when(!empty($visitor->branch_id), function ($q) use ($visitor) {
@@ -440,15 +451,8 @@ class VisitorController extends Controller
                 \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
             }
 
-            // Attach documents if any
-            if (isset($validated['documents'])) {
-                foreach ($validated['documents'] as $documentPath) {
-                    $visitor->documents()->create([
-                        'file_path' => $documentPath,
-                        'file_name' => basename($documentPath)
-                    ]);
-                }
-            }
+            // Document is already stored in documents column, no need for separate table
+            // The document path is already saved in the main visitor record
 
             // Email notifications
             try {
@@ -607,7 +611,7 @@ class VisitorController extends Controller
 
             if ($request->hasFile('document')) {
                 $documentPath = $request->file('document')->store('visitor_documents', 'public');
-                $visitor->document_path = $documentPath;
+                $visitor->documents = $documentPath;
             }
 
             return redirect()->back()->with('success', $message);
@@ -622,15 +626,6 @@ class VisitorController extends Controller
 
             $previousStatus = $visitor->status;
             $newStatus = $request->input('status');
-            
-            // Check if visitor has completed visit form before allowing approval
-            if ($newStatus === 'Approved' && !$visitor->visit_completed_at && !($visitor->department_id && $visitor->purpose)) {
-                $message = 'Visitor must complete visit form before approval.';
-                if ($isAjax) {
-                    return response()->json(['success' => false, 'message' => $message], 422);
-                }
-                return redirect()->back()->with('error', $message);
-            }
             
             // Update visitor status and track changes
             $visitor->last_status = $previousStatus;
@@ -656,6 +651,16 @@ class VisitorController extends Controller
                     \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
                 } catch (\Throwable $e) {
                     \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
+                }
+            }
+            
+            // Send Google notification if enabled
+            if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendApprovalNotification($visitor->company, $visitor);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send approval notification: ' . $e->getMessage());
                 }
             }
             
@@ -1064,6 +1069,14 @@ class VisitorController extends Controller
                 
                 $visitor->save();
 
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendVisitFormNotification($visitor->company, $visitor, false);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send visit form notification: ' . $e->getMessage());
+                }
+
                 // Commit the transaction
                 \DB::commit();
 
@@ -1288,6 +1301,14 @@ class VisitorController extends Controller
                     $visitor->approved_at = now();
                 }
                 
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendMarkInNotification($visitor->company, $visitor);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send mark-in notification: ' . $e->getMessage());
+                }
+                
                 $message = 'Visitor checked in successfully.';
             } else {
                 // Check if already checked out
@@ -1297,6 +1318,14 @@ class VisitorController extends Controller
                 }
                 
                 $visitor->out_time = now();
+                
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendMarkOutNotification($visitor->company, $visitor);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send mark-out notification: ' . $e->getMessage());
+                }
                 
                 // Only update status to Completed if it's currently Approved
                 if ($visitor->status === 'Approved') {
@@ -1565,7 +1594,7 @@ class VisitorController extends Controller
                         ->with('play_notification', $playNotification ?? false)
                         ->with('visit_completed', true);
                 } else {
-                    return redirect()->route('public.visitor.index', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
+                    return redirect()->route('public.visitor.show', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
                         ->with('success', $message)
                         ->with('play_notification', $playNotification ?? false);
                 }
@@ -1593,7 +1622,12 @@ class VisitorController extends Controller
     public function printPass($id)
     {
         $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
-        $this->authorizeVisitor($visitor);
+        
+        // For public routes, skip authorization check
+        // Only check authorization for authenticated routes
+        if (auth()->check()) {
+            $this->authorizeVisitor($visitor);
+        }
 
         // Debugging company data before checking status
         if (!$visitor->company) {
@@ -1614,7 +1648,12 @@ class VisitorController extends Controller
     public function downloadPassPDF($id)
     {
         $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
-        $this->authorizeVisitor($visitor);
+        
+        // For public routes, skip authorization check
+        // Only check authorization for authenticated routes
+        if (auth()->check()) {
+            $this->authorizeVisitor($visitor);
+        }
 
         // Debugging company data before checking status
         if (!$visitor->company) {
@@ -1626,7 +1665,7 @@ class VisitorController extends Controller
         }
 
         // Generate PDF using the pass_pdf view
-        $pdf = \Barryvdh\DomPDF\PDF::loadView('visitors.pass_pdf', [
+        $pdf = \PDF::loadView('visitors.pass_pdf', [
             'visitor' => $visitor,
             'company' => $visitor->company
         ]);

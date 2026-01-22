@@ -232,7 +232,7 @@
         </div>
     </div>
 
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="alert alert-success border-0 shadow-sm mb-4" role="alert">
             <div class="d-flex align-items-center">
                 <div class="flex-shrink-0">
@@ -247,7 +247,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </div>
-    @endif
+    @endif -->
     @if(session('error'))
         <div class="alert alert-danger border-0 shadow-sm mb-4" role="alert">
             <div class="d-flex align-items-center">

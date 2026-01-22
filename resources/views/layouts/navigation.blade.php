@@ -29,6 +29,11 @@
             @endphp
             @if($user)
                 <ul class="navbar-nav">
+                    <!-- Notifications for Superadmin -->
+                    @if(!$isCompany)
+                        <x-notifications />
+                    @endif
+                    
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                             role="button" data-bs-toggle="dropdown" aria-expanded="false">

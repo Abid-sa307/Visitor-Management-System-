@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Visitor;
 use App\Models\VisitorCategory;
 use App\Models\Department;
+use App\Services\GoogleNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -179,7 +180,7 @@ class QRController extends Controller
         $validated['purpose'] = $validated['purpose'] ?? 'General Visit';
         
         try {
-            // Create the visitor with only the provided fields
+            // Create visitor with only the provided fields
             $visitorData = [
                 'name' => $validated['name'],
                 'email' => $validated['email'] ?? null,
@@ -189,6 +190,15 @@ class QRController extends Controller
                 'company_id' => $company->id,
                 'is_approved' => $company->auto_approve_visitors,
             ];
+            
+            // Set status based on auto approval
+            if ($company->auto_approve_visitors) {
+                $visitorData['status'] = 'Approved';
+                $visitorData['approved_at'] = now();
+                // Don't set visit_completed_at here - only set when form is actually completed
+            } else {
+                $visitorData['status'] = 'Pending';
+            }
             
             // Add branch_id if branch was specified in QR scan
             if ($branch) {
@@ -380,17 +390,39 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
     ]);
 }
         
-        public function storePublicVisit(Request $request, Company $company, $visitorId = null, $branch = null)
+        public function storePublicVisit(Request $request, Company $company, $branch = null, $visitorId = null)
         {
             // Get visitor ID from route parameter
             $visitorId = $visitorId ?? $request->route('visitor');
             
+            // Debug: Log the incoming data
+            \Log::info('Public visit submission attempt:', [
+                'visitorId' => $visitorId,
+                'companyId' => $company->id,
+                'branchId' => $branch,
+                'routeName' => $request->route()->getName(),
+                'allRouteParams' => $request->route()->parameters()
+            ]);
+            
             // Find the visitor
-            $visitor = Visitor::findOrFail($visitorId);
+            try {
+                $visitor = Visitor::findOrFail($visitorId);
+            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+                \Log::error('Visitor not found:', ['visitorId' => $visitorId, 'error' => $e->getMessage()]);
+                abort(404, 'Visitor not found.');
+            }
             
             // Verify visitor belongs to company
             if ($visitor->company_id != $company->id) {
-                abort(403, 'This visitor does not belong to specified company.');
+                \Log::error('Visitor company mismatch:', [
+                    'visitor_id' => $visitor->id,
+                    'visitor_company_id' => $visitor->company_id,
+                    'route_company_id' => $company->id
+                ]);
+                
+                // Return to QR scan page with error message
+                return redirect()->route('qr.scan', ['company' => $company->id])
+                    ->with('error', 'This visitor belongs to a different company. Please scan the correct QR code for company: ' . $visitor->company->name);
             }
             
             // Validate the request
@@ -419,28 +451,34 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
             if ($request->filled('person_to_visit_manual')) {
                 $validated['person_to_visit'] = $request->input('person_to_visit_manual');
             }
-
-            // Update visitor with validated data
-            $visitor->update($validated);
             
-            // Mark visit as completed
-            $visitor->update([
-                'visit_completed_at' => now(),
-                'status' => 'Approved',
-                'approved_at' => now(),
-            ]);
+            // Mark visit as completed and update all data in one operation
+            $validated['visit_completed_at'] = now();
+            
+            // Only auto-approve if company has auto-approval enabled
+            if ($company->auto_approve_visitors) {
+                $validated['status'] = 'Approved';
+                $validated['approved_at'] = now();
+            }
+            
+            // Update visitor with all validated data
+            $visitor->update($validated);
 
-            // Redirect back with success message
+            // Send notification if enabled
+            $notificationService = new GoogleNotificationService();
+            $notificationService->sendVisitFormNotification($company, $visitor, true);
+
+            // Redirect to public-index page with success message
             if ($branch) {
-                return redirect()->route('public.visitor.index.branch', [
+                return redirect()->route('public.visitor.show', [
                     'company' => $company->id, 
                     'branch' => $branch, 
-                    'visitor' => $visitorId
+                    'visitor' => $visitor->id
                 ])->with('success', 'Visit details submitted successfully!');
             } else {
-                return redirect()->route('public.visitor.index', [
+                return redirect()->route('public.visitor.show', [
                     'company' => $company->id, 
-                    'visitor' => $visitorId
+                    'visitor' => $visitor->id
                 ])->with('success', 'Visit details submitted successfully!');
             }
         }
@@ -454,12 +492,9 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
          */
         public function editPublicVisit(Company $company, $visitor, $branch = null)
         {
-            // Find the visitor
-            $visitor = Visitor::findOrFail($visitor);
-            
-            // Verify the visitor belongs to the company
-            if ($visitor->company_id != $company->id) {
-                abort(403, 'This visitor does not belong to the specified company.');
+            // Find visitor if not already an object
+            if (!is_object($visitor)) {
+                $visitor = Visitor::findOrFail($visitor);
             }
             
             // Get branch model if branch ID is provided
@@ -470,9 +505,11 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
             
             // Get necessary data for the form
             $departments = $company->departments()->get();
+            
+            // Get visitor categories for company and branch
             $visitorCategories = \App\Models\VisitorCategory::query()
+                ->where('company_id', $company->id)
                 ->when($branchModel, fn($q) => $q->where('branch_id', $branchModel->id))
-                ->when(!$branchModel, fn($q) => $q->where('company_id', $company->id)->whereNull('branch_id'))
                 ->orderBy('name')
                 ->get();
             

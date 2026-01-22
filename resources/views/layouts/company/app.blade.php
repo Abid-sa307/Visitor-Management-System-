@@ -20,8 +20,8 @@
         <!-- Main Content -->
         <div id="content">
 
-            {{-- Topbar if needed --}}
-            {{-- @include('layouts.company.topbar') --}}
+            {{-- Topbar --}}
+            @include('layouts.company.topbar')
 
             <!-- Begin Page Content -->
             <div class="container-fluid">

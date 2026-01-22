@@ -40,7 +40,8 @@ public function __construct()
         'createVisitor', 
         'storeVisitor',
         'showVisitForm',
-        'storePublicVisit'
+        'storePublicVisit',
+        'publicVisitorIndex'
     ]);
 }
 
@@ -183,7 +184,7 @@ public function __construct()
         $branchId = session('scanned_branch_id');
         
         // Redirect to the next step
-        $redirectUrl = route('public.visitor.index', [
+        $redirectUrl = route('public.visitor.show', [
             'company' => $company->id,
             'visitor' => $visitor->id
         ]);
@@ -352,18 +353,38 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
 public function publicVisitorIndex(Company $company, $visitor = null, $branch = null)
 {
     try {
+        // Debug: Log the incoming request
+        \Log::info('publicVisitorIndex called:', [
+            'company_id' => $company->id,
+            'visitor_param' => $visitor,
+            'branch_param' => $branch,
+            'route_name' => request()->route()->getName(),
+            'url' => request()->fullUrl(),
+            'method' => request()->method(),
+            'user_authenticated' => auth()->check(),
+            'company_authenticated' => auth()->guard('company')->check()
+        ]);
+        
         // If visitor is 'create', show the creation form
         if ($visitor === 'create') {
             return $this->createVisitor($company);
         }
 
         // Find the visitor with relationships
-        $visitor = \App\Models\Visitor::with(['department', 'branch', 'visitorCategory'])
+        $visitor = \App\Models\Visitor::with(['department', 'branch', 'category'])
             ->findOrFail($visitor);
         
         // Verify visitor belongs to company
         if ($visitor->company_id != $company->id) {
-            throw new \Exception("Visitor does not belong to this company");
+            \Log::error('Visitor company mismatch in publicVisitorIndex:', [
+                'visitor_id' => $visitor->id,
+                'visitor_company_id' => $visitor->company_id,
+                'route_company_id' => $company->id
+            ]);
+            
+            // Return to QR scan page with error message
+            return redirect()->route('qr.scan', ['company' => $company->id])
+                ->with('error', 'This visitor belongs to a different company. Please scan the correct QR code for company: ' . $visitor->company->name);
         }
 
         \Log::info("Displaying public visitor index for visitor ID: " . $visitor->id);
@@ -399,7 +420,7 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
 
     } catch (\Exception $e) {
         \Log::error('Error in publicVisitorIndex: ' . $e->getMessage());
-        return redirect()->route('public.visitor.index', ['company' => $company->id, 'visitor' => 'create'])
+        return redirect()->route('qr.visitor.create', ['company' => $company->id])
             ->with('error', 'Could not load visitor details. ' . $e->getMessage());
     }
 }

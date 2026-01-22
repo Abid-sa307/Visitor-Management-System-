@@ -97,16 +97,6 @@ Route::get('/visitor-management-system-in-{country}', [VmsLandingController::cla
 */
 // QR Code Management Routes
 // In routes/web.php
-Route::get('/public/company/{company}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])
-    ->name('public.visitor.index');
-
-// Branch-specific visitor index
-Route::get('/public/company/{company}/branch/{branch}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])
-    ->name('public.visitor.index.branch');
-
-
-
-    
 Route::prefix('qr')->name('qr.')->group(function () {
     // QR Code Management
     Route::get('/scan/{company}/{branch?}', [\App\Http\Controllers\QRController::class, 'scan'])->name('scan');
@@ -205,8 +195,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
     Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
     Route::post('/undo-security-checkout/{id}', [VisitorController::class, 'undoSecurityCheckout'])->name('visitors.undo-security-checkout');
-    Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
-    Route::get('/visitors/{id}/pass/pdf', [VisitorController::class, 'downloadPassPDF'])->name('visitors.pass.pdf');
     Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
     Route::put('/visitors/{id}/visit/undo', [VisitorController::class, 'undoVisit'])->name('visitors.visit.undo');
@@ -264,6 +252,51 @@ Route::middleware(['auth'])->group(function () {
 
 /*
 |----------------------------------------------------------------------|
+| Public Visit Form Routes (No Authentication Required)
+|----------------------------------------------------------------------|
+*/
+Route::prefix('public')->name('public.')->group(function () {
+    // Visitor tracking route
+    Route::get('/visitors/{visitor}/track', [\App\Http\Controllers\QRController::class, 'trackVisitor'])
+        ->name('visitor.track');
+    
+    // Show public visit form (for new visits)
+    Route::get('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
+        ->name('visitor.visit.form');
+    
+    // Show public visit form with branch (for branch-specific QR scans)
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
+        ->name('visitor.visit.form.branch');
+    
+    // Handle public visit form submission (for new and existing visits)
+    Route::match(['post', 'put'], '/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
+        ->name('visitor.visit.store');
+    
+    // Handle public visit form submission with branch (for branch-specific QR scans)
+    Route::match(['post', 'put'], '/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
+        ->name('visitor.visit.store.branch');
+    
+    // Show edit form for existing visits
+    Route::get('/companies/{company}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
+        ->name('visitor.visit.edit');
+    
+    // Show edit form for existing visits with branch
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
+        ->name('visitor.visit.edit.branch');
+    
+    // Show visitor details
+    Route::get('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRManagementController::class, 'publicVisitorIndex'])
+        ->name('visitor.show');
+    
+    // Public visitor pass routes (no authentication required)
+    Route::get('/visitors/{id}/pass', [\App\Http\Controllers\VisitorController::class, 'printPass'])
+        ->name('visitors.pass');
+    Route::get('/visitors/{id}/pass/pdf', [\App\Http\Controllers\VisitorController::class, 'downloadPassPDF'])
+        ->name('visitors.pass.pdf');
+});
+
+/*
+|----------------------------------------------------------------------|
 | Company Panel Routes (Role: company)
 |----------------------------------------------------------------------|
 */
@@ -286,6 +319,8 @@ Route::prefix('company')
         Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
         Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
         Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
+        
+        // Visitor Pass routes
         Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
         Route::get('/visitors/{id}/pass/pdf', [VisitorController::class, 'downloadPassPDF'])->name('visitors.pass.pdf');
         
@@ -615,41 +650,6 @@ Route::get('/models/{filename}', function ($filename) {
     }
     abort(404, 'Model file not found: ' . $filename);
 })->where('filename', '.*');
-
-// Public visit routes
-Route::prefix('public')->name('public.')->group(function () {
-    // Visitor tracking route
-    Route::get('/visitors/{visitor}/track', [\App\Http\Controllers\QRController::class, 'trackVisitor'])
-        ->name('visitor.track');
-    
-    // Show public visit form (for new visits)
-    Route::get('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
-        ->name('visitor.visit.form');
-    
-    // Show public visit form with branch (for branch-specific QR scans)
-    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
-        ->name('visitor.visit.form.branch');
-    
-    // Handle public visit form submission (for new and existing visits)
-    Route::match(['post', 'put'], '/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
-        ->name('visitor.visit.store');
-    
-    // Handle public visit form submission with branch (for branch-specific QR scans)
-    Route::match(['post', 'put'], '/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
-        ->name('visitor.visit.store.branch');
-    
-    // Show edit form for existing visits
-    Route::get('/companies/{company}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
-        ->name('visitor.visit.edit');
-    
-    // Show edit form for existing visits with branch
-    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
-        ->name('visitor.visit.edit.branch');
-    
-    // Show visitor details
-    Route::get('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRController::class, 'showPublicVisitor'])
-        ->name('visitor.show');
-});
 
 // Breeze/Auth Routes
 require __DIR__ . '/auth.php';

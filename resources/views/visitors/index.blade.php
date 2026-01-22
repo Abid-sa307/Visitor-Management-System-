@@ -128,7 +128,7 @@
         <th>Email</th>
         <th>Visit Date</th>
         <th>Approval Status</th>
-        <th>In/Out Status</th>
+        <th>Mark In/Out</th>
         <th style="min-width: 180px;">Actions</th>
     </tr>
 </thead>
@@ -144,7 +144,19 @@
                 <span class="badge bg-warning">{{ $visitor->status ?? 'Pending' }}</span>
             </td>
             <td>
-                <span class="badge bg-secondary">Pending</span>
+                @php
+                    $status = 'Pending';
+                    $badgeClass = 'bg-secondary';
+                    
+                    if ($visitor->in_time && !$visitor->out_time) {
+                        $status = 'Marked In';
+                        $badgeClass = 'bg-success';
+                    } elseif ($visitor->in_time && $visitor->out_time) {
+                        $status = 'Completed';
+                        $badgeClass = 'bg-primary';
+                    }
+                @endphp
+                <span class="badge {{ $badgeClass }}">{{ $status }}</span>
             </td>
               <td>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -187,12 +199,12 @@
                     </button>
                   @else
                     <div class="btn-group" role="group">
-                      <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
+                      <a href="{{ route('company.visitors.pass', $visitor->id) }}" target="_blank"
                          class="action-btn action-btn--view action-btn--icon"
                          title="Print Pass">
                         <i class="fas fa-print"></i>
                       </a>
-                      <a href="{{ route('visitors.pass.pdf', $visitor->id) }}"
+                      <a href="{{ route('company.visitors.pass.pdf', $visitor->id) }}"
                          class="action-btn action-btn--view action-btn--icon"
                          title="Download PDF">
                         <i class="fas fa-file-pdf"></i>
