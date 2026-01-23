@@ -285,6 +285,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Company</th>
+                    <th>Branch</th>
                     <th>Department</th>
                     <th>Purpose</th>
                     <th>In Time</th>
@@ -299,6 +300,7 @@
                     <tr>
                         <td class="fw-semibold">{{ $visitor->name }}</td>
                         <td>{{ $visitor->company->name ?? '—' }}</td>
+                        <td>{{ $visitor->branch->name ?? '—' }}</td>
                         <td>{{ $visitor->department->name ?? '—' }}</td>
                         <td>{{ $visitor->purpose ?? '—' }}</td>
                         <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>

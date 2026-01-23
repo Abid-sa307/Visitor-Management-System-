@@ -125,6 +125,7 @@
         <th>Name</th>
         <th>Company</th>
         <th>Branch</th>
+        <th>Department</th>
         <th>Email</th>
         <th>Visit Date</th>
         <th>Approval Status</th>
@@ -138,6 +139,7 @@
             <td>{{ $visitor->name }}</td>
             <td>{{ $visitor->company->name ?? '—' }}</td>
             <td>{{ $visitor->branch->name ?? '—' }}</td>
+            <td>{{ $visitor->department->name ?? '—' }}</td>
             <td>{{ $visitor->email ?? '—' }}</td>
             <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
             <td>
@@ -232,7 +234,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="9" class="text-muted">No visitors found.</td></tr>
+            <tr><td colspan="10" class="text-muted">No visitors found.</td></tr>
           @endforelse
         </tbody>
       </table>

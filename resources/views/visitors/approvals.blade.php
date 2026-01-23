@@ -115,6 +115,8 @@
                         <th>Phone</th>
                         <th>Company</th>
                         <th>Department</th>
+                        <th>Documents</th>
+                        <th>Workman Policy</th>
                         <th>Status</th>
                         <th>Visit</th>
                     </tr>
@@ -127,6 +129,24 @@
                         <td>{{ $visitor->phone }}</td>
                         <td>{{ $visitor->company->name ?? 'N/A' }}</td>
                         <td>{{ $visitor->department->name ?? 'N/A' }}</td>
+                        <td>
+                            @if($visitor->documents && $visitor->documents->count() > 0)
+                                <span class="badge bg-info">
+                                    <i class="fas fa-file me-1"></i>{{ $visitor->documents->count() }}
+                                </span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($visitor->workman_policy && $visitors->workman_policy->count() > 0)
+                                <span class="badge bg-success">
+                                    <i class="fas fa-file me-1"></i>{{ $visitor->workman_policy->count() }}
+                                </span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td>
                             @php
                                 $st = $visitor->status;

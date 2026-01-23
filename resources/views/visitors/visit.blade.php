@@ -123,14 +123,14 @@
 
             {{-- Visitor Company --}}
             <div class="mb-3">
-                <label class="form-label fw-semibold">Visitor's Company Name</label>
+                <label class="form-label fw-semibold">Visitor's Company Name (optional)</label>
                 <input type="text" name="visitor_company" class="form-control" value="{{ old('visitor_company', $visitor->visitor_company) }}">
             </div>
 
             {{-- Visitor Website --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Visitor Company Website (optional)</label>
-                <input type="url" name="visitor_website" class="form-control" value="{{ old('visitor_website', $visitor->visitor_website) }}">
+                <input type="text" name="visitor_website" class="form-control" value="{{ old('visitor_website', $visitor->visitor_website) }}">
             </div>
 
             {{-- Vehicle Type & Number --}}

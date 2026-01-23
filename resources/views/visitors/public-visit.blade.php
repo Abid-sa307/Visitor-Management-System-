@@ -136,7 +136,7 @@
 
             {{-- Visitor Company --}}
             <div class="mb-3">
-                <label class="form-label fw-semibold">Visitor's Company Name</label>
+                <label class="form-label fw-semibold">Visitor's Company Name (optional)</label>
                 <input type="text" name="visitor_company" class="form-control @error('visitor_company') is-invalid @enderror" 
                        value="{{ old('visitor_company', $visitor->visitor_company ?? '') }}">
                 @error('visitor_company')
@@ -147,7 +147,7 @@
             {{-- Visitor Website --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Visitor Company Website (optional)</label>
-                <input type="url" name="visitor_website" class="form-control @error('visitor_website') is-invalid @enderror" 
+                <input type="text" name="visitor_website" class="form-control @error('visitor_website') is-invalid @enderror" 
                        value="{{ old('visitor_website', $visitor->visitor_website ?? '') }}">
                 @error('visitor_website')
                     <div class="invalid-feedback">{{ $message }}</div>

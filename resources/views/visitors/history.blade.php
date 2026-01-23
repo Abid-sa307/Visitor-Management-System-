@@ -125,35 +125,14 @@
             </form>
         </div>
     </div>
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All Statuses</option>
-                        <option value="Pending" {{ request('status') == 'Pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
-                        <option value="Rejected" {{ request('status') == 'Rejected' ? 'selected' : '' }}>Rejected</option>
-                        <option value="Checked In" {{ request('status') == 'Checked In' ? 'selected' : '' }}>Checked In</option>
-                        <option value="Checked Out" {{ request('status') == 'Checked Out' ? 'selected' : '' }}>Checked Out</option>
-                    </select>
-                </div>
-
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fas fa-filter me-1"></i> Apply Filters
-                    </button>
-                    <a href="{{ route('visitors.history') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-undo me-1"></i> Reset
-                    </a>
-                </div>
-            </div>
-        </div>
-    </form>
+    {{-- FILTER FORM END --}}
 
     <!-- Table -->
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-primary">
+                <table class="table table-striped table-hover align-middle text-center border shadow-sm rounded-4 overflow-hidden">
+                    <thead class="table-primary text-uppercase">
                         <tr>
                             <th>Name</th>
                             <th>Company</th>
@@ -168,22 +147,25 @@
                     <tbody>
                         @forelse($visitors as $visitor)
                             <tr>
-                                <td class="fw-semibold">{{ $visitor->name }}</td>
+                                <td class="fw-semibold text-start">{{ $visitor->name }}</td>
                                 <td>{{ $visitor->company->name ?? '—' }}</td>
                                 <td>{{ $visitor->branch->name ?? '—' }}</td>
                                 <td>{{ $visitor->department->name ?? '—' }}</td>
                                 <td>{{ $visitor->phone }}</td>
                                 <td>
-                                    <span class="badge bg-{{ 
-                                        $visitor->status === 'Approved' ? 'success' : 
-                                        ($visitor->status === 'Rejected' ? 'danger' : 
-                                        ($visitor->status === 'Checked In' ? 'success' : 
-                                        ($visitor->status === 'Checked Out' ? 'dark' : 'secondary'))) }}">
+                                    @php
+                                        $statusClass = 'bg-secondary';
+                                        if ($visitor->status === 'Approved') $statusClass = 'bg-success';
+                                        elseif ($visitor->status === 'Rejected') $statusClass = 'bg-danger';
+                                        elseif ($visitor->status === 'Checked In') $statusClass = 'bg-info';
+                                        elseif ($visitor->status === 'Checked Out') $statusClass = 'bg-dark';
+                                    @endphp
+                                    <span class="badge {{ $statusClass }} px-2 py-1">
                                         {{ $visitor->status }}
                                     </span>
                                 </td>
-                                <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M Y, h:i A') : '—' }}</td>
-                                <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('d M Y, h:i A') : '—' }}</td>
+                                <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('M d, Y h:i A') : '—' }}</td>
+                                <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('M d, Y h:i A') : '—' }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -196,8 +178,10 @@
 
             <!-- Pagination -->
             @if($visitors->hasPages())
-                <div class="card-footer">
-                    {{ $visitors->appends(request()->query())->links() }}
+                <div class="card-footer bg-light border-top">
+                    <div class="d-flex justify-content-center">
+                        {{ $visitors->appends(request()->query())->links() }}
+                    </div>
                 </div>
             @endif
         </div>
