@@ -156,6 +156,19 @@
         const checkboxes = document.querySelectorAll('.department-checkbox');
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
         updateDepartmentText();
+        updateSelectAllDepartmentsState();
+    }
+
+    function updateSelectAllDepartmentsState() {
+        const selectAll = document.getElementById('selectAllDepartments');
+        const checkboxes = document.querySelectorAll('.department-checkbox');
+        if (checkboxes.length === 0) {
+            selectAll.checked = false;
+            selectAll.disabled = true;
+        } else {
+            selectAll.disabled = false;
+            selectAll.checked = checkboxes.length === document.querySelectorAll('.department-checkbox:checked').length;
+        }
     }
 
     function updateDepartmentText() {
@@ -168,11 +181,13 @@
         } else {
             text.textContent = `${checkboxes.length} departments selected`;
         }
+        updateSelectAllDepartmentsState();
     }
 
     $(document).ready(function() {
         // Initialize text on page load
         updateDepartmentText();
+        updateSelectAllDepartmentsState();
         
         // Set initial select all state
         const departmentCheckboxes = document.querySelectorAll('.department-checkbox');
@@ -214,11 +229,13 @@
                             departmentOptions.appendChild(div);
                         });
                         updateDepartmentText();
+                        updateSelectAllDepartmentsState();
                     }
                 });
             }
             
             updateDepartmentText();
+            updateSelectAllDepartmentsState();
         });
     });
 </script>

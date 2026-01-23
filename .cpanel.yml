@@ -1,4 +1,0 @@
-deployment:
-  tasks:
-    - export DEPLOYPATH=/home/visitorm/repositories/Visitor-Management-System-
-    - /bin/cp -R * $DEPLOYPATH

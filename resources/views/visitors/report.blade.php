@@ -55,7 +55,7 @@
                                 <div id="branchOptions" style="max-height: 120px; overflow-y: auto;">
                                 </div>
                                 <hr class="my-1">
-                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="applyBranches()">Apply</button>
                             </div>
                         </div>
                     </div>
@@ -77,7 +77,7 @@
                                 <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;">
                                 </div>
                                 <hr class="my-1">
-                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('departmentDropdownMenu').style.display='none'">Apply</button>
+                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="applyDepartments()">Apply</button>
                             </div>
                         </div>
                     </div>
@@ -103,7 +103,22 @@
             const checkboxes = document.querySelectorAll('.branch-checkbox');
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
             updateBranchText();
-            loadDepartmentsByBranches();
+            updateSelectAllBranchesState();
+            
+            // Unlock department dropdown when branches are selected
+            const anyChecked = document.querySelectorAll('.branch-checkbox:checked').length > 0;
+            const departmentBtn = document.querySelector('[data-dropdown="department"]');
+            if (departmentBtn) {
+                if (anyChecked) {
+                    departmentBtn.disabled = false;
+                    departmentBtn.style.opacity = '1';
+                    departmentBtn.style.cursor = 'pointer';
+                } else {
+                    departmentBtn.disabled = true;
+                    departmentBtn.style.opacity = '0.5';
+                    departmentBtn.style.cursor = 'not-allowed';
+                }
+            }
         }
 
         function toggleAllDepartments() {
@@ -111,6 +126,40 @@
             const checkboxes = document.querySelectorAll('.department-checkbox');
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
             updateDepartmentText();
+            updateSelectAllDepartmentsState();
+        }
+
+        function updateSelectAllBranchesState() {
+            const selectAll = document.getElementById('selectAllBranches');
+            const checkboxes = document.querySelectorAll('.branch-checkbox');
+            if (checkboxes.length === 0) {
+                selectAll.checked = false;
+                selectAll.disabled = true;
+            } else {
+                selectAll.disabled = false;
+                selectAll.checked = checkboxes.length === document.querySelectorAll('.branch-checkbox:checked').length;
+            }
+        }
+
+        function updateSelectAllDepartmentsState() {
+            const selectAll = document.getElementById('selectAllDepartments');
+            const checkboxes = document.querySelectorAll('.department-checkbox');
+            if (checkboxes.length === 0) {
+                selectAll.checked = false;
+                selectAll.disabled = true;
+            } else {
+                selectAll.disabled = false;
+                selectAll.checked = checkboxes.length === document.querySelectorAll('.department-checkbox:checked').length;
+            }
+        }
+
+        function applyBranches() {
+            document.getElementById('branchDropdownMenu').style.display = 'none';
+            loadDepartmentsByBranches();
+        }
+
+        function applyDepartments() {
+            document.getElementById('departmentDropdownMenu').style.display = 'none';
         }
 
         function updateBranchText() {
@@ -122,6 +171,22 @@
                 text.textContent = checkboxes[0].nextElementSibling.textContent;
             } else {
                 text.textContent = `${checkboxes.length} branches selected`;
+            }
+            updateSelectAllBranchesState();
+            
+            // Unlock department dropdown when branches are selected
+            const anyChecked = checkboxes.length > 0;
+            const departmentBtn = document.querySelector('[data-dropdown="department"]');
+            if (departmentBtn) {
+                if (anyChecked) {
+                    departmentBtn.disabled = false;
+                    departmentBtn.style.opacity = '1';
+                    departmentBtn.style.cursor = 'pointer';
+                } else {
+                    departmentBtn.disabled = true;
+                    departmentBtn.style.opacity = '0.5';
+                    departmentBtn.style.cursor = 'not-allowed';
+                }
             }
         }
 
@@ -135,6 +200,7 @@
             } else {
                 text.textContent = `${checkboxes.length} departments selected`;
             }
+            updateSelectAllDepartmentsState();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -149,6 +215,16 @@
             
             console.log('Initial branches:', allBranches);
             console.log('Initial departments:', allDepartments);
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#branchBtn') && !e.target.closest('#branchDropdownMenu')) {
+                    document.getElementById('branchDropdownMenu').style.display = 'none';
+                }
+                if (!e.target.closest('#departmentBtn') && !e.target.closest('#departmentDropdownMenu')) {
+                    document.getElementById('departmentDropdownMenu').style.display = 'none';
+                }
+            });
             
             // Initialize branches
             function initBranches(skipDeptLoad = false) {
@@ -166,7 +242,7 @@
                     checkbox.value = branch.id;
                     checkbox.id = `branch_${branch.id}`;
                     checkbox.checked = isChecked;
-                    checkbox.onchange = function() { updateBranchText(); loadDepartmentsByBranches(); };
+                    checkbox.onchange = function() { updateBranchText(); };
                     
                     const label = document.createElement('label');
                     label.className = 'form-check-label';
@@ -178,6 +254,7 @@
                     branchOptions.appendChild(div);
                 });
                 updateBranchText();
+                updateSelectAllBranchesState();
                 if (branches.length > 0) {
                     branchBtn.disabled = false;
                     branchBtn.style.opacity = '1';
@@ -204,6 +281,7 @@
                     departmentOptions.appendChild(div);
                 });
                 updateDepartmentText();
+                updateSelectAllDepartmentsState();
                 if (departments.length > 0) {
                     departmentBtn.disabled = false;
                     departmentBtn.style.opacity = '1';

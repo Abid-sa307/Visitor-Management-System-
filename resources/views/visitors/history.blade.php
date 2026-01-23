@@ -261,6 +261,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkboxes = document.querySelectorAll('.branch-checkbox');
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
         updateBranchText();
+        updateSelectAllBranchesState();
+        
+        // Unlock department dropdown when branches are selected
+        const anyChecked = document.querySelectorAll('.branch-checkbox:checked').length > 0;
+        const departmentButton = document.querySelector('[data-dropdown="department"]');
+        if (departmentButton) {
+            if (anyChecked) {
+                departmentButton.disabled = false;
+                departmentButton.style.opacity = '1';
+                departmentButton.style.cursor = 'pointer';
+            } else {
+                departmentButton.disabled = true;
+                departmentButton.style.opacity = '0.5';
+                departmentButton.style.cursor = 'not-allowed';
+            }
+        }
     }
 
     function toggleAllDepartments() {
@@ -268,6 +284,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkboxes = document.querySelectorAll('.department-checkbox');
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
         updateDepartmentText();
+        updateSelectAllDepartmentsState();
+    }
+
+    function updateSelectAllBranchesState() {
+        const selectAll = document.getElementById('selectAllBranches');
+        const checkboxes = document.querySelectorAll('.branch-checkbox');
+        if (checkboxes.length === 0) {
+            selectAll.checked = false;
+            selectAll.disabled = true;
+        } else {
+            selectAll.disabled = false;
+            selectAll.checked = checkboxes.length === document.querySelectorAll('.branch-checkbox:checked').length;
+        }
+    }
+
+    function updateSelectAllDepartmentsState() {
+        const selectAll = document.getElementById('selectAllDepartments');
+        const checkboxes = document.querySelectorAll('.department-checkbox');
+        if (checkboxes.length === 0) {
+            selectAll.checked = false;
+            selectAll.disabled = true;
+        } else {
+            selectAll.disabled = false;
+            selectAll.checked = checkboxes.length === document.querySelectorAll('.department-checkbox:checked').length;
+        }
     }
 
     function updateBranchText() {
@@ -279,6 +320,22 @@ document.addEventListener('DOMContentLoaded', function() {
             text.textContent = checkboxes[0].nextElementSibling.textContent;
         } else {
             text.textContent = `${checkboxes.length} branches selected`;
+        }
+        updateSelectAllBranchesState();
+        
+        // Unlock department dropdown when branches are selected
+        const anyChecked = checkboxes.length > 0;
+        const departmentButton = document.querySelector('[data-dropdown="department"]');
+        if (departmentButton) {
+            if (anyChecked) {
+                departmentButton.disabled = false;
+                departmentButton.style.opacity = '1';
+                departmentButton.style.cursor = 'pointer';
+            } else {
+                departmentButton.disabled = true;
+                departmentButton.style.opacity = '0.5';
+                departmentButton.style.cursor = 'not-allowed';
+            }
         }
     }
 
@@ -292,6 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             text.textContent = `${checkboxes.length} departments selected`;
         }
+        updateSelectAllDepartmentsState();
     }
 
     // Make functions global
@@ -299,6 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.toggleAllDepartments = toggleAllDepartments;
     window.updateBranchText = updateBranchText;
     window.updateDepartmentText = updateDepartmentText;
+    window.updateSelectAllBranchesState = updateSelectAllBranchesState;
+    window.updateSelectAllDepartmentsState = updateSelectAllDepartmentsState;
 
     // Close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
