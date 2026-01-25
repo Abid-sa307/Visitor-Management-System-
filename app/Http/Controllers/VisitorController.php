@@ -258,6 +258,29 @@ class VisitorController extends Controller
 
     public function create()
     {
+        // Check if current time is within branch operation hours for selected branch
+        if (request()->filled('branch_id') && !session('alert')) {
+            $branchId = request()->input('branch_id');
+            $branchModel = \App\Models\Branch::find($branchId);
+            
+            if ($branchModel) {
+                $currentTime = now()->format('H:i');
+                $startTime = date('H:i', strtotime($branchModel->start_time));
+                $endTime = date('H:i', strtotime($branchModel->end_time));
+                
+                if ($startTime && $endTime) {
+                    if ($currentTime < $startTime || $currentTime > $endTime) {
+                        $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                        
+                        // Set alert in session and redirect back
+                        return redirect()->route('visitors.index')
+                            ->with('error', $errorMessage)
+                            ->with('alert', $errorMessage);
+                    }
+                }
+            }
+        }
+        
         $companies   = $this->getCompanies();
         $departments = $this->getDepartments();
         $categories  = VisitorCategory::query()
@@ -279,6 +302,29 @@ class VisitorController extends Controller
     
     public function store(Request $request)
     {
+        // Check if current time is within branch operation hours for selected branch
+        if ($request->filled('branch_id')) {
+            $branchId = $request->input('branch_id');
+            $branchModel = \App\Models\Branch::find($branchId);
+            
+            if ($branchModel) {
+                $currentTime = now()->format('H:i');
+                $startTime = date('H:i', strtotime($branchModel->start_time));
+                $endTime = date('H:i', strtotime($branchModel->end_time));
+                
+                if ($startTime && $endTime) {
+                    if ($currentTime < $startTime || $currentTime > $endTime) {
+                        $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                        
+                        return redirect()->route('visitors.index')
+                            ->with('error', $errorMessage)
+                            ->with('alert', $errorMessage)
+                            ->withInput();
+                    }
+                }
+            }
+        }
+        
         return DB::transaction(function () use ($request) {
             // ---------------------------
             // Validation rules
@@ -311,7 +357,7 @@ class VisitorController extends Controller
                 'vehicle_number'      => 'nullable|string|max:50',
                 'goods_in_car'        => 'nullable|string|max:255',
                 'workman_policy'      => 'nullable|in:Yes,No',
-                'workman_policy_photo'=> 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'workman_policy_photo'=> 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,tiff,webp|max:5120',
                 'document'            => 'nullable|file|mimes:pdf,doc,docx,jpeg,png,jpg|max:5120',
             ], $messages);
 
@@ -1001,7 +1047,7 @@ class VisitorController extends Controller
                 'vehicle_number'      => 'nullable|string',
                 'goods_in_car'        => 'nullable|string',
                 'workman_policy'      => 'nullable|in:Yes,No',
-                'workman_policy_photo'=> 'nullable|image|max:2048',
+                'workman_policy_photo'=> 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,tiff,webp|max:5120',
                 'status'              => 'sometimes|in:Pending,Approved,Rejected',
             ]);
 
@@ -1876,25 +1922,40 @@ class VisitorController extends Controller
     {
         $query = $this->companyScope(Visitor::query())
             ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
-            ->whereIn('status', ['approved', 'rejected'])
             ->latest('updated_at');
+
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+            \Log::info('Approval Report - Status filter applied: ' . $request->status);
+        } else {
+            // Temporarily show ALL statuses to see what's in the database
+            // $query->whereIn('status', ['Approved', 'Rejected']);
+            \Log::info('Approval Report - Showing ALL statuses for debugging');
+        }
+
+        // Apply branch filter (handle array from dropdown checkboxes)
+        if ($request->filled('branch_ids')) {
+            $query->whereIn('branch_id', $request->branch_ids);
+            \Log::info('Approval Report - Branch IDs filter: ' . json_encode($request->branch_ids));
+        }
+
+        // Apply department filter (handle array from dropdown checkboxes)
+        if ($request->filled('department_ids')) {
+            $query->whereIn('department_id', $request->department_ids);
+            \Log::info('Approval Report - Department IDs filter: ' . json_encode($request->department_ids));
+        }
 
         // Apply date range filter
         $this->applyDateRange($query, 'updated_at', $request);
 
+        // Log the final SQL query for debugging
+        \Log::info('Approval Report Query: ' . $query->toSql());
+        \Log::info('Approval Report Bindings: ' . json_encode($query->getBindings()));
+
         // Apply company filter if provided and user is superadmin
         if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
             $query->where('company_id', $request->company_id);
-        }
-
-        // Apply department filter if provided
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
-        
-        // Apply branch filter if provided
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
         }
 
         // Get companies for filter dropdown
@@ -1917,6 +1978,9 @@ class VisitorController extends Controller
         $branches = $branchesQuery->pluck('name', 'id');
 
         $visitors = $query->paginate(10)->appends($request->query());
+
+        // Log the total count for debugging
+        \Log::info('Approval Report - Total visitors found: ' . $visitors->total());
 
         return view('visitors.approval_status', compact(
             'visitors',
@@ -1966,12 +2030,15 @@ class VisitorController extends Controller
     public function hourlyReport(Request $request)
     {
         $query = Visitor::whereNotNull('in_time')
+            ->leftJoin('branches', 'visitors.branch_id', '=', 'branches.id')
             ->select(
                 DB::raw('HOUR(in_time) as hour'),
                 DB::raw('DATE(in_time) as date'),
+                'branches.name as branch_name',
                 DB::raw('COUNT(*) as count')
             )
-            ->groupBy('hour', 'date')
+            ->groupBy('hour', 'date', 'branches.name')
+            ->orderBy('branches.name')
             ->orderBy('date')
             ->orderBy('hour');
 
@@ -1985,7 +2052,7 @@ class VisitorController extends Controller
 
         // Apply company filter
         if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
+            $query->where('visitors.company_id', $request->company_id);
         }
 
         // Apply department filter
@@ -1995,12 +2062,12 @@ class VisitorController extends Controller
 
         // Apply branch filter
         if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+            $query->where('visitors.branch_id', $request->branch_id);
         }
 
         // Apply company filter for non-superadmins
         if (auth()->user()->role !== 'superadmin') {
-            $query->where('company_id', auth()->user()->company_id);
+            $query->where('visitors.company_id', auth()->user()->company_id);
 
             // If user has specific departments assigned
             if (auth()->user()->departments->isNotEmpty()) {
@@ -2015,6 +2082,7 @@ class VisitorController extends Controller
         $series = $hourlyData->map(function($item) {
             return [
                 'hour' => $item->date . ' ' . str_pad($item->hour, 2, '0', STR_PAD_LEFT) . ':00:00',
+                'branch_name' => $item->branch_name ?? 'Unknown Branch',
                 'count' => $item->count
             ];
         })->toArray();

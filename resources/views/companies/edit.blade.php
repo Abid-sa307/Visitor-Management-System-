@@ -206,12 +206,22 @@
                                         <input name="branches[address][]" class="form-control form-control-sm" value="{{ $b->address }}" placeholder="Address">
                                     </td>
                                     <td>
-                                        <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"
-                                               value="{{ $b->start_time ?? '' }}">
+                                        <div class="d-flex">
+                                            <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"
+                                                   value="{{ $b->start_time ?? '' }}" id="start_time_{{ $b->id }}">
+                                            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('start_time_{{ $b->id }}')" title="Clear Start Time">
+                                                <i class="fas fa-eraser"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                     <td>
-                                        <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"
-                                               value="{{ $b->end_time ?? '' }}">
+                                        <div class="d-flex">
+                                            <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"
+                                                   value="{{ $b->end_time ?? '' }}" id="end_time_{{ $b->id }}">
+                                            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('end_time_{{ $b->id }}')" title="Clear End Time">
+                                                <i class="fas fa-eraser"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                     <td class="text-end">
                                         @if($b->id === $mainBranchId)
@@ -349,8 +359,22 @@ document.addEventListener('DOMContentLoaded', function(){
       <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
       <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
       <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
-      <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"></td>
-      <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"></td>
+      <td>
+        <div class="d-flex">
+          <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" id="start_time_${Date.now()}">
+          <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('start_time_${Date.now()}')" title="Clear Start Time">
+            <i class="fas fa-eraser"></i>
+          </button>
+        </div>
+      </td>
+      <td>
+        <div class="d-flex">
+          <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" id="end_time_${Date.now()}">
+          <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('end_time_${Date.now()}')" title="Clear End Time">
+            <i class="fas fa-eraser"></i>
+          </button>
+        </div>
+      </td>
       <td class="text-end">
         <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
         <input type="hidden" name="branches[deleted][]" value="0" class="delete-marker">
@@ -427,6 +451,24 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     });
   });
+  
+  // Make the clear function globally accessible
+  window.clearOperationTime = function(fieldId) {
+    const input = document.getElementById(fieldId);
+    
+    if (input) {
+      input.value = '';
+      console.log('Cleared field:', fieldId);
+    } else {
+      console.log('Field not found:', fieldId);
+    }
+  };
+  
+  // Function to clear both operation times (kept for backward compatibility)
+  window.clearOperationTimes = function(startId, endId) {
+    window.clearOperationTime(startId);
+    window.clearOperationTime(endId);
+  };
 });
 </script>
 @endpush

@@ -199,6 +199,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
     Route::put('/visitors/{id}/visit/undo', [VisitorController::class, 'undoVisit'])->name('visitors.visit.undo');
     
+    // Visitor Pass routes
+    Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+    Route::get('/visitors/{id}/pass/pdf', [VisitorController::class, 'downloadPassPDF'])->name('visitors.pass.pdf');
+    
     // Face Recognition
     Route::post('/visitors/{visitor}/verify-face', [FaceRecognitionController::class, 'verifyVisitor'])->name('visitors.verify-face');
     Route::post('/visitors/{visitor}/register-face', [FaceRecognitionController::class, 'registerVisitor'])->name('visitors.register-face');

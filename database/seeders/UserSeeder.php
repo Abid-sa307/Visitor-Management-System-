@@ -33,7 +33,7 @@ public function run(): void
             ['email' => 'visitormanagmentsystemsoftware@gmail.com'],
             [
                 'name' => 'Admin User',
-                'password' => bcrypt('Nnt@12345'),
+                'password' => bcrypt('NNT!rM@9Q2^Sx#P4D7'),
                 'company_id' => $company->id,
                 'role' => 'superadmin',
                 'is_super_admin' => 1,

@@ -149,7 +149,7 @@ public function index(Request $request)
     }
 
     $monthly = $monthlyBase
-        ->selectRaw("DATE_FORMAT(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30'), '%b') as month, COUNT(*) as count")
+        ->selectRaw("DATE_FORMAT(created_at, '%b') as month, COUNT(*) as count")
         ->groupBy('month')
         ->orderByRaw("STR_TO_DATE(month, '%b')")
         ->get();
@@ -174,25 +174,18 @@ public function index(Request $request)
         });
 
     if ($singleDay) {
-        $hourBase->whereRaw(
-            "DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) = ?",
-            [$from]
-        );
+        $hourBase->whereDate('created_at', $from);
     } elseif ($from && $to) {
         // For multi-day range, aggregate hours across all days
-        $hourBase->whereRaw(
-            "DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) BETWEEN ? AND ?",
-            [$from, $to]
-        );
+        $hourBase->whereDate('created_at', '>=', $from)
+                 ->whereDate('created_at', '<=', $to);
     } else {
         // If no date range, show today's hours
-        $hourBase->whereRaw(
-            "DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) = CURDATE()"
-        );
+        $hourBase->whereDate('created_at', Carbon::today());
     }
 
     $hourly = $hourBase
-        ->selectRaw("HOUR(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) as hour, COUNT(*) as count")
+        ->selectRaw("HOUR(created_at) as hour, COUNT(*) as count")
         ->groupBy('hour')
         ->orderBy('hour')
         ->get()
@@ -205,31 +198,47 @@ public function index(Request $request)
         $hourData[]   = isset($hourly[$i]) ? (int) $hourly[$i]->count : 0;
     }
 
-    // ----- Day-wise chart -----
-    $dayWiseBase = clone $dateFilteredQuery;
+    // ----- Day-wise chart (Last 7 Days) -----
+    // Use fresh base query to avoid restrictive date filters
+    $dayWiseBase = Visitor::query();
+
+    // Apply role-based filtering but not date filtering
+    if (in_array(($user->role ?? null), ['company', 'company_user'])) {
+        $dayWiseBase->where('company_id', $user->company_id);
+        if ($user->company?->auto_approve_visitors) {
+            $dayWiseBase->where('status', 'Approved');
+        }
+    } elseif (($user->role ?? null) === 'superadmin' && $selectedCompany) {
+        $dayWiseBase->where('company_id', $selectedCompany);
+    }
+
+    // Apply branch and department filters if selected
+    if (!empty($branchIds)) {
+        $dayWiseBase->whereIn('branch_id', $branchIds);
+    }
+    if (!empty($departmentIds)) {
+        $dayWiseBase->whereIn('department_id', $departmentIds);
+    }
+    
+    // Always show last 7 days for visitor trends
+    $periodStart = now()->copy()->subDays(6); // 6 days ago + today = 7 days total
+    $periodEnd   = now();
+    
+    // Filter data to last 7 days
+    $dayWiseBase->whereDate('created_at', '>=', $periodStart->format('Y-m-d'))
+                 ->whereDate('created_at', '<=', $periodEnd->format('Y-m-d'));
 
     $dayWise = (clone $dayWiseBase)
-        ->selectRaw("DATE(CONVERT_TZ(COALESCE(in_time, created_at), '+00:00', '+05:30')) as date, COUNT(*) as count")
+        ->selectRaw("DATE(created_at) as date, COUNT(*) as count")
         ->groupBy('date')
         ->orderBy('date')
         ->get()
         ->pluck('count', 'date');
 
-    if ($from && $to) {
-        $periodStart = Carbon::parse($from);
-        $periodEnd   = Carbon::parse($to);
-    } else {
-        $firstRecord = (clone $dayWiseBase)->orderBy('created_at')->value('created_at');
-        $lastRecord  = (clone $dayWiseBase)->orderByDesc('created_at')->value('created_at');
+    // Debug: Log the raw data
+    \Log::info('Day Wise Base Query SQL: ' . $dayWiseBase->toSql());
+    \Log::info('Day Wise Raw Data: ' . $dayWise->toJson());
 
-        if ($firstRecord && $lastRecord) {
-            $periodStart = Carbon::parse($firstRecord);
-            $periodEnd   = Carbon::parse($lastRecord);
-        } else {
-            $periodStart = now();
-            $periodEnd   = now();
-        }
-    }
     $dayWiseLabels  = [];
     $dayWiseData    = [];
 

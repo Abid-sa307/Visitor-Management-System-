@@ -130,7 +130,7 @@
         <th>Visit Date</th>
         <th>Approval Status</th>
         <th>Mark In/Out</th>
-        <th style="min-width: 180px;">Actions</th>
+        <th style="min-width: 220px;">Actions</th>
     </tr>
 </thead>
 <tbody>
@@ -201,12 +201,12 @@
                     </button>
                   @else
                     <div class="btn-group" role="group">
-                      <a href="{{ route('company.visitors.pass', $visitor->id) }}" target="_blank"
+                      <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
                          class="action-btn action-btn--view action-btn--icon"
                          title="Print Pass">
                         <i class="fas fa-print"></i>
                       </a>
-                      <a href="{{ route('company.visitors.pass.pdf', $visitor->id) }}"
+                      <a href="{{ route('visitors.pass.pdf', $visitor->id) }}"
                          class="action-btn action-btn--view action-btn--icon"
                          title="Download PDF">
                         <i class="fas fa-file-pdf"></i>
@@ -504,6 +504,11 @@ function resetVerificationUI() {
   // Stop any active camera
   stopCamera();
 }
+
+// Show alert for operation hours validation
+@if(session('alert'))
+    alert('{{ session('alert') }}');
+@endif
 
 </script>
 @endpush

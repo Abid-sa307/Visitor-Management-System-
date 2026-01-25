@@ -139,18 +139,30 @@
         $timeSlots[] = "$start-$end";
       }
       
-      // Get unique dates
-      $dates = collect($series)
-        ->map(fn($row) => \Carbon\Carbon::parse($row['hour'])->format('Y-m-d'))
+      // Get unique branches that have data
+      $branches = collect($series)
+        ->map(fn($row) => $row['branch_name'] ?? 'Unknown Branch')
         ->unique()
         ->sort()
         ->values();
+      
+      // Get unique dates for each branch
+      $branchDates = [];
+      foreach ($branches as $branch) {
+        $branchDates[$branch] = collect($series)
+          ->filter(fn($row) => ($row['branch_name'] ?? 'Unknown Branch') === $branch)
+          ->map(fn($row) => \Carbon\Carbon::parse($row['hour'])->format('Y-m-d'))
+          ->unique()
+          ->sort()
+          ->values();
+      }
     @endphp
     
     <div class="table-responsive shadow-sm border rounded">
       <table class="table table-bordered align-middle text-center mb-0">
         <thead class="table-primary">
           <tr>
+            <th class="text-center">Branch</th>
             <th class="text-center">Date</th>
             @foreach($timeSlots as $slot)
               <th class="text-center small" style="min-width: 80px;">{{ $slot }}</th>
@@ -158,40 +170,48 @@
             <th class="text-center fw-bold">Total</th>
           </tr>
         </thead>
+
         <tbody>
-          @foreach($dates as $date)
-            @php
-              $dateTotal = 0;
-              $dateFormatted = \Carbon\Carbon::parse($date)->format('d M Y');
-            @endphp
-            <tr>
-              <th class="text-center">{{ $dateFormatted }}</th>
-              @foreach($timeSlots as $index => $slot)
-                @php
-                  $startHour = str_pad($index, 2, '0', STR_PAD_LEFT);
-                  $endHour = str_pad(($index + 1) % 24, 2, '0', STR_PAD_LEFT);
-                  
-                  $count = collect($series)
-                    ->filter(function($row) use ($date, $startHour) {
-                      $rowDate = date('Y-m-d', strtotime($row['hour']));
-                      $rowHour = date('H', strtotime($row['hour']));
-                      return $rowDate === $date && $rowHour === $startHour;
-                    })
-                    ->sum('count');
-                  
-                  $dateTotal += $count;
-                @endphp
-                <td class="{{ $count > 0 ? 'bg-light' : '' }}">
-                  {{ $count > 0 ? $count : '-' }}
-                </td>
-              @endforeach
-              <td class="fw-bold bg-light">{{ $dateTotal > 0 ? $dateTotal : '-' }}</td>
-            </tr>
+          @foreach($branches as $branch)
+            @foreach($branchDates[$branch] as $date)
+              @php
+                $dateTotal = 0;
+                $dateFormatted = \Carbon\Carbon::parse($date)->format('d M Y');
+              @endphp
+              <tr>
+                @if($loop->first)
+                  <th class="text-center" rowspan="{{ $branchDates[$branch]->count() }}">{{ $branch }}</th>
+                @endif
+                <th class="text-center">{{ $dateFormatted }}</th>
+                @foreach($timeSlots as $index => $slot)
+                  @php
+                    $startHour = str_pad($index, 2, '0', STR_PAD_LEFT);
+                    $endHour = str_pad(($index + 1) % 24, 2, '0', STR_PAD_LEFT);
+                    
+                    $count = collect($series)
+                      ->filter(function($row) use ($branch, $date, $startHour) {
+                        $rowDate = date('Y-m-d', strtotime($row['hour']));
+                        $rowHour = date('H', strtotime($row['hour']));
+                        $rowBranch = $row['branch_name'] ?? 'Unknown Branch';
+                        return $rowBranch === $branch && $rowDate === $date && $rowHour === $startHour;
+                      })
+                      ->sum('count');
+                    
+                    $dateTotal += $count;
+                  @endphp
+                  <td class="{{ $count > 0 ? 'bg-light' : '' }}">
+                    {{ $count > 0 ? $count : '-' }}
+                  </td>
+                @endforeach
+                <td class="fw-bold bg-light">{{ $dateTotal > 0 ? $dateTotal : '-' }}</td>
+              </tr>
+            @endforeach
           @endforeach
           
           <!-- Hourly Total Row -->
           <tr class="table-secondary">
             <th class="text-center">Total</th>
+            <th class="text-center">All Dates</th>
             @php
               $hourlyTotals = array_fill(0, 24, 0);
               $grandTotal = 0;

@@ -358,6 +358,7 @@
             <table class="table table-bordered table-hover align-middle text-center mb-0">
                 <thead class="table-primary text-uppercase">
                     <tr>
+                        <th>visitor's photo</th>
                         <th>Visitor Name</th>
                         <th>Visitor Category</th>
                         <th>Branch</th>
@@ -366,6 +367,7 @@
                         <th>Purpose of Visit</th>
                         <th>Vehicle (Type / No.)</th>
                         <th>Goods in Vehicle</th>
+                        <th>Document</th>
                         <th>Workman Policy</th>
                         <th>Date</th>
                         <th>Entry Time</th>
@@ -376,6 +378,11 @@
                 <tbody>
                     @foreach ($visitors as $visitor)
                         <tr>
+                            <td>
+                                {{ $visitor->photo ? '--' : '—' }}
+                                @if ($visitor->photo)
+                                    <img src="{{ asset('storage/' . $visitor->photo) }}" alt="{{ $visitor->name }}" class="img-fluid rounded" style="max-width: 100px; max-height: 100px;"></td>
+                                @endif
                             <td class="fw-semibold">{{ $visitor->name }}</td>
                             <td>{{ $visitor->category->name ?? '—' }}</td>
                             <td>{{ $visitor->branch->name ?? '—' }}</td>
@@ -387,6 +394,11 @@
                                 {{ $vt || $vn ? trim(($vt ?: '') . ($vt && $vn ? ' / ' : '') . ($vn ?: '')) : '—' }}
                             </td>
                             <td>{{ $visitor->goods_in_car ?? '—' }}</td>
+                            <td>{{ $visitor->document ?? '—' }}
+                                @if(!empty($visitor->documents))
+                                    <div><a href="{{ asset('storage/' . $visitor->documents) }}" target="_blank" class="small">View Photo</a></div>
+                                @endif
+                            </td>
                             <td>
                                 {{ $visitor->workman_policy ?? '—' }}
                                 @if(!empty($visitor->workman_policy_photo))

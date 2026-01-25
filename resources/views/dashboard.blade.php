@@ -282,7 +282,7 @@
     <div class="col-lg-6">
         <div class="card shadow h-100">
             <div class="card-header bg-warning text-dark">
-                <h6 class="m-0 font-weight-bold">Visitor Trends (Selected Range)</h6>
+                <h6 class="m-0 font-weight-bold">Visitor Trends (Last 7 Days)</h6>
             </div>
             <div class="card-body chart-container">
                 <canvas id="dayChartCanvas"></canvas>
@@ -744,6 +744,11 @@ document.addEventListener('DOMContentLoaded', function () {
             ]
         }
     };
+
+    // Debug: Log chart data to console
+    console.log('Day Wise Data:', {!! json_encode($dayWiseData) !!});
+    console.log('Day Wise Labels:', {!! json_encode($dayWiseLabels) !!});
+    console.log('Charts object:', charts);
 
     Object.values(charts).forEach(({el, type, labels, data, color, colors, fill}) => {
         const ctx = document.getElementById(el);

@@ -159,22 +159,13 @@
 
             {{-- Workman Policy --}}
             <div class="mb-3">
-                <label class="form-label fw-semibold">Upload Workman Policy Photo (Optional)</label>
-                <input type="file" name="workman_policy_photo" class="form-control">
+                <label class="form-label fw-semibold">Upload Workman Policy Document (Optional)</label>
+                <input type="file" name="workman_policy_photo" class="form-control" 
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp">
                 @if($visitor->workman_policy_photo)
-                    <small><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">View current</a></small>
+                    <small><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">View current document</a></small>
                 @endif
             </div>
-
-            {{-- Status --}}
-            <!-- <div class="mb-3">
-                <label class="form-label fw-semibold">Status</label>
-                <select name="status" class="form-select">
-                    <option value="Pending" {{ $visitor->status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="Approved" {{ $visitor->status == 'Approved' ? 'selected' : '' }}>Approved</option>
-                    <option value="Rejected" {{ $visitor->status == 'Rejected' ? 'selected' : '' }}>Rejected</option>
-                </select>
-            </div> -->
 
             <button type="submit" class="btn btn-success w-100 fw-bold" id="submitBtn">Save Visit Info</button>
         </form>
@@ -186,6 +177,31 @@
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('form');
     const submitBtn = document.getElementById('submitBtn');
+    
+    // Person to Visit dropdown and manual input functionality
+    const employeeSelect = document.getElementById('employeeSelect');
+    const manualInput = document.querySelector('input[name="person_to_visit_manual"]');
+    
+    if (employeeSelect && manualInput) {
+        function toggleManualInput() {
+            if (employeeSelect.value) {
+                // Employee selected, lock manual input
+                manualInput.disabled = true;
+                manualInput.value = '';
+                manualInput.placeholder = 'Disabled when employee is selected';
+            } else {
+                // No employee selected, enable manual input
+                manualInput.disabled = false;
+                manualInput.placeholder = 'Enter name if not in list';
+            }
+        }
+        
+        // Initial state
+        toggleManualInput();
+        
+        // Listen for changes
+        employeeSelect.addEventListener('change', toggleManualInput);
+    }
     
     // Function to update departments based on selected branch
     function updateDepartments(branchId) {

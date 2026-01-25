@@ -110,12 +110,16 @@
             <table class="table table-hover align-middle text-center">
                 <thead class="table-primary">
                     <tr>
+                        <th>Photo</th>
                         <th>Name</th>
                         <th>Purpose</th>
+                        <th>Person to Visit</th>
+                        <th>visitor's company</th>
+                        <th>vehicle number</th>
                         <th>Phone</th>
-                        <th>Company</th>
+                        <th>Branch</th>
                         <th>Department</th>
-                        <th>Documents</th>
+                        <th>Document</th>
                         <th>Workman Policy</th>
                         <th>Status</th>
                         <th>Visit</th>
@@ -124,27 +128,54 @@
                 <tbody>
                     @foreach($visitors as $visitor)
                     <tr>
+                        <td>
+                            @if($visitor->face_image)
+                                <img src="{{ asset('storage/' . $visitor->face_image) }}" 
+                                     alt="{{ $visitor->name }}'s photo" 
+                                     class="rounded-circle" 
+                                     style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #dee2e6;">
+                            @else
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px; border: 2px solid #dee2e6;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            @endif
+                        </td>
                         <td class="fw-semibold">{{ $visitor->name }}</td>
                         <td>{{ $visitor->purpose ?? '—' }}</td>
+                        <td>{{ $visitor->person_to_visit ?? '—' }}</td>
+                        <td>{{ $visitor->visitor_company ?? 'N/A' }}</td>
+                        <td>{{ $visitor->vehicle_number ?? 'N/A' }}</td>
                         <td>{{ $visitor->phone }}</td>
-                        <td>{{ $visitor->company->name ?? 'N/A' }}</td>
+                        
+                        <td>{{ $visitor->branch->name ?? 'N/A' }}</td>
                         <td>{{ $visitor->department->name ?? 'N/A' }}</td>
                         <td>
-                            @if($visitor->documents && $visitor->documents->count() > 0)
-                                <span class="badge bg-info">
-                                    <i class="fas fa-file me-1"></i>{{ $visitor->documents->count() }}
-                                </span>
+                            @if($visitor->documents)
+                                @php
+                                    $documents = $visitor->documents;
+                                    // Handle if documents is JSON/array or string
+                                    if (is_string($documents)) {
+                                        $documents = json_decode($documents, true) ?? [$documents];
+                                    }
+                                    $displayText = is_array($documents) ? count($documents) . ' file(s)' : basename($documents);
+                                @endphp
+                                {{ $displayText }}
+                                @if(is_array($documents))
+                                    @foreach($documents as $doc)
+                                        <div><a href="{{ asset('storage/' . $doc) }}" target="_blank" class="small">View Document</a></div>
+                                    @endforeach
+                                @else
+                                    <div><a href="{{ asset('storage/' . $documents) }}" target="_blank" class="small">View Document</a></div>
+                                @endif
                             @else
-                                <span class="text-muted">—</span>
+                                —
                             @endif
                         </td>
                         <td>
-                            @if($visitor->workman_policy && $visitors->workman_policy->count() > 0)
-                                <span class="badge bg-success">
-                                    <i class="fas fa-file me-1"></i>{{ $visitor->workman_policy->count() }}
-                                </span>
-                            @else
-                                <span class="text-muted">—</span>
+                            {{ $visitor->workman_policy ?? '—' }}
+                            @if(!empty($visitor->workman_policy_photo))
+                                <div><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank" class="small">View Photo</a></div>
                             @endif
                         </td>
                         <td>

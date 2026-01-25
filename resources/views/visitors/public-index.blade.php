@@ -8,9 +8,17 @@
                 <!-- Header with Gradient Background -->
                 <div class="card-header bg-gradient-primary text-white py-4">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="h3 mb-1">Welcome to {{ $company->name }}</h2>
-                            <p class="mb-0 opacity-75">Visitor Portal</p>
+                        <div class="d-flex align-items-center">
+                            @if(!empty($company->logo))
+                                <img src="{{ asset('storage/' . $company->logo) }}" 
+                                     alt="{{ $company->name }} Logo" 
+                                     class="me-3" 
+                                     style="height: 50px; width: auto; max-width: 150px; object-fit: contain;">
+                            @endif
+                            <div>
+                                <h2 class="h3 mb-1">Welcome to {{ $company->name }}</h2>
+                                <p class="mb-0 opacity-75">Visitor Portal</p>
+                            </div>
                         </div>
                         @if($visitor)
                         <div class="status-badge">
@@ -451,10 +459,7 @@
                             @else
                                 <!-- Regular New Visitor Registration -->
                                 <div class="mb-5">
-                                    <div class="icon-wrapper bg-soft-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
-                                    </div>
-                                    <h2 class="mb-3">Welcome to {{ $company->name }}</h2>
+ 
                                     <p class="lead text-muted mb-4">Please register as a visitor to continue your visit</p>
                                     
                                     <div class="d-grid gap-3 col-lg-6 mx-auto">
@@ -1153,6 +1158,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Show alert for operation hours validation
+@if(session('alert'))
+    alert('{{ session('alert') }}');
+@endif
 </script>
 @endif
+
+<!-- Operation Hours Alert Script -->
+@if(session('alert'))
+<script>
+    // Show alert for operation hours validation
+    alert('{{ session('alert') }}');
+</script>
+@endif
+
 @endsection

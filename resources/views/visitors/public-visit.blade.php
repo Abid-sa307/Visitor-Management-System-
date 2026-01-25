@@ -191,15 +191,16 @@
 
             {{-- Workman Policy --}}
             <div class="mb-3">
-                <label class="form-label fw-semibold">Upload Workman Policy Photo (Optional)</label>
-                <input type="file" name="workman_policy_photo" class="form-control @error('workman_policy_photo') is-invalid @enderror">
+                <label class="form-label fw-semibold">Upload Workman Policy Document (Optional)</label>
+                <input type="file" name="workman_policy_photo" class="form-control @error('workman_policy_photo') is-invalid @enderror" 
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp">
                 @error('workman_policy_photo')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
                 @if(isset($visitor->workman_policy_photo) && $visitor->workman_policy_photo)
                     <small class="mt-1 d-block">
                         <a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">
-                            <i class="bi bi-eye me-1"></i>View current
+                            <i class="bi bi-eye me-1"></i>View current document
                         </a>
                     </small>
                 @endif
@@ -267,6 +268,31 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('visitorForm');
     const submitButton = document.getElementById('submitButton');
+    
+    // Person to Visit dropdown and manual input functionality
+    const employeeSelect = document.getElementById('employeeSelect');
+    const manualInput = document.querySelector('input[name="person_to_visit_manual"]');
+    
+    if (employeeSelect && manualInput) {
+        function toggleManualInput() {
+            if (employeeSelect.value) {
+                // Employee selected, lock manual input
+                manualInput.disabled = true;
+                manualInput.value = '';
+                manualInput.placeholder = 'Disabled when employee is selected';
+            } else {
+                // No employee selected, enable manual input
+                manualInput.disabled = false;
+                manualInput.placeholder = 'Enter name if not in list';
+            }
+        }
+        
+        // Initial state
+        toggleManualInput();
+        
+        // Listen for changes
+        employeeSelect.addEventListener('change', toggleManualInput);
+    }
     const buttonText = document.getElementById('buttonText');
     const spinner = document.getElementById('spinner');
 

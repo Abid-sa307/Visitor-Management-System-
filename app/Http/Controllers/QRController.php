@@ -19,32 +19,68 @@ class QRController extends Controller
      */
     protected $layout = 'layouts.guest';
     public function scan(Company $company, $branch = null, Request $request = null)
-{
-    $request = $request ?? request();
-    $branchModel = $branch ? $company->branches()->find($branch) : null;
+    {
+        $request = $request ?? request();
+        $branchModel = $branch ? $company->branches()->find($branch) : null;
 
-    // Get visitor from session
-    $visitor = null;
-    if (session('current_visitor_id')) {
-        $visitor = Visitor::find(session('current_visitor_id'));
-        
-        // Check if visitor exists and is checked out
-        if ($visitor && $visitor->status === 'Completed' && $visitor->out_time) {
-            // Clear the visitor from session
-            $request->session()->forget('current_visitor_id');
-            $visitor = null;
-        } elseif (!$visitor) {
-            // If visitor not found, clear the session
-            $request->session()->forget('current_visitor_id');
+        // Check if current time is within branch operation hours (only if no alert already shown)
+        if ($branchModel && !session('alert')) {
+            $currentTime = now()->format('H:i');
+            $startTime = date('H:i', strtotime($branchModel->start_time));
+            $endTime = date('H:i', strtotime($branchModel->end_time));
+            
+            // Debug logging
+            \Log::info('Operation Hours Check:', [
+                'branch_id' => $branch,
+                'branch_name' => $branchModel->name,
+                'current_time' => $currentTime,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'current_time_numeric' => (int)str_replace(':', '', $currentTime),
+                'start_time_numeric' => (int)str_replace(':', '', $startTime),
+                'end_time_numeric' => (int)str_replace(':', '', $endTime),
+                'has_hours' => ($startTime && $endTime) ? true : false
+            ]);
+            
+            if ($startTime && $endTime) {
+                if ($currentTime < $startTime || $currentTime > $endTime) {
+                    $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                    
+                    \Log::info('Outside operating hours - setting alert');
+                    
+                    // Set alert in session without redirecting
+                    session()->flash('alert', $errorMessage);
+                    session()->flash('error', $errorMessage);
+                } else {
+                    \Log::info('Within operating hours - no alert needed');
+                }
+            } else {
+                \Log::info('No operation hours set for branch');
+            }
         }
-    }
 
-    return view('visitors.public-index', [
-        'company' => $company,
-        'branch' => $branchModel,
-        'visitor' => $visitor
-    ]);
-}
+        // Get visitor from session
+        $visitor = null;
+        if (session('current_visitor_id')) {
+            $visitor = Visitor::find(session('current_visitor_id'));
+            
+            // Check if visitor exists and is checked out
+            if ($visitor && $visitor->status === 'Completed' && $visitor->out_time) {
+                // Clear the visitor from session
+                $request->session()->forget('current_visitor_id');
+                $visitor = null;
+            } elseif (!$visitor) {
+                // If visitor not found, clear the session
+                $request->session()->forget('current_visitor_id');
+            }
+        }
+
+        return view('visitors.public-index', [
+            'company' => $company,
+            'branch' => $branchModel,
+            'visitor' => $visitor
+        ]);
+    }
 
     /**
      * Show the form for creating a new visitor
@@ -54,6 +90,24 @@ class QRController extends Controller
         $branchModel = null;
         if ($branch) {
             $branchModel = $company->branches()->find($branch);
+            
+            // Check if current time is within branch operation hours
+            if ($branchModel) {
+                $currentTime = now()->format('H:i');
+                $startTime = date('H:i', strtotime($branchModel->start_time));
+                $endTime = date('H:i', strtotime($branchModel->end_time));
+                
+                if ($startTime && $endTime) {
+                    if ($currentTime < $startTime || $currentTime > $endTime) {
+                        $redirectParams = $branch ? ['company' => $company->id, 'branch' => $branch] : ['company' => $company->id];
+                        $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                        
+                        return redirect()->route('qr.scan', $redirectParams)
+                            ->with('error', $errorMessage)
+                            ->with('alert', $errorMessage);
+                    }
+                }
+            }
         }
         
         return view('visitors.public-create', [
@@ -148,6 +202,27 @@ class QRController extends Controller
      */
     public function storeVisitor(Request $request, Company $company, $branch = null)
     {
+        // Check if current time is within branch operation hours
+        if ($branch) {
+            $branchModel = $company->branches()->find($branch);
+            if ($branchModel) {
+                $currentTime = now()->format('H:i');
+                $startTime = date('H:i', strtotime($branchModel->start_time));
+                $endTime = date('H:i', strtotime($branchModel->end_time));
+                
+                if ($startTime && $endTime) {
+                    if ($currentTime < $startTime || $currentTime > $endTime) {
+                        $redirectParams = $branch ? ['company' => $company->id, 'branch' => $branch] : ['company' => $company->id];
+                        $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                        
+                        return redirect()->route('qr.scan', $redirectParams)
+                            ->with('error', $errorMessage)
+                            ->with('alert', $errorMessage);
+                    }
+                }
+            }
+        }
+
         // Check if face recognition is enabled for this company
         $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
         
@@ -438,7 +513,7 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
                 'vehicle_number' => 'nullable|string|max:50',
                 'goods_in_car' => 'nullable|string|max:255',
                 'workman_policy' => 'nullable|in:Yes,No',
-                'workman_policy_photo' => 'nullable|image|max:2048',
+                'workman_policy_photo' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,tiff,webp|max:5120',
             ]);
 
             // Handle file upload

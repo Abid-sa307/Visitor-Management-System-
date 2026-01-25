@@ -247,8 +247,22 @@ document.addEventListener('DOMContentLoaded', function(){
         <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Main Phone" value="{{ old('contact_number') }}"></td>
         <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Main Email" value="{{ old('email') }}"></td>
         <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Main Address" value="{{ old('address') }}"></td>
-        <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" placeholder="09:00"></td>
-        <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" placeholder="18:00"></td>
+        <td>
+          <div class="d-flex">
+            <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" placeholder="09:00" id="main_start_time">
+            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('main_start_time')" title="Clear Start Time">
+              <i class="fas fa-eraser"></i>
+            </button>
+          </div>
+        </td>
+        <td>
+          <div class="d-flex">
+            <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" placeholder="18:00" id="main_end_time">
+            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('main_end_time')" title="Clear End Time">
+              <i class="fas fa-eraser"></i>
+            </button>
+          </div>
+        </td>
         <td class="text-end">
           <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Main branch cannot be removed">
             <i class="fas fa-lock"></i>
@@ -261,9 +275,25 @@ document.addEventListener('DOMContentLoaded', function(){
         <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
         <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
         <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
-        <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"></td>
-        <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"></td>
-        <td class="text-end"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button></td>`;
+        <td>
+          <div class="d-flex">
+            <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" id="start_time_${Date.now()}">
+            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('start_time_${Date.now()}')" title="Clear Start Time">
+              <i class="fas fa-eraser"></i>
+            </button>
+          </div>
+        </td>
+        <td>
+          <div class="d-flex">
+            <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" id="end_time_${Date.now()}">
+            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('end_time_${Date.now()}')" title="Clear End Time">
+              <i class="fas fa-eraser"></i>
+            </button>
+          </div>
+        </td>
+        <td class="text-end">
+          <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
+        </td>`;
     }
     return tr;
   };
@@ -340,6 +370,24 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     });
   });
+  
+  // Make the clear function globally accessible
+  window.clearOperationTime = function(fieldId) {
+    const input = document.getElementById(fieldId);
+    
+    if (input) {
+      input.value = '';
+      console.log('Cleared field:', fieldId);
+    } else {
+      console.log('Field not found:', fieldId);
+    }
+  };
+  
+  // Function to clear both operation times (kept for backward compatibility)
+  window.clearOperationTimes = function(startId, endId) {
+    window.clearOperationTime(startId);
+    window.clearOperationTime(endId);
+  };
 });
 </script>
 @endpush

@@ -290,7 +290,6 @@
                     <th>Purpose</th>
                     <th>In Time</th>
                     <th>Out Time</th>
-                    <th>Status</th>
                     <th>Approval Status</th>
                     <th>Action</th>
                 </tr>
@@ -305,13 +304,7 @@
                         <td>{{ $visitor->purpose ?? '—' }}</td>
                         <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>
                         <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('d M, h:i A') : '—' }}</td>
-                        <td>
-                            <span class="badge bg-{{ 
-                                $visitor->status === 'Approved' ? 'success' : 
-                                ($visitor->status === 'Completed' ? 'secondary' : 'warning') }}">
-                                {{ $visitor->status }}
-                            </span>
-                        </td>
+                    
                         <td>
                             <span class="badge bg-{{ 
                                 $visitor->status === 'Approved' ? 'primary' : 
