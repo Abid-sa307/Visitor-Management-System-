@@ -110,6 +110,7 @@
             <table class="table table-hover align-middle text-center">
                 <thead class="table-primary">
                     <tr>
+                        <th>Visit</th>
                         <th>Photo</th>
                         <th>Name</th>
                         <th>Purpose</th>
@@ -122,12 +123,35 @@
                         <th>Document</th>
                         <th>Workman Policy</th>
                         <th>Status</th>
-                        <th>Visit</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($visitors as $visitor)
                     <tr>
+                        <td class="d-flex justify-content-center">
+                            @if($visitor->status === 'Pending')
+                            <div class="d-flex gap-2">
+                                <form action="{{ route($actionRoute, $visitor) }}" method="POST" class="js-approval-form">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="status" value="Approved">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check me-1"></i> Approve
+                                    </button>
+                                </form>
+                                <form action="{{ route($actionRoute, $visitor) }}" method="POST" class="js-approval-form">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="status" value="Rejected">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times me-1"></i> Reject
+                                    </button>
+                                </form>
+                            </div>
+                            @else
+                                <span class="text-muted">Action completed</span>
+                            @endif
+                        </td>
                         <td>
                             @if($visitor->face_image)
                                 <img src="{{ asset('storage/' . $visitor->face_image) }}" 
@@ -207,30 +231,7 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="d-flex justify-content-center">
-                            @if($visitor->status === 'Pending')
-                            <div class="d-flex gap-2">
-                                <form action="{{ route($actionRoute, $visitor) }}" method="POST" class="js-approval-form">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="Approved">
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check me-1"></i> Approve
-                                    </button>
-                                </form>
-                                <form action="{{ route($actionRoute, $visitor) }}" method="POST" class="js-approval-form">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="Rejected">
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-times me-1"></i> Reject
-                                    </button>
-                                </form>
-                            </div>
-                            @else
-                                <span class="text-muted">Action completed</span>
-                            @endif
-                        </td>
+                        
                     </tr>
                     @endforeach
                 </tbody>

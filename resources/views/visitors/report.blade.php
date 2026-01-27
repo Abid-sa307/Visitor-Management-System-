@@ -22,7 +22,7 @@
                 <div class="row g-3 align-items-end">
                     {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
-                        @include('components.basic_date_range')
+                        @include('components.basic_date_range', ['from' => $from ?? now()->format('Y-m-d'), 'to' => $to ?? now()->format('Y-m-d')])
                     </div>
                     
                     {{-- 2️⃣ Company (superadmin only) --}}

@@ -263,20 +263,18 @@ class VisitorController extends Controller
             $branchId = request()->input('branch_id');
             $branchModel = \App\Models\Branch::find($branchId);
             
-            if ($branchModel) {
+            if ($branchModel && !empty($branchModel->start_time) && !empty($branchModel->end_time)) {
                 $currentTime = now()->format('H:i');
                 $startTime = date('H:i', strtotime($branchModel->start_time));
                 $endTime = date('H:i', strtotime($branchModel->end_time));
                 
-                if ($startTime && $endTime) {
-                    if ($currentTime < $startTime || $currentTime > $endTime) {
-                        $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
-                        
-                        // Set alert in session and redirect back
-                        return redirect()->route('visitors.index')
-                            ->with('error', $errorMessage)
-                            ->with('alert', $errorMessage);
-                    }
+                if ($currentTime < $startTime || $currentTime > $endTime) {
+                    $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                    
+                    // Set alert in session and redirect back
+                    return redirect()->route('visitors.index')
+                        ->with('error', $errorMessage)
+                        ->with('alert', $errorMessage);
                 }
             }
         }
@@ -307,20 +305,18 @@ class VisitorController extends Controller
             $branchId = $request->input('branch_id');
             $branchModel = \App\Models\Branch::find($branchId);
             
-            if ($branchModel) {
+            if ($branchModel && !empty($branchModel->start_time) && !empty($branchModel->end_time)) {
                 $currentTime = now()->format('H:i');
                 $startTime = date('H:i', strtotime($branchModel->start_time));
                 $endTime = date('H:i', strtotime($branchModel->end_time));
                 
-                if ($startTime && $endTime) {
-                    if ($currentTime < $startTime || $currentTime > $endTime) {
-                        $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
-                        
-                        return redirect()->route('visitors.index')
-                            ->with('error', $errorMessage)
-                            ->with('alert', $errorMessage)
-                            ->withInput();
-                    }
+                if ($currentTime < $startTime || $currentTime > $endTime) {
+                    $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                    
+                    return redirect()->route('visitors.index')
+                        ->with('error', $errorMessage)
+                        ->with('alert', $errorMessage)
+                        ->withInput();
                 }
             }
         }
@@ -1801,8 +1797,38 @@ class VisitorController extends Controller
             ->with(['company', 'department', 'branch'])
             ->latest();
 
-        // Apply date range filter
-        $this->applyDateRange($query, 'in_time', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Main Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('in_time', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('in_time', '>=', $from);
+                $query->whereDate('in_time', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('in_time', '=', $currentDate);
+            \Log::info('Using default current date filter');
+        }
 
         // Apply company filter if provided and user is superadmin
         if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
@@ -1850,24 +1876,59 @@ class VisitorController extends Controller
             'statusCounts',
             'companies',
             'departments',
-            'branches'
+            'branches',
+            'from',
+            'to'
         ));
     }
     public function inOutReport(Request $request)
     {
         $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch', 'logs']);
 
-        if ($request->filled('from') || $request->filled('to')) {
-            $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
-            $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('In/Out Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
 
-            $query->where(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
-                ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
-            })->orWhere(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
-                ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate = Carbon::parse($to)->endOfDay();
+
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->where(function ($q) use ($currentDate) {
+                $todayStart = Carbon::parse($currentDate)->startOfDay();
+                $todayEnd = Carbon::parse($currentDate)->endOfDay();
+                $q->whereBetween('in_time', [$todayStart, $todayEnd])
+                  ->orWhereBetween('out_time', [$todayStart, $todayEnd]);
             });
+            \Log::info('Using default current date filter');
         }
 
         // Apply company filter
@@ -1911,7 +1972,9 @@ class VisitorController extends Controller
             'visits', 
             'companies', 
             'departments', 
-            'branches'
+            'branches',
+            'from',
+            'to'
         ));
     }
 
@@ -1946,8 +2009,38 @@ class VisitorController extends Controller
             \Log::info('Approval Report - Department IDs filter: ' . json_encode($request->department_ids));
         }
 
-        // Apply date range filter
-        $this->applyDateRange($query, 'updated_at', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Approval Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('updated_at', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('updated_at', '>=', $from);
+                $query->whereDate('updated_at', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('updated_at', '=', $currentDate);
+            \Log::info('Using default current date filter');
+        }
 
         // Log the final SQL query for debugging
         \Log::info('Approval Report Query: ' . $query->toSql());
@@ -1986,7 +2079,9 @@ class VisitorController extends Controller
             'visitors',
             'companies',
             'departments',
-            'branches'
+            'branches',
+            'from',
+            'to'
         ));
     }
 
@@ -2006,7 +2101,38 @@ class VisitorController extends Controller
             $query->where('status', $request->status);
         }
 
-        $this->applyDateRange($query, 'created_at', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Security Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('created_at', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('created_at', '>=', $from);
+                $query->whereDate('created_at', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('created_at', '=', $currentDate);
+            \Log::info('Using default current date filter');
+        }
 
     $securityChecks = $query->paginate(10)->appends($request->query());
     
@@ -2021,7 +2147,7 @@ class VisitorController extends Controller
             ->toArray();
     }
 
-    return view('visitors.security_checkpoints', compact('securityChecks', 'companies', 'departments'));
+    return view('visitors.security_checkpoints', compact('securityChecks', 'companies', 'departments', 'from', 'to'));
     }
 
     // Hourly visitors report (counts of in/out per hour over a date range)
@@ -2042,12 +2168,37 @@ class VisitorController extends Controller
             ->orderBy('date')
             ->orderBy('hour');
 
-        // Apply date range filter
-        if ($request->filled('from')) {
-            $query->whereDate('in_time', '>=', $request->from);
-        }
-        if ($request->filled('to')) {
-            $query->whereDate('in_time', '<=', $request->to);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Hourly Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('in_time', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('in_time', '>=', $from);
+                $query->whereDate('in_time', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('in_time', '=', $currentDate);
+            \Log::info('Using default current date filter');
         }
 
         // Apply company filter
@@ -2101,8 +2252,8 @@ class VisitorController extends Controller
 
         return view('visitors.reports_hourly', [
             'series' => $series,
-            'from' => $request->input('from', now()->startOfDay()->format('Y-m-d')),
-            'to' => $request->input('to', now()->endOfDay()->format('Y-m-d')),
+            'from' => $request->input('from', now()->format('Y-m-d')),
+            'to' => $request->input('to', now()->format('Y-m-d')),
             'companies' => $companies->pluck('name', 'id'),
             'departments' => $departments->pluck('name', 'id'),
             'branches' => $branches,
@@ -2116,7 +2267,24 @@ class VisitorController extends Controller
             Visitor::with(['category', 'department'])
         )->latest('in_time');
 
-        $this->applyDateRange($query, 'in_time', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('in_time', '=', $from);
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('in_time', '>=', $from);
+                $query->whereDate('in_time', '<=', $to);
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('in_time', '=', $currentDate);
+        }
 
         $visitors = $query->get();
 
@@ -2194,16 +2362,35 @@ class VisitorController extends Controller
     {
         $query = $this->companyScope(Visitor::query());
 
-        if ($request->filled('from') || $request->filled('to')) {
-            $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
-            $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate = Carbon::parse($to)->endOfDay();
 
-            $query->where(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
-                  ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
-            })->orWhere(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
-                  ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+            } else {
+                // If date range is specified, use the range
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+            }
+        } else {
+            // Default to current date
+            $query->where(function ($q) use ($currentDate) {
+                $todayStart = Carbon::parse($currentDate)->startOfDay();
+                $todayEnd = Carbon::parse($currentDate)->endOfDay();
+                $q->whereBetween('in_time', [$todayStart, $todayEnd])
+                  ->orWhereBetween('out_time', [$todayStart, $todayEnd]);
             });
         }
 
@@ -2271,7 +2458,24 @@ class VisitorController extends Controller
             $query->where('status', $request->status);
         }
 
-        $this->applyDateRange($query, 'created_at', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('created_at', '=', $from);
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('created_at', '>=', $from);
+                $query->whereDate('created_at', '<=', $to);
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('created_at', '=', $currentDate);
+        }
 
         $checks = $query->get();
 
@@ -2307,10 +2511,11 @@ class VisitorController extends Controller
 
     public function hourlyReportExport(Request $request)
     {
-        $from = $request->input('from');
-        $to   = $request->input('to');
-        $start = $from ? Carbon::parse($from)->startOfDay() : Carbon::today()->startOfDay();
-        $end   = $to   ? Carbon::parse($to)->endOfDay()   : Carbon::today()->endOfDay();
+        // Default to current date if no dates specified
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to   = $request->input('to', now()->format('Y-m-d'));
+        $start = Carbon::parse($from)->startOfDay();
+        $end   = Carbon::parse($to)->endOfDay();
 
         $selectedCompany = $request->input('company_id');
         $selectedBranch  = $request->input('branch_id');

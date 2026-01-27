@@ -26,23 +26,25 @@ class QRController extends Controller
         // Check if current time is within branch operation hours (only if no alert already shown)
         if ($branchModel && !session('alert')) {
             $currentTime = now()->format('H:i');
-            $startTime = date('H:i', strtotime($branchModel->start_time));
-            $endTime = date('H:i', strtotime($branchModel->end_time));
             
-            // Debug logging
-            \Log::info('Operation Hours Check:', [
-                'branch_id' => $branch,
-                'branch_name' => $branchModel->name,
-                'current_time' => $currentTime,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-                'current_time_numeric' => (int)str_replace(':', '', $currentTime),
-                'start_time_numeric' => (int)str_replace(':', '', $startTime),
-                'end_time_numeric' => (int)str_replace(':', '', $endTime),
-                'has_hours' => ($startTime && $endTime) ? true : false
-            ]);
-            
-            if ($startTime && $endTime) {
+            // Only process if both start_time and end_time are actually set
+            if (!empty($branchModel->start_time) && !empty($branchModel->end_time)) {
+                $startTime = date('H:i', strtotime($branchModel->start_time));
+                $endTime = date('H:i', strtotime($branchModel->end_time));
+                
+                // Debug logging
+                \Log::info('Operation Hours Check:', [
+                    'branch_id' => $branch,
+                    'branch_name' => $branchModel->name,
+                    'current_time' => $currentTime,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                    'current_time_numeric' => (int)str_replace(':', '', $currentTime),
+                    'start_time_numeric' => (int)str_replace(':', '', $startTime),
+                    'end_time_numeric' => (int)str_replace(':', '', $endTime),
+                    'has_hours' => true
+                ]);
+                
                 if ($currentTime < $startTime || $currentTime > $endTime) {
                     $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
                     
@@ -55,7 +57,7 @@ class QRController extends Controller
                     \Log::info('Within operating hours - no alert needed');
                 }
             } else {
-                \Log::info('No operation hours set for branch');
+                \Log::info('No operation hours set for branch - skipping validation');
             }
         }
 
@@ -93,11 +95,12 @@ class QRController extends Controller
             
             // Check if current time is within branch operation hours
             if ($branchModel) {
-                $currentTime = now()->format('H:i');
-                $startTime = date('H:i', strtotime($branchModel->start_time));
-                $endTime = date('H:i', strtotime($branchModel->end_time));
-                
-                if ($startTime && $endTime) {
+                // Only check if branch has both start_time and end_time set
+                if (!empty($branchModel->start_time) && !empty($branchModel->end_time)) {
+                    $currentTime = now()->format('H:i');
+                    $startTime = date('H:i', strtotime($branchModel->start_time));
+                    $endTime = date('H:i', strtotime($branchModel->end_time));
+                    
                     if ($currentTime < $startTime || $currentTime > $endTime) {
                         $redirectParams = $branch ? ['company' => $company->id, 'branch' => $branch] : ['company' => $company->id];
                         $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
@@ -206,11 +209,12 @@ class QRController extends Controller
         if ($branch) {
             $branchModel = $company->branches()->find($branch);
             if ($branchModel) {
-                $currentTime = now()->format('H:i');
-                $startTime = date('H:i', strtotime($branchModel->start_time));
-                $endTime = date('H:i', strtotime($branchModel->end_time));
-                
-                if ($startTime && $endTime) {
+                // Only check if branch has both start_time and end_time set
+                if (!empty($branchModel->start_time) && !empty($branchModel->end_time)) {
+                    $currentTime = now()->format('H:i');
+                    $startTime = date('H:i', strtotime($branchModel->start_time));
+                    $endTime = date('H:i', strtotime($branchModel->end_time));
+                    
                     if ($currentTime < $startTime || $currentTime > $endTime) {
                         $redirectParams = $branch ? ['company' => $company->id, 'branch' => $branch] : ['company' => $company->id];
                         $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
@@ -346,8 +350,7 @@ class QRController extends Controller
             
             return redirect()
                 ->route($route, $routeParams)
-                ->with('success', 'Visitor registered successfully! Please complete the visit form.')
-                ->with('play_notification', true);
+                ->with('success', 'Visitor registered successfully! Please complete the visit form.');
                 
         } catch (\Exception $e) {
             return back()

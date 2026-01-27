@@ -118,12 +118,8 @@
                 <div class="row g-3 align-items-end">
                     {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
-                        @php
-                            $from = request('from', now()->format('Y-m-d'));
-                            $to = request('to', now()->format('Y-m-d'));
-                        @endphp
                         <label class="form-label">Date Range</label>
-                        @include('components.basic_date_range', ['from' => $from, 'to' => $to])
+                        @include('components.basic_date_range', ['from' => $from ?? now()->format('Y-m-d'), 'to' => $to ?? now()->format('Y-m-d')])
                     </div>
 
                     {{-- 2️⃣ Company (superadmin only) --}}
