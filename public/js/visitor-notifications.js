@@ -6,7 +6,7 @@
 class VisitorNotificationSystem {
     constructor() {
         this.permission = 'default';
-        this.companyNotificationEnabled = false;
+        this.companyNotificationEnabled = true; // Always true, server handles the logic
         this.init();
     }
 
@@ -19,32 +19,104 @@ class VisitorNotificationSystem {
 
         // Get current permission status
         this.permission = Notification.permission;
-        
+
         // Load company notification preference
         await this.loadCompanyNotificationPreference();
+
+        // Setup audio unlock on first interaction
+        this.setupAudioUnlock();
+
+        // Start polling for new notifications
+        this.startPolling();
+    }
+
+    setupAudioUnlock() {
+        const unlock = () => {
+            console.log('User interaction: Unlocking audio engine...');
+
+            // Use Web Audio API to unlock (reliable, no file needed)
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.value = 440;
+                gain.gain.value = 0.001; // Nearly silent
+
+                osc.start();
+                setTimeout(() => {
+                    osc.stop();
+                    console.log('Audio engine unlocked via Oscillator');
+                }, 100);
+            }
+
+            // Remove listeners
+            document.removeEventListener('click', unlock);
+            document.removeEventListener('keydown', unlock);
+            document.removeEventListener('touchstart', unlock);
+        };
+
+        // Listen for any interaction
+        document.addEventListener('click', unlock);
+        document.addEventListener('keydown', unlock);
+        document.addEventListener('touchstart', unlock);
+    }
+
+    startPolling() {
+        if (!this.companyNotificationEnabled) return;
+
+        let lastCount = 0;
+
+        // Initial check
+        this.checkUnreadCount(true).then(c => lastCount = c);
+
+        // Poll every 5 seconds
+        setInterval(async () => {
+            const currentCount = await this.checkUnreadCount(false);
+            if (currentCount > lastCount) {
+                const diff = currentCount - lastCount;
+                this.playNotificationSound();
+                this.showNotification(diff === 1 ? 'New Visitor Activity' : `${diff} New Visitor Updates`, {
+                    body: 'You have new unread notifications.',
+                    tag: 'polling-update'
+                });
+                lastCount = currentCount;
+            } else if (currentCount < lastCount) {
+                // Count decreased (read), update reference
+                lastCount = currentCount;
+            }
+        }, 5000);
+    }
+
+    async checkUnreadCount(isInitial) {
+        try {
+            const response = await fetch('/api/notifications/unread-count', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                return data.count || 0;
+            }
+        } catch (e) {
+            console.error('Error checking unread count:', e);
+        }
+        return 0;
     }
 
     async loadCompanyNotificationPreference() {
-        try {
-            // Get the current company ID from the page or meta tag
-            const companyId = this.getCurrentCompanyId();
-            
-            if (!companyId) {
-                return;
-            }
-
-            // Fetch company notification preference
-            const response = await fetch(`/api/companies/${companyId}/notification-preference`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                this.companyNotificationEnabled = data.enable_visitor_notifications || false;
-            } else {
-                console.error('API response not ok:', response.statusText);
-            }
-        } catch (error) {
-            console.error('Error loading company notification preference:', error);
-        }
+        // Redundant check removed. 
+        // Logic is: Backend only sends notifications if enabled. 
+        // Frontend simply plays what it receives.
+        this.companyNotificationEnabled = true;
+        console.log('Notification System: Ready to poll (Access Control handled by Backend)');
     }
 
     getCurrentCompanyId() {
@@ -111,7 +183,7 @@ class VisitorNotificationSystem {
             }, 5000);
 
             // Handle click
-            notification.onclick = function() {
+            notification.onclick = function () {
                 window.focus();
                 notification.close();
             };
@@ -123,21 +195,64 @@ class VisitorNotificationSystem {
         }
     }
 
-    playNotificationSound() {
+    async playNotificationSound() {
+        console.log('Triggering notification sound (15s Ring)...');
+        this.playRingtone();
+    }
+
+    playRingtone() {
         try {
-            // Use existing notification sound
-            const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
-            audio.volume = 0.5;
-            audio.play().catch(e => console.log('Audio play failed:', e));
-        } catch (error) {
-            console.log('Audio not supported:', error);
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+
+            const ctx = new AudioContext();
+
+            // Allow ring for 15 seconds
+            const duration = 15;
+            const now = ctx.currentTime;
+
+            // Pattern: Three beeps (High-Low-High) repeated
+            // We use an oscillator
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.type = 'sine'; // Smooth sine wave
+
+            // Create a ringing pattern using automation
+            // Frequency Sweep: 800Hz <-> 1000Hz (Phone ring style)
+            osc.frequency.setValueAtTime(800, now);
+
+            // Create a rhythmic pulse
+            // Loop every 2 seconds: Ring (1s) - Silence (1s)
+            for (let i = 0; i < 7; i++) { // 7 loops covers ~14 seconds
+                const start = now + (i * 2);
+                // Tone 1
+                osc.frequency.setValueAtTime(880, start); // A5
+                osc.frequency.linearRampToValueAtTime(880, start + 0.1);
+
+                // Envelope (Volume)
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(0.3, start + 0.05); // Attack
+                gain.gain.setValueAtTime(0.3, start + 0.8); // Sustain
+                gain.gain.linearRampToValueAtTime(0, start + 1.0); // Release
+            }
+
+            osc.start(now);
+            osc.stop(now + 15);
+
+            console.log('Ringtone playing for 15s via Web Audio API');
+        } catch (e) {
+            console.error('Audio playback failed:', e);
         }
     }
 
     // Store notification in session storage to persist across page reloads
     showPersistentNotification(title, options = {}) {
         console.log('DEBUG: showPersistentNotification method called with:', title, options);
-        
+
         // Store notification data
         const notificationData = {
             title: title,
@@ -146,7 +261,7 @@ class VisitorNotificationSystem {
         };
         sessionStorage.setItem('pendingNotification', JSON.stringify(notificationData));
         console.log('DEBUG: Stored notification in sessionStorage');
-        
+
         // Show notification immediately
         console.log('DEBUG: Calling showNotification');
         this.showNotification(title, options);
@@ -158,7 +273,7 @@ class VisitorNotificationSystem {
         if (pending) {
             const notificationData = JSON.parse(pending);
             sessionStorage.removeItem('pendingNotification');
-            
+
             // Show notification after a short delay to ensure page is ready
             setTimeout(() => {
                 this.showNotification(notificationData.title, notificationData.options);
@@ -196,11 +311,11 @@ class VisitorNotificationSystem {
     }
 }
 
-// Initialize the notification system
-const visitorNotifications = new VisitorNotificationSystem();
+// Initialize the notification system and expose globally
+window.visitorNotifications = new VisitorNotificationSystem();
 
 // Global functions for easy access from other scripts
-window.showVisitorNotification = function(type, data) {
+window.showVisitorNotification = function (type, data) {
     console.log('DEBUG: Global showVisitorNotification called with:', type, data);
     switch (type) {
         case 'visitor_added':
@@ -237,11 +352,11 @@ window.showVisitorNotification = function(type, data) {
 };
 
 // Global persistent notification function
-window.showPersistentNotification = function(title, options) {
+window.showPersistentNotification = function (title, options) {
     console.log('DEBUG: showPersistentNotification called with:', title, options);
     console.log('DEBUG: visitorNotifications defined:', typeof visitorNotifications !== 'undefined');
     console.log('DEBUG: showPersistentNotification method exists:', typeof visitorNotifications !== 'undefined' && visitorNotifications.showPersistentNotification);
-    
+
     if (typeof visitorNotifications !== 'undefined' && visitorNotifications.showPersistentNotification) {
         console.log('DEBUG: Calling visitorNotifications.showPersistentNotification');
         visitorNotifications.showPersistentNotification(title, options);
@@ -251,7 +366,7 @@ window.showPersistentNotification = function(title, options) {
 };
 
 // Bypass test function
-window.testNotificationBypass = function() {
+window.testNotificationBypass = function () {
     if ('Notification' in window) {
         if (Notification.permission === 'granted') {
             const notification = new Notification('Test Bypass', {
@@ -274,7 +389,7 @@ window.testNotificationBypass = function() {
 };
 
 // Fix for missing playVisitorNotification function (used in other visitor pages)
-window.playVisitorNotification = function() {
+window.playVisitorNotification = function () {
     // This function was referenced in other visitor pages but not defined
     // Originally meant to play notification sound, but we're using browser notifications
     // You can add sound playing logic here if needed

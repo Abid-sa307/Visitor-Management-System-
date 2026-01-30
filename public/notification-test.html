@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Test Page</title>
+</head>
+<body>
+    <h1>Visitor Notification System Test</h1>
+    <p>This page simulates the notification system that would trigger after visit form submission or visitor approval.</p>
+    
+    <button onclick="testNotification()">🔔 Test Notification Now</button>
+    <button onclick="testSound()">🔊 Test Sound Only</button>
+    
+    <script>
+        function testNotification() {
+            // Simulate the notification system
+            console.log('🔔 Testing notification system...');
+            
+            function showVisitorNotification() {
+                // Create visual notification
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    z-index: 9999;
+                    max-width: 400px;
+                    font-family: Arial, sans-serif;
+                    animation: slideIn 0.5s ease-out;
+                `;
+                
+                notification.innerHTML = `
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 24px; margin-right: 10px;">🔔</span>
+                        <strong style="font-size: 16px;">Visitor Notification</strong>
+                    </div>
+                    <div style="font-size: 14px; margin-bottom: 15px;">Test notification: Visitor has been approved</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">Dismiss</button>
+                        <button onclick="playNotificationSound()" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">🔊 Play Sound</button>
+                    </div>
+                `;
+                
+                // Add animation
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 10 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 10000);
+            }
+            
+            function playNotificationSound() {
+                console.log('🔊 Playing notification sound...');
+                try {
+                    const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                    audio.volume = 0.6;
+                    audio.play().then(() => {
+                        console.log('✅ Notification sound played successfully');
+                    }).catch(e => {
+                        console.log('❌ Sound play failed:', e);
+                        
+                        // Try backup beep
+                        try {
+                            const audio2 = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==');
+                            audio2.volume = 0.3;
+                            audio2.play().catch(() => console.log('❌ Backup audio also failed'));
+                        } catch (e2) {
+                            console.log('❌ Backup audio creation failed');
+                        }
+                    });
+                } catch (e) {
+                    console.log('❌ Audio creation failed:', e);
+                }
+            }
+            
+            // Show notification and play sound
+            showVisitorNotification();
+            playNotificationSound();
+            
+            // Flash browser tab
+            const originalTitle = document.title;
+            let flashCount = 0;
+            const flashInterval = setInterval(() => {
+                document.title = flashCount % 2 === 0 ? '🔔 New Visitor!' : originalTitle;
+                flashCount++;
+                if (flashCount > 8) {
+                    clearInterval(flashInterval);
+                    document.title = originalTitle;
+                }
+            }, 1000);
+        }
+        
+        function testSound() {
+            try {
+                const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                audio.volume = 0.6;
+                audio.play().then(() => {
+                    console.log('✅ Sound test successful');
+                }).catch(e => {
+                    console.log('❌ Sound test failed:', e);
+                });
+            } catch (e) {
+                console.log('❌ Sound test creation failed:', e);
+            }
+        }
+    </script>
+</body>
+</html>

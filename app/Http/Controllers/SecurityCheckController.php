@@ -20,8 +20,14 @@ class SecurityCheckController extends Controller
         $authUser = $isCompany ? Auth::guard('company')->user() : Auth::user();
         $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
-        // Base query
-        $visitorQuery = Visitor::query()->with(['company', 'department', 'branch'])->latest('created_at');
+        // Base query - only show visitors from companies that have security checks enabled
+        $visitorQuery = Visitor::query()
+            ->with(['company', 'department', 'branch'])
+            ->whereHas('company', function($query) {
+                // Only show visitors from companies with security check service enabled
+                $query->where('security_check_service', true);
+            })
+            ->latest('created_at');
 
         // Apply date range filter if provided
         $fromDate = $request->input('from') ?: now()->subDays(30)->format('Y-m-d');

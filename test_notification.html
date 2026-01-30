@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notification Test</title>
+</head>
+<body>
+    <h1>Browser Notification & Sound Test</h1>
+    
+    <button onclick="testNotification()">Test Browser Notification</button>
+    <button onclick="testSound()">Test Bell Sound</button>
+    <button onclick="testBoth()">Test Both</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        function log(message) {
+            console.log(message);
+            document.getElementById('results').innerHTML += '<p>' + message + '</p>';
+        }
+        
+        function testNotification() {
+            log('Testing browser notification...');
+            
+            if ('Notification' in window) {
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        log('Permission result: ' + permission);
+                        if (permission === 'granted') {
+                            showNotification();
+                        }
+                    });
+                } else if (Notification.permission === 'granted') {
+                    showNotification();
+                } else {
+                    log('Notification permission denied');
+                }
+            } else {
+                log('Browser notifications not supported');
+            }
+        }
+        
+        function showNotification() {
+            const notification = new Notification('Test Notification', {
+                body: 'This is a test notification from the visitor system',
+                icon: '/favicon.ico',
+                requireInteraction: true
+            });
+            
+            log('Browser notification should appear now');
+            
+            setTimeout(() => {
+                notification.close();
+                log('Notification closed');
+            }, 5000);
+        }
+        
+        function testSound() {
+            log('Testing bell sound...');
+            
+            try {
+                const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                audio.play().then(() => {
+                    log('✅ Sound playing successfully');
+                }).catch(e => {
+                    log('❌ Sound play failed: ' + e.message);
+                });
+                
+                setTimeout(() => {
+                    audio.pause();
+                    log('Sound stopped');
+                }, 3000);
+                
+            } catch (e) {
+                log('❌ Audio creation failed: ' + e.message);
+            }
+        }
+        
+        function testBoth() {
+            testNotification();
+            setTimeout(testSound, 1000);
+        }
+        
+        // Check current permission status
+        if ('Notification' in window) {
+            log('Current notification permission: ' + Notification.permission);
+        } else {
+            log('Browser notifications not supported');
+        }
+    </script>
+</body>
+</html>

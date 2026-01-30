@@ -27,369 +27,370 @@
         </div>
     @endif
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div class="section-heading mb-3">
-                <div class="section-heading__title text-primary">
-                    <i class="fas fa-building me-2"></i> Company Information
-                </div>
-                <div class="section-heading__meta">
-                    Core identity, contacts, and services that define how this tenant operates.
-                </div>
-            </div>
+    <form method="POST" action="{{ route('companies.store') }}" enctype="multipart/form-data">
+        @csrf
 
-            <form method="POST" action="{{ route('companies.store') }}" enctype="multipart/form-data">
-                @csrf
+        <!-- Company Information Section -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="section-heading mb-3">
+                            <div class="section-heading__title text-primary">
+                                <i class="fas fa-building me-2"></i> Company Information
+                            </div>
+                            <div class="section-heading__meta">
+                                Core identity, contacts, and services that define how this tenant operates.
+                            </div>
+                        </div>
 
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Name <span class="text-danger">*</span></label>
-                        <input name="name" class="form-control" value="{{ old('name') }}" required>
-                    </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Name <span class="text-danger">*</span></label>
+                                <input name="name" class="form-control" value="{{ old('name') }}" required>
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Email</label>
-                        <input name="email" type="email" class="form-control" value="{{ old('email') }}">
-                    </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contact Number</label>
+                                <input name="contact_number" class="form-control" value="{{ old('contact_number') }}">
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Contact Number</label>
-                        <input name="contact_number" class="form-control" value="{{ old('contact_number') }}">
-                    </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input name="email" type="email" class="form-control" value="{{ old('email') }}">
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Website</label>
-                        <input name="website" type="url" class="form-control" value="{{ old('website') }}">
-                    </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Website</label>
+                                <input name="website" class="form-control" value="{{ old('website') }}" placeholder="https://example.com">
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">GST Number</label>
-                        <input name="gst_number" class="form-control" value="{{ old('gst_number') }}">
-                    </div>
+                            <div class="col-md-6">
+                                <label class="form-label">GST Number</label>
+                                <input name="gst_number" class="form-control" value="{{ old('gst_number') }}">
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Logo</label>
-                        <input name="logo" type="file" class="form-control">
-                    </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone</label>
+                                <input name="phone" class="form-control" value="{{ old('phone') }}">
+                            </div>
 
-                    <div class="col-12">
-                        <label class="form-label">Address <span class="text-danger">*</span></label>
-                        <textarea name="address" class="form-control" rows="3" required>{{ old('address') }}</textarea>
-                    </div>
-                </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                <textarea name="address" class="form-control" rows="3">{{ old('address') }}</textarea>
+                            </div>
 
-                <hr class="my-4">
-                <h5 class="fw-bold mb-3">Branches</h5>
-                <div class="alert alert-info mb-3">
-                    <small class="mb-0">
-                        <i class="fas fa-info-circle me-1"></i>
-                        <strong>Main Branch</strong> is automatically created for every company and serves as the default location. 
-                        It cannot be removed but its details can be updated.<br>
-                        <strong>Note:</strong> Branch names must be unique within each company.
-                    </small>
-                </div>
-                <div class="mb-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="addBranchBtn">Add Additional Branch</button>
-                </div>
-                <div id="branchesRepeater" class="mb-3">
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th style="width: 20%">Name</th>
-                                    <th style="width: 15%">Phone</th>
-                                    <th style="width: 20%">Email</th>
-                                    <th>Address</th>
-                                    <th style="width: 15%">Operation Start Time</th>
-                                    <th style="width: 15%">Operation End Time</th>
-                                    <th style="width: 60px"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="branchesBody">
-                                <!-- Rows appended here -->
-                            </tbody>
-                        </table>
+                            <div class="col-12">
+                                <label class="form-label">Logo</label>
+                                <input name="logo" type="file" class="form-control" accept="image/*">
+                                <small class="form-text text-muted">Upload company logo (optional)</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="auto_approve_visitors" name="auto_approve_visitors" value="1"
-                        {{ old('auto_approve_visitors') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="auto_approve_visitors">Auto Approve Visitors</label>
+                <!-- Branches Section -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="section-heading mb-3">
+                            <div class="section-heading__title text-primary">
+                                <i class="fas fa-code-branch me-2"></i>Branches
+                            </div>
+                            <div class="section-heading__meta">
+                                Define locations and operating hours for this company.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="button" id="addBranchBtn" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i> Add Branch
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th style="width: 15%">Phone</th>
+                                        <th style="width: 20%">Email</th>
+                                        <th>Address</th>
+                                        <th style="width: 15%">Operation Start Time</th>
+                                        <th style="width: 15%">Operation End Time</th>
+                                        <th style="width: 60px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="branchesBody">
+                                    <!-- Rows appended here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="face_recognition_enabled" name="face_recognition_enabled" value="1"
-                        {{ old('face_recognition_enabled') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="face_recognition_enabled">Enable Face Recognition for Visitors</label>
-                    <small class="form-text text-muted d-block">When enabled, visitors will be able to verify their identity using face recognition during check-in.</small>
-                </div>
+                <!-- Settings Section -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="section-heading mb-3">
+                            <div class="section-heading__title text-primary">
+                                <i class="fas fa-cogs me-2"></i> Features
+                            </div>
+                            <div class="section-heading__meta">
+                                Configure features and security options for this company.
+                            </div>
+                        </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="security_check_service" name="security_check_service" value="1"
-                        {{ old('security_check_service') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="security_check_service">Enable Security Check Service</label>
-                    <small class="form-text text-muted d-block">When enabled, visitors must complete security check-in and check-out procedures.<br>
-<strong>Security Check Type:</strong> Required when security service is enabled.<br>
-<strong>Behavior:</strong> If disabled, dropdown is locked with "None" option. If enabled, dropdown unlocks for selection.</small>
-                </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block">Auto Approve Visitors</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_approve_visitors" name="auto_approve_visitors" value="1"
+                                    {{ old('auto_approve_visitors') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="auto_approve_visitors">
+                                    <span class="toggle-label">{{ old('auto_approve_visitors') ? 'Enabled' : 'Disabled' }}</span>
+                                </label>
+                            </div>
+                        </div>
 
-                <div class="mb-3" id="security_none_container">
-                    <label for="security_checkin_type" class="form-label">Security Check Type</label>
-                    <select class="form-select" id="security_checkin_type" name="security_checkin_type" disabled>
-                        <option value="none" selected>None</option>
-                    </select>
-                    <input type="hidden" id="security_checkin_type_hidden" name="security_checkin_type_hidden" value="none">
-                    <small class="form-text text-muted d-block">Specify when security checks are required.</small>
-                </div>
-                
-                <div class="mb-3" id="security_options_container" style="display: none;">
-                    <label for="security_checkin_type_enabled" class="form-label">Security Check Type</label>
-                    <select class="form-select" id="security_checkin_type_enabled" name="security_checkin_type">
-                        <option value="checkin" {{ old('security_checkin_type') === 'checkin' ? 'selected' : '' }}>Check-in Only</option>
-                        <option value="checkout" {{ old('security_checkin_type') === 'checkout' ? 'selected' : '' }}>Check-out Only</option>
-                        <option value="both" {{ old('security_checkin_type') === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
-                    </select>
-                    <small class="form-text text-muted d-block">Specify when security checks are required.</small>
-                </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block">Face Recognition for Visitors</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="face_recognition_enabled" name="face_recognition_enabled" value="1"
+                                    {{ old('face_recognition_enabled') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="face_recognition_enabled">
+                                    <span class="toggle-label">{{ old('face_recognition_enabled') ? 'Enabled' : 'Disabled' }}</span>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block">When enabled, visitors will be able to verify their identity using face recognition during check-in.</small>
+                        </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="mail_service_enabled" name="mail_service_enabled" value="1"
-                        {{ old('mail_service_enabled') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="mail_service_enabled">Enable Mail Service</label>
-                    <small class="form-text text-muted d-block">When enabled, mail notifications will be sent for Company activities.</small>
-                </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block">Security Check Service</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="security_check_service" name="security_check_service" value="1"
+                                    {{ old('security_check_service') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="security_check_service">
+                                    <span class="toggle-label">{{ old('security_check_service') ? 'Enabled' : 'Disabled' }}</span>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block">When enabled, visitors must complete security check-in and check-out procedures.</small>
+                        </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="enable_visitor_notifications" name="enable_visitor_notifications" value="1"
-                        {{ old('enable_visitor_notifications') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="enable_visitor_notifications">Enable Visitor Notifications</label>
-                    <small class="form-text text-muted d-block">When enabled, notifications will be displayed throughout the software for visitor events (created, approved, check-in/out).</small>
-                </div>
+                        <div class="mb-3" id="security_check_type_container">
+                            <label for="security_checkin_type" class="form-label">Security Check Type</label>
+                            <select class="form-select" id="security_checkin_type" name="security_checkin_type" disabled>
+                                <option value="none" selected>None (Security Check Service Disabled)</option>
+                            </select>
+                            <input type="hidden" id="security_checkin_type_hidden" name="security_checkin_type" value="none">
+                            <small class="form-text text-muted d-block">Enable Security Check Service above to configure security check options.</small>
+                        </div>
+                        
+                        <div class="mb-3" id="security_options_container" style="display: none;">
+                            <label for="security_checkin_type_enabled" class="form-label">Security Check Type</label>
+                            <select class="form-select" id="security_checkin_type_enabled" name="security_checkin_type">
+                                <option value="checkin" {{ old('security_checkin_type') === 'checkin' ? 'selected' : (old('security_checkin_type') ? '' : 'selected') }}>Check-in Only</option>
+                                <option value="checkout" {{ old('security_checkin_type') === 'checkout' ? 'selected' : '' }}>Check-out Only</option>
+                                <option value="both" {{ old('security_checkin_type') === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
+                            </select>
+                            <small class="form-text text-muted d-block">Specify when security checks are required.</small>
+                        </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="mark_in_out_in_qr_flow" name="mark_in_out_in_qr_flow" value="1"
-                        {{ old('mark_in_out_in_qr_flow') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="mark_in_out_in_qr_flow">Enable Mark In/Out in QR Flow</label>
-                    <small class="form-text text-muted d-block">When enabled, visitors created via QR flow can be marked in/out from the visitor entry page. If disabled, mark in/out actions will be blocked for QR flow visitors.</small>
-                </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block">Mail Service</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="mail_service_enabled" name="mail_service_enabled" value="1"
+                                    {{ old('mail_service_enabled') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="mail_service_enabled">
+                                    <span class="toggle-label">{{ old('mail_service_enabled') ? 'Enabled' : 'Disabled' }}</span>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block">When enabled, mail notifications will be sent for Company activities.</small>
+                        </div>
 
-                <div class="mt-4 text-end">
-                    <button type="submit" class="btn btn-success px-4">
-                        <i class="fas fa-save me-1"></i> Save Company
-                    </button>
+                        <div class="mb-3">
+                            <label class="form-label d-block">Visitor Notifications</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable_visitor_notifications" name="enable_visitor_notifications" value="1"
+                                    {{ old('enable_visitor_notifications') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="enable_visitor_notifications">
+                                    <span class="toggle-label">{{ old('enable_visitor_notifications') ? 'Enabled' : 'Disabled' }}</span>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block">When enabled, notifications will be displayed throughout the software for visitor events.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label d-block">Mark In/Out in QR Flow</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="mark_in_out_in_qr_flow" name="mark_in_out_in_qr_flow" value="1"
+                                    {{ old('mark_in_out_in_qr_flow') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="mark_in_out_in_qr_flow">
+                                    <span class="toggle-label">{{ old('mark_in_out_in_qr_flow') ? 'Enabled' : 'Disabled' }}</span>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block">When enabled, visitors created via QR flow can be marked in/out from the visitor entry page.</small>
+                        </div>
+
+                        <div class="mt-4 text-end">
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="fas fa-save me-1"></i> Save Company
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
-        </div>
-    </div>
 </div>
+
+@push('styles')
+<style>
+.form-check.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+    cursor: pointer;
+}
+
+.form-check.form-switch .form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.form-check.form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.toggle-label {
+    font-weight: 500;
+    color: #495057;
+    margin-left: 0.5rem;
+}
+
+.form-check.form-switch .form-check-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.mb-3 .form-label {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+</style>
+@endpush
+
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  const body = document.getElementById('branchesBody');
-  const addBtn = document.getElementById('addBranchBtn');
-  const securityCheckbox = document.getElementById('security_check_service');
-  const noneDropdown = document.getElementById('security_checkin_type');
-  const optionsDropdown = document.getElementById('security_checkin_type_enabled');
-  const hiddenField = document.getElementById('security_checkin_type_hidden');
-  const noneContainer = document.getElementById('security_none_container');
-  const optionsContainer = document.getElementById('security_options_container');
-  
-  // Function to toggle dropdown state
-  function toggleSecurityDropdown() {
-    if (securityCheckbox.checked) {
-      // Show options dropdown, hide none dropdown
-      noneContainer.style.display = 'none';
-      optionsContainer.style.display = 'block';
-      optionsDropdown.disabled = false;
-      optionsDropdown.classList.remove('disabled');
-      // Set current value if it exists, otherwise default to 'both'
-      if (!optionsDropdown.value) {
-        optionsDropdown.value = 'both';
-      }
-      hiddenField.value = optionsDropdown.value;
-    } else {
-      // Show none dropdown, hide options dropdown
-      noneContainer.style.display = 'block';
-      optionsContainer.style.display = 'none';
-      noneDropdown.disabled = true;
-      noneDropdown.value = 'none';
-      optionsDropdown.disabled = true;
-      optionsDropdown.classList.add('disabled');
-      // When unchecked, set to 'none'
-      hiddenField.value = 'none';
+// Simple security toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const securityCheckbox = document.getElementById('security_check_service');
+    const noneContainer = document.getElementById('security_check_type_container');
+    const optionsContainer = document.getElementById('security_options_container');
+    const optionsDropdown = document.getElementById('security_checkin_type_enabled');
+    const hiddenField = document.getElementById('security_checkin_type_hidden');
+    
+    // Function to update security state
+    function updateSecurityState(isChange = false) {
+        if (!securityCheckbox || !noneContainer || !optionsContainer || !optionsDropdown || !hiddenField) {
+            return;
+        }
+
+        if (securityCheckbox.checked) {
+            // Enable security
+            noneContainer.style.display = 'none';
+            optionsContainer.style.display = 'block';
+            optionsDropdown.disabled = false;
+            optionsDropdown.classList.remove('disabled');
+            
+            // If triggered by user change or no value set, default to checkin
+            if (isChange || !optionsDropdown.value) {
+                optionsDropdown.value = 'checkin';
+            }
+            hiddenField.value = optionsDropdown.value;
+        } else {
+            // Disable security
+            noneContainer.style.display = 'block';
+            optionsContainer.style.display = 'none';
+            optionsDropdown.disabled = true;
+            optionsDropdown.classList.add('disabled');
+            hiddenField.value = 'none';
+        }
     }
-  }
-  
-  // Sync hidden field when dropdown value changes
-  if (optionsDropdown) {
-    optionsDropdown.addEventListener('change', function() {
-      hiddenField.value = this.value;
-    });
-  }
-  
-  // Initialize dropdown state on page load
-  toggleSecurityDropdown();
-  
-  // Add event listener to checkbox
-  if (securityCheckbox) {
-    securityCheckbox.addEventListener('change', toggleSecurityDropdown);
-  }
-  
-  const makeRow = (isMainBranch = false) => {
-    const tr = document.createElement('tr');
-    if (isMainBranch) {
-      tr.innerHTML = `
-        <td>
-          <input name="branches[name][]" class="form-control form-control-sm" value="Main Branch" placeholder="Branch name">
-          <small class="text-muted">Main branch (auto-created)</small>
-        </td>
-        <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Main Phone" value="{{ old('contact_number') }}"></td>
-        <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Main Email" value="{{ old('email') }}"></td>
-        <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Main Address" value="{{ old('address') }}"></td>
-        <td>
-          <div class="d-flex">
-            <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" placeholder="09:00" id="main_start_time">
-            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('main_start_time')" title="Clear Start Time">
-              <i class="fas fa-eraser"></i>
-            </button>
-          </div>
-        </td>
-        <td>
-          <div class="d-flex">
-            <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" placeholder="18:00" id="main_end_time">
-            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('main_end_time')" title="Clear End Time">
-              <i class="fas fa-eraser"></i>
-            </button>
-          </div>
-        </td>
-        <td class="text-end">
-          <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Main branch cannot be removed">
-            <i class="fas fa-lock"></i>
-          </button>
-        </td>`;
-      tr.classList.add('main-branch');
-    } else {
-      tr.innerHTML = `
-        <td><input name="branches[name][]" class="form-control form-control-sm" placeholder="Branch name"></td>
-        <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
-        <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
-        <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
-        <td>
-          <div class="d-flex">
-            <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" id="start_time_${Date.now()}">
-            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('start_time_${Date.now()}')" title="Clear Start Time">
-              <i class="fas fa-eraser"></i>
-            </button>
-          </div>
-        </td>
-        <td>
-          <div class="d-flex">
-            <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" id="end_time_${Date.now()}">
-            <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('end_time_${Date.now()}')" title="Clear End Time">
-              <i class="fas fa-eraser"></i>
-            </button>
-          </div>
-        </td>
-        <td class="text-end">
-          <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
-        </td>`;
-    }
-    return tr;
-  };
-  
-  // Auto-add main branch on page load
-  if (body && body.children.length === 0) {
-    body.appendChild(makeRow(true));
-  }
-  
-  if (addBtn) addBtn.addEventListener('click', ()=> {
-    const newRow = makeRow(false);
-    
-    // Add real-time validation for branch names
-    const nameInput = newRow.querySelector('input[name="branches[name][]"]');
-    nameInput.addEventListener('blur', function() {
-      validateBranchName(this);
-    });
-    
-    body.appendChild(newRow);
-  });
-  
-  // Function to validate branch name uniqueness
-  function validateBranchName(input) {
-    const allNameInputs = body.querySelectorAll('input[name="branches[name][]"]');
-    const currentName = input.value.trim().toLowerCase();
-    const isMainBranch = input.value.trim() === 'Main Branch';
-    
-    if (currentName === '') {
-      input.classList.remove('is-invalid');
-      return true;
-    }
-    
-    let duplicateFound = false;
-    allNameInputs.forEach(nameInput => {
-      if (nameInput !== input && nameInput.value.trim().toLowerCase() === currentName) {
-        duplicateFound = true;
-      }
-    });
-    
-    if (duplicateFound && !isMainBranch) {
-      input.classList.add('is-invalid');
-      
-      // Remove existing error message if any
-      const existingError = input.parentNode.querySelector('.invalid-feedback');
-      if (existingError) {
-        existingError.remove();
-      }
-      
-      // Add error message
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'invalid-feedback';
-      errorDiv.textContent = 'Branch name already exists. Please use a different name.';
-      input.parentNode.appendChild(errorDiv);
-      
-      return false;
-    } else {
-      input.classList.remove('is-invalid');
-      const existingError = input.parentNode.querySelector('.invalid-feedback');
-      if (existingError) {
-        existingError.remove();
-      }
-      return true;
-    }
-  }
-  
-  // Add validation to existing branch name inputs
-  document.addEventListener('DOMContentLoaded', function() {
-    const existingNameInputs = body.querySelectorAll('input[name="branches[name][]"]');
-    existingNameInputs.forEach(input => {
-      if (!input.readOnly) { // Don't validate readonly main branch
-        input.addEventListener('blur', function() {
-          validateBranchName(this);
+
+    // Initialize if elements exist
+    if (securityCheckbox && noneContainer && optionsContainer) {
+        // Set initial state
+        updateSecurityState(false);
+        
+        // Add event listener
+        securityCheckbox.addEventListener('change', function() {
+            updateSecurityState(true);
         });
-      }
-    });
-  });
-  
-  // Make the clear function globally accessible
-  window.clearOperationTime = function(fieldId) {
-    const input = document.getElementById(fieldId);
-    
-    if (input) {
-      input.value = '';
-      console.log('Cleared field:', fieldId);
-    } else {
-      console.log('Field not found:', fieldId);
+        
+        // Sync hidden field when dropdown value changes
+        if (optionsDropdown && hiddenField) {
+            optionsDropdown.addEventListener('change', function() {
+                hiddenField.value = this.value;
+            });
+        }
     }
-  };
-  
-  // Function to clear both operation times (kept for backward compatibility)
-  window.clearOperationTimes = function(startId, endId) {
-    window.clearOperationTime(startId);
-    window.clearOperationTime(endId);
-  };
+    
+    // Toggle labels - update based on checkbox state
+    function updateToggleLabel(checkbox) {
+        const label = checkbox.parentElement.querySelector('.toggle-label');
+        if (label) {
+            label.textContent = checkbox.checked ? 'Enabled' : 'Disabled';
+        }
+    }
+    
+    // Initialize all toggle labels
+    document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(function(checkbox) {
+        // Set initial state
+        updateToggleLabel(checkbox);
+        
+        // Update on change
+        checkbox.addEventListener('change', function() {
+            updateToggleLabel(this);
+        });
+    });
+    
+    // Branch functionality
+    const body = document.getElementById('branchesBody');
+    const addBtn = document.getElementById('addBranchBtn');
+    
+    if (body && body.children.length === 0) {
+        body.innerHTML += `
+            <tr>
+                <td>
+                    <input name="branches[name][]" class="form-control form-control-sm" value="Main Branch" placeholder="Branch name">
+                    <small class="text-muted">Main branch (auto-created)</small>
+                </td>
+                <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Main Phone" value="{{ old('contact_number') }}"></td>
+                <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Main Email" value="{{ old('email') }}"></td>
+                <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Main Address" value="{{ old('address') }}"></td>
+                <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" placeholder="09:00"></td>
+                <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" placeholder="18:00"></td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Main branch cannot be removed">
+                        <i class="fas fa-lock"></i>
+                    </button>
+                </td>
+            </tr>`;
+    }
+    
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input name="branches[name][]" class="form-control form-control-sm" placeholder="Branch name"></td>
+                <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
+                <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
+                <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
+                <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" placeholder="09:00"></td>
+                <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" placeholder="18:00"></td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
+                </td>`;
+            body.appendChild(row);
+        });
+    }
 });
 </script>
 @endpush
 @endsection
-

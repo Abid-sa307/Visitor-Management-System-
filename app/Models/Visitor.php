@@ -14,8 +14,6 @@ class Visitor extends Model
 {
     use HasFactory, Notifiable;
 
-
-
     protected $fillable = [
         'company_id',
         'branch_id',
@@ -105,8 +103,6 @@ class Visitor extends Model
         'updated_at',
         'deleted_at'
     ];
-
-
 
     /**
      * Get the branch that the visitor belongs to.

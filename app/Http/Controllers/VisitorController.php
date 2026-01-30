@@ -522,8 +522,21 @@ class VisitorController extends Controller
                     foreach ($recipients as $user) {
                         $user->notify(new VisitorCreated($visitor));
                     }
-                    
+
+                    // ---------------------------------------------------------
+                    // NOTIFICATION SYSTEM TRIGGER (15s Ringtone + Browser Notification)
+                    // ---------------------------------------------------------
+                    try {
+                        $notificationService = new \App\Services\GoogleNotificationService();
+                        $notificationService->sendVisitFormNotification($visitor->company, $visitor);
+                        \Log::info("Triggered GoogleNotificationService for Visitor: {$visitor->id}");
+                    } catch (\Throwable $e) {
+                         \Log::warning('GoogleNotificationService trigger failed: '.$e->getMessage());
+                    }
+                    // ---------------------------------------------------------
+
                     // Send emails to company users based on branch assignment
+
                     $companyUsers = CompanyUser::where('company_id', $visitor->company_id)->get();
                         
                     foreach ($companyUsers as $companyUser) {
@@ -553,9 +566,19 @@ class VisitorController extends Controller
             $route = $this->isSuper() ? 'visitors.visit.form' : 'company.visitors.visit.form';
             $message = 'Visitor registered successfully. Please complete the visit form.';
 
+            // Check if notification should trigger
+            if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                return redirect()->route($route, $visitor->id)
+                    ->with('success', $message)
+                    ->with('visitor_name', $visitor->name)
+                    ->with('visitor_company_id', $visitor->company_id)
+                    ->with('play_notification', true)
+                    ->with('notification_message', "{$visitor->name} - New Visitor Registered");
+            }
+
             return redirect()->route($route, $visitor->id)->with('success', $message)
-                ->with('play_notification', true)
-                ->with('visitor_name', $visitor->name);
+                ->with('visitor_name', $visitor->name)
+                ->with('visitor_company_id', $visitor->company_id);
         });
     }
 
@@ -697,14 +720,20 @@ class VisitorController extends Controller
             }
             
             // Send Google notification if enabled
-            if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
-                try {
-                    $notificationService = new GoogleNotificationService();
-                    $notificationService->sendApprovalNotification($visitor->company, $visitor);
-                } catch (\Throwable $e) {
-                    \Log::error('Failed to send approval notification: ' . $e->getMessage());
+        if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
+            try {
+                $notificationService = new GoogleNotificationService();
+                $notificationService->sendApprovalNotification($visitor->company, $visitor);
+                
+                // Simple notification: Set session flash for frontend
+                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                    session()->flash('play_notification', true);
+                    session()->flash('notification_message', "{$visitor->name} - Approved");
                 }
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send approval notification: ' . $e->getMessage());
             }
+        }
             
             // Send approval notification emails to company users
             if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
@@ -733,17 +762,39 @@ class VisitorController extends Controller
                     \Log::warning('Failed to send visitor approval notifications: ' . $e->getMessage());
                 }
             }
+            
+            // Check if company has visitor notifications enabled and trigger notification
+            $playNotification = false;
+            $notificationMessage = '';
+            
+            if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
+                    $playNotification = true;
+                    $notificationMessage = "Visitor {$visitor->name} has been APPROVED";
+                    \Log::info('Approval/Reject - Visitor APPROVED, notifications enabled for company: ' . $visitor->company->name);
+                } elseif ($previousStatus !== 'Rejected' && $newStatus === 'Rejected') {
+                    $playNotification = true;
+                    $notificationMessage = "Visitor {$visitor->name} has been REJECTED";
+                    \Log::info('Approval/Reject - Visitor REJECTED, notifications enabled for company: ' . $visitor->company->name);
+                }
+            }
 
             if ($isAjax) {
                 return response()->json([
                     'success' => true,
                     'status'  => $visitor->status,
                     'message' => "Visitor status updated to {$visitor->status}",
-                    'play_notification' => $newStatus === 'Approved'
+                    'play_notification' => $playNotification,
+                    'visitor_name' => $visitor->name,
+                    'notification_message' => $notificationMessage
                 ]);
             }
 
-            return redirect()->back()->with('success', "Visitor status updated to {$visitor->status}");
+            return redirect()->back()
+                ->with('success', "Visitor status updated to {$visitor->status}")
+                ->with('play_notification', $playNotification)
+                ->with('visitor_name', $visitor->name)
+                ->with('notification_message', $notificationMessage);
         }
 
         // Otherwise, normal full update
@@ -1128,13 +1179,35 @@ class VisitorController extends Controller
                     'new_status' => $visitor->fresh()->status
                 ]);
 
+                // Check if company has visitor notifications enabled and trigger notification
+                $playNotification = false;
+                $notificationMessage = '';
+                \Log::info('Visit form submitted - Checking notifications for visitor ID: ' . $visitor->id);
+                \Log::info('Visit form submitted - Visitor company ID: ' . ($visitor->company ? $visitor->company->id : 'null'));
+                \Log::info('Visit form submitted - Visitor company name: ' . ($visitor->company ? $visitor->company->name : 'no company'));
+                \Log::info('Visit form submitted - Company enable_visitor_notifications: ' . ($visitor->company ? ($visitor->company->enable_visitor_notifications ? 'true' : 'false') : 'no company'));
+                
+                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                    $playNotification = true;
+                    $notificationMessage = "Visit form submitted for visitor: " . $visitor->name;
+                    \Log::info('Visit form submitted - Visitor notifications ENABLED for company: ' . $visitor->company->name . ', playing notification for visitor: ' . $visitor->name);
+                } else {
+                    \Log::info('Visit form submitted - Visitor notifications DISABLED');
+                }
+
                 // Determine the appropriate redirect route based on user type
                 if (auth()->guard('company')->check()) {
                     return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.');
+                        ->with('success', 'Visit submitted successfully.')
+                        ->with('play_notification', $playNotification)
+                        ->with('visitor_name', $visitor->name)
+                        ->with('notification_message', $notificationMessage);
                 } else {
                     return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.');
+                        ->with('success', 'Visit submitted successfully.')
+                        ->with('play_notification', $playNotification)
+                        ->with('visitor_name', $visitor->name)
+                        ->with('notification_message', $notificationMessage);
                 }
 
             } catch (\Exception $e) {
@@ -1596,6 +1669,25 @@ class VisitorController extends Controller
             
             $visitor->save();
             DB::commit();
+
+            // Send notification if enabled
+            try {
+                $notificationService = new GoogleNotificationService();
+                if ($action === 'in') {
+                    $notificationService->sendMarkInNotification($visitor->company, $visitor);
+                } elseif ($action === 'out') {
+                    $notificationService->sendMarkOutNotification($visitor->company, $visitor);
+                    // Also trigger security check-out notification if applicable (though usually security check is separate)
+                }
+                
+                // Simple notification: Set session flash for frontend
+                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                    session()->flash('play_notification', true);
+                    session()->flash('notification_message', "{$visitor->name} - " . ($action === 'in' ? 'Checked In' : 'Checked Out'));
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send mark-in/out notification: ' . $e->getMessage());
+            }
 
             if (request()->ajax()) {
                 return response()->json([
@@ -2598,12 +2690,13 @@ class VisitorController extends Controller
         // Prepare data for view
         $isSuper = $this->isSuper();
         $companies = [];
+        $actionRoute = 'visitors.update'; // Route for approve/reject actions
         
         if ($isSuper) {
             $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
         }
 
-        return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies'));
+        return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies', 'actionRoute'));
     }
 
     /**

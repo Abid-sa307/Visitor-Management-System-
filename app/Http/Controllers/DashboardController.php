@@ -108,6 +108,12 @@ public function index(Request $request)
     $pendingCount  = (clone $dateFilteredQuery)->where('status', 'Pending')->count();
     $rejectedCount = (clone $dateFilteredQuery)->where('status', 'Rejected')->count();
 
+    // ----- All-time counts for summary cards -----
+    $allTimeTotalVisitors = (clone $baseVisitorQuery)->count();
+    $allTimeApprovedCount = (clone $baseVisitorQuery)->where('status', 'Approved')->count();
+    $allTimePendingCount  = (clone $baseVisitorQuery)->where('status', 'Pending')->count();
+    $allTimeRejectedCount = (clone $baseVisitorQuery)->where('status', 'Rejected')->count();
+
     // Store the date range in the session for the view
     $request->session()->flash('date_range', [
         'from' => $from,
@@ -356,6 +362,10 @@ public function index(Request $request)
         'approvedCount'     => $approvedCount,
         'pendingCount'      => $pendingCount,
         'rejectedCount'     => $rejectedCount,
+        'allTimeTotalVisitors' => $allTimeTotalVisitors,
+        'allTimeApprovedCount' => $allTimeApprovedCount,
+        'allTimePendingCount'  => $allTimePendingCount,
+        'allTimeRejectedCount' => $allTimeRejectedCount,
         'latestVisitors'    => $latestVisitors,
         'visitors'          => $visitors,
 

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Fix Test</title>
+</head>
+<body>
+    <h1>Audio Notification Test</h1>
+    <p>Test the enhanced audio notification system with multiple fallbacks</p>
+    
+    <button onclick="testAudioSystem()">🔊 Test Audio System</button>
+    <button onclick="testBeepOnly()">📞 Test Beep Only</button>
+    
+    <div id="status"></div>
+    
+    <script src="/js/beep-sound.js"></script>
+    <script>
+        function log(message) {
+            const status = document.getElementById('status');
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            status.appendChild(div);
+            console.log(message);
+        }
+        
+        function testAudioSystem() {
+            log('🔊 Testing enhanced audio system...');
+            
+            // Try different audio sources
+            const audioSources = [
+                '/sounds/mixkit-bell-notification-933.wav',
+                'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ=='
+            ];
+            
+            let attempt = 0;
+            
+            function tryNextSource() {
+                if (attempt >= audioSources.length) {
+                    log('❌ All audio sources failed, trying beep sound');
+                    try {
+                        if (typeof createBeepSound === 'function') {
+                            createBeepSound();
+                            log('✅ Beep sound played successfully');
+                        } else {
+                            log('❌ Beep sound function not available');
+                        }
+                    } catch (e) {
+                        log('❌ Beep sound failed: ' + e.message);
+                    }
+                    return;
+                }
+                
+                try {
+                    const audio = new Audio(audioSources[attempt]);
+                    audio.volume = 0.6;
+                    
+                    audio.addEventListener('canplaythrough', () => {
+                        log(`✅ Audio source ${attempt + 1} ready`);
+                    });
+                    
+                    audio.play().then(() => {
+                        log(`✅ Notification sound played successfully (source ${attempt + 1})`);
+                    }).catch(e => {
+                        log(`❌ Audio source ${attempt + 1} failed: ${e.message}`);
+                        attempt++;
+                        tryNextSource();
+                    });
+                    
+                } catch (e) {
+                    log(`❌ Audio source ${attempt + 1} creation failed: ${e.message}`);
+                    attempt++;
+                    tryNextSource();
+                }
+            }
+            
+            tryNextSource();
+        }
+        
+        function testBeepOnly() {
+            log('📞 Testing beep sound only...');
+            try {
+                if (typeof createBeepSound === 'function') {
+                    createBeepSound();
+                    log('✅ Beep sound played successfully');
+                } else {
+                    log('❌ Beep sound function not available');
+                }
+            } catch (e) {
+                log('❌ Beep sound failed: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

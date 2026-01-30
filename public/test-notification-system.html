@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { margin: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Visitor Notification System Test</h1>
+    
+    <div id="status"></div>
+    
+    <h2>Browser Permission Tests</h2>
+    <button onclick="checkNotificationPermission()">Check Notification Permission</button>
+    <button onclick="requestNotificationPermission()">Request Notification Permission</button>
+    <button onclick="testBrowserNotification()">Test Browser Notification</button>
+    
+    <h2>Audio Tests</h2>
+    <button onclick="testAudioDirect()">Test Audio Direct</button>
+    <button onclick="testAudioLoop()">Test Audio 15sec Loop</button>
+    
+    <h2>System Tests</h2>
+    <button onclick="simulateVisitFormSubmit()">Simulate Visit Form Submit</button>
+    <button onclick="simulateVisitorApprove()">Simulate Visitor Approve</button>
+    
+    <script>
+        function log(message, type = 'info') {
+            const status = document.getElementById('status');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            status.appendChild(div);
+            console.log(message);
+        }
+
+        function checkNotificationPermission() {
+            if (!('Notification' in window)) {
+                log('❌ This browser does not support notifications', 'error');
+                return;
+            }
+            
+            const permission = Notification.permission;
+            log(`🔔 Notification permission: ${permission}`, permission === 'granted' ? 'success' : 'info');
+        }
+
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                log('❌ This browser does not support notifications', 'error');
+                return;
+            }
+            
+            Notification.requestPermission().then(permission => {
+                log(`🔔 Permission result: ${permission}`, permission === 'granted' ? 'success' : 'error');
+            });
+        }
+
+        function testBrowserNotification() {
+            if (Notification.permission !== 'granted') {
+                log('❌ Notification permission not granted', 'error');
+                return;
+            }
+            
+            const notification = new Notification('Test Notification', {
+                body: 'This is a test notification from the visitor management system',
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                tag: 'test-' + Date.now()
+            });
+            
+            log('✅ Browser notification sent', 'success');
+            
+            setTimeout(() => {
+                notification.close();
+                log('🔕 Browser notification closed', 'info');
+            }, 5000);
+        }
+
+        function testAudioDirect() {
+            try {
+                const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                audio.volume = 0.5;
+                audio.play().then(() => {
+                    log('🔊 Audio played successfully', 'success');
+                }).catch(e => {
+                    log(`❌ Audio play failed: ${e.message}`, 'error');
+                });
+            } catch (e) {
+                log(`❌ Audio creation failed: ${e.message}`, 'error');
+            }
+        }
+
+        function testAudioLoop() {
+            try {
+                const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                audio.loop = true;
+                audio.volume = 0.5;
+                audio.play().then(() => {
+                    log('🔊 Audio loop started (15 seconds)', 'success');
+                    
+                    setTimeout(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        log('🔇 Audio loop stopped', 'info');
+                    }, 15000);
+                }).catch(e => {
+                    log(`❌ Audio loop failed: ${e.message}`, 'error');
+                });
+            } catch (e) {
+                log(`❌ Audio loop creation failed: ${e.message}`, 'error');
+            }
+        }
+
+        function simulateVisitFormSubmit() {
+            log('📝 Simulating visit form submit notification...', 'info');
+            
+            // Simulate the session data that would be set
+            const playNotification = true;
+            const visitorName = 'Test Visitor';
+            const notificationMessage = 'Visit form submitted for visitor: Test Visitor';
+            
+            if (playNotification) {
+                // Play notification sound
+                try {
+                    const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                    audio.loop = true;
+                    audio.play().then(() => {
+                        log('🔊 Visit form notification audio started', 'success');
+                    }).catch(e => {
+                        log(`❌ Audio failed: ${e.message}`, 'error');
+                    });
+                    
+                    setTimeout(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    }, 15000);
+                } catch (e) {
+                    log(`❌ Audio error: ${e.message}`, 'error');
+                }
+                
+                // Show browser notification
+                if (Notification.permission === 'granted') {
+                    const notification = new Notification('Visit Form Submitted', {
+                        body: notificationMessage,
+                        icon: '/favicon.ico',
+                        badge: '/favicon.ico',
+                        tag: 'visit-form-' + Date.now(),
+                        requireInteraction: true
+                    });
+                    
+                    log('🔔 Visit form browser notification sent', 'success');
+                    
+                    setTimeout(() => {
+                        notification.close();
+                    }, 10000);
+                } else {
+                    log('❌ Browser notification permission not granted', 'error');
+                }
+                
+                // Show alert
+                alert(`🔔 NOTIFICATION: ${notificationMessage}`);
+            }
+        }
+
+        function simulateVisitorApprove() {
+            log('✅ Simulating visitor approve notification...', 'info');
+            
+            const playNotification = true;
+            const visitorName = 'Test Visitor';
+            const notificationMessage = 'Visitor Test Visitor has been APPROVED';
+            
+            if (playNotification) {
+                // Play notification sound
+                try {
+                    const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                    audio.loop = true;
+                    audio.play().then(() => {
+                        log('🔊 Approval notification audio started', 'success');
+                    }).catch(e => {
+                        log(`❌ Audio failed: ${e.message}`, 'error');
+                    });
+                    
+                    setTimeout(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    }, 15000);
+                } catch (e) {
+                    log(`❌ Audio error: ${e.message}`, 'error');
+                }
+                
+                // Show browser notification
+                if (Notification.permission === 'granted') {
+                    const notification = new Notification('Visitor Approved', {
+                        body: notificationMessage,
+                        icon: '/favicon.ico',
+                        badge: '/favicon.ico',
+                        tag: 'visitor-approved-' + Date.now(),
+                        requireInteraction: true
+                    });
+                    
+                    log('🔔 Approval browser notification sent', 'success');
+                    
+                    setTimeout(() => {
+                        notification.close();
+                    }, 10000);
+                } else {
+                    log('❌ Browser notification permission not granted', 'error');
+                }
+                
+                // Show alert
+                alert(`🔔 NOTIFICATION: ${notificationMessage}`);
+            }
+        }
+
+        // Check permission on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Notification test page loaded', 'info');
+            checkNotificationPermission();
+        });
+    </script>
+</body>
+</html>

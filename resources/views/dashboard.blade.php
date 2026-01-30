@@ -151,8 +151,8 @@
         </div>
         <div class="stat-card__content">
             <p class="stat-card__label">Total Visitors</p>
-            <h3 class="stat-card__value">{{ number_format($totalVisitors) }}</h3>
-            <span class="stat-card__subtext">Overall this period</span>
+            <h3 class="stat-card__value">{{ number_format($allTimeTotalVisitors) }}</h3>
+            <span class="stat-card__subtext">All time records</span>
         </div>
     </div>
 
@@ -162,7 +162,7 @@
         </div>
         <div class="stat-card__content">
             <p class="stat-card__label">Approved</p>
-            <h3 class="stat-card__value">{{ number_format($approvedCount) }}</h3>
+            <h3 class="stat-card__value">{{ number_format($allTimeApprovedCount) }}</h3>
             <span class="stat-card__subtext">Cleared entries</span>
         </div>
     </div>
@@ -174,7 +174,7 @@
             </div>
             <div class="stat-card__content">
                 <p class="stat-card__label">Pending</p>
-                <h3 class="stat-card__value">{{ number_format($pendingCount) }}</h3>
+                <h3 class="stat-card__value">{{ number_format($allTimePendingCount) }}</h3>
                 <span class="stat-card__subtext">Awaiting action</span>
             </div>
         </div>
@@ -186,7 +186,7 @@
         </div>
         <div class="stat-card__content">
             <p class="stat-card__label">Rejected</p>
-            <h3 class="stat-card__value">{{ number_format($rejectedCount) }}</h3>
+            <h3 class="stat-card__value">{{ number_format($allTimeRejectedCount) }}</h3>
             <span class="stat-card__subtext">Declined entries</span>
         </div>
     </div>
@@ -711,30 +711,30 @@ document.addEventListener('DOMContentLoaded', function () {
         visitor: {
             el: 'visitorChartCanvas',
             type: 'bar',
-            data: {!! json_encode($chartData) !!},
-            labels: {!! json_encode($chartLabels) !!},
+            data: @json($chartData ?? []),
+            labels: @json($chartLabels ?? []),
             color: 'rgba(75, 192, 192, 0.6)'
         },
         hour: {
             el: 'hourChartCanvas',
             type: 'bar',
-            data: {!! json_encode($hourData) !!},
-            labels: {!! json_encode($hourLabels) !!},
+            data: @json($hourData ?? []),
+            labels: @json($hourLabels ?? []),
             color: 'rgba(255, 99, 132, 0.6)'
         },
         day: {
             el: 'dayChartCanvas',
             type: 'line',
-            data: {!! json_encode($dayWiseData) !!},
-            labels: {!! json_encode($dayWiseLabels) !!},
+            data: @json($dayWiseData ?? []),
+            labels: @json($dayWiseLabels ?? []),
             color: 'rgba(54, 162, 235, 0.6)',
             fill: true
         },
         dept: {
             el: 'deptChartCanvas',
             type: 'doughnut',
-            data: {!! json_encode($deptCounts) !!},
-            labels: {!! json_encode($deptLabels) !!},
+            data: @json($deptCounts ?? []),
+            labels: @json($deptLabels ?? []),
             colors: [
                 'rgba(40, 167, 69, 0.8)',
                 'rgba(23, 162, 184, 0.8)',
@@ -746,9 +746,13 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // Debug: Log chart data to console
-    console.log('Day Wise Data:', {!! json_encode($dayWiseData) !!});
-    console.log('Day Wise Labels:', {!! json_encode($dayWiseLabels) !!});
-    console.log('Charts object:', charts);
+    // Safely logging data
+    try {
+        console.log('Day Wise Data:', @json($dayWiseData ?? []));
+        console.log('Day Wise Labels:', @json($dayWiseLabels ?? []));
+    } catch(e) {
+        console.warn('Error content logging:', e);
+    }
 
     Object.values(charts).forEach(({el, type, labels, data, color, colors, fill}) => {
         const ctx = document.getElementById(el);

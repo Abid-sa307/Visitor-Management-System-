@@ -68,3 +68,5 @@ Route::get('/companies/{company}/notification-preference', function (\App\Models
         ]
     ]);
 });
+
+// Route moved to web.php to leverage Session Auth

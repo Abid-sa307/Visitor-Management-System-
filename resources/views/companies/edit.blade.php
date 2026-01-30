@@ -88,23 +88,38 @@
                     </div>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="auto_approve_visitors" name="auto_approve_visitors" value="1"
-                        {{ old('auto_approve_visitors', $company->auto_approve_visitors ?? 0) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="auto_approve_visitors">Auto Approve Visitors</label>
+                <div class="mb-3">
+                    <label class="form-label d-block">Auto Approve Visitors</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="auto_approve_visitors" name="auto_approve_visitors" value="1"
+                            {{ old('auto_approve_visitors', $company->auto_approve_visitors ?? 0) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="auto_approve_visitors">
+                            <span class="toggle-label">{{ old('auto_approve_visitors', $company->auto_approve_visitors ?? 0) ? 'Enabled' : 'Disabled' }}</span>
+                        </label>
+                    </div>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="face_recognition_enabled" name="face_recognition_enabled" value="1"
-                        {{ old('face_recognition_enabled', $company->face_recognition_enabled ?? 0) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="face_recognition_enabled">Enable Face Recognition for Visitors</label>
+                <div class="mb-3">
+                    <label class="form-label d-block">Face Recognition for Visitors</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="face_recognition_enabled" name="face_recognition_enabled" value="1"
+                            {{ old('face_recognition_enabled', $company->face_recognition_enabled ?? 0) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="face_recognition_enabled">
+                            <span class="toggle-label">{{ old('face_recognition_enabled', $company->face_recognition_enabled ?? 0) ? 'Enabled' : 'Disabled' }}</span>
+                        </label>
+                    </div>
                     <small class="form-text text-muted d-block">When enabled, visitors will be able to verify their identity using face recognition during check-in.</small>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="security_check_service" name="security_check_service" value="1"
-                        {{ old('security_check_service', $company->security_check_service ?? 0) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="security_check_service">Enable Security Check Service</label>
+                <div class="mb-3">
+                    <label class="form-label d-block">Security Check Service</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="security_check_service" name="security_check_service" value="1"
+                            {{ old('security_check_service', $company->security_check_service ?? 0) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="security_check_service">
+                            <span class="toggle-label">{{ old('security_check_service', $company->security_check_service ?? 0) ? 'Enabled' : 'Disabled' }}</span>
+                        </label>
+                    </div>
                     <small class="form-text text-muted d-block">When enabled, visitors must complete security check-in and check-out procedures.<br>
 <strong>Security Check Type:</strong> Required when security service is enabled.<br>
 <strong>Behavior:</strong> If disabled, dropdown is locked with "None" option. If enabled, dropdown unlocks for selection.</small>
@@ -130,31 +145,46 @@
                 <div class="mb-3" id="security_options_container" style="{{ old('security_check_service', $company->security_check_service ?? 0) ? '' : 'display: none;' }}">
                     <label for="security_checkin_type_enabled" class="form-label">Security Check Type</label>
                     <select class="form-select" id="security_checkin_type_enabled" name="security_checkin_type">
-                        <option value="checkin" {{ old('security_checkin_type', $company->security_checkin_type) === 'checkin' ? 'selected' : '' }}>Check-in Only</option>
+                        <option value="checkin" {{ old('security_checkin_type', $company->security_checkin_type) === 'checkin' ? 'selected' : ((old('security_checkin_type', $company->security_checkin_type)) ? '' : 'selected') }}>Check-in Only</option>
                         <option value="checkout" {{ old('security_checkin_type', $company->security_checkin_type) === 'checkout' ? 'selected' : '' }}>Check-out Only</option>
                         <option value="both" {{ old('security_checkin_type', $company->security_checkin_type) === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
                     </select>
                     <small class="form-text text-muted d-block">Specify when security checks are required.</small>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="mail_service_enabled" name="mail_service_enabled" value="1"
-                        {{ old('mail_service_enabled', $company->mail_service_enabled) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="mail_service_enabled">Enable Mail Service</label>
+                <div class="mb-3">
+                    <label class="form-label d-block">Mail Service</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="mail_service_enabled" name="mail_service_enabled" value="1"
+                            {{ old('mail_service_enabled', $company->mail_service_enabled) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="mail_service_enabled">
+                            <span class="toggle-label">{{ old('mail_service_enabled', $company->mail_service_enabled) ? 'Enabled' : 'Disabled' }}</span>
+                        </label>
+                    </div>
                     <small class="form-text text-muted d-block">When enabled, mail notifications will be sent for Company activities.</small>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="enable_visitor_notifications" name="enable_visitor_notifications" value="1"
-                        {{ old('enable_visitor_notifications', $company->enable_visitor_notifications) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="enable_visitor_notifications">Enable Visitor Notifications</label>
+                <div class="mb-3">
+                    <label class="form-label d-block">Visitor Notifications</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enable_visitor_notifications" name="enable_visitor_notifications" value="1"
+                            {{ old('enable_visitor_notifications', $company->enable_visitor_notifications) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="enable_visitor_notifications">
+                            <span class="toggle-label">{{ old('enable_visitor_notifications', $company->enable_visitor_notifications) ? 'Enabled' : 'Disabled' }}</span>
+                        </label>
+                    </div>
                     <small class="form-text text-muted d-block">When enabled, notifications will be displayed throughout the software for visitor events (created, approved, check-in/out).</small>
                 </div>
 
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="mark_in_out_in_qr_flow" name="mark_in_out_in_qr_flow" value="1"
-                        {{ old('mark_in_out_in_qr_flow', $company->mark_in_out_in_qr_flow ?? 0) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="mark_in_out_in_qr_flow">Enable Mark In/Out in QR Flow</label>
+                <div class="mb-3">
+                    <label class="form-label d-block">Mark In/Out in QR Flow</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="mark_in_out_in_qr_flow" name="mark_in_out_in_qr_flow" value="1"
+                            {{ old('mark_in_out_in_qr_flow', $company->mark_in_out_in_qr_flow ?? 0) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="mark_in_out_in_qr_flow">
+                            <span class="toggle-label">{{ old('mark_in_out_in_qr_flow', $company->mark_in_out_in_qr_flow ?? 0) ? 'Enabled' : 'Disabled' }}</span>
+                        </label>
+                    </div>
                     <small class="form-text text-muted d-block">When enabled, visitors created via QR flow can be marked in/out from the visitor entry page. If disabled, mark in/out actions will be blocked for QR flow visitors.</small>
                 </div>
 
@@ -254,6 +284,44 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+.form-check.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+    cursor: pointer;
+}
+
+.form-check.form-switch .form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.form-check.form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.toggle-label {
+    font-weight: 500;
+    color: #495057;
+    margin-left: 0.5rem;
+}
+
+.form-check.form-switch .form-check-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.mb-3 .form-label {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+</style>
+@endpush
+
 @endsection
 
 @push('scripts')
@@ -289,16 +357,16 @@ document.addEventListener('DOMContentLoaded', function(){
   const optionsContainer = document.getElementById('security_options_container');
   
   // Function to toggle dropdown state
-  function toggleSecurityDropdown() {
+  function toggleSecurityDropdown(isChange = false) {
     if (securityCheckbox.checked) {
       // Show options dropdown, hide none dropdown
       noneContainer.style.display = 'none';
       optionsContainer.style.display = 'block';
       optionsDropdown.disabled = false;
       optionsDropdown.classList.remove('disabled');
-      // Set current value if it exists, otherwise default to 'both'
-      if (!optionsDropdown.value) {
-        optionsDropdown.value = 'both';
+      // Set current value if it exists, otherwise default to 'checkin'
+      if (isChange || !optionsDropdown.value) {
+        optionsDropdown.value = 'checkin';
       }
       hiddenField.value = optionsDropdown.value;
     } else {
@@ -322,12 +390,29 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   
   // Initialize dropdown state on page load
-  toggleSecurityDropdown();
+  toggleSecurityDropdown(false);
   
   // Add event listener to checkbox
   if (securityCheckbox) {
-    securityCheckbox.addEventListener('change', toggleSecurityDropdown);
+    securityCheckbox.addEventListener('change', function() {
+      toggleSecurityDropdown(true);
+    });
   }
+  
+  // Update toggle labels dynamically
+  const toggleInputs = document.querySelectorAll('.form-check-input[type="checkbox"]');
+  toggleInputs.forEach(input => {
+    const label = input.nextElementSibling.querySelector('.toggle-label');
+    if (label) {
+      // Set initial label
+      label.textContent = input.checked ? 'Enabled' : 'Disabled';
+      
+      // Update label on change
+      input.addEventListener('change', function() {
+        label.textContent = this.checked ? 'Enabled' : 'Disabled';
+      });
+    }
+  });
   
   function markForDeletion(button) {
     const row = button.closest('tr');

@@ -45,7 +45,7 @@ class CompanyController extends Controller
                 'auto_approve_visitors' => 'sometimes|boolean',
                 'face_recognition_enabled' => 'sometimes|boolean',
                 'security_check_service' => 'sometimes|boolean',
-                'security_checkin_type' => 'nullable|string|in:checkin,checkout,both',
+                'security_checkin_type' => 'nullable|string|in:none,checkin,checkout,both',
                 'mail_service_enabled' => 'sometimes|boolean',
                 'visitor_notifications_enabled' => 'sometimes|boolean',
                 'enable_visitor_notifications' => 'sometimes|boolean',
@@ -72,9 +72,9 @@ class CompanyController extends Controller
             
             // Handle security_checkin_type
             if ($request->boolean('security_check_service')) {
-                $company->security_checkin_type = $request->input('security_checkin_type_hidden') ?: $request->input('security_checkin_type') ?: 'both';
+                $company->security_checkin_type = $request->input('security_checkin_type_hidden') ?: $request->input('security_checkin_type') ?: 'checkin';
             } else {
-                $company->security_checkin_type = 'both';
+                $company->security_checkin_type = 'none';
             }
             
             $company->contact_number = $validated['contact_number'] ?? '';
@@ -187,7 +187,7 @@ class CompanyController extends Controller
                 'auto_approve_visitors' => 'sometimes|boolean',
                 'face_recognition_enabled' => 'sometimes|boolean',
                 'security_check_service' => 'sometimes|boolean',
-                'security_checkin_type' => 'nullable|string|in:checkin,checkout,both',
+                'security_checkin_type' => 'nullable|string|in:none,checkin,checkout,both',
                 'mail_service_enabled' => 'sometimes|boolean',
                 'visitor_notifications_enabled' => 'sometimes|boolean',
                 'enable_visitor_notifications' => 'sometimes|boolean',
@@ -215,9 +215,9 @@ class CompanyController extends Controller
             
             // Handle security_checkin_type
             if ($request->boolean('security_check_service')) {
-                $company->security_checkin_type = $request->input('security_checkin_type_hidden') ?: $request->input('security_checkin_type') ?: 'both';
+                $company->security_checkin_type = $request->input('security_checkin_type_hidden') ?: $request->input('security_checkin_type') ?: 'checkin';
             } else {
-                $company->security_checkin_type = 'both';
+                $company->security_checkin_type = 'none';
             }
             
             $company->contact_number = $validated['contact_number'] ?? '';

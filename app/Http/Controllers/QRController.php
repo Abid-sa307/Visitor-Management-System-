@@ -350,7 +350,8 @@ class QRController extends Controller
             
             return redirect()
                 ->route($route, $routeParams)
-                ->with('success', 'Visitor registered successfully! Please complete the visit form.');
+                ->with('success', 'Visitor registered successfully! Please complete the visit form.')
+                ->with('visitor_name', $visitor->name);
                 
         } catch (\Exception $e) {
             return back()

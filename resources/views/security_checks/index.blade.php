@@ -145,6 +145,7 @@
                             <th>Branch</th>
                             <th>Department</th>
                             <th>Status</th>
+                            <th>Security Type</th>
                             <th>Last Visit</th>
                             <th>Action</th>
                         </tr>
@@ -164,8 +165,11 @@
                                 $canUndoCheckin = $hasSecurityCheckin && !$visitor->in_time && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
                                 $canUndoCheckout = $hasSecurityCheckout && \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) <= 30;
                                 $securityCheckinType = $visitor->company ? $visitor->company->security_checkin_type : 'both';
+                                
+                                // Fix: Handle all security check types properly
                                 $showCheckinButton = in_array($securityCheckinType, ['checkin', 'both']);
                                 $showCheckoutButton = in_array($securityCheckinType, ['checkout', 'both']);
+                                $showNoSecurityButtons = $securityCheckinType === 'none';
                             @endphp
                             <tr>
                                 <td class="fw-semibold">{{ $visitor->name }}</td>
@@ -182,6 +186,39 @@
                                     </span>
                                 </td>
                                 <td>
+                                    @if($visitor->company)
+                                        @if(!$visitor->company->security_check_service)
+                                            <span class="badge bg-light text-dark border border-secondary">
+                                                <i class="fas fa-ban"></i> Disabled
+                                            </span>
+                                        @else
+                                            @switch($visitor->company->security_checkin_type)
+                                                @case('checkin')
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-sign-in-alt"></i> Check In Only
+                                                    </span>
+                                                    @break
+                                                @case('checkout')
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-sign-out-alt"></i> Check Out Only
+                                                    </span>
+                                                    @break
+                                                @case('both')
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-exchange-alt"></i> Both
+                                                    </span>
+                                                    @break
+                                                @default
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-shield-alt"></i> None
+                                                    </span>
+                                            @endswitch
+                                        @endif
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
                                     @if($visitor->in_time)
                                         {{ \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d H:i') }}
                                     @else
@@ -189,7 +226,12 @@
                                     @endif
                                 </td>
                                 <td class="d-flex gap-2">
-                                    @if(!$hasSecurityCheckin && $showCheckinButton)
+                                    @if($showNoSecurityButtons)
+                                        {{-- Company has 'none' security check type - no buttons --}}
+                                        <span class="text-muted" title="No security checks required">
+                                            <i class="fas fa-shield-alt"></i> No Security
+                                        </span>
+                                    @elseif(!$hasSecurityCheckin && $showCheckinButton)
                                         {{-- Security Check-in Button --}}
                                         <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
                                             @csrf

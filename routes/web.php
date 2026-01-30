@@ -37,9 +37,71 @@ Route::get('/test-db', function() {
 });
 
 // Test notification route
-Route::get('/test-notification', function() {
-    return view('test-notification');
-})->name('test.notification');
+Route::get('/debug-audio-test', function() {
+    return view('debug_audio_test');
+});
+
+Route::get('/debug-session-test', function() {
+    // Set session data
+    session()->flash('play_notification', true);
+    session()->flash('visitor_name', 'Test Visitor');
+    session()->flash('notification_message', 'Visit form submitted for visitor: Test Visitor');
+    
+    // Show what's in session
+    echo "<h1>Session Debug Test</h1>";
+    echo "<h2>Session Data Set:</h2>";
+    echo "<pre>";
+    echo "play_notification: " . (session('play_notification') ? 'true' : 'false') . "\n";
+    echo "visitor_name: " . session('visitor_name') . "\n";
+    echo "notification_message: " . session('notification_message') . "\n";
+    echo "</pre>";
+    
+    echo "<h2>All Session Data:</h2>";
+    echo "<pre>" . print_r(session()->all(), true) . "</pre>";
+    
+    echo "<br><a href='/debug-session-check'>Check if session data persists</a>";
+});
+
+Route::get('/debug-layout-test', function() {
+    // Set session data
+    session()->flash('play_notification', true);
+    session()->flash('visitor_name', 'Test Visitor');
+    session()->flash('notification_message', 'Visit form submitted for visitor: Test Visitor');
+    
+    // Check session values before rendering
+    echo "<h1>Pre-Layout Session Check</h1>";
+    echo "<pre>";
+    echo "play_notification: " . (session('play_notification') ? 'true' : 'false') . "\n";
+    echo "visitor_name: " . session('visitor_name') . "\n";
+    echo "notification_message: " . session('notification_message') . "\n";
+    echo "</pre>";
+    
+    echo "<h2>Now testing layout variables:</h2>";
+    
+    // Simulate the layout PHP code
+    $playNotification = session('play_notification', false);
+    $visitorName = session('visitor_name', 'Unknown');
+    $notificationMessage = session('notification_message', 'New visitor registered');
+    
+    echo "<pre>";
+    echo "\$playNotification: " . ($playNotification ? 'true' : 'false') . "\n";
+    echo "\$visitorName: " . $visitorName . "\n";
+    echo "\$notificationMessage: " . $notificationMessage . "\n";
+    echo "If condition result: " . ($playNotification ? 'TRUE - Should show notification' : 'FALSE - No notification') . "\n";
+    echo "</pre>";
+    
+    if ($playNotification) {
+        echo "<h2>✅ NOTIFICATION SHOULD TRIGGER</h2>";
+        echo "<script>
+            alert('🔔 DIRECT TEST: Notification condition is TRUE!');
+            console.log('Direct test - condition met');
+        </script>";
+    } else {
+        echo "<h2>❌ NOTIFICATION CONDITION IS FALSE</h2>";
+    }
+    
+    echo "<br><a href='/'>Go to dashboard</a>";
+});
 
 // Test email route
 Route::get('/test-email', function () {
@@ -167,6 +229,9 @@ Route::middleware(['auth'])->group(function () {
 */
 // Shared dashboard route for both superadmins and company users
 Route::middleware(['auth'])->group(function () {
+    // Notifications
+    Route::get('/api/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount']); // Keep /api prefix for consistency with JS
+    
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile
@@ -721,5 +786,61 @@ Route::get('/test-data', function() {
             ];
         })
     ];
+});
+
+// Debug routes for company settings
+Route::get('/debug-company-settings', function() {
+    echo "<h2>Company Notification Settings</h2>";
+    
+    // Get all companies
+    $companies = \App\Models\Company::all(['id', 'name', 'enable_visitor_notifications']);
+    
+    echo "<table border='1' style='border-collapse: collapse; width: 100%;'>";
+    echo "<tr><th>ID</th><th>Name</th><th>Visitor Notifications</th></tr>";
+    
+    foreach ($companies as $company) {
+        echo "<tr>";
+        echo "<td>{$company->id}</td>";
+        echo "<td>{$company->name}</td>";
+        echo "<td style='text-align: center; color: " . ($company->enable_visitor_notifications ? 'green' : 'red') . "; font-weight: bold;'>";
+        echo $company->enable_visitor_notifications ? '✅ YES' : '❌ NO';
+        echo "</td>";
+        echo "</tr>";
+    }
+    
+    echo "</table>";
+    
+    echo "<h3>Looking for 'basic' company:</h3>";
+    $basicCompany = \App\Models\Company::where('name', 'like', '%basic%')->first();
+    if ($basicCompany) {
+        echo "<p><strong>Found:</strong> {$basicCompany->name} (ID: {$basicCompany->id}) - Notifications: " . ($basicCompany->enable_visitor_notifications ? 'YES' : 'NO') . "</p>";
+    } else {
+        echo "<p>No company with 'basic' in name found.</p>";
+    }
+    
+    echo "<h3>Enable Notifications for Company:</h3>";
+    echo "<form method='post' action='/debug-enable-notifications'>";
+    echo csrf_field();
+    echo "<input type='number' name='company_id' placeholder='Company ID' required style='padding: 5px; margin-right: 10px;'>";
+    echo "<button type='submit' style='padding: 5px 15px; background: #007bff; color: white; border: none; cursor: pointer;'>Enable Notifications</button>";
+    echo "</form>";
+    
+    if (session('enabled')) {
+        echo "<p style='color: green; font-weight: bold;'>✅ Notifications enabled for company ID: " . session('company_id') . "</p>";
+    }
+});
+
+Route::post('/debug-enable-notifications', function() {
+    $companyId = request('company_id');
+    $company = \App\Models\Company::find($companyId);
+    
+    if ($company) {
+        $company->enable_visitor_notifications = true;
+        $company->save();
+        
+        return redirect('/debug-company-settings')->with('enabled', true)->with('company_id', $companyId);
+    } else {
+        echo "<p style='color: red;'>Company not found!</p>";
+    }
 });
 

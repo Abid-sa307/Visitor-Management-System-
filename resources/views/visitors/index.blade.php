@@ -171,7 +171,7 @@
                     $editDisabled = $isApproved || $isCompleted;
                     
                     // Pass button: unlocked only if visit form is filled
-                    $passDisabled = !$visitFormFilled || $isCompleted;
+                    $passDisabled = !$visitFormFilled;
                     
                     // Delete button: locked if completed
                     $deleteDisabled = $isCompleted;
@@ -195,7 +195,7 @@
                   {{-- Pass --}}
                   @if($passDisabled)
                     <button class="action-btn action-btn--view action-btn--icon" 
-                            title="{{ $isCompleted ? 'Pass locked (visit completed)' : 'Pass locked (visit form not filled)' }}" 
+                            title="Pass locked (visit form not filled)" 
                             disabled style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fas fa-print"></i>
                     </button>

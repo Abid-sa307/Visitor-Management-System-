@@ -111,6 +111,7 @@
                 <thead class="table-primary">
                     <tr>
                         <th>Visit</th>
+                        <th>Status</th>
                         <th>Photo</th>
                         <th>Name</th>
                         <th>Purpose</th>
@@ -122,7 +123,6 @@
                         <th>Department</th>
                         <th>Document</th>
                         <th>Workman Policy</th>
-                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -151,6 +151,35 @@
                             @else
                                 <span class="text-muted">Action completed</span>
                             @endif
+                        </td>
+                        <td>
+                            @php
+                                $st = $visitor->status;
+                                $cls = $st === 'Approved' ? 'success' : ($st === 'Rejected' ? 'danger' : ($st === 'Completed' ? 'secondary' : 'warning'));
+                                $canUndo = $visitor->can_undo_status ?? false;
+                                $minutesLeft = $canUndo ? max(0, 30 - ($visitor->status_changed_at ? $visitor->status_changed_at->diffInMinutes(now()) : 0)) : 0;
+                                $actionRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
+                            @endphp
+                            <div class="d-flex flex-column align-items-center">
+                                <span class="badge bg-{{ $cls }} px-2 fw-normal" 
+                                      style="min-width: 80px; font-size: 0.85em; padding: 0.2rem 0.5rem;">
+                                    {{ $st }}
+                                </span>
+                                
+                                @if($st === 'Approved' || $st === 'Rejected')
+                                    @if($canUndo)
+                                        <form action="{{ route($actionRoute, $visitor) }}" method="POST" class="js-approval-form mt-2">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="status" value="Pending">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-undo me-1"></i> Undo
+                                            </button>
+                                            <div class="small text-muted">{{ $minutesLeft }} min left</div>
+                                        </form>
+                                    @endif
+                                @endif
+                            </div>
                         </td>
                         <td>
                             @if($visitor->face_image)
@@ -202,35 +231,7 @@
                                 <div><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank" class="small">View Photo</a></div>
                             @endif
                         </td>
-                        <td>
-                            @php
-                                $st = $visitor->status;
-                                $cls = $st === 'Approved' ? 'success' : ($st === 'Rejected' ? 'danger' : ($st === 'Completed' ? 'secondary' : 'warning'));
-                                $canUndo = $visitor->can_undo_status ?? false;
-                                $minutesLeft = $canUndo ? max(0, 30 - ($visitor->status_changed_at ? $visitor->status_changed_at->diffInMinutes(now()) : 0)) : 0;
-                                $actionRoute = request()->is('company/*') ? 'company.visitors.update' : 'visitors.update';
-                            @endphp
-                            <div class="d-flex flex-column align-items-center">
-                                <span class="badge bg-{{ $cls }} px-2 fw-normal" 
-                                      style="min-width: 80px; font-size: 0.85em; padding: 0.2rem 0.5rem;">
-                                    {{ $st }}
-                                </span>
-                                
-                                @if($st === 'Approved' || $st === 'Rejected')
-                                    @if($canUndo)
-                                        <form action="{{ route($actionRoute, $visitor) }}" method="POST" class="js-approval-form mt-2">
-                                            @csrf
-                                            @method('PUT')
-                                            <input type="hidden" name="status" value="Pending">
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                                <i class="fas fa-undo me-1"></i> Undo
-                                            </button>
-                                            <div class="small text-muted">{{ $minutesLeft }} min left</div>
-                                        </form>
-                                    @endif
-                                @endif
-                            </div>
-                        </td>
+                        
                         
                     </tr>
                     @endforeach
@@ -572,7 +573,51 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Show notification for approval
+                        // Show notification if play_notification is true
+                        if (data.play_notification) {
+                            console.log('DEBUG: Triggering notification for:', data.visitor_name);
+                            console.log('DEBUG: Notification message:', data.notification_message);
+                            
+                            // Show alert
+                            alert('🔔 ' + data.notification_message);
+                            
+                            // Play sound
+                            try {
+                                const audio = new Audio('{{ asset("sounds/mixkit-bell-notification-933.wav") }}');
+                                audio.loop = true;
+                                audio.play().then(() => {
+                                    console.log('DEBUG: Approval notification audio playing');
+                                }).catch(e => {
+                                    console.log('DEBUG: Approval notification audio failed:', e);
+                                });
+                                
+                                // Stop after 15 seconds
+                                setTimeout(() => {
+                                    audio.pause();
+                                    audio.currentTime = 0;
+                                }, 15000);
+                                
+                            } catch (e) {
+                                console.log('DEBUG: Approval notification audio error:', e);
+                            }
+                            
+                            // Browser notification
+                            if ('Notification' in window && Notification.permission === 'granted') {
+                                const notification = new Notification('Visitor Status Update', {
+                                    body: data.notification_message,
+                                    icon: '/favicon.ico',
+                                    requireInteraction: true
+                                });
+                                
+                                setTimeout(() => {
+                                    notification.close();
+                                }, 10000);
+                            } else if ('Notification' in window && Notification.permission === 'default') {
+                                Notification.requestPermission();
+                            }
+                        }
+                        
+                        // Show notification for approval (legacy)
                         if (data.status === 'Approved') {
                             console.log('DEBUG: Approval detected, triggering persistent notification...');
                             if (typeof showPersistentNotification === 'function') {
