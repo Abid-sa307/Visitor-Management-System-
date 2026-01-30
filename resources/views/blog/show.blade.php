@@ -25,7 +25,7 @@
         /* ===== Header like React BlogDetail ===== */
         .blog-header-wrap {
             background: #fff;
-            padding-top: calc(80px + 24px); /* adjust if navbar is fixed */
+            padding-top: calc(80px + 24px);
             padding-bottom: 32px;
             border-bottom: 1px solid rgba(148, 163, 184, 0.25);
         }
@@ -44,8 +44,8 @@
             text-align: center;
         }
         .blog-title-main {
-            font-weight: 800;
-            font-size: 2.3rem;
+            font-weight: 950;
+            font-size: 2.8rem;
             line-height: 1.2;
             text-align: center;
             margin-bottom: 8px;
@@ -84,19 +84,22 @@
         .blog-body p {
             line-height: 1.8;
             margin-bottom: 1rem;
+            font-size: 1.2rem;
         }
 
         .blog-body h2 {
             margin-top: 2.5rem;
             margin-bottom: 1rem;
-            font-weight: 800;
-            font-size: 1.6rem;
+            font-weight: 900;
+            font-size: 2.2rem;
+            color: #6BA3F5;
         }
         .blog-body h3 {
             margin-top: 1.8rem;
             margin-bottom: 0.75rem;
-            font-weight: 700;
-            font-size: 1.25rem;
+            font-weight: 800;
+            font-size: 2.1rem;
+            color: #6BA3F5;
         }
         .blog-body blockquote {
             margin: 1.5rem 0;
@@ -105,13 +108,129 @@
             background: #f8fafc;
             font-style: italic;
         }
+        
+        /* -------- FORCE LIST MARKERS (GLOBAL RESET FIX) -------- */
+        /* Bullets (UL) */
         .blog-body ul,
-        .blog-body ol {
-            padding-left: 1.4rem;
-            margin-bottom: 1rem;
+        .blog-intro ul {
+            list-style: disc !important;
+            list-style-position: outside !important;
+            padding-left: 32px !important;
+            margin: 0 0 16px !important;
         }
-        .blog-body li {
-            line-height: 1.8;
+
+        /* Numbers (OL) */
+        .blog-body ol,
+        .blog-intro ol {
+            list-style: decimal !important;
+            list-style-position: outside !important;
+            padding-left: 32px !important;
+            margin: 0 0 16px !important;
+        }
+
+        /* IMPORTANT: if theme set li {display:block;} markers disappear */
+        .blog-body ul li,
+        .blog-body ol li,
+        .blog-intro ul li,
+        .blog-intro ol li {
+            display: list-item !important;
+            font-size: 1.2rem;
+            line-height: 1.9;
+            margin: 6px 0;
+        }
+
+        /* Bigger markers */
+        .blog-body ul li::marker,
+        .blog-intro ul li::marker {
+            font-size: 1.4em !important;   /* BIG DOT */
+            font-weight: 900 !important;
+        }
+
+        .blog-body ol li::marker,
+        .blog-intro ol li::marker {
+            font-size: 1.0em !important;   /* BIG NUMBER */
+            font-weight: 900 !important;
+        }
+
+        /* Nested lists */
+        .blog-body ul ul,
+        .blog-body ol ol,
+        .blog-body ul ol,
+        .blog-body ol ul {
+            margin: 8px 0;
+            padding-left: 24px !important;
+        }
+
+        /* Code blocks */
+        .blog-body code {
+            padding: 1px 6px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        /* Links */
+        .blog-body a {
+            text-decoration: underline;
+            color: #6BA3F5;
+        }
+
+        .blog-body a:hover {
+            color: #5a92e5;
+        }
+
+        /* Images */
+        .blog-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Strong and emphasis */
+        .blog-body strong {
+            font-weight: 700;
+        }
+
+        .blog-body em {
+            font-style: italic;
+        }
+
+        /* Table styling */
+        .blog-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            border: 1px solid #e5e7eb;
+        }
+
+        .blog-body th,
+        .blog-body td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .blog-body th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+
+        /* Pre-formatted text */
+        .blog-body pre {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-left: 4px solid #6BA3F5;
+        }
+
+        .blog-body pre code {
+            background: none;
+            padding: 0;
         }
 
         /* ===== Engitech-style Author Card ===== */
@@ -121,7 +240,7 @@
         .author-photo-stack::before{left:-14px;top:-14px;background:#cfe1ff;}
         .author-photo-stack::after{left:14px;top:14px;background:#e7f0ff;}
         .author-photo{position:relative;z-index:1;width:228px;height:218px;object-fit:cover;border-radius:4px;box-shadow:0 10px 24px rgba(0,0,0,.08);}
-        .author-title{color:#0f2e5f;font-weight:800;margin:0 0 8px;font-size:30px;}
+        .author-title{color:#0f2e5f;font-weight:950;margin:0 0 8px;font-size:32px;}
         .author-desc{color:#475569;line-height:1.8;max-width:60ch;margin:0;}
         .li-badge{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-top:12px;background:#0a66c2;color:#fff;border-radius:6px;transition:transform .12s,box-shadow .12s;text-decoration:none;}
         .li-badge:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.35);}
@@ -708,42 +827,94 @@
                 </p>
             @endif
 
-            {{-- Body: simple Portable Text renderer --}}
+            {{-- Body: Enhanced Portable Text renderer with links --}}
             <div class="blog-body mt-3">
                 @if(!empty($post['body']) && is_array($post['body']))
                     @php
-                        $blocks    = $post['body'];
-                        $listType  = null;
+                        $blocks = $post['body'];
+                        $listType = null;
                         $listItems = [];
-                        $html      = '';
+                        $html = '';
+
+                        $safeHref = function($href) {
+                            if (!$href) return '';
+                            $h = trim($href);
+                            if (preg_match('/^javascript:/i', $h) || preg_match('/^data:/i', $h)) return '';
+                            if (preg_match('/^www\./i', $h)) return 'https://' . $h;
+                            return $h;
+                        };
+
+                        $renderSpans = function($children, $markDefs = []) use ($safeHref) {
+                            $result = '';
+                            foreach ($children ?? [] as $child) {
+                                if (($child['_type'] ?? '') !== 'span') continue;
+                                
+                                $text = e($child['text'] ?? '');
+                                $marks = $child['marks'] ?? [];
+                                
+                                foreach ($marks as $mark) {
+                                    if ($mark === 'strong') {
+                                        $text = '<strong>' . $text . '</strong>';
+                                    } elseif ($mark === 'em') {
+                                        $text = '<em>' . $text . '</em>';
+                                    } elseif ($mark === 'code') {
+                                        $text = '<code style="padding:1px 6px;border-radius:6px;background:#f1f5f9">' . $text . '</code>';
+                                    } else {
+                                        // Check if mark is a reference to markDefs
+                                        $def = collect($markDefs)->firstWhere('_key', $mark);
+                                        if ($def && ($def['_type'] ?? '') === 'link' && !empty($def['href'])) {
+                                            $href = $safeHref($def['href']);
+                                            if ($href) {
+                                                $text = '<a href="' . e($href) . '" target="_blank" rel="noopener noreferrer" style="text-decoration:underline;color:#6BA3F5">' . $text . '</a>';
+                                            }
+                                        }
+                                    }
+                                }
+                                $result .= $text;
+                            }
+                            return $result;
+                        };
 
                         $flushList = function () use (&$listType, &$listItems, &$html) {
                             if (!$listType || empty($listItems)) return;
                             $tag = $listType === 'number' ? 'ol' : 'ul';
-                            $html .= '<'.$tag.'>';
+                            $html .= '<' . $tag . ' class="mb-3" style="padding-left:20px">';
                             foreach ($listItems as $item) {
-                                $html .= '<li>'.e($item).'</li>';
+                                $html .= '<li style="line-height:1.8">' . $item . '</li>';
                             }
-                            $html .= '</'.$tag.'>';
-                            $listType  = null;
+                            $html .= '</' . $tag . '>';
+                            $listType = null;
                             $listItems = [];
                         };
 
-                        $textFromChildren = function ($children) {
-                            return collect($children ?? [])->pluck('text')->join(' ');
-                        };
-
                         foreach ($blocks as $block) {
-                            if (($block['_type'] ?? null) === 'block') {
-                                $txt = $textFromChildren($block['children'] ?? []);
+                            // Handle images
+                            if (($block['_type'] ?? '') === 'image' && !empty($block['asset'])) {
+                                $flushList();
+                                $imageUrl = 'https://cdn.sanity.io/images/1bthezjc/production/' . $block['asset']['_ref'] . '-1600x900.jpg';
+                                $alt = e($block['alt'] ?? '');
+                                $caption = e($block['caption'] ?? '');
+                                
+                                $html .= '<figure class="my-4">';
+                                $html .= '<img src="' . $imageUrl . '" alt="' . $alt . '" style="width:100%;height:420px;object-fit:cover;object-position:center;display:block;border-radius:12px" loading="lazy">';
+                                if ($caption) {
+                                    $html .= '<figcaption class="text-muted mt-2" style="font-size:14px">' . $caption . '</figcaption>';
+                                }
+                                $html .= '</figure>';
+                                continue;
+                            }
+
+                            // Handle text blocks
+                            if (($block['_type'] ?? '') === 'block') {
+                                $content = $renderSpans($block['children'] ?? [], $block['markDefs'] ?? []);
 
                                 if (!empty($block['listItem'])) {
                                     $current = $block['listItem'] === 'number' ? 'number' : 'bullet';
                                     if ($listType && $listType !== $current) {
                                         $flushList();
                                     }
-                                    $listType    = $current;
-                                    $listItems[] = $txt;
+                                    $listType = $current;
+                                    $listItems[] = $content;
                                     continue;
                                 } else {
                                     $flushList();
@@ -752,13 +923,13 @@
                                 $style = $block['style'] ?? 'normal';
 
                                 if ($style === 'h2') {
-                                    $html .= '<h2>'.e($txt).'</h2>';
+                                    $html .= '<h2 class="mt-5 mb-3" style="font-weight:900;color:#6BA3F5;font-size:2.2rem">' . $content . '</h2>';
                                 } elseif ($style === 'h3') {
-                                    $html .= '<h3>'.e($txt).'</h3>';
+                                    $html .= '<h3 class="mt-4 mb-2" style="font-weight:800;color:#6BA3F5;font-size:2.1rem">' . $content . '</h3>';
                                 } elseif ($style === 'blockquote') {
-                                    $html .= '<blockquote>'.e($txt).'</blockquote>';
+                                    $html .= '<blockquote class="my-4 p-3 border-start" style="border-left-width:4px;border-color:#1e3a8a;background:#f8fafc">' . $content . '</blockquote>';
                                 } else {
-                                    $html .= '<p>'.e($txt).'</p>';
+                                    $html .= '<p class="mb-3" style="line-height:1.8;font-size:1.2rem">' . $content . '</p>';
                                 }
                             }
                         }

@@ -104,6 +104,12 @@ $schema = [
             object-fit: contain;
         }
 
+        .hero-image-desktop {
+            width: 150% !important;
+            max-width: 730px !important;
+            height: auto !important;
+        }
+
         @media (min-width: 769px) {
             .hero .hero-image {
                 margin-bottom: 160px;
