@@ -14,8 +14,6 @@ class Visitor extends Model
 {
     use HasFactory, Notifiable;
 
-
-
     protected $fillable = [
         'company_id',
         'branch_id',
@@ -106,8 +104,6 @@ class Visitor extends Model
         'deleted_at'
     ];
 
-
-
     /**
      * Get the branch that the visitor belongs to.
      */
@@ -154,11 +150,22 @@ class Visitor extends Model
     protected static function booted()
     {
         static::created(function ($visitor) {
-            // Send notification to company user when a visitor checks in
-            if ($visitor->status === 'checked_in' && $visitor->company) {
-                $companyUser = $visitor->company->users()->first();
-                if ($companyUser) {
-                    $companyUser->notify(new VisitorCheckInNotification($visitor));
+            // Send notification to company users when a visitor is created
+            if ($visitor->company_id) {
+                $recipients = User::where('company_id', $visitor->company_id)
+                    ->when($visitor->branch_id, function ($q) use ($visitor) {
+                        $q->where(function ($qq) use ($visitor) {
+                            $qq->whereNull('branch_id')->orWhere('branch_id', $visitor->branch_id);
+                        });
+                    })
+                    ->get();
+                    
+                foreach ($recipients as $user) {
+                    try {
+                        $user->notify(new VisitorCheckInNotification($visitor));
+                    } catch (\Throwable $e) {
+                        \Log::warning('Failed to send visitor notification: ' . $e->getMessage());
+                    }
                 }
             }
         });
@@ -198,6 +205,26 @@ class Visitor extends Model
         return $this->status_changed_at instanceof Carbon
             ? $this->status_changed_at->gt(now()->subMinutes(30))
             : Carbon::parse($this->status_changed_at)->gt(now()->subMinutes(30));
+    }
+
+    /**
+     * Check if visitor has completed the visit form
+     *
+     * @return bool
+     */
+    public function hasCompletedVisitForm(): bool
+    {
+        return $this->visit_completed_at || ($this->department_id && $this->purpose);
+    }
+
+    /**
+     * Check if visitor can be approved (visit form must be completed)
+     *
+     * @return bool
+     */
+    public function canBeApproved(): bool
+    {
+        return $this->hasCompletedVisitForm();
     }
 
     // protected static function booted()

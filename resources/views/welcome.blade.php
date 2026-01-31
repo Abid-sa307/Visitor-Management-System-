@@ -648,7 +648,6 @@ $schema = [
                 <div class="col-lg-6 text-white">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">Visitor Management System for All Workplaces
                         Worldwide</h1>
-                    
                     <!-- Mobile Image - Only visible on mobile -->
                     <div class="mobile-image-container mb-4">
                         <img src="/images/visitor-management-system-main-img1.jpeg" alt="Visitor Management System"

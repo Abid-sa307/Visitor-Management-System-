@@ -34,6 +34,25 @@
                 </div>
             @endif
 
+            {{-- Branch Selection --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Branch</label>
+                <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
+                    <option value="">-- Select Branch --</option>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" 
+                            {{ old('branch_id', $visitor->branch_id ?? $selectedBranchId ?? '') == $branch->id ? 'selected' : '' }}>
+                            {{ $branch->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('branch_id')
+                    <div class="invalid-feedback d-block">
+                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                    </div>
+                @enderror
+            </div>
+
             {{-- Department & Visitor Category --}}
             <div class="row mb-3">
                 <div class="col">
@@ -72,7 +91,28 @@
             {{-- Person to Visit --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Person to Visit</label>
-                <input type="text" name="person_to_visit" class="form-control" value="{{ old('person_to_visit', $visitor->person_to_visit) }}">
+                <select name="person_to_visit" id="employeeSelect" class="form-select @error('person_to_visit') is-invalid @enderror">
+                    <option value="">-- Select Employee --</option>
+                    @forelse($employees ?? [] as $employee)
+                        <option value="{{ $employee->name }}" 
+                            {{ old('person_to_visit', $visitor->person_to_visit ?? '') === $employee->name ? 'selected' : '' }}>
+                            {{ $employee->name }}{{ $employee->designation ? ' - ' . $employee->designation : '' }}
+                        </option>
+                    @empty
+                        <option value="" disabled>No employees available</option>
+                    @endforelse
+                </select>
+                <div class="mt-2">
+                    <small class="text-muted">Or enter manually:</small>
+                    <input type="text" name="person_to_visit_manual" class="form-control form-control-sm mt-1" 
+                           placeholder="Enter name if not in list" 
+                           value="{{ old('person_to_visit_manual') }}">
+                </div>
+                @error('person_to_visit')
+                    <div class="invalid-feedback d-block">
+                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                    </div>
+                @enderror
             </div>
 
             {{-- Purpose of Visit --}}
@@ -83,14 +123,14 @@
 
             {{-- Visitor Company --}}
             <div class="mb-3">
-                <label class="form-label fw-semibold">Visitor's Company Name</label>
+                <label class="form-label fw-semibold">Visitor's Company Name (optional)</label>
                 <input type="text" name="visitor_company" class="form-control" value="{{ old('visitor_company', $visitor->visitor_company) }}">
             </div>
 
             {{-- Visitor Website --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Visitor Company Website (optional)</label>
-                <input type="url" name="visitor_website" class="form-control" value="{{ old('visitor_website', $visitor->visitor_website) }}">
+                <input type="text" name="visitor_website" class="form-control" value="{{ old('visitor_website', $visitor->visitor_website) }}">
             </div>
 
             {{-- Vehicle Type & Number --}}
@@ -119,22 +159,13 @@
 
             {{-- Workman Policy --}}
             <div class="mb-3">
-                <label class="form-label fw-semibold">Upload Workman Policy Photo (Optional)</label>
-                <input type="file" name="workman_policy_photo" class="form-control">
+                <label class="form-label fw-semibold">Upload Workman Policy Document (Optional)</label>
+                <input type="file" name="workman_policy_photo" class="form-control" 
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp">
                 @if($visitor->workman_policy_photo)
-                    <small><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">View current</a></small>
+                    <small><a href="{{ asset('storage/' . $visitor->workman_policy_photo) }}" target="_blank">View current document</a></small>
                 @endif
             </div>
-
-            {{-- Status --}}
-            <!-- <div class="mb-3">
-                <label class="form-label fw-semibold">Status</label>
-                <select name="status" class="form-select">
-                    <option value="Pending" {{ $visitor->status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="Approved" {{ $visitor->status == 'Approved' ? 'selected' : '' }}>Approved</option>
-                    <option value="Rejected" {{ $visitor->status == 'Rejected' ? 'selected' : '' }}>Rejected</option>
-                </select>
-            </div> -->
 
             <button type="submit" class="btn btn-success w-100 fw-bold" id="submitBtn">Save Visit Info</button>
         </form>
@@ -146,6 +177,172 @@
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('form');
     const submitBtn = document.getElementById('submitBtn');
+    
+    // Person to Visit dropdown and manual input functionality
+    const employeeSelect = document.getElementById('employeeSelect');
+    const manualInput = document.querySelector('input[name="person_to_visit_manual"]');
+    
+    if (employeeSelect && manualInput) {
+        function toggleManualInput() {
+            if (employeeSelect.value) {
+                // Employee selected, lock manual input
+                manualInput.disabled = true;
+                manualInput.value = '';
+                manualInput.placeholder = 'Disabled when employee is selected';
+            } else {
+                // No employee selected, enable manual input
+                manualInput.disabled = false;
+                manualInput.placeholder = 'Enter name if not in list';
+            }
+        }
+        
+        // Initial state
+        toggleManualInput();
+        
+        // Listen for changes
+        employeeSelect.addEventListener('change', toggleManualInput);
+    }
+    
+    // Function to update departments based on selected branch
+    function updateDepartments(branchId) {
+        const departmentSelect = document.querySelector('select[name="department_id"]');
+        if (!departmentSelect) return;
+        
+        // Get current selected value
+        const currentSelected = departmentSelect.value;
+        
+        // Fetch departments for the selected branch
+        fetch(`/api/branches/${branchId}/departments`)
+            .then(response => response.json())
+            .then(departments => {
+                // Clear existing options
+                departmentSelect.innerHTML = '<option value="">-- Select Department --</option>';
+                
+                // Add new options
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    if (dept.id == currentSelected) {
+                        option.selected = true;
+                    }
+                    departmentSelect.appendChild(option);
+                });
+                
+                // If no departments available
+                if (departments.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No departments available';
+                    departmentSelect.appendChild(option);
+                }
+                
+                // Update visitor categories after departments are loaded
+                updateVisitorCategories(branchId);
+            })
+            .catch(error => {
+                console.error('Error fetching departments:', error);
+                // On error, show no departments available
+                departmentSelect.innerHTML = '<option value="">-- Select Department --</option><option value="" disabled>No departments available</option>';
+            });
+    }
+    
+    // Function to update visitor categories based on selected branch
+    function updateVisitorCategories(branchId) {
+        const categorySelect = document.querySelector('select[name="visitor_category_id"]');
+        if (!categorySelect) return;
+        
+        // Get current selected value
+        const currentSelected = categorySelect.value;
+        
+        // Fetch categories for the selected branch
+        fetch(`/api/branches/${branchId}/visitor-categories`)
+            .then(response => response.json())
+            .then(data => {
+                // Clear existing options
+                categorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+                
+                // Add new options
+                data.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    if (category.id == currentSelected) {
+                        option.selected = true;
+                    }
+                    categorySelect.appendChild(option);
+                });
+                
+                // If no categories available
+                if (data.categories.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No categories available';
+                    categorySelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching visitor categories:', error);
+                // On error, show no categories available
+                categorySelect.innerHTML = '<option value="">-- Select Category --</option><option value="" disabled>No categories available</option>';
+            });
+    }
+    
+    // Function to update employees based on selected branch
+    function updateEmployees(branchId) {
+        const employeeSelect = document.querySelector('select[name="person_to_visit"]');
+        if (!employeeSelect) return;
+        
+        // Get current selected value
+        const currentSelected = employeeSelect.value;
+        
+        // Fetch employees for the selected branch
+        fetch(`/api/branches/${branchId}/employees`)
+            .then(response => response.json())
+            .then(employees => {
+                // Clear existing options
+                employeeSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+                
+                // Add new options
+                employees.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.name;
+                    option.textContent = employee.name + (employee.designation ? ' - ' + employee.designation : '');
+                    if (employee.name == currentSelected) {
+                        option.selected = true;
+                    }
+                    employeeSelect.appendChild(option);
+                });
+                
+                // If no employees available
+                if (employees.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No employees available';
+                    employeeSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching employees:', error);
+                // On error, show no employees available
+                employeeSelect.innerHTML = '<option value="">-- Select Employee --</option><option value="" disabled>No employees available</option>';
+            });
+    }
+    
+    // Listen for branch changes
+    const branchSelect = document.querySelector('select[name="branch_id"]');
+    if (branchSelect) {
+        branchSelect.addEventListener('change', function() {
+            updateDepartments(this.value);
+            updateEmployees(this.value);
+        });
+        
+        // Don't call update functions on page load since data is already loaded from server
+        // Only call them when user actually changes the branch
+    }
     
     if (form) {
         form.addEventListener('submit', function(e) {

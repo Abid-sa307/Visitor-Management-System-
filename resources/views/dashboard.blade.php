@@ -151,8 +151,8 @@
         </div>
         <div class="stat-card__content">
             <p class="stat-card__label">Total Visitors</p>
-            <h3 class="stat-card__value">{{ number_format($totalVisitors) }}</h3>
-            <span class="stat-card__subtext">Overall this period</span>
+            <h3 class="stat-card__value">{{ number_format($allTimeTotalVisitors) }}</h3>
+            <span class="stat-card__subtext">All time records</span>
         </div>
     </div>
 
@@ -162,7 +162,7 @@
         </div>
         <div class="stat-card__content">
             <p class="stat-card__label">Approved</p>
-            <h3 class="stat-card__value">{{ number_format($approvedCount) }}</h3>
+            <h3 class="stat-card__value">{{ number_format($allTimeApprovedCount) }}</h3>
             <span class="stat-card__subtext">Cleared entries</span>
         </div>
     </div>
@@ -174,7 +174,7 @@
             </div>
             <div class="stat-card__content">
                 <p class="stat-card__label">Pending</p>
-                <h3 class="stat-card__value">{{ number_format($pendingCount) }}</h3>
+                <h3 class="stat-card__value">{{ number_format($allTimePendingCount) }}</h3>
                 <span class="stat-card__subtext">Awaiting action</span>
             </div>
         </div>
@@ -186,7 +186,7 @@
         </div>
         <div class="stat-card__content">
             <p class="stat-card__label">Rejected</p>
-            <h3 class="stat-card__value">{{ number_format($rejectedCount) }}</h3>
+            <h3 class="stat-card__value">{{ number_format($allTimeRejectedCount) }}</h3>
             <span class="stat-card__subtext">Declined entries</span>
         </div>
     </div>
@@ -282,7 +282,7 @@
     <div class="col-lg-6">
         <div class="card shadow h-100">
             <div class="card-header bg-warning text-dark">
-                <h6 class="m-0 font-weight-bold">Visitor Trends (Selected Range)</h6>
+                <h6 class="m-0 font-weight-bold">Visitor Trends (Last 7 Days)</h6>
             </div>
             <div class="card-body chart-container">
                 <canvas id="dayChartCanvas"></canvas>
@@ -319,6 +319,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const checkboxes = document.querySelectorAll('.branch-checkbox');
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
         updateBranchText();
+        updateSelectAllBranchesState();
+        
+        // Unlock department dropdown when branches are selected
+        const anyChecked = document.querySelectorAll('.branch-checkbox:checked').length > 0;
+        const departmentButton = document.querySelector('[data-dropdown="department"]');
+        if (departmentButton) {
+            if (anyChecked) {
+                departmentButton.disabled = false;
+                departmentButton.style.opacity = '1';
+                departmentButton.style.cursor = 'pointer';
+            } else {
+                departmentButton.disabled = true;
+                departmentButton.style.opacity = '0.5';
+                departmentButton.style.cursor = 'not-allowed';
+            }
+        }
     }
 
     function toggleAllDepartments() {
@@ -326,6 +342,31 @@ document.addEventListener('DOMContentLoaded', function () {
         const checkboxes = document.querySelectorAll('.department-checkbox');
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
         updateDepartmentText();
+        updateSelectAllDepartmentsState();
+    }
+
+    function updateSelectAllBranchesState() {
+        const selectAll = document.getElementById('selectAllBranches');
+        const checkboxes = document.querySelectorAll('.branch-checkbox');
+        if (checkboxes.length === 0) {
+            selectAll.checked = false;
+            selectAll.disabled = true;
+        } else {
+            selectAll.disabled = false;
+            selectAll.checked = checkboxes.length === document.querySelectorAll('.branch-checkbox:checked').length;
+        }
+    }
+
+    function updateSelectAllDepartmentsState() {
+        const selectAll = document.getElementById('selectAllDepartments');
+        const checkboxes = document.querySelectorAll('.department-checkbox');
+        if (checkboxes.length === 0) {
+            selectAll.checked = false;
+            selectAll.disabled = true;
+        } else {
+            selectAll.disabled = false;
+            selectAll.checked = checkboxes.length === document.querySelectorAll('.department-checkbox:checked').length;
+        }
     }
 
     function updateBranchText() {
@@ -337,6 +378,22 @@ document.addEventListener('DOMContentLoaded', function () {
             text.textContent = checkboxes[0].nextElementSibling.textContent;
         } else {
             text.textContent = `${checkboxes.length} branches selected`;
+        }
+        updateSelectAllBranchesState();
+        
+        // Unlock department dropdown when branches are selected
+        const anyChecked = checkboxes.length > 0;
+        const departmentButton = document.querySelector('[data-dropdown="department"]');
+        if (departmentButton) {
+            if (anyChecked) {
+                departmentButton.disabled = false;
+                departmentButton.style.opacity = '1';
+                departmentButton.style.cursor = 'pointer';
+            } else {
+                departmentButton.disabled = true;
+                departmentButton.style.opacity = '0.5';
+                departmentButton.style.cursor = 'not-allowed';
+            }
         }
     }
 
@@ -350,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             text.textContent = `${checkboxes.length} departments selected`;
         }
+        updateSelectAllDepartmentsState();
     }
 
     // Set initial checked state for branches and departments
@@ -373,6 +431,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Update text displays
         updateBranchText();
         updateDepartmentText();
+        updateSelectAllBranchesState();
+        updateSelectAllDepartmentsState();
     }
     
     // Initialize on page load
@@ -383,6 +443,8 @@ document.addEventListener('DOMContentLoaded', function () {
     window.toggleAllDepartments = toggleAllDepartments;
     window.updateBranchText = updateBranchText;
     window.updateDepartmentText = updateDepartmentText;
+    window.updateSelectAllBranchesState = updateSelectAllBranchesState;
+    window.updateSelectAllDepartmentsState = updateSelectAllDepartmentsState;
 
     // ------- Load branches via AJAX --------
     function loadBranches(companyId) {
@@ -450,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         branchOptions.appendChild(div);
                     });
                     updateBranchText();
+                    updateSelectAllBranchesState();
                 } else {
                     branchOptions.innerHTML = '<div class="text-muted">No branches available</div>';
                 }
@@ -503,6 +566,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     departmentOptions.appendChild(div);
                 });
                 updateDepartmentText();
+                updateSelectAllDepartmentsState();
             } else {
                 departmentOptions.innerHTML = '<div class="text-muted">No departments available</div>';
             }
@@ -627,6 +691,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
             updateDepartmentText();
+            updateSelectAllDepartmentsState();
         }).catch(error => {
             console.error('Error loading departments:', error);
             departmentOptions.innerHTML = '<div class="text-muted">Error loading departments</div>';
@@ -646,30 +711,30 @@ document.addEventListener('DOMContentLoaded', function () {
         visitor: {
             el: 'visitorChartCanvas',
             type: 'bar',
-            data: {!! json_encode($chartData) !!},
-            labels: {!! json_encode($chartLabels) !!},
+            data: @json($chartData ?? []),
+            labels: @json($chartLabels ?? []),
             color: 'rgba(75, 192, 192, 0.6)'
         },
         hour: {
             el: 'hourChartCanvas',
             type: 'bar',
-            data: {!! json_encode($hourData) !!},
-            labels: {!! json_encode($hourLabels) !!},
+            data: @json($hourData ?? []),
+            labels: @json($hourLabels ?? []),
             color: 'rgba(255, 99, 132, 0.6)'
         },
         day: {
             el: 'dayChartCanvas',
             type: 'line',
-            data: {!! json_encode($dayWiseData) !!},
-            labels: {!! json_encode($dayWiseLabels) !!},
+            data: @json($dayWiseData ?? []),
+            labels: @json($dayWiseLabels ?? []),
             color: 'rgba(54, 162, 235, 0.6)',
             fill: true
         },
         dept: {
             el: 'deptChartCanvas',
             type: 'doughnut',
-            data: {!! json_encode($deptCounts) !!},
-            labels: {!! json_encode($deptLabels) !!},
+            data: @json($deptCounts ?? []),
+            labels: @json($deptLabels ?? []),
             colors: [
                 'rgba(40, 167, 69, 0.8)',
                 'rgba(23, 162, 184, 0.8)',
@@ -679,6 +744,15 @@ document.addEventListener('DOMContentLoaded', function () {
             ]
         }
     };
+
+    // Debug: Log chart data to console
+    // Safely logging data
+    try {
+        console.log('Day Wise Data:', @json($dayWiseData ?? []));
+        console.log('Day Wise Labels:', @json($dayWiseLabels ?? []));
+    } catch(e) {
+        console.warn('Error content logging:', e);
+    }
 
     Object.values(charts).forEach(({el, type, labels, data, color, colors, fill}) => {
         const ctx = document.getElementById(el);

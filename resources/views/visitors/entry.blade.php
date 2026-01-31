@@ -232,7 +232,7 @@
         </div>
     </div>
 
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="alert alert-success border-0 shadow-sm mb-4" role="alert">
             <div class="d-flex align-items-center">
                 <div class="flex-shrink-0">
@@ -247,7 +247,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </div>
-    @endif
+    @endif -->
     @if(session('error'))
         <div class="alert alert-danger border-0 shadow-sm mb-4" role="alert">
             <div class="d-flex align-items-center">
@@ -285,11 +285,11 @@
                 <tr>
                     <th>Name</th>
                     <th>Company</th>
+                    <th>Branch</th>
                     <th>Department</th>
                     <th>Purpose</th>
                     <th>In Time</th>
                     <th>Out Time</th>
-                    <th>Status</th>
                     <th>Approval Status</th>
                     <th>Action</th>
                 </tr>
@@ -299,17 +299,12 @@
                     <tr>
                         <td class="fw-semibold">{{ $visitor->name }}</td>
                         <td>{{ $visitor->company->name ?? '—' }}</td>
+                        <td>{{ $visitor->branch->name ?? '—' }}</td>
                         <td>{{ $visitor->department->name ?? '—' }}</td>
                         <td>{{ $visitor->purpose ?? '—' }}</td>
                         <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>
                         <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('d M, h:i A') : '—' }}</td>
-                        <td>
-                            <span class="badge bg-{{ 
-                                $visitor->status === 'Approved' ? 'success' : 
-                                ($visitor->status === 'Completed' ? 'secondary' : 'warning') }}">
-                                {{ $visitor->status }}
-                            </span>
-                        </td>
+                    
                         <td>
                             <span class="badge bg-{{ 
                                 $visitor->status === 'Approved' ? 'primary' : 

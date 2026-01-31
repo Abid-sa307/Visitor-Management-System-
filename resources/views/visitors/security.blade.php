@@ -125,38 +125,7 @@
                                         <a href="{{ route('security-questions.index') }}" target="_blank">Add Security Questions</a>
                                     </div>
                                     
-                                    <!-- Fallback to default questions if no database questions exist -->
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h6 class="card-title">Question 1</h6>
-                                            <p class="card-text">Are you carrying any prohibited items?</p>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="yes_default_1" value="yes" required>
-                                                <label class="form-check-label" for="yes_default_1">Yes</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="no_default_1" value="no" required>
-                                                <label class="form-check-label" for="no_default_1">No</label>
-                                            </div>
-                                            <input type="hidden" name="questions[]" value="Are you carrying any prohibited items?">
-                                        </div>
-                                    </div>
-
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h6 class="card-title">Question 2</h6>
-                                            <p class="card-text">Have you visited this facility before?</p>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="yes_default_2" value="yes" required>
-                                                <label class="form-check-label" for="yes_default_2">Yes</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="responses[]" id="no_default_2" value="no" required>
-                                                <label class="form-check-label" for="no_default_2">No</label>
-                                            </div>
-                                            <input type="hidden" name="questions[]" value="Have you visited this facility before?">
-                                        </div>
-                                    </div>
+                                    
                                 @endif
                             </div>
 

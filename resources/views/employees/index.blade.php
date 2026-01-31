@@ -90,12 +90,12 @@
             </div>
         </form>
 
-    @if(session('success'))
+    <!-- @if(session('success'))
         <div class="alert alert-success small alert-dismissible fade show" role="alert">
             {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    @endif -->
 
         @if($employees->isEmpty())
             <div class="alert alert-info mb-0">No employees found for the selected criteria.</div>

@@ -92,7 +92,57 @@
 
                 <!-- Topbar -->
                 @include('partials.topbar')
-                <!-- End of Topbar -->
+                
+                <!-- Notification Permission Request -->
+                <div id="notification-request-banner" class="alert alert-info border-0 rounded-0 mb-0 text-center" style="display: none;">
+                    <strong><i class="fas fa-bell"></i> Enable Notifications:</strong> 
+                    Get real-time alerts for visitor arrivals and approvals.
+                    <button id="enable-notifs-btn" class="btn btn-sm btn-primary ml-3">
+                        Enable Now
+                    </button>
+                    <button onclick="document.getElementById('notification-request-banner').style.display='none'; localStorage.setItem('hide_notif_banner', 'true')" class="btn btn-sm btn-link text-muted ml-2">
+                        Dismiss
+                    </button>
+                </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const banner = document.getElementById('notification-request-banner');
+                        const status = Notification.permission;
+                        
+                        if (status === 'default' && !localStorage.getItem('hide_notif_banner')) {
+                            banner.style.display = 'block';
+                            banner.classList.add('alert-info');
+                        } else if (status === 'denied') {
+                            banner.style.display = 'block';
+                            banner.classList.add('alert-danger');
+                            banner.innerHTML = `<strong><i class="fas fa-ban"></i> Notifications Blocked</strong>. Please click the Lock icon 🔒 in your address bar to Allow notifications.`;
+                        } else {
+                            // Granted - Hide banner
+                            banner.style.display = 'none';
+                        }
+                        
+                        // Handler for enable button 
+                        const btn = document.getElementById('enable-notifs-btn');
+                        if (btn) {
+                            btn.addEventListener('click', function() {
+                                Notification.requestPermission().then(function(result) {
+                                    if (result === 'granted') {
+                                        // Play test sound to unlock audio engine
+                                        if (window.visitorNotifications) {
+                                            window.visitorNotifications.playNotificationSound(); 
+                                        }
+                                        banner.style.display = 'none';
+                                        alert('Notifications enabled! You will now hear alerts.');
+                                    } else {
+                                        window.location.reload();
+                                    }
+                                });
+                            });
+                        }
+                    });
+                </script>
+                <!-- End Notification Permission Request -->
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
@@ -710,8 +760,14 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Visitor Notification System -->
-    <script src="{{ asset('js/visitor-notifications.js') }}"></script>
+    <!-- Simple Notification System -->
+    <script>
+        window.visitorNotificationData = {
+            trigger: {{ session('play_notification') ? 'true' : 'false' }},
+            message: '{{ session('notification_message', 'New visitor activity') }}'
+        };
+    </script>
+    <script src="{{ asset('js/simple-notification.js') }}?v={{ time() }}"></script>
     @include('partials.visitor-notification')
 
     <script>
@@ -940,212 +996,196 @@
     });
 
     // Play notification sound and show visual effect when visitor is created
-    @if(session('play_notification'))
+    @php
+        $playNotification = session('play_notification', false);
+        $visitorName = session('visitor_name', 'Unknown');
+        $notificationMessage = session('notification_message', 'New visitor registered');
+        \Log::info('Layout Debug - play_notification: ' . ($playNotification ? 'true' : 'false'));
+        \Log::info('Layout Debug - visitor_name: ' . $visitorName);
+        \Log::info('Layout Debug - notification_message: ' . $notificationMessage);
+        \Log::info('Layout Debug - All session data: ' . json_encode(session()->all()));
+    @endphp
+    
+    @if($playNotification)
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Play notification sound (using browser's built-in notification sound)
-                try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.value = 800;
-                    oscillator.type = 'sine';
-                    
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.5);
-                } catch (e) {
-                    console.log('Audio notification not supported');
-                }
-                
-                // Create beautiful notification box
+            console.log('🔔 NOTIFICATION TRIGGERED: {{ $notificationMessage }}');
+            
+            // Enhanced notification system
+            function showVisitorNotification() {
+                // Create visual notification
                 const notification = document.createElement('div');
-                notification.className = 'visitor-notification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    z-index: 9999;
+                    max-width: 400px;
+                    font-family: Arial, sans-serif;
+                    animation: slideIn 0.5s ease-out;
+                `;
+                
                 notification.innerHTML = `
-                    <div class="notification-icon">
-                        <div class="icon-circle">
-                            <i class="bi bi-person-plus-fill"></i>
-                        </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 24px; margin-right: 10px;">🔔</span>
+                        <strong style="font-size: 16px;">Visitor Notification</strong>
                     </div>
-                    <div class="notification-content">
-                        <div class="notification-title">New Visitor Registered!</div>
-                        <div class="notification-message">A visitor has been successfully registered in the system</div>
-                        <div class="notification-time">Just now</div>
-                    </div>
-                    <div class="notification-close">
-                        <button type="button" class="close-btn">&times;</button>
+                    <div style="font-size: 14px; margin-bottom: 15px;">{{ $notificationMessage }}</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">Dismiss</button>
+                        <button onclick="playNotificationSound()" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">🔊 Play Sound</button>
                     </div>
                 `;
                 
+                // Add animation
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+                
                 document.body.appendChild(notification);
                 
-                // Add close functionality
-                const closeBtn = notification.querySelector('.close-btn');
-                closeBtn.addEventListener('click', () => {
-                    notification.classList.add('notification-exit');
-                    setTimeout(() => notification.remove(), 300);
-                });
-                
-                // Auto-remove after 6 seconds
+                // Auto-remove after 10 seconds
                 setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.classList.add('notification-exit');
-                        setTimeout(() => notification.remove(), 300);
+                    if (notification.parentElement) {
+                        notification.remove();
                     }
-                }, 6000);
+                }, 10000);
+            }
+            
+            function playNotificationSound() {
+                console.log('🔊 Playing notification sound...');
+                
+                // Try different audio sources
+                const audioSources = [
+                    '/sounds/mixkit-bell-notification-933.wav',
+                    '{{ asset("sounds/mixkit-bell-notification-933.wav") }}',
+                    'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ=='
+                ];
+                
+                let attempt = 0;
+                
+                function tryNextSource() {
+                    if (attempt >= audioSources.length) {
+                        console.log('❌ All audio sources failed, trying beep sound');
+                        // Fallback to generated beep sound
+                        try {
+                            if (typeof createBeepSound === 'function') {
+                                createBeepSound();
+                                console.log('✅ Beep sound played successfully');
+                            } else {
+                                console.log('❌ Beep sound function not available');
+                            }
+                        } catch (e) {
+                            console.log('❌ Beep sound failed:', e.message);
+                        }
+                        return;
+                    }
+                    
+                    try {
+                        const audio = new Audio(audioSources[attempt]);
+                        audio.volume = 0.6;
+                        
+                        audio.addEventListener('canplaythrough', () => {
+                            console.log(`✅ Audio source ${attempt + 1} ready`);
+                        });
+                        
+                        audio.play().then(() => {
+                            console.log(`✅ Notification sound played successfully (source ${attempt + 1})`);
+                        }).catch(e => {
+                            console.log(`❌ Audio source ${attempt + 1} failed:`, e.message);
+                            attempt++;
+                            tryNextSource();
+                        });
+                        
+                    } catch (e) {
+                        console.log(`❌ Audio source ${attempt + 1} creation failed:`, e.message);
+                        attempt++;
+                        tryNextSource();
+                    }
+                }
+                
+                tryNextSource();
+            }
+            
+            function showBrowserNotification() {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const notification = new Notification('🔔 Visitor Management System', {
+                        body: '{{ $notificationMessage }}',
+                        icon: '/favicon.ico',
+                        badge: '/favicon.ico',
+                        tag: 'visitor-{{ $visitorName }}-' + Date.now(),
+                        requireInteraction: true
+                    });
+                    
+                    notification.onclick = function() {
+                        window.focus();
+                        notification.close();
+                    };
+                    
+                    setTimeout(() => {
+                        notification.close();
+                    }, 8000);
+                }
+            }
+            
+            // Immediate actions
+            showVisitorNotification();
+            playNotificationSound();
+            
+            // DOM loaded actions
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 DOM loaded - enhancing notification experience');
+                
+                // Request browser notification permission
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            showBrowserNotification();
+                        }
+                    });
+                } else if (Notification.permission === 'granted') {
+                    showBrowserNotification();
+                }
+                
+                // Flash browser tab
+                const originalTitle = document.title;
+                let flashCount = 0;
+                const flashInterval = setInterval(() => {
+                    document.title = flashCount % 2 === 0 ? '🔔 New Visitor!' : originalTitle;
+                    flashCount++;
+                    if (flashCount > 8) {
+                        clearInterval(flashInterval);
+                        document.title = originalTitle;
+                    }
+                }, 1000);
+                
+                // Retry sound after user interaction
+                document.addEventListener('click', function playSoundOnClick() {
+                    playNotificationSound();
+                    document.removeEventListener('click', playSoundOnClick);
+                }, { once: true });
             });
+            
+            // Keep trying sound for 10 seconds
+            let retryCount = 0;
+            const soundRetryInterval = setInterval(() => {
+                playNotificationSound();
+                retryCount++;
+                if (retryCount >= 10) {
+                    clearInterval(soundRetryInterval);
+                }
+            }, 1000);
         </script>
-        
-        // Add beautiful CSS styles
-        <style>
-        .visitor-notification {
-            position: fixed !important;
-            top: 20px !important;
-            right: 20px !important;
-            z-index: 9999 !important;
-            min-width: 350px !important;
-            max-width: 400px !important;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            border-radius: 16px !important;
-            padding: 0 !important;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
-            display: flex !important;
-            align-items: center !important;
-            animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
-            transition: all 0.3s ease !important;
-            color: white !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-        }
-        
-        .visitor-notification:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        .notification-icon {
-            padding: 20px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        
-        .icon-circle {
-            width: 50px !important;
-            height: 50px !important;
-            background: rgba(255, 255, 255, 0.2) !important;
-            border-radius: 50% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            backdrop-filter: blur(10px) !important;
-            border: 2px solid rgba(255, 255, 255, 0.3) !important;
-        }
-        
-        .icon-circle i {
-            font-size: 24px !important;
-            color: white !important;
-        }
-        
-        .notification-content {
-            flex: 1 !important;
-            padding: 20px 20px 20px 0 !important;
-        }
-        
-        .notification-title {
-            font-size: 16px !important;
-            font-weight: 700 !important;
-            margin-bottom: 4px !important;
-            color: #ffffff !important;
-        }
-        
-        .notification-message {
-            font-size: 14px !important;
-            opacity: 0.9 !important;
-            margin-bottom: 4px !important;
-            line-height: 1.4 !important;
-        }
-        
-        .notification-time {
-            font-size: 12px !important;
-            opacity: 0.7 !important;
-        }
-        
-        .notification-close {
-            padding: 20px !important;
-            padding-left: 0 !important;
-        }
-        
-        .close-btn {
-            background: none !important;
-            border: none !important;
-            color: white !important;
-            font-size: 20px !important;
-            cursor: pointer !important;
-            opacity: 0.7 !important;
-            transition: opacity 0.2s !important;
-            padding: 0 !important;
-            width: 24px !important;
-            height: 24px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        
-        .close-btn:hover {
-            opacity: 1 !important;
-        }
-        
-        .notification-exit {
-            animation: slideOutRight 0.3s ease-in forwards !important;
-        }
-        
-        @keyframes slideInRight {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-        
-        /* Pulse animation for icon */
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.1);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-        
-        .visitor-notification .icon-circle {
-            animation: pulse 2s infinite;
-        }
-        </style>
     @endif
-    </script>
 
     @stack('scripts')
 </body>

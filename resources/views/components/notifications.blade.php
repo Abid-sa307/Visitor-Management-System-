@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadNotifications() {
-    fetch('/api/notifications')
+    fetch('/notifications')
         .then(response => response.json())
         .then(data => {
             displayNotifications(data.notifications);
@@ -97,7 +97,13 @@ function displayNotifications(notifications) {
 function getNotificationIcon(type) {
     const icons = {
         'created': '<i class="bi bi-person-plus text-primary"></i>',
+        'visitor_created': '<i class="bi bi-person-plus text-primary"></i>',
         'approved': '<i class="bi bi-check-circle text-success"></i>',
+        'visit_form_submitted': '<i class="bi bi-file-earmark-text text-info"></i>',
+        'security_check_in': '<i class="bi bi-shield-check text-primary"></i>',
+        'security_check_out': '<i class="bi bi-shield-x text-warning"></i>',
+        'visitor_mark_in': '<i class="bi bi-box-arrow-in-right text-success"></i>',
+        'visitor_mark_out': '<i class="bi bi-box-arrow-right text-secondary"></i>',
         'check_in': '<i class="bi bi-box-arrow-in-right text-info"></i>',
         'check_out': '<i class="bi bi-box-arrow-right text-warning"></i>'
     };
@@ -107,7 +113,13 @@ function getNotificationIcon(type) {
 function getTypeColor(type) {
     const colors = {
         'created': '#007bff',
+        'visitor_created': '#007bff',
         'approved': '#28a745',
+        'visit_form_submitted': '#17a2b8',
+        'security_check_in': '#6f42c1',
+        'security_check_out': '#fd7e14',
+        'visitor_mark_in': '#28a745',
+        'visitor_mark_out': '#6c757d',
         'check_in': '#17a2b8',
         'check_out': '#ffc107'
     };
@@ -136,7 +148,7 @@ function updateNotificationBadge(count) {
 }
 
 function updateUnreadCount() {
-    fetch('/api/notifications/unread-count')
+    fetch('/notifications/unread-count')
         .then(response => response.json())
         .then(data => {
             updateNotificationBadge(data.unread_count);
@@ -145,7 +157,7 @@ function updateUnreadCount() {
 }
 
 function markNotificationsAsRead() {
-    fetch('/api/notifications/mark-read', {
+    fetch('/notifications/mark-read', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

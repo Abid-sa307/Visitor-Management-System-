@@ -66,6 +66,7 @@
                             <th>Face Verification</th>
                             <th>Website</th>
                             <th>Security Check</th>
+                            <th>QR Mark In/Out</th>
                             <th>Notification</th>
                             <th style="width: 120px;">Actions</th>
                         </tr>
@@ -137,6 +138,12 @@
                                 </span>
                             </td>
                             <td>
+                                @php $markInOut = (int)($company->mark_in_out_in_qr_flow ?? 0); @endphp
+                                <span class="badge bg-{{ $markInOut ? 'success' : 'secondary' }}" title="{{ $markInOut ? 'Visitors from QR flow can be marked in/out' : 'Mark in/out blocked for QR flow visitors' }}">
+                                    {{ $markInOut ? 'Enabled' : 'Disabled' }}
+                                </span>
+                            </td>
+                            <td>
                                 @php $notificationsEnabled = (int)($company->enable_visitor_notifications ?? 0); @endphp
                                 <span class="badge bg-{{ $notificationsEnabled ? 'success' : 'secondary' }}">{{ $notificationsEnabled ? 'On' : 'Off' }}</span>
                             </td>
@@ -166,7 +173,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="text-muted py-4">No companies found.</td>
+                            <td colspan="11" class="text-muted py-4">No companies found.</td>
                         </tr>
                         @endforelse
                     </tbody>

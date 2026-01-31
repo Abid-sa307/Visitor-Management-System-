@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Path Test</title>
+</head>
+<body>
+    <h1>Audio Path Testing</h1>
+    
+    <button onclick="testAudio1()">Test /sounds/mixkit-bell-notification-933.wav</button>
+    <button onclick="testAudio2()">Test sounds/mixkit-bell-notification-933.wav</button>
+    <button onclick="testAudio3()">Test {{ asset('sounds/mixkit-bell-notification-933.wav') }}</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        function log(message) {
+            console.log(message);
+            document.getElementById('results').innerHTML += '<p>' + message + '</p>';
+        }
+        
+        function testAudio1() {
+            log('Testing: /sounds/mixkit-bell-notification-933.wav');
+            try {
+                const audio = new Audio('/sounds/mixkit-bell-notification-933.wav');
+                audio.play().then(() => {
+                    log('✅ Audio 1 played successfully');
+                }).catch(e => {
+                    log('❌ Audio 1 failed: ' + e.message);
+                });
+            } catch (e) {
+                log('❌ Audio 1 creation failed: ' + e.message);
+            }
+        }
+        
+        function testAudio2() {
+            log('Testing: sounds/mixkit-bell-notification-933.wav');
+            try {
+                const audio = new Audio('sounds/mixkit-bell-notification-933.wav');
+                audio.play().then(() => {
+                    log('✅ Audio 2 played successfully');
+                }).catch(e => {
+                    log('❌ Audio 2 failed: ' + e.message);
+                });
+            } catch (e) {
+                log('❌ Audio 2 creation failed: ' + e.message);
+            }
+        }
+        
+        function testAudio3() {
+            const path = '{{ asset("sounds/mixkit-bell-notification-933.wav") }}';
+            log('Testing: ' + path);
+            try {
+                const audio = new Audio(path);
+                audio.play().then(() => {
+                    log('✅ Audio 3 played successfully');
+                }).catch(e => {
+                    log('❌ Audio 3 failed: ' + e.message);
+                });
+            } catch (e) {
+                log('❌ Audio 3 creation failed: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

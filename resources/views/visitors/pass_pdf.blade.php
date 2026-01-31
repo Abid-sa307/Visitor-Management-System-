@@ -1,205 +1,316 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Visitor Pass</title>
+    <title>Visitor Pass - {{ $visitor->name }}</title>
     <style>
+        @page {
+            size: 90mm 54mm;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
             margin: 0;
             padding: 0;
-            background: #fff;
-        }
-        .pass-container {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            border: 2px solid #333;
-            background: white;
-        }
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 2px solid #333;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            letter-spacing: 2px;
-            font-weight: 600;
-        }
-        .company-name {
-            font-size: 14px;
-            margin-top: 5px;
-            opacity: 0.9;
-        }
-        .main-content {
-            display: flex;
-            padding: 30px;
-            gap: 30px;
-        }
-        .photo-section {
-            flex: 0 0 150px;
-            text-align: center;
-        }
-        .visitor-photo {
-            width: 120px;
-            height: 120px;
-            border: 3px solid #ddd;
-            object-fit: cover;
-            background: #f5f5f5;
-        }
-        .photo-placeholder {
-            width: 120px;
-            height: 120px;
-            border: 3px solid #ddd;
-            background: #f5f5f5;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            color: #999;
         }
-        .info-section {
-            flex: 1;
+
+        .visitor-pass {
+            width: 90mm;
+            height: 54mm;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            position: relative;
+            border: 1px solid #d1d5db;
         }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+
+        /* Left Panel */
+        .pass-left {
+            width: 36%;
+            background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+            color: #ffffff;
+            padding: 6px 6px 4px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
         }
-        .info-item {
-            margin-bottom: 15px;
+
+        .pass-left::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: rotate(45deg);
         }
-        .info-label {
+
+        .company-logo {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            margin-bottom: 4px;
+            object-fit: cover;
+        }
+
+        .company-name-text {
+            font-size: 7px;
             font-weight: 600;
-            color: #555;
-            font-size: 12px;
+            line-height: 1.2;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            display: block;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
-        .info-value {
-            font-size: 14px;
-            color: #333;
+
+        .visitor-badge {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 6px;
+            font-weight: 500;
+            text-align: center;
+            margin-top: auto;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* Right Panel */
+        .pass-right {
+            width: 64%;
+            padding: 6px 8px 6px 8px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .pass-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+
+        .pass-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1d4ed8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pass-id {
+            font-size: 7px;
+            color: #6b7280;
             font-weight: 500;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+
+        .details {
+            flex: 1;
+            margin-bottom: 2px;
         }
-        .status-approved {
-            background: #27ae60;
-            color: white;
-        }
-        .status-completed {
-            background: #7f8c8d;
-            color: white;
-        }
-        .footer {
-            background: #ecf0f1;
-            padding: 15px 30px;
-            border-top: 1px solid #ddd;
+
+        .detail-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 2px;
+            min-height: 8px;
         }
-        .pass-id {
+
+        .detail-label {
+            font-size: 6px;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex: 0 0 auto;
+        }
+
+        .detail-value {
+            font-size: 6px;
+            color: #374151;
             font-weight: 600;
-            color: #2c3e50;
+            text-align: right;
+            flex: 1;
+            margin-left: 4px;
+            word-break: break-word;
         }
-        .date {
-            font-size: 12px;
-            color: #7f8c8d;
+
+        .detail-value.highlight {
+            color: #1d4ed8;
+            font-weight: 700;
         }
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 72px;
-            color: rgba(0, 0, 0, 0.05);
+
+        hr {
+            border: none;
+            border-top: 1px dashed #d1d5db;
+            margin: 2px 0;
+        }
+
+        .barcode-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -2px;
+        }
+
+        .barcode {
+            font-family: 'Courier New', monospace;
+            font-size: 8px;
             font-weight: bold;
-            pointer-events: none;
-            z-index: 1;
+            letter-spacing: 1px;
+            color: #374151;
+            background: #f9fafb;
+            padding: 1px 3px;
+            border: 1px solid #e5e7eb;
+            border-radius: 2px;
+            text-align: center;
+            min-width: 40px;
+        }
+
+        .barcode-label {
+            font-size: 5px;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 1px;
+        }
+
+        .pass-footer {
+            border-top: 1px dashed #d1d5db;
+            margin-top: 3px;
+            padding-top: 2px;
+            text-align: center;
+            font-size: 5px;
+            color: #6b7280;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+
+            .visitor-pass {
+                box-shadow: none;
+                border: 1px solid #d1d5db;
+            }
+
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
     </style>
 </head>
 <body>
-    <div class="pass-container">
-        <div class="watermark">VISITOR</div>
-        
-        <div class="header">
-            <h1>VISITOR PASS</h1>
-            <div class="company-name">{{ $company->name ?? 'Visitor Management System' }}</div>
+    <div class="visitor-pass">
+        <!-- LEFT SIDE: BRAND + PHOTO -->
+        <div class="pass-left">
+            <div class="text-center">
+                @if(!empty($company->logo))
+                    <img src="{{ asset('storage/' . $company->logo) }}" alt="Company Logo" class="company-logo">
+                @endif
+                <div class="company-name-text">
+                    {{ $company->name ?? 'Company Name' }}
+                </div>
+            </div>
+            <div class="visitor-badge">
+                VISITOR
+            </div>
         </div>
 
-        <div class="main-content">
-            <div class="photo-section">
-                @if($visitor->photo)
-                    <img src="{{ asset('storage/' . $visitor->photo) }}" alt="Visitor Photo" class="visitor-photo">
-                @else
-                    <div class="photo-placeholder">👤</div>
-                @endif
+        <!-- RIGHT SIDE: DETAILS -->
+        <div class="pass-right">
+            <div class="pass-header">
+                <div>
+                    <div class="pass-title">Visitor Pass</div>
+                </div>
+                <div class="pass-id">
+                    ID: {{ str_pad($visitor->id, 6, '0', STR_PAD_LEFT) }}
+                </div>
             </div>
 
-            <div class="info-section">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Name</span>
-                        <span class="info-value">{{ $visitor->name }}</span>
+            <div class="details">
+                <div class="detail-row">
+                    <div class="detail-label">branch:</div>
+                    <div class="detail-value">
+                        {{ $visitor->branch->name ?? 'N/A' }}
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Email</span>
-                        <span class="info-value">{{ $visitor->email ?? '—' }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">department:</div>
+                    <div class="detail-value">
+                        {{ $visitor->department->name ?? 'N/A' }}
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Phone</span>
-                        <span class="info-value">{{ $visitor->phone ?? '—' }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Visit To:</div>
+                    <div class="detail-value">
+                        {{ $visitor->employee->name ?? $visitor->person_to_visit ?? 'N/A' }}
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Company</span>
-                        <span class="info-value">{{ $visitor->visitor_company ?? $company->name ?? '—' }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">purpose:</div>
+                    <div class="detail-value">
+                        {{ $visitor->purpose ?? 'N/A' }}
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Department</span>
-                        <span class="info-value">{{ $visitor->department->name ?? '—' }}</span>
+                </div>
+                <hr>
+                <div class="detail-row">
+                    <div class="detail-label">Name:</div>
+                    <div class="detail-value highlight">
+                        {{ $visitor->name ?? 'N/A' }}
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Purpose</span>
-                        <span class="info-value">{{ $visitor->purpose ?? '—' }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">mobile number:</div>
+                    <div class="detail-value">
+                        {{ $visitor->phone ?? 'N/A' }}
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Person to Visit</span>
-                        <span class="info-value">{{ $visitor->person_to_visit ?? '—' }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Visit Date</span>
-                        <span class="info-value">{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Status</span>
-                        <span class="info-value">
-                            <span class="status-badge {{ $visitor->status === 'Approved' ? 'status-approved' : ($visitor->status === 'Completed' ? 'status-completed' : '') }}">
-                                {{ $visitor->status }}
-                            </span>
-                        </span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">valid_until:</div>
+                    <div class="detail-value">
+                        {{ $visitor->created_at ? $visitor->created_at->copy()->startOfDay()->format('d-m-Y h:i A') : 'N/A' }}
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="footer">
-            <div class="pass-id">PASS ID: #{{ $visitor->id }}</div>
-            <div class="date">{{ now()->format('M d, Y h:i A') }}</div>
+            <div>
+                <div class="barcode-section">
+                    <div class="barcode">
+                        <!-- *{{ $visitor->visitor_id ?? 'VISITOR' }}* -->
+                    </div>
+                    <div class="barcode-label">VISITOR ID</div>
+                </div>
+
+                <div class="pass-footer">
+                    Please keep this pass visible at all times while on the premises.
+                </div>
+            </div>
         </div>
     </div>
 </body>

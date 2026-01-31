@@ -68,6 +68,16 @@
             line-height: 1.1;
         }
 
+        .company-address-text {
+            font-size: 7px;
+            font-weight: 400;
+            text-align: center;
+            color: #6b7280;
+            line-height: 1.2;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
         .visitor-photo {
             width: 55px;
             height: 70px;
@@ -224,6 +234,7 @@
                 <div class="company-name-text">
                     {{ $company->name ?? 'Company Name' }}
                 </div>
+                
             </div>
         </div>
 
@@ -243,7 +254,12 @@
                     </div>
                 </div>
                 
-              
+                <div class="detail-row">
+                    <div class="detail-label">Branch Address:</div>
+                    <div class="detail-value">
+                        {{ $visitor->branch->address ?? 'N/A' }}
+                    </div>
+                </div>
 
 
                 <div class="detail-row">
@@ -261,6 +277,13 @@
                 </div>
 
                 <div class="detail-row">
+                    <div class="detail-label">Visitor category:</div>
+                    <div class="detail-value">
+                        {{ $visitor->category->name ?? 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="detail-row">
                     <div class="detail-label">purpose:</div>
                     <div class="detail-value">
                         {{ $visitor->purpose ?? 'N/A' }}
@@ -268,7 +291,7 @@
                 </div>
                 <hr>
                   <div class="detail-row">
-                    <div class="detail-label">Name:</div>
+                    <div class="detail-label">Visitor Name:</div>
                     <div class="detail-value">
                         {{ $visitor->name ?? 'N/A' }}
                     </div>

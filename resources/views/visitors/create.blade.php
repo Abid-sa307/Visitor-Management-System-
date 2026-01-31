@@ -95,12 +95,12 @@
                   <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
               @else
-                @if(isset($branches) && $branches->count() > 1)
+                @if(isset($branches) && $branches->count() > 0)
                   <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
                     <option value="">-- Select Branch --</option>
                     @foreach($branches as $id => $name)
                       <option value="{{ $id }}" 
-                          {{ old('branch_id') == $id ? 'selected' : '' }}>
+                          {{ old('branch_id', auth()->user()->branch_id) == $id ? 'selected' : '' }}>
                           {{ $name }}
                       </option>
                     @endforeach
@@ -109,7 +109,7 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
                 @else
-                  <input type="text" class="form-control" value="{{ $branches->first() ?? 'No branches' }}" readonly>
+                  <input type="text" class="form-control" value="No branches available" readonly>
                 @endif
               @endif
             </div>

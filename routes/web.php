@@ -31,6 +31,91 @@ use App\Mail\OtpVerificationMail;
 use App\Http\Middleware\VerifyOtp;
 
 
+// Test routes
+Route::get('/test-db', function() {
+    dd(config('database.connections.mysql.username'));
+});
+
+// Test notification route
+Route::get('/debug-audio-test', function() {
+    return view('debug_audio_test');
+});
+
+Route::get('/debug-session-test', function() {
+    // Set session data
+    session()->flash('play_notification', true);
+    session()->flash('visitor_name', 'Test Visitor');
+    session()->flash('notification_message', 'Visit form submitted for visitor: Test Visitor');
+    
+    // Show what's in session
+    echo "<h1>Session Debug Test</h1>";
+    echo "<h2>Session Data Set:</h2>";
+    echo "<pre>";
+    echo "play_notification: " . (session('play_notification') ? 'true' : 'false') . "\n";
+    echo "visitor_name: " . session('visitor_name') . "\n";
+    echo "notification_message: " . session('notification_message') . "\n";
+    echo "</pre>";
+    
+    echo "<h2>All Session Data:</h2>";
+    echo "<pre>" . print_r(session()->all(), true) . "</pre>";
+    
+    echo "<br><a href='/debug-session-check'>Check if session data persists</a>";
+});
+
+Route::get('/debug-layout-test', function() {
+    // Set session data
+    session()->flash('play_notification', true);
+    session()->flash('visitor_name', 'Test Visitor');
+    session()->flash('notification_message', 'Visit form submitted for visitor: Test Visitor');
+    
+    // Check session values before rendering
+    echo "<h1>Pre-Layout Session Check</h1>";
+    echo "<pre>";
+    echo "play_notification: " . (session('play_notification') ? 'true' : 'false') . "\n";
+    echo "visitor_name: " . session('visitor_name') . "\n";
+    echo "notification_message: " . session('notification_message') . "\n";
+    echo "</pre>";
+    
+    echo "<h2>Now testing layout variables:</h2>";
+    
+    // Simulate the layout PHP code
+    $playNotification = session('play_notification', false);
+    $visitorName = session('visitor_name', 'Unknown');
+    $notificationMessage = session('notification_message', 'New visitor registered');
+    
+    echo "<pre>";
+    echo "\$playNotification: " . ($playNotification ? 'true' : 'false') . "\n";
+    echo "\$visitorName: " . $visitorName . "\n";
+    echo "\$notificationMessage: " . $notificationMessage . "\n";
+    echo "If condition result: " . ($playNotification ? 'TRUE - Should show notification' : 'FALSE - No notification') . "\n";
+    echo "</pre>";
+    
+    if ($playNotification) {
+        echo "<h2>✅ NOTIFICATION SHOULD TRIGGER</h2>";
+        echo "<script>
+            alert('🔔 DIRECT TEST: Notification condition is TRUE!');
+            console.log('Direct test - condition met');
+        </script>";
+    } else {
+        echo "<h2>❌ NOTIFICATION CONDITION IS FALSE</h2>";
+    }
+    
+    echo "<br><a href='/'>Go to dashboard</a>";
+});
+
+// Test email route
+Route::get('/test-email', function () {
+    try {
+        Mail::raw('This is a test email from your application', function($message) {
+            $message->to('nntvms@gmail.com')
+                    ->subject('Test Email from Visitor Management System');
+        });
+        return 'Test email sent successfully to nntvms@gmail.com';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
+
 /*
 |----------------------------------------------------------------------|
 | Public Routes (Unauthenticated Routes)
@@ -75,21 +160,13 @@ Route::get('/visitor-management-system-in-{country}', [VmsLandingController::cla
 */
 // QR Code Management Routes
 // In routes/web.php
-Route::get('/public/company/{company}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])
-    ->name('public.visitor.index');
-
-// Branch-specific visitor index
-Route::get('/public/company/{company}/branch/{branch}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])
-    ->name('public.visitor.index.branch');
-
-
-
-    
 Route::prefix('qr')->name('qr.')->group(function () {
     // QR Code Management
     Route::get('/scan/{company}/{branch?}', [\App\Http\Controllers\QRController::class, 'scan'])->name('scan');
     Route::get('/{company}/visitor/create', [\App\Http\Controllers\QRController::class, 'createVisitor'])->name('visitor.create');
+    Route::get('/{company}/{branch}/visitor/create', [\App\Http\Controllers\QRController::class, 'createVisitor'])->name('visitor.create.branch');
     Route::post('/{company}/visitor', [\App\Http\Controllers\QRController::class, 'storeVisitor'])->name('visitor.store');
+    Route::post('/{company}/{branch}/visitor', [\App\Http\Controllers\QRController::class, 'storeVisitor'])->name('visitor.store.branch');
     // Route::get('/{company}/visitor/{visitor}/visit', [QRManagementController::class, 'showVisitForm'])->name('visitor.visit.form');
     Route::post('/{company}/visitor/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storeVisit'])->name('visitor.visit.store');
         
@@ -153,6 +230,9 @@ Route::middleware(['auth'])->group(function () {
 */
 // Shared dashboard route for both superadmins and company users
 Route::middleware(['auth'])->group(function () {
+    // Notifications
+    Route::get('/api/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount']); // Keep /api prefix for consistency with JS
+    
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile
@@ -181,10 +261,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
     Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
     Route::post('/undo-security-checkout/{id}', [VisitorController::class, 'undoSecurityCheckout'])->name('visitors.undo-security-checkout');
-    Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
     Route::get('/visitors/{id}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
     Route::post('/visitors/{id}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
     Route::put('/visitors/{id}/visit/undo', [VisitorController::class, 'undoVisit'])->name('visitors.visit.undo');
+    
+    // Visitor Pass routes
+    Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+    Route::get('/visitors/{id}/pass/pdf', [VisitorController::class, 'downloadPassPDF'])->name('visitors.pass.pdf');
     
     // Face Recognition
     Route::post('/visitors/{visitor}/verify-face', [FaceRecognitionController::class, 'verifyVisitor'])->name('visitors.verify-face');
@@ -239,6 +322,51 @@ Route::middleware(['auth'])->group(function () {
 
 /*
 |----------------------------------------------------------------------|
+| Public Visit Form Routes (No Authentication Required)
+|----------------------------------------------------------------------|
+*/
+Route::prefix('public')->name('public.')->group(function () {
+    // Visitor tracking route
+    Route::get('/visitors/{visitor}/track', [\App\Http\Controllers\QRController::class, 'trackVisitor'])
+        ->name('visitor.track');
+    
+    // Show public visit form (for new visits)
+    Route::get('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
+        ->name('visitor.visit.form');
+    
+    // Show public visit form with branch (for branch-specific QR scans)
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
+        ->name('visitor.visit.form.branch');
+    
+    // Handle public visit form submission (for new and existing visits)
+    Route::match(['post', 'put'], '/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
+        ->name('visitor.visit.store');
+    
+    // Handle public visit form submission with branch (for branch-specific QR scans)
+    Route::match(['post', 'put'], '/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
+        ->name('visitor.visit.store.branch');
+    
+    // Show edit form for existing visits
+    Route::get('/companies/{company}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
+        ->name('visitor.visit.edit');
+    
+    // Show edit form for existing visits with branch
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
+        ->name('visitor.visit.edit.branch');
+    
+    // Show visitor details
+    Route::get('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRManagementController::class, 'publicVisitorIndex'])
+        ->name('visitor.show');
+    
+    // Public visitor pass routes (no authentication required)
+    Route::get('/visitors/{id}/pass', [\App\Http\Controllers\VisitorController::class, 'printPass'])
+        ->name('visitors.pass');
+    Route::get('/visitors/{id}/pass/pdf', [\App\Http\Controllers\VisitorController::class, 'downloadPassPDF'])
+        ->name('visitors.pass.pdf');
+});
+
+/*
+|----------------------------------------------------------------------|
 | Company Panel Routes (Role: company)
 |----------------------------------------------------------------------|
 */
@@ -261,7 +389,10 @@ Route::prefix('company')
         Route::get('/visitor-history', [VisitorController::class, 'history'])->name('visitors.history');
         Route::get('/visitor-entry', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
         Route::post('/visitor-entry-toggle/{id}', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
+        
+        // Visitor Pass routes
         Route::get('/visitors/{id}/pass', [VisitorController::class, 'printPass'])->name('visitors.pass');
+        Route::get('/visitors/{id}/pass/pdf', [VisitorController::class, 'downloadPassPDF'])->name('visitors.pass.pdf');
         
         // Visits Management
         Route::get('/visits', [VisitorController::class, 'visitsIndex'])->name('company.visits.index');
@@ -590,29 +721,6 @@ Route::get('/models/{filename}', function ($filename) {
     abort(404, 'Model file not found: ' . $filename);
 })->where('filename', '.*');
 
-// Public visit routes
-Route::prefix('public')->name('public.')->group(function () {
-    // Visitor tracking route
-    Route::get('/visitors/{visitor}/track', [\App\Http\Controllers\QRController::class, 'trackVisitor'])
-        ->name('visitor.track');
-    
-    // Show public visit form (for new visits)
-    Route::get('/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'showPublicVisitForm'])
-        ->name('visitor.visit.form');
-    
-    // Handle public visit form submission (for new and existing visits)
-    Route::match(['post', 'put'], '/companies/{company}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
-        ->name('visitor.visit.store');
-    
-    // Show edit form for existing visits
-    Route::get('/companies/{company}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
-        ->name('visitor.visit.edit');
-    
-    // Show visitor details
-    Route::get('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRController::class, 'showPublicVisitor'])
-        ->name('visitor.show');
-});
-
 // Breeze/Auth Routes
 require __DIR__ . '/auth.php';
 ////////////////robot.txt////////////////////
@@ -632,7 +740,7 @@ Route::get('/robots.txt', function () {
 //////////////site map///////
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
 
-// Temporary fix for notification preference API
+Route::get('/api/companies/{company}/face-recognition', [VisitorController::class, 'checkFaceRecognition'])->name('api.companies.face-recognition');
 Route::get('/api/companies/{company}/notification-preference', function (\App\Models\Company $company) {
     return response()->json([
         'enable_visitor_notifications' => (bool) $company->enable_visitor_notifications,
@@ -643,5 +751,97 @@ Route::get('/api/companies/{company}/notification-preference', function (\App\Mo
             'enable_visitor_notifications_cast' => (bool) $company->enable_visitor_notifications
         ]
     ]);
+});
+
+// Test route for debugging
+Route::get('/test-data', function() {
+    $branches = \App\Models\Branch::with('company')->get();
+    $employees = \App\Models\Employee::with('branch')->get();
+    $categories = \App\Models\VisitorCategory::with('branch')->get();
+    
+    return [
+        'branches' => $branches->map(function($b) {
+            return [
+                'id' => $b->id,
+                'name' => $b->name,
+                'company_id' => $b->company_id,
+                'company_name' => $b->company ? $b->company->name : 'N/A'
+            ];
+        }),
+        'employees' => $employees->map(function($e) {
+            return [
+                'id' => $e->id,
+                'name' => $e->name,
+                'branch_id' => $e->branch_id,
+                'branch_name' => $e->branch ? $e->branch->name : 'N/A',
+                'company_id' => $e->company_id
+            ];
+        }),
+        'categories' => $categories->map(function($c) {
+            return [
+                'id' => $c->id,
+                'name' => $c->name,
+                'branch_id' => $c->branch_id,
+                'branch_name' => $c->branch ? $c->branch->name : 'N/A',
+                'company_id' => $c->company_id
+            ];
+        })
+    ];
+});
+
+// Debug routes for company settings
+Route::get('/debug-company-settings', function() {
+    echo "<h2>Company Notification Settings</h2>";
+    
+    // Get all companies
+    $companies = \App\Models\Company::all(['id', 'name', 'enable_visitor_notifications']);
+    
+    echo "<table border='1' style='border-collapse: collapse; width: 100%;'>";
+    echo "<tr><th>ID</th><th>Name</th><th>Visitor Notifications</th></tr>";
+    
+    foreach ($companies as $company) {
+        echo "<tr>";
+        echo "<td>{$company->id}</td>";
+        echo "<td>{$company->name}</td>";
+        echo "<td style='text-align: center; color: " . ($company->enable_visitor_notifications ? 'green' : 'red') . "; font-weight: bold;'>";
+        echo $company->enable_visitor_notifications ? '✅ YES' : '❌ NO';
+        echo "</td>";
+        echo "</tr>";
+    }
+    
+    echo "</table>";
+    
+    echo "<h3>Looking for 'basic' company:</h3>";
+    $basicCompany = \App\Models\Company::where('name', 'like', '%basic%')->first();
+    if ($basicCompany) {
+        echo "<p><strong>Found:</strong> {$basicCompany->name} (ID: {$basicCompany->id}) - Notifications: " . ($basicCompany->enable_visitor_notifications ? 'YES' : 'NO') . "</p>";
+    } else {
+        echo "<p>No company with 'basic' in name found.</p>";
+    }
+    
+    echo "<h3>Enable Notifications for Company:</h3>";
+    echo "<form method='post' action='/debug-enable-notifications'>";
+    echo csrf_field();
+    echo "<input type='number' name='company_id' placeholder='Company ID' required style='padding: 5px; margin-right: 10px;'>";
+    echo "<button type='submit' style='padding: 5px 15px; background: #007bff; color: white; border: none; cursor: pointer;'>Enable Notifications</button>";
+    echo "</form>";
+    
+    if (session('enabled')) {
+        echo "<p style='color: green; font-weight: bold;'>✅ Notifications enabled for company ID: " . session('company_id') . "</p>";
+    }
+});
+
+Route::post('/debug-enable-notifications', function() {
+    $companyId = request('company_id');
+    $company = \App\Models\Company::find($companyId);
+    
+    if ($company) {
+        $company->enable_visitor_notifications = true;
+        $company->save();
+        
+        return redirect('/debug-company-settings')->with('enabled', true)->with('company_id', $companyId);
+    } else {
+        echo "<p style='color: red;'>Company not found!</p>";
+    }
 });
 

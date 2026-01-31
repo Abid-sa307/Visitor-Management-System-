@@ -9,6 +9,8 @@ use App\Models\Department;
 use App\Models\VisitorCategory;
 use App\Models\SecurityCheck;
 use App\Models\Branch;
+use App\Models\Employee;
+use App\Services\GoogleNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -22,7 +24,6 @@ use Illuminate\Validation\ValidationException;
 use App\Notifications\VisitorCreated;
 use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Controllers\NotificationHelper;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VisitorNotificationMail;
 use App\Models\CompanyUser;
@@ -257,9 +258,33 @@ class VisitorController extends Controller
 
     public function create()
     {
+        // Check if current time is within branch operation hours for selected branch
+        if (request()->filled('branch_id') && !session('alert')) {
+            $branchId = request()->input('branch_id');
+            $branchModel = \App\Models\Branch::find($branchId);
+            
+            if ($branchModel && !empty($branchModel->start_time) && !empty($branchModel->end_time)) {
+                $currentTime = now()->format('H:i');
+                $startTime = date('H:i', strtotime($branchModel->start_time));
+                $endTime = date('H:i', strtotime($branchModel->end_time));
+                
+                if ($currentTime < $startTime || $currentTime > $endTime) {
+                    $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                    
+                    // Set alert in session and redirect back
+                    return redirect()->route('visitors.index')
+                        ->with('error', $errorMessage)
+                        ->with('alert', $errorMessage);
+                }
+            }
+        }
+        
         $companies   = $this->getCompanies();
         $departments = $this->getDepartments();
-        $categories  = VisitorCategory::orderBy('name')->get();
+        $categories  = VisitorCategory::query()
+            ->when(!$this->isSuper(), fn($q) => $q->where('company_id', auth()->user()->company_id))
+            ->orderBy('name')
+            ->get();
         
         // Get branches for company users
         $branches = collect();
@@ -275,6 +300,27 @@ class VisitorController extends Controller
     
     public function store(Request $request)
     {
+        // Check if current time is within branch operation hours for selected branch
+        if ($request->filled('branch_id')) {
+            $branchId = $request->input('branch_id');
+            $branchModel = \App\Models\Branch::find($branchId);
+            
+            if ($branchModel && !empty($branchModel->start_time) && !empty($branchModel->end_time)) {
+                $currentTime = now()->format('H:i');
+                $startTime = date('H:i', strtotime($branchModel->start_time));
+                $endTime = date('H:i', strtotime($branchModel->end_time));
+                
+                if ($currentTime < $startTime || $currentTime > $endTime) {
+                    $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
+                    
+                    return redirect()->route('visitors.index')
+                        ->with('error', $errorMessage)
+                        ->with('alert', $errorMessage)
+                        ->withInput();
+                }
+            }
+        }
+        
         return DB::transaction(function () use ($request) {
             // ---------------------------
             // Validation rules
@@ -287,6 +333,7 @@ class VisitorController extends Controller
 
             $validated = $request->validate([
                 'company_id'          => 'nullable|exists:companies,id',
+                'branch_id'           => 'nullable|exists:branches,id',
                 'name'                => 'required|string|max:255|regex:' . self::NAME_REGEX,
                 'visitor_category_id' => 'nullable|exists:visitor_categories,id',
                 'email'               => 'nullable|email',
@@ -301,12 +348,12 @@ class VisitorController extends Controller
                 'documents'           => 'nullable|array',
                 'documents.*'         => 'file|mimes:pdf,doc,docx,jpeg,png,jpg|max:5120',
                 'visitor_company'     => 'nullable|string|max:255',
-                'visitor_website'     => 'nullable|url|max:255',
+                'visitor_website'     => 'nullable|string|max:255',
                 'vehicle_type'        => 'nullable|string|max:20',
                 'vehicle_number'      => 'nullable|string|max:50',
                 'goods_in_car'        => 'nullable|string|max:255',
                 'workman_policy'      => 'nullable|in:Yes,No',
-                'workman_policy_photo'=> 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'workman_policy_photo'=> 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,tiff,webp|max:5120',
                 'document'            => 'nullable|file|mimes:pdf,doc,docx,jpeg,png,jpg|max:5120',
             ], $messages);
 
@@ -388,7 +435,7 @@ class VisitorController extends Controller
             // Handle document upload
             if ($request->hasFile('document')) {
                 $documentPath = $request->file('document')->store('visitor_documents', 'public');
-                $validated['document_path'] = $documentPath;
+                $validated['documents'] = $documentPath;
             }
 
             // Workman policy photo
@@ -397,17 +444,18 @@ class VisitorController extends Controller
                     ->store('wpc_photos', 'public');
             }
 
-            // Auto-approval logic
+            // Auto-approval logic - but keep status as Pending until visit form is completed
             $status = 'Pending';
             $approvedAt = null;
 
-            if (!empty($validated['company_id'])) {
-                $company = Company::find($validated['company_id']);
-                if ($company && (int) $company->auto_approve_visitors === 1) {
-                    $status = 'Approved';
-                    $approvedAt = now();
-                }
-            }
+            // Don't auto-approve until visit form is completed
+            // if (!empty($validated['company_id'])) {
+            //     $company = Company::find($validated['company_id']);
+            //     if ($company && (int) $company->auto_approve_visitors === 1) {
+            //         $status = 'Approved';
+            //         $approvedAt = now();
+            //     }
+            // }
 
             $validated['status'] = $status;
             if (\Schema::hasColumn('visitors', 'approved_at')) {
@@ -417,20 +465,36 @@ class VisitorController extends Controller
             // Create visitor
             $visitor = Visitor::create($validated);
 
-            // Only create notification for visitor created if not auto-approved (normal workflow)
-            if (!$visitor->approved_at) {
-                NotificationHelper::visitorCreated($visitor);
+            // Send notification for visitor created
+            try {
+                if (!empty($visitor->company_id)) {
+                    // Send Google notification if enabled
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendNotification(
+                        $visitor->company,
+                        'visitor_created',
+                        "New visitor {$visitor->name} has been created",
+                        $visitor
+                    );
+                    
+                    $recipients = User::query()
+                        ->where('company_id', $visitor->company_id)
+                        ->when(!empty($visitor->branch_id), function ($q) use ($visitor) {
+                            $q->where(function ($qq) use ($visitor) {
+                                $qq->whereNull('branch_id')->orWhere('branch_id', $visitor->branch_id);
+                            });
+                        })
+                        ->get();
+                    foreach ($recipients as $user) {
+                        $user->notify(new VisitorCreated($visitor));
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
             }
 
-            // Attach documents if any
-            if (isset($validated['documents'])) {
-                foreach ($validated['documents'] as $documentPath) {
-                    $visitor->documents()->create([
-                        'file_path' => $documentPath,
-                        'file_name' => basename($documentPath)
-                    ]);
-                }
-            }
+            // Document is already stored in documents column, no need for separate table
+            // The document path is already saved in the main visitor record
 
             // Email notifications
             try {
@@ -458,8 +522,21 @@ class VisitorController extends Controller
                     foreach ($recipients as $user) {
                         $user->notify(new VisitorCreated($visitor));
                     }
-                    
+
+                    // ---------------------------------------------------------
+                    // NOTIFICATION SYSTEM TRIGGER (15s Ringtone + Browser Notification)
+                    // ---------------------------------------------------------
+                    try {
+                        $notificationService = new \App\Services\GoogleNotificationService();
+                        $notificationService->sendVisitFormNotification($visitor->company, $visitor);
+                        \Log::info("Triggered GoogleNotificationService for Visitor: {$visitor->id}");
+                    } catch (\Throwable $e) {
+                         \Log::warning('GoogleNotificationService trigger failed: '.$e->getMessage());
+                    }
+                    // ---------------------------------------------------------
+
                     // Send emails to company users based on branch assignment
+
                     $companyUsers = CompanyUser::where('company_id', $visitor->company_id)->get();
                         
                     foreach ($companyUsers as $companyUser) {
@@ -485,15 +562,23 @@ class VisitorController extends Controller
                 \Log::warning('VisitorCreated notify failed: '.$e->getMessage());
             }
 
-            // Redirect based on user type
-            $route = $this->isSuper() ? 'visitors.index' : 'company.visitors.index';
-            $message = $status === 'Approved' 
-                ? 'Visitor registered and auto-approved successfully.' 
-                : 'Visitor registered successfully. Pending approval.';
+            // Always redirect to visit form after visitor creation
+            $route = $this->isSuper() ? 'visitors.visit.form' : 'company.visitors.visit.form';
+            $message = 'Visitor registered successfully. Please complete the visit form.';
 
-            return redirect()->route($route)->with('success', $message)
-                ->with('play_notification', true)
-                ->with('visitor_name', $visitor->name);
+            // Check if notification should trigger
+            if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                return redirect()->route($route, $visitor->id)
+                    ->with('success', $message)
+                    ->with('visitor_name', $visitor->name)
+                    ->with('visitor_company_id', $visitor->company_id)
+                    ->with('play_notification', true)
+                    ->with('notification_message', "{$visitor->name} - New Visitor Registered");
+            }
+
+            return redirect()->route($route, $visitor->id)->with('success', $message)
+                ->with('visitor_name', $visitor->name)
+                ->with('visitor_company_id', $visitor->company_id);
         });
     }
 
@@ -530,7 +615,10 @@ class VisitorController extends Controller
             })
             ->orderBy('name')
             ->get();
-        $categories = VisitorCategory::orderBy('name')->get();
+        $categories = VisitorCategory::query()
+            ->when(!$this->isSuper(), fn($q) => $q->where('company_id', auth()->user()->company_id))
+            ->orderBy('name')
+            ->get();
 
         return view('visitors.edit', compact('visitor', 'companies', 'departments', 'branches', 'categories'));
     }
@@ -588,7 +676,7 @@ class VisitorController extends Controller
 
             if ($request->hasFile('document')) {
                 $documentPath = $request->file('document')->store('visitor_documents', 'public');
-                $visitor->document_path = $documentPath;
+                $visitor->documents = $documentPath;
             }
 
             return redirect()->back()->with('success', $message);
@@ -613,9 +701,6 @@ class VisitorController extends Controller
             if ($newStatus === 'Approved') {
                 $visitor->approved_by = auth()->id();
                 $visitor->approved_at = now();
-                
-                // Create notification for visitor approval
-                NotificationHelper::visitorApproved($visitor);
             } 
             // Clear approval data when status changes from Approved
             elseif ($previousStatus === 'Approved') {
@@ -633,6 +718,22 @@ class VisitorController extends Controller
                     \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
                 }
             }
+            
+            // Send Google notification if enabled
+        if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
+            try {
+                $notificationService = new GoogleNotificationService();
+                $notificationService->sendApprovalNotification($visitor->company, $visitor);
+                
+                // Simple notification: Set session flash for frontend
+                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                    session()->flash('play_notification', true);
+                    session()->flash('notification_message', "{$visitor->name} - Approved");
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send approval notification: ' . $e->getMessage());
+            }
+        }
             
             // Send approval notification emails to company users
             if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
@@ -661,17 +762,39 @@ class VisitorController extends Controller
                     \Log::warning('Failed to send visitor approval notifications: ' . $e->getMessage());
                 }
             }
+            
+            // Check if company has visitor notifications enabled and trigger notification
+            $playNotification = false;
+            $notificationMessage = '';
+            
+            if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                if ($previousStatus !== 'Approved' && $newStatus === 'Approved') {
+                    $playNotification = true;
+                    $notificationMessage = "Visitor {$visitor->name} has been APPROVED";
+                    \Log::info('Approval/Reject - Visitor APPROVED, notifications enabled for company: ' . $visitor->company->name);
+                } elseif ($previousStatus !== 'Rejected' && $newStatus === 'Rejected') {
+                    $playNotification = true;
+                    $notificationMessage = "Visitor {$visitor->name} has been REJECTED";
+                    \Log::info('Approval/Reject - Visitor REJECTED, notifications enabled for company: ' . $visitor->company->name);
+                }
+            }
 
             if ($isAjax) {
                 return response()->json([
                     'success' => true,
                     'status'  => $visitor->status,
                     'message' => "Visitor status updated to {$visitor->status}",
-                    'play_notification' => $newStatus === 'Approved'
+                    'play_notification' => $playNotification,
+                    'visitor_name' => $visitor->name,
+                    'notification_message' => $notificationMessage
                 ]);
             }
 
-            return redirect()->back()->with('success', "Visitor status updated to {$visitor->status}");
+            return redirect()->back()
+                ->with('success', "Visitor status updated to {$visitor->status}")
+                ->with('play_notification', $playNotification)
+                ->with('visitor_name', $visitor->name)
+                ->with('notification_message', $notificationMessage);
         }
 
         // Otherwise, normal full update
@@ -876,15 +999,11 @@ class VisitorController extends Controller
 
         // Check if visitor has already completed the visit form (and it hasn't been undone)
         if ($visitor->visit_completed_at && ($visitor->department_id || $visitor->person_to_visit || $visitor->purpose)) {
-            return redirect()->route('visitors.entry.page')
+            return redirect()->route('visitors.index')
                 ->with('error', 'Visitor has already completed the visit form.');
         }
 
-        // Check if visitor is approved before allowing visit form completion
-        if ($visitor->status !== 'Approved') {
-            return redirect()->route('visitors.entry.page')
-                ->with('error', 'Visitor must be approved before completing the visit form.');
-        }
+        // Allow visit form completion for Pending visitors (new flow)
 
         $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
         $isSuper = $this->isSuper();
@@ -903,9 +1022,16 @@ class VisitorController extends Controller
         $departments = $selectedBranchId ? $this->getDepartments($selectedBranchId) : collect();
 
         $visitorCategories = VisitorCategory::query()
-            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+            ->when($companyId && !$selectedBranchId, fn($q) => $q->where('company_id', $companyId)->whereNull('branch_id'))
             ->orderBy('name')
             ->get(['id', 'name']);
+
+        // Get employees for the selected branch
+        $employees = \App\Models\Employee::query()
+            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
+            ->orderBy('name')
+            ->get(['id', 'name', 'designation']);
 
         $canUndoVisit = $visitor->visit_completed_at && 
                         Carbon::parse($visitor->visit_completed_at)->gt(now()->subMinutes(30)) &&
@@ -918,6 +1044,7 @@ class VisitorController extends Controller
             'companies' => $companies,
             'branches' => $branches,
             'visitorCategories' => $visitorCategories,
+            'employees' => $employees,
             'isSuper' => $isSuper,
             'user' => $user,
             'selectedBranchId' => $selectedBranchId,
@@ -962,12 +1089,12 @@ class VisitorController extends Controller
                 'person_to_visit'     => 'required|string',
                 'purpose'             => 'nullable|string',
                 'visitor_company'     => 'nullable|string',
-                'visitor_website'     => 'nullable|url',
+                'visitor_website'     => 'nullable|string',
                 'vehicle_type'        => 'nullable|string',
                 'vehicle_number'      => 'nullable|string',
                 'goods_in_car'        => 'nullable|string',
                 'workman_policy'      => 'nullable|in:Yes,No',
-                'workman_policy_photo'=> 'nullable|image|max:2048',
+                'workman_policy_photo'=> 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,tiff,webp|max:5120',
                 'status'              => 'sometimes|in:Pending,Approved,Rejected',
             ]);
 
@@ -986,7 +1113,12 @@ class VisitorController extends Controller
                 }
 
                 // Get all input except the ones we don't want to update
-                $updateData = $request->except(['workman_policy_photo', '_token', '_method', 'status']);
+                $updateData = $request->except(['workman_policy_photo', '_token', '_method', 'status', 'person_to_visit_manual']);
+                
+                // Handle manual person_to_visit input if provided
+                if ($request->filled('person_to_visit_manual')) {
+                    $updateData['person_to_visit'] = $request->input('person_to_visit_manual');
+                }
                 
                 // Only update status if it's explicitly provided in the request
                 if ($request->has('status')) {
@@ -1016,7 +1148,27 @@ class VisitorController extends Controller
                 
                 // Mark visit form as completed
                 $visitor->visit_completed_at = now();
+                
+                // Check if company has auto-approval and apply it after visit form completion
+                if (!empty($visitor->company_id)) {
+                    $company = Company::find($visitor->company_id);
+                    if ($company && $company->auto_approve_visitors && $visitor->status === 'Pending') {
+                        $updateData['status'] = 'Approved';
+                        $updateData['approved_by'] = auth()->id();
+                        $updateData['approved_at'] = now();
+                        $visitor->update($updateData);
+                    }
+                }
+                
                 $visitor->save();
+
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendVisitFormNotification($visitor->company, $visitor, false);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send visit form notification: ' . $e->getMessage());
+                }
 
                 // Commit the transaction
                 \DB::commit();
@@ -1027,13 +1179,35 @@ class VisitorController extends Controller
                     'new_status' => $visitor->fresh()->status
                 ]);
 
+                // Check if company has visitor notifications enabled and trigger notification
+                $playNotification = false;
+                $notificationMessage = '';
+                \Log::info('Visit form submitted - Checking notifications for visitor ID: ' . $visitor->id);
+                \Log::info('Visit form submitted - Visitor company ID: ' . ($visitor->company ? $visitor->company->id : 'null'));
+                \Log::info('Visit form submitted - Visitor company name: ' . ($visitor->company ? $visitor->company->name : 'no company'));
+                \Log::info('Visit form submitted - Company enable_visitor_notifications: ' . ($visitor->company ? ($visitor->company->enable_visitor_notifications ? 'true' : 'false') : 'no company'));
+                
+                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                    $playNotification = true;
+                    $notificationMessage = "Visit form submitted for visitor: " . $visitor->name;
+                    \Log::info('Visit form submitted - Visitor notifications ENABLED for company: ' . $visitor->company->name . ', playing notification for visitor: ' . $visitor->name);
+                } else {
+                    \Log::info('Visit form submitted - Visitor notifications DISABLED');
+                }
+
                 // Determine the appropriate redirect route based on user type
                 if (auth()->guard('company')->check()) {
                     return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.');
+                        ->with('success', 'Visit submitted successfully.')
+                        ->with('play_notification', $playNotification)
+                        ->with('visitor_name', $visitor->name)
+                        ->with('notification_message', $notificationMessage);
                 } else {
                     return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.');
+                        ->with('success', 'Visit submitted successfully.')
+                        ->with('play_notification', $playNotification)
+                        ->with('visitor_name', $visitor->name)
+                        ->with('notification_message', $notificationMessage);
                 }
 
             } catch (\Exception $e) {
@@ -1235,14 +1409,19 @@ class VisitorController extends Controller
                 // Only update check-in time, don't modify the status
                 $visitor->in_time = now();
                 
-                // Create notification for visitor check-in
-                NotificationHelper::visitorCheckIn($visitor);
-                
                 // If auto-approval is enabled and status is Pending, update to Approved
                 if ($companyAuto && $visitor->status === 'Pending') {
                     $visitor->status = 'Approved';
                     $visitor->approved_by = auth()->id();
                     $visitor->approved_at = now();
+                }
+                
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendMarkInNotification($visitor->company, $visitor);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send mark-in notification: ' . $e->getMessage());
                 }
                 
                 $message = 'Visitor checked in successfully.';
@@ -1255,8 +1434,13 @@ class VisitorController extends Controller
                 
                 $visitor->out_time = now();
                 
-                // Create notification for visitor check-out
-                NotificationHelper::visitorCheckOut($visitor);
+                // Send notification if enabled
+                try {
+                    $notificationService = new GoogleNotificationService();
+                    $notificationService->sendMarkOutNotification($visitor->company, $visitor);
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to send mark-out notification: ' . $e->getMessage());
+                }
                 
                 // Only update status to Completed if it's currently Approved
                 if ($visitor->status === 'Approved') {
@@ -1486,6 +1670,25 @@ class VisitorController extends Controller
             $visitor->save();
             DB::commit();
 
+            // Send notification if enabled
+            try {
+                $notificationService = new GoogleNotificationService();
+                if ($action === 'in') {
+                    $notificationService->sendMarkInNotification($visitor->company, $visitor);
+                } elseif ($action === 'out') {
+                    $notificationService->sendMarkOutNotification($visitor->company, $visitor);
+                    // Also trigger security check-out notification if applicable (though usually security check is separate)
+                }
+                
+                // Simple notification: Set session flash for frontend
+                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                    session()->flash('play_notification', true);
+                    session()->flash('notification_message', "{$visitor->name} - " . ($action === 'in' ? 'Checked In' : 'Checked Out'));
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send mark-in/out notification: ' . $e->getMessage());
+            }
+
             if (request()->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -1525,7 +1728,7 @@ class VisitorController extends Controller
                         ->with('play_notification', $playNotification ?? false)
                         ->with('visit_completed', true);
                 } else {
-                    return redirect()->route('public.visitor.index', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
+                    return redirect()->route('public.visitor.show', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
                         ->with('success', $message)
                         ->with('play_notification', $playNotification ?? false);
                 }
@@ -1553,7 +1756,12 @@ class VisitorController extends Controller
     public function printPass($id)
     {
         $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
-        $this->authorizeVisitor($visitor);
+        
+        // For public routes, skip authorization check
+        // Only check authorization for authenticated routes
+        if (auth()->check()) {
+            $this->authorizeVisitor($visitor);
+        }
 
         // Debugging company data before checking status
         if (!$visitor->company) {
@@ -1569,6 +1777,46 @@ class VisitorController extends Controller
             'visitor' => $visitor,
             'company' => $visitor->company
         ]);
+    }
+
+    public function downloadPassPDF($id)
+    {
+        $visitor = Visitor::with(['company', 'department', 'branch'])->findOrFail($id);
+        
+        // For public routes, skip authorization check
+        // Only check authorization for authenticated routes
+        if (auth()->check()) {
+            $this->authorizeVisitor($visitor);
+        }
+
+        // Debugging company data before checking status
+        if (!$visitor->company) {
+            \Log::warning('Visitor does not have a company', ['visitor_id' => $visitor->id]);
+        }
+
+        if ($visitor->status !== 'Approved' && $visitor->status !== 'Completed') {
+            return redirect()->back()->with('error', 'Pass not available.');
+        }
+
+        // Generate PDF using the pass_pdf view
+        $pdf = \PDF::loadView('visitors.pass_pdf', [
+            'visitor' => $visitor,
+            'company' => $visitor->company
+        ]);
+
+        // Configure PDF to maintain design
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOptions([
+            'defaultFont' => 'Arial',
+            'isRemoteEnabled' => true,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => true,
+            'enable_fontsubsetting' => true,
+            'font_dir' => public_path('fonts'),
+        ]);
+
+        // Download the PDF
+        return $pdf->download('visitor-pass-' . $visitor->id . '-' . str_replace(' ', '-', $visitor->name) . '.pdf');
     }
 
     // --------------------------- AJAX: Lookup by phone ---------------------------
@@ -1641,8 +1889,38 @@ class VisitorController extends Controller
             ->with(['company', 'department', 'branch'])
             ->latest();
 
-        // Apply date range filter
-        $this->applyDateRange($query, 'in_time', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Main Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('in_time', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('in_time', '>=', $from);
+                $query->whereDate('in_time', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('in_time', '=', $currentDate);
+            \Log::info('Using default current date filter');
+        }
 
         // Apply company filter if provided and user is superadmin
         if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
@@ -1690,24 +1968,59 @@ class VisitorController extends Controller
             'statusCounts',
             'companies',
             'departments',
-            'branches'
+            'branches',
+            'from',
+            'to'
         ));
     }
     public function inOutReport(Request $request)
     {
         $query = $this->companyScope(Visitor::query())->with(['company', 'department', 'branch', 'logs']);
 
-        if ($request->filled('from') || $request->filled('to')) {
-            $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
-            $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('In/Out Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
 
-            $query->where(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
-                ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
-            })->orWhere(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
-                ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate = Carbon::parse($to)->endOfDay();
+
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->where(function ($q) use ($currentDate) {
+                $todayStart = Carbon::parse($currentDate)->startOfDay();
+                $todayEnd = Carbon::parse($currentDate)->endOfDay();
+                $q->whereBetween('in_time', [$todayStart, $todayEnd])
+                  ->orWhereBetween('out_time', [$todayStart, $todayEnd]);
             });
+            \Log::info('Using default current date filter');
         }
 
         // Apply company filter
@@ -1751,7 +2064,9 @@ class VisitorController extends Controller
             'visits', 
             'companies', 
             'departments', 
-            'branches'
+            'branches',
+            'from',
+            'to'
         ));
     }
 
@@ -1762,25 +2077,70 @@ class VisitorController extends Controller
     {
         $query = $this->companyScope(Visitor::query())
             ->with(['department', 'approvedBy', 'rejectedBy', 'company', 'branch'])
-            ->whereIn('status', ['approved', 'rejected'])
             ->latest('updated_at');
 
-        // Apply date range filter
-        $this->applyDateRange($query, 'updated_at', $request);
+        // Apply status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+            \Log::info('Approval Report - Status filter applied: ' . $request->status);
+        } else {
+            // Temporarily show ALL statuses to see what's in the database
+            // $query->whereIn('status', ['Approved', 'Rejected']);
+            \Log::info('Approval Report - Showing ALL statuses for debugging');
+        }
+
+        // Apply branch filter (handle array from dropdown checkboxes)
+        if ($request->filled('branch_ids')) {
+            $query->whereIn('branch_id', $request->branch_ids);
+            \Log::info('Approval Report - Branch IDs filter: ' . json_encode($request->branch_ids));
+        }
+
+        // Apply department filter (handle array from dropdown checkboxes)
+        if ($request->filled('department_ids')) {
+            $query->whereIn('department_id', $request->department_ids);
+            \Log::info('Approval Report - Department IDs filter: ' . json_encode($request->department_ids));
+        }
+
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Approval Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('updated_at', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('updated_at', '>=', $from);
+                $query->whereDate('updated_at', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('updated_at', '=', $currentDate);
+            \Log::info('Using default current date filter');
+        }
+
+        // Log the final SQL query for debugging
+        \Log::info('Approval Report Query: ' . $query->toSql());
+        \Log::info('Approval Report Bindings: ' . json_encode($query->getBindings()));
 
         // Apply company filter if provided and user is superadmin
         if ($request->filled('company_id') && auth()->user()->role === 'superadmin') {
             $query->where('company_id', $request->company_id);
-        }
-
-        // Apply department filter if provided
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
-        
-        // Apply branch filter if provided
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
         }
 
         // Get companies for filter dropdown
@@ -1804,11 +2164,16 @@ class VisitorController extends Controller
 
         $visitors = $query->paginate(10)->appends($request->query());
 
+        // Log the total count for debugging
+        \Log::info('Approval Report - Total visitors found: ' . $visitors->total());
+
         return view('visitors.approval_status', compact(
             'visitors',
             'companies',
             'departments',
-            'branches'
+            'branches',
+            'from',
+            'to'
         ));
     }
 
@@ -1828,7 +2193,38 @@ class VisitorController extends Controller
             $query->where('status', $request->status);
         }
 
-        $this->applyDateRange($query, 'created_at', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Security Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('created_at', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('created_at', '>=', $from);
+                $query->whereDate('created_at', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('created_at', '=', $currentDate);
+            \Log::info('Using default current date filter');
+        }
 
     $securityChecks = $query->paginate(10)->appends($request->query());
     
@@ -1843,7 +2239,7 @@ class VisitorController extends Controller
             ->toArray();
     }
 
-    return view('visitors.security_checkpoints', compact('securityChecks', 'companies', 'departments'));
+    return view('visitors.security_checkpoints', compact('securityChecks', 'companies', 'departments', 'from', 'to'));
     }
 
     // Hourly visitors report (counts of in/out per hour over a date range)
@@ -1852,26 +2248,54 @@ class VisitorController extends Controller
     public function hourlyReport(Request $request)
     {
         $query = Visitor::whereNotNull('in_time')
+            ->leftJoin('branches', 'visitors.branch_id', '=', 'branches.id')
             ->select(
                 DB::raw('HOUR(in_time) as hour'),
                 DB::raw('DATE(in_time) as date'),
+                'branches.name as branch_name',
                 DB::raw('COUNT(*) as count')
             )
-            ->groupBy('hour', 'date')
+            ->groupBy('hour', 'date', 'branches.name')
+            ->orderBy('branches.name')
             ->orderBy('date')
             ->orderBy('hour');
 
-        // Apply date range filter
-        if ($request->filled('from')) {
-            $query->whereDate('in_time', '>=', $request->from);
-        }
-        if ($request->filled('to')) {
-            $query->whereDate('in_time', '<=', $request->to);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        // Debug logging
+        \Log::info('Hourly Report Date Filter:', [
+            'request_from' => $request->input('from'),
+            'request_to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
+            'current_date' => $currentDate,
+            'from_equals_current' => ($from === $currentDate),
+            'to_equals_current' => ($to === $currentDate)
+        ]);
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('in_time', '=', $from);
+                \Log::info('Using single date filter for current date');
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('in_time', '>=', $from);
+                $query->whereDate('in_time', '<=', $to);
+                \Log::info('Using date range filter');
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('in_time', '=', $currentDate);
+            \Log::info('Using default current date filter');
         }
 
         // Apply company filter
         if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
+            $query->where('visitors.company_id', $request->company_id);
         }
 
         // Apply department filter
@@ -1881,12 +2305,12 @@ class VisitorController extends Controller
 
         // Apply branch filter
         if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+            $query->where('visitors.branch_id', $request->branch_id);
         }
 
         // Apply company filter for non-superadmins
         if (auth()->user()->role !== 'superadmin') {
-            $query->where('company_id', auth()->user()->company_id);
+            $query->where('visitors.company_id', auth()->user()->company_id);
 
             // If user has specific departments assigned
             if (auth()->user()->departments->isNotEmpty()) {
@@ -1901,6 +2325,7 @@ class VisitorController extends Controller
         $series = $hourlyData->map(function($item) {
             return [
                 'hour' => $item->date . ' ' . str_pad($item->hour, 2, '0', STR_PAD_LEFT) . ':00:00',
+                'branch_name' => $item->branch_name ?? 'Unknown Branch',
                 'count' => $item->count
             ];
         })->toArray();
@@ -1919,8 +2344,8 @@ class VisitorController extends Controller
 
         return view('visitors.reports_hourly', [
             'series' => $series,
-            'from' => $request->input('from', now()->startOfDay()->format('Y-m-d')),
-            'to' => $request->input('to', now()->endOfDay()->format('Y-m-d')),
+            'from' => $request->input('from', now()->format('Y-m-d')),
+            'to' => $request->input('to', now()->format('Y-m-d')),
             'companies' => $companies->pluck('name', 'id'),
             'departments' => $departments->pluck('name', 'id'),
             'branches' => $branches,
@@ -1934,7 +2359,24 @@ class VisitorController extends Controller
             Visitor::with(['category', 'department'])
         )->latest('in_time');
 
-        $this->applyDateRange($query, 'in_time', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('in_time', '=', $from);
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('in_time', '>=', $from);
+                $query->whereDate('in_time', '<=', $to);
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('in_time', '=', $currentDate);
+        }
 
         $visitors = $query->get();
 
@@ -2012,16 +2454,35 @@ class VisitorController extends Controller
     {
         $query = $this->companyScope(Visitor::query());
 
-        if ($request->filled('from') || $request->filled('to')) {
-            $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
-            $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()   : null;
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate = Carbon::parse($to)->endOfDay();
 
-            $query->where(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('in_time', '>=', $from))
-                  ->when($to,   fn($qq) => $qq->where('in_time', '<=', $to));
-            })->orWhere(function ($q) use ($from, $to) {
-                $q->when($from, fn($qq) => $qq->where('out_time', '>=', $from))
-                  ->when($to,   fn($qq) => $qq->where('out_time', '<=', $to));
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+            } else {
+                // If date range is specified, use the range
+                $query->where(function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('in_time', [$fromDate, $toDate])
+                      ->orWhereBetween('out_time', [$fromDate, $toDate]);
+                });
+            }
+        } else {
+            // Default to current date
+            $query->where(function ($q) use ($currentDate) {
+                $todayStart = Carbon::parse($currentDate)->startOfDay();
+                $todayEnd = Carbon::parse($currentDate)->endOfDay();
+                $q->whereBetween('in_time', [$todayStart, $todayEnd])
+                  ->orWhereBetween('out_time', [$todayStart, $todayEnd]);
             });
         }
 
@@ -2089,7 +2550,24 @@ class VisitorController extends Controller
             $query->where('status', $request->status);
         }
 
-        $this->applyDateRange($query, 'created_at', $request);
+        // Apply date range filter - default to current date
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        $currentDate = now()->format('Y-m-d');
+        
+        if ($from && $to) {
+            if ($from === $to && $from === $currentDate) {
+                // If both dates are current date, show only current date
+                $query->whereDate('created_at', '=', $from);
+            } else {
+                // If date range is specified, use the range
+                $query->whereDate('created_at', '>=', $from);
+                $query->whereDate('created_at', '<=', $to);
+            }
+        } else {
+            // Default to current date
+            $query->whereDate('created_at', '=', $currentDate);
+        }
 
         $checks = $query->get();
 
@@ -2125,10 +2603,11 @@ class VisitorController extends Controller
 
     public function hourlyReportExport(Request $request)
     {
-        $from = $request->input('from');
-        $to   = $request->input('to');
-        $start = $from ? Carbon::parse($from)->startOfDay() : Carbon::today()->startOfDay();
-        $end   = $to   ? Carbon::parse($to)->endOfDay()   : Carbon::today()->endOfDay();
+        // Default to current date if no dates specified
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to   = $request->input('to', now()->format('Y-m-d'));
+        $start = Carbon::parse($from)->startOfDay();
+        $end   = Carbon::parse($to)->endOfDay();
 
         $selectedCompany = $request->input('company_id');
         $selectedBranch  = $request->input('branch_id');
@@ -2211,12 +2690,13 @@ class VisitorController extends Controller
         // Prepare data for view
         $isSuper = $this->isSuper();
         $companies = [];
+        $actionRoute = 'visitors.update'; // Route for approve/reject actions
         
         if ($isSuper) {
             $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
         }
 
-        return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies'));
+        return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies', 'actionRoute'));
     }
 
     /**

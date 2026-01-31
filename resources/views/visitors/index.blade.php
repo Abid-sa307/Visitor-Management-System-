@@ -3,6 +3,21 @@
 @push('styles')
 <style>
   .checkin-btn { min-width: 110px; }
+  .btn-group .action-btn {
+    border-radius: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.3) !important;
+  }
+  .btn-group .action-btn:last-child {
+    border-right: none !important;
+  }
+  .btn-group .action-btn:first-child {
+    border-top-left-radius: 6px !important;
+    border-bottom-left-radius: 6px !important;
+  }
+  .btn-group .action-btn:last-child {
+    border-top-right-radius: 6px !important;
+    border-bottom-right-radius: 6px !important;
+  }
   .face-verification-container {
     min-height: 300px;
     display: flex;
@@ -110,11 +125,12 @@
         <th>Name</th>
         <th>Company</th>
         <th>Branch</th>
+        <th>Department</th>
         <th>Email</th>
         <th>Visit Date</th>
         <th>Approval Status</th>
-        <th>In/Out Status</th>
-        <th style="min-width: 180px;">Actions</th>
+        <th>Mark In/Out</th>
+        <th style="min-width: 220px;">Actions</th>
     </tr>
 </thead>
 <tbody>
@@ -123,13 +139,26 @@
             <td>{{ $visitor->name }}</td>
             <td>{{ $visitor->company->name ?? '—' }}</td>
             <td>{{ $visitor->branch->name ?? '—' }}</td>
+            <td>{{ $visitor->department->name ?? '—' }}</td>
             <td>{{ $visitor->email ?? '—' }}</td>
-            <td>{{ $visitor->visit_date ? 'Jan 08, 2026' : '—' }}</td>
+            <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
             <td>
                 <span class="badge bg-warning">{{ $visitor->status ?? 'Pending' }}</span>
             </td>
             <td>
-                <span class="badge bg-secondary">Pending</span>
+                @php
+                    $status = 'Pending';
+                    $badgeClass = 'bg-secondary';
+                    
+                    if ($visitor->in_time && !$visitor->out_time) {
+                        $status = 'Marked In';
+                        $badgeClass = 'bg-success';
+                    } elseif ($visitor->in_time && $visitor->out_time) {
+                        $status = 'Completed';
+                        $badgeClass = 'bg-primary';
+                    }
+                @endphp
+                <span class="badge {{ $badgeClass }}">{{ $status }}</span>
             </td>
               <td>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -142,7 +171,7 @@
                     $editDisabled = $isApproved || $isCompleted;
                     
                     // Pass button: unlocked only if visit form is filled
-                    $passDisabled = !$visitFormFilled || $isCompleted;
+                    $passDisabled = !$visitFormFilled;
                     
                     // Delete button: locked if completed
                     $deleteDisabled = $isCompleted;
@@ -166,16 +195,23 @@
                   {{-- Pass --}}
                   @if($passDisabled)
                     <button class="action-btn action-btn--view action-btn--icon" 
-                            title="{{ $isCompleted ? 'Pass locked (visit completed)' : 'Pass locked (visit form not filled)' }}" 
+                            title="Pass locked (visit form not filled)" 
                             disabled style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fas fa-print"></i>
                     </button>
                   @else
-                    <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
-                       class="action-btn action-btn--view action-btn--icon"
-                       title="Print Pass">
-                      <i class="fas fa-print"></i>
-                    </a>
+                    <div class="btn-group" role="group">
+                      <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
+                         class="action-btn action-btn--view action-btn--icon"
+                         title="Print Pass">
+                        <i class="fas fa-print"></i>
+                      </a>
+                      <a href="{{ route('visitors.pass.pdf', $visitor->id) }}"
+                         class="action-btn action-btn--view action-btn--icon"
+                         title="Download PDF">
+                        <i class="fas fa-file-pdf"></i>
+                      </a>
+                    </div>
                   @endif
 
                   {{-- Delete --}}
@@ -198,7 +234,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="9" class="text-muted">No visitors found.</td></tr>
+            <tr><td colspan="10" class="text-muted">No visitors found.</td></tr>
           @endforelse
         </tbody>
       </table>
@@ -468,6 +504,11 @@ function resetVerificationUI() {
   // Stop any active camera
   stopCamera();
 }
+
+// Show alert for operation hours validation
+@if(session('alert'))
+    alert('{{ session('alert') }}');
+@endif
 
 </script>
 @endpush

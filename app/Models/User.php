@@ -44,6 +44,15 @@ class User extends Authenticatable implements AuthenticatableUserContract
     public function branches()    { return $this->belongsToMany(Branch::class)->withTimestamps(); }
     public function departments() { return $this->belongsToMany(Department::class); }
     public function department()  { return $this->belongsTo(Department::class, 'department_id'); } // optional single
+    
+    /**
+     * Get the entity's notifications.
+     */
+    public function notifications()
+    {
+        return $this->morphMany(\App\Models\DatabaseNotification::class, 'notifiable')
+                    ->orderBy('created_at', 'desc');
+    }
 
     /**
      * Check if OTP verification is required for this user

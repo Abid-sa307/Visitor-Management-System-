@@ -145,6 +145,7 @@
                             <th>Branch</th>
                             <th>Department</th>
                             <th>Status</th>
+                            <th>Security Type</th>
                             <th>Last Visit</th>
                             <th>Action</th>
                         </tr>
@@ -161,11 +162,14 @@
                                 $toggleRoute = $isCompany ? 'company.security-checks.toggle' : 'security-checks.toggle';
                                 $hasSecurityCheckin = $visitor->security_checkin_time !== null;
                                 $hasSecurityCheckout = $visitor->security_checkout_time !== null;
-                                $canUndoCheckin = $hasSecurityCheckin && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
+                                $canUndoCheckin = $hasSecurityCheckin && !$visitor->in_time && \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) <= 30;
                                 $canUndoCheckout = $hasSecurityCheckout && \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) <= 30;
                                 $securityCheckinType = $visitor->company ? $visitor->company->security_checkin_type : 'both';
+                                
+                                // Fix: Handle all security check types properly
                                 $showCheckinButton = in_array($securityCheckinType, ['checkin', 'both']);
                                 $showCheckoutButton = in_array($securityCheckinType, ['checkout', 'both']);
+                                $showNoSecurityButtons = $securityCheckinType === 'none';
                             @endphp
                             <tr>
                                 <td class="fw-semibold">{{ $visitor->name }}</td>
@@ -182,6 +186,39 @@
                                     </span>
                                 </td>
                                 <td>
+                                    @if($visitor->company)
+                                        @if(!$visitor->company->security_check_service)
+                                            <span class="badge bg-light text-dark border border-secondary">
+                                                <i class="fas fa-ban"></i> Disabled
+                                            </span>
+                                        @else
+                                            @switch($visitor->company->security_checkin_type)
+                                                @case('checkin')
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-sign-in-alt"></i> Check In Only
+                                                    </span>
+                                                    @break
+                                                @case('checkout')
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-sign-out-alt"></i> Check Out Only
+                                                    </span>
+                                                    @break
+                                                @case('both')
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-exchange-alt"></i> Both
+                                                    </span>
+                                                    @break
+                                                @default
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-shield-alt"></i> None
+                                                    </span>
+                                            @endswitch
+                                        @endif
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
                                     @if($visitor->in_time)
                                         {{ \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d H:i') }}
                                     @else
@@ -189,7 +226,12 @@
                                     @endif
                                 </td>
                                 <td class="d-flex gap-2">
-                                    @if(!$hasSecurityCheckin && $showCheckinButton)
+                                    @if($showNoSecurityButtons)
+                                        {{-- Company has 'none' security check type - no buttons --}}
+                                        <span class="text-muted" title="No security checks required">
+                                            <i class="fas fa-shield-alt"></i> No Security
+                                        </span>
+                                    @elseif(!$hasSecurityCheckin && $showCheckinButton)
                                         {{-- Security Check-in Button --}}
                                         <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
                                             @csrf
@@ -198,16 +240,17 @@
                                                 <i class="fas fa-sign-in-alt me-1"></i> Check In
                                             </button>
                                         </form>
-                                    @elseif(!$hasSecurityCheckout && $showCheckoutButton)
-                                        {{-- Security Check-out Button --}}
-                                        @if($visitor->in_time && !$visitor->out_time)
+                                    
+                                    @elseif($hasSecurityCheckin && !$hasSecurityCheckout)
+                                        {{-- Show Check-out and Undo Check-in buttons --}}
+                                        @if($showCheckoutButton && $visitor->security_checkin_time && !$visitor->security_checkout_time)
                                             <a href="{{ route($checkoutRoute, $visitor->id) }}" class="btn btn-sm btn-warning" title="Security Check-out Form">
                                                 <i class="fas fa-clipboard-check me-1"></i> Check Out
-                                            </a>
+                                            </a> 
                                         @endif
                                         
                                         {{-- Undo Check-in Button --}}
-                                        @if($canUndoCheckin && $showCheckinButton)
+                                        @if($canUndoCheckin)
                                             <form action="{{ route($toggleRoute, $visitor->id) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 <input type="hidden" name="action" value="undo_checkin">
@@ -216,6 +259,11 @@
                                                 </button>
                                             </form>
                                         @endif
+                                    @elseif(!$hasSecurityCheckin && !$hasSecurityCheckout && $showCheckoutButton)
+                                        {{-- Check-out only mode - show check-out button without requiring check-in --}}
+                                        <a href="{{ route($checkoutRoute, $visitor->id) }}" class="btn btn-sm btn-warning" title="Security Check-out Form">
+                                            <i class="fas fa-clipboard-check me-1"></i> Check Out
+                                        </a>
                                     @elseif($hasSecurityCheckout)
                                         {{-- Both completed - show undo checkout if available --}}
                                         @if($canUndoCheckout)
