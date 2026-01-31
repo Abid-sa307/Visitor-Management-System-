@@ -345,15 +345,18 @@ Route::prefix('public')->name('public.')->group(function () {
     Route::match(['post', 'put'], '/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [\App\Http\Controllers\QRController::class, 'storePublicVisit'])
         ->name('visitor.visit.store.branch');
     
+    // IMPORTANT: More specific routes must come before general routes
+    // Edit routes (with /edit suffix) must be defined before the general visitor show route
+    
+    // Show edit form for existing visits with branch (most specific)
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
+        ->name('visitor.visit.edit.branch');
+    
     // Show edit form for existing visits
     Route::get('/companies/{company}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
         ->name('visitor.visit.edit');
     
-    // Show edit form for existing visits with branch
-    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/edit', [\App\Http\Controllers\QRController::class, 'editPublicVisit'])
-        ->name('visitor.visit.edit.branch');
-    
-    // Show visitor details
+    // Show visitor details (less specific - must come AFTER edit routes)
     Route::get('/companies/{company}/visitors/{visitor}', [\App\Http\Controllers\QRManagementController::class, 'publicVisitorIndex'])
         ->name('visitor.show');
     

@@ -1,19 +1,6 @@
-// Simple notification system - check session flag on page load
-(function () {
-    'use strict';
-
-    // Get notification data from PHP session (passed via blade)
-    const shouldNotify = window.visitorNotificationData?.trigger || false;
-    const message = window.visitorNotificationData?.message || 'New visitor activity';
-
-    if (!shouldNotify) return;
-
+// Simple notification system
+window.playSimpleNotification = function (message = 'New visitor activity') {
     console.log('Notification triggered:', message);
-
-    // Request permission if needed
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
 
     // Show browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -66,4 +53,22 @@
             console.error('Audio failed:', e);
         }
     }
+};
+
+(function () {
+    'use strict';
+
+    // Get notification data from PHP session (passed via blade)
+    const shouldNotify = window.visitorNotificationData?.trigger || false;
+    const message = window.visitorNotificationData?.message || 'New visitor activity';
+
+    if (!shouldNotify) return;
+
+    // Request permission if needed
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+
+    // Trigger the notification
+    window.playSimpleNotification(message);
 })();

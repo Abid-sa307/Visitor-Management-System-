@@ -22,6 +22,28 @@
         <div class="min-vh-100 d-flex flex-column">
             <!-- Main Content -->
             <main class="flex-grow-1 py-4">
+                <div class="container">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
+                    @if(session('status'))
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            {{ session('status') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+                </div>
                 @yield('content')
             </main>
 
@@ -37,7 +59,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <!-- Visitor Notification System -->
-        <script src="{{ asset('js/visitor-notification.js') }}"></script>
         @include('partials.visitor-notification')
         
         @stack('scripts')

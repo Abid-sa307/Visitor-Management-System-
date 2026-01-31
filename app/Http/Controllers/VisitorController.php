@@ -1612,7 +1612,7 @@ class VisitorController extends Controller
                 
                 $visitor->in_time = now();
                 $message = 'Visitor checked in successfully.';
-                $playNotification = true;
+                $playNotification = !$isPublicRequest;
                 
             } elseif ($action === 'out' || ($visitor->in_time && !$visitor->out_time)) {
                 // Check if visitor has completed visit form (check both visit_completed_at and required fields)
@@ -1657,8 +1657,7 @@ class VisitorController extends Controller
                     $visitor->status = 'Completed';
                 }
                 $message = 'Visitor checked out successfully.';
-                $playNotification = true;
-                $playNotification = true;
+                $playNotification = !$isPublicRequest;
             }
 
             // Update status history if status changed
@@ -1680,8 +1679,8 @@ class VisitorController extends Controller
                     // Also trigger security check-out notification if applicable (though usually security check is separate)
                 }
                 
-                // Simple notification: Set session flash for frontend
-                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                // Simple notification: Set session flash for frontend (only for company users)
+                if (!$isPublicRequest && $visitor->company && $visitor->company->enable_visitor_notifications) {
                     session()->flash('play_notification', true);
                     session()->flash('notification_message', "{$visitor->name} - " . ($action === 'in' ? 'Checked In' : 'Checked Out'));
                 }

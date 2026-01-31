@@ -67,9 +67,10 @@
                                     $hasSecurityCheck = $visitor->securityChecks()->exists();
                                     $hasCheckInSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkin')->exists();
                                     $hasCheckOutSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkout')->exists();
+                                    $securityServiceEnabled = $visitor->company->security_check_service ?? false;
                                     $securityType = $visitor->company->security_checkin_type ?? '';
-                                    $needsSecurityCheckIn = in_array($securityType, ['checkin', 'both']) && !$hasCheckInSecurityCheck;
-                                    $needsSecurityCheckOut = in_array($securityType, ['checkout', 'both']) && !$hasCheckOutSecurityCheck;
+                                    $needsSecurityCheckIn = $securityServiceEnabled && in_array($securityType, ['checkin', 'both']) && !$hasCheckInSecurityCheck;
+                                    $needsSecurityCheckOut = $securityServiceEnabled && in_array($securityType, ['checkout', 'both']) && !$hasCheckOutSecurityCheck;
                                     $hasFaceRecognition = $visitor->company && $visitor->company->face_recognition_enabled;
                                     $hasFaceEncoding = !empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]';
                                     $markInOutEnabled = $visitor->company && $visitor->company->mark_in_out_in_qr_flow;
@@ -232,7 +233,7 @@
                                     </div>
                                 @endif
                                 @if($visitor->status === 'Pending')
-                                    <a href="{{ isset($branch) && $branch ? route('public.visitor.visit.edit.branch', ['company' => $company, 'branch' => $branch, 'visitor' => $visitor]) : route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
+                                    <a href="{{ isset($branch) && $branch ? route('public.visitor.visit.edit.branch', ['company' => $company->id, 'branch' => $branch->id, 'visitor' => $visitor->id]) : route('public.visitor.visit.edit', ['company' => $company->id, 'visitor' => $visitor->id]) }}" 
                                        class="btn btn-outline-primary px-4">
                                         <i class="bi bi-pencil-square me-2"></i> Update Visit Information
                                     </a>
