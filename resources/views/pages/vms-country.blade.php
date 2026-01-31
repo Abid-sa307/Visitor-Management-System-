@@ -122,11 +122,17 @@
         .hero .hero-image {
             width: 100%;
             height: auto;
-            max-height: 450px;
+            max-height: 650px;
             object-fit: contain;
         }
 
-        @media (min-width: 769px) {
+          .hero-image-desktop {
+            width: 150% !important;
+            max-width: 730px !important;
+            height: auto !important;
+        }
+
+       @media (min-width: 769px) {
             .hero .hero-image {
                 margin-bottom: 160px;
             }

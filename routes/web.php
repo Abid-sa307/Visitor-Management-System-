@@ -143,6 +143,7 @@ Route::get('/temple-and-dargah', fn() => view('pages.temple-and-dargah'))->name(
 Route::get('/privacy-policy', fn() => view('pages.privacy-policy'))->name('privacy-policy');
 Route::get('/terms-of-use', fn() => view('pages.terms-of-use'))->name('terms-of-use');
 Route::get('/refund-and-cancellation', fn() => view('pages.refund-and-cancellation'))->name('refund-and-cancellation');
+Route::get('/service-agreement', fn() => view('pages.service-agreement'))->name('service-agreement');
 
 
 
@@ -733,7 +734,7 @@ Route::get('/robots.txt', function () {
     $content .= "Allow: /\n";
 
     
-    $content .= "Sitemap: " . url('/sitemap-0.xml') . "\n";
+    $content .= "Sitemap: " . url('/sitemap.xml') . "\n";
 
     return response($content, 200)
         ->header('Content-Type', 'text/plain');
