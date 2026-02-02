@@ -1,7 +1,7 @@
 <script>
     window.visitorNotificationData = {
-        trigger: {{ session('play_notification') ? 'true' : 'false' }},
-        message: "{{ session('notification_message') ?? 'New visitor activity' }}"
+        trigger: @json(session('play_notification') ? true : false),
+        message: @json(session('notification_message') ?? 'New visitor activity')
     };
 </script>
 <script src="{{ asset('js/simple-notification.js') }}"></script>

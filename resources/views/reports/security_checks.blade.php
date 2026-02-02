@@ -317,67 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Format date as YYYY-MM-DD
-    function formatDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    // Get the first day of the month
-    function getFirstDayOfMonth(date) {
-        return new Date(date.getFullYear(), date.getMonth(), 1);
-    }
-
-    // Get the last day of the month
-    function getLastDayOfMonth(date) {
-        return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    }
-
-    // Handle quick date buttons
-    document.querySelectorAll('.quick-date').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const range = this.dataset.range;
-            const today = new Date();
-            let from, to;
-
-            switch(range) {
-                case 'today':
-                    from = to = new Date();
-                    break;
-                case 'yesterday':
-                    const yesterday = new Date();
-                    yesterday.setDate(today.getDate() - 1);
-                    from = to = yesterday;
-                    break;
-                case 'this-month':
-                    from = getFirstDayOfMonth(today);
-                    to = getLastDayOfMonth(today);
-                    break;
-                case 'last-month':
-                    const lastMonth = new Date(today);
-                    lastMonth.setMonth(today.getMonth() - 1);
-                    from = getFirstDayOfMonth(lastMonth);
-                    to = getLastDayOfMonth(lastMonth);
-                    break;
-                default:
-                    return;
-            }
-
-            // Update input fields
-            document.getElementById('from').value = formatDate(from);
-            document.getElementById('to').value = formatDate(to);
-            
-            // Submit the form
-            document.getElementById('filterForm').submit();
-        });
-    });
-
-    // Handle company change to load departments and branches
+    // Cascading dropdown logic for Company -> Branch -> Department
     const companySelect = document.getElementById('company_id');
     const departmentSelect = document.getElementById('department_id');
     const branchSelect = document.getElementById('branch_id');
@@ -424,23 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Validate date range
-    const fromDateInput = document.getElementById('from');
-    const toDateInput = document.getElementById('to');
-
-    if (fromDateInput && toDateInput) {
-        fromDateInput.addEventListener('change', function() {
-            if (this.value > toDateInput.value) {
-                toDateInput.value = this.value;
-            }
-        });
-
-        toDateInput.addEventListener('change', function() {
-            if (this.value < fromDateInput.value) {
-                fromDateInput.value = this.value;
-            }
-        });
-    }
+    // Tooltips and other initializations can be added here
 });
 </script>
 @endpush

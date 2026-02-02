@@ -591,23 +591,30 @@ public function storeVisit(Request $request, Company $company, $branch = null)
             $visitor->update($validated);
 
             // Send notification if enabled
-            $notificationService = new GoogleNotificationService();
-            $notificationService->sendVisitFormNotification($company, $visitor, true);
+    $notificationService = new GoogleNotificationService();
+    $notificationService->sendVisitFormNotification($company, $visitor, true);
 
-            // Redirect to public-index page with success message
-            if ($branch) {
-                return redirect()->route('public.visitor.show', [
-                    'company' => $company->id, 
-                    'branch' => $branch, 
-                    'visitor' => $visitor->id
-                ])->with('success', 'Visit details submitted successfully!');
-            } else {
-                return redirect()->route('public.visitor.show', [
-                    'company' => $company->id, 
-                    'visitor' => $visitor->id
-                ])->with('success', 'Visit details submitted successfully!');
-            }
-        }
+    // Check if user is authenticated (company user logged in)
+    if (auth()->guard('company')->check()) {
+        // Redirect authenticated company users to their visits dashboard
+        return redirect()->route('company.visits.index')
+            ->with('success', 'Visit details submitted successfully!');
+    }
+
+    // Redirect public users to visitor show page with success message
+    if ($branch) {
+        return redirect()->route('public.visitor.show', [
+            'company' => $company->id, 
+            'branch' => $branch, 
+            'visitor' => $visitor->id
+        ])->with('success', 'Visit details submitted successfully!');
+    } else {
+        return redirect()->route('public.visitor.show', [
+            'company' => $company->id, 
+            'visitor' => $visitor->id
+        ])->with('success', 'Visit details submitted successfully!');
+    }
+}
         /**
          * Show the form for editing a visitor's details (public interface)
          *

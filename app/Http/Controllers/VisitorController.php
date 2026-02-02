@@ -109,8 +109,7 @@ class VisitorController extends Controller
 
     private function isCompany(): bool
     {
-        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-        return (($u->role ?? null) === 'company');
+        return Auth::guard('company')->check();
     }
 
     // Scope queries to company for non-super admins
@@ -146,6 +145,9 @@ class VisitorController extends Controller
                 'visitors.history'    => 'company.visitors.history',
                 'visitors.entry.page' => 'company.visitors.entry.page',
                 'visitors.report'     => 'company.visitors.report',
+                'visitors.approvals'  => 'company.visitors.approvals',
+                'visitors.visit.form' => 'company.visitors.visit.form',
+                'visits.index'        => 'company.visits.index',
             ];
             if (isset($map[$name])) return $map[$name];
         }
@@ -300,6 +302,14 @@ class VisitorController extends Controller
     
     public function store(Request $request)
     {
+        \Log::info('=== VISITOR CREATE START ===', [
+            'user_guard' => auth()->guard('company')->check() ? 'company' : 'web',
+            'user_id' => auth()->guard('company')->check() ? auth()->guard('company')->id() : auth()->id(),
+            'company_id' => $request->input('company_id'),
+            'branch_id' => $request->input('branch_id'),
+            'request_data' => $request->except(['photo', 'face_image', 'documents'])
+        ]);
+        
         // Check if current time is within branch operation hours for selected branch
         if ($request->filled('branch_id')) {
             $branchId = $request->input('branch_id');
@@ -313,7 +323,7 @@ class VisitorController extends Controller
                 if ($currentTime < $startTime || $currentTime > $endTime) {
                     $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
                     
-                    return redirect()->route('visitors.index')
+                    return redirect()->route($this->panelRoute('visitors.index'))
                         ->with('error', $errorMessage)
                         ->with('alert', $errorMessage)
                         ->withInput();
@@ -448,14 +458,14 @@ class VisitorController extends Controller
             $status = 'Pending';
             $approvedAt = null;
 
-            // Don't auto-approve until visit form is completed
-            // if (!empty($validated['company_id'])) {
-            //     $company = Company::find($validated['company_id']);
-            //     if ($company && (int) $company->auto_approve_visitors === 1) {
-            //         $status = 'Approved';
-            //         $approvedAt = now();
-            //     }
-            // }
+            // Auto-approval logic
+            if (!empty($validated['company_id'])) {
+                $company = Company::find($validated['company_id']);
+                if ($company && (int) $company->auto_approve_visitors === 1) {
+                    $status = 'Approved';
+                    $approvedAt = now();
+                }
+            }
 
             $validated['status'] = $status;
             if (\Schema::hasColumn('visitors', 'approved_at')) {
@@ -563,8 +573,15 @@ class VisitorController extends Controller
             }
 
             // Always redirect to visit form after visitor creation
-            $route = $this->isSuper() ? 'visitors.visit.form' : 'company.visitors.visit.form';
+            $route = $this->panelRoute('visitors.visit.form');
             $message = 'Visitor registered successfully. Please complete the visit form.';
+            
+            \Log::info('=== VISITOR CREATE REDIRECT ===', [
+                'visitor_id' => $visitor->id,
+                'route' => $route,
+                'isSuper' => $this->isSuper(),
+                'isCompany' => $this->isCompany(),
+            ]);
 
             // Check if notification should trigger
             if ($visitor->company && $visitor->company->enable_visitor_notifications) {
@@ -999,7 +1016,7 @@ class VisitorController extends Controller
 
         // Check if visitor has already completed the visit form (and it hasn't been undone)
         if ($visitor->visit_completed_at && ($visitor->department_id || $visitor->person_to_visit || $visitor->purpose)) {
-            return redirect()->route('visitors.index')
+            return redirect()->route($this->panelRoute('visitors.index'))
                 ->with('error', 'Visitor has already completed the visit form.');
         }
 
@@ -1196,19 +1213,11 @@ class VisitorController extends Controller
                 }
 
                 // Determine the appropriate redirect route based on user type
-                if (auth()->guard('company')->check()) {
-                    return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.')
-                        ->with('play_notification', $playNotification)
-                        ->with('visitor_name', $visitor->name)
-                        ->with('notification_message', $notificationMessage);
-                } else {
-                    return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.')
-                        ->with('play_notification', $playNotification)
-                        ->with('visitor_name', $visitor->name)
-                        ->with('notification_message', $notificationMessage);
-                }
+                return redirect()->route($this->panelRoute('visits.index'))
+                    ->with('success', 'Visit submitted successfully.')
+                    ->with('play_notification', $playNotification)
+                    ->with('visitor_name', $visitor->name)
+                    ->with('notification_message', $notificationMessage);
 
             } catch (\Exception $e) {
                 \DB::rollBack();

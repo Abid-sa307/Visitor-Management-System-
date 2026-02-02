@@ -634,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const anyChecked = document.querySelectorAll('.branch-checkbox:checked').length > 0;
             const departmentButton = document.querySelector('[data-dropdown="department"]');
             const companySelect = document.getElementById('company_id');
-            const companyId = companySelect ? companySelect.value : "{{ auth()->user()->company_id ?? '' }}";
+            const companyId = companySelect ? companySelect.value : @json(auth()->user()->company_id ?? '');
             
             if (anyChecked && companyId) {
                 if (departmentButton) {

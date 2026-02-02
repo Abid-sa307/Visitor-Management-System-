@@ -386,29 +386,15 @@
             transform: rotate(180deg);
         }
         
-        /* Modern Dropdown */
-        #dateRangeDropdown {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            animation: dropIn 0.3s ease-out;
+        .date-range-dropdown.show, 
+        .dropdown-menu.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
-        
-        @keyframes dropIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
+
         /* Modern Section Headers */
-        #dateRangeDropdown .small.text-muted.fw-semibold {
+        .date-range-dropdown .small.text-muted.fw-semibold {
             color: #007bff !important;
             font-weight: 600 !important;
             font-size: 0.75rem !important;
@@ -418,7 +404,7 @@
         }
         
         /* Modern Preset Buttons */
-        #dateRangeDropdown .date-preset {
+        .date-range-dropdown .date-preset {
             background: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 10px;
@@ -427,82 +413,85 @@
             padding: 10px 16px;
             transition: all 0.2s ease;
             text-align: left;
+            display: block;
+            margin-bottom: 4px;
+            text-decoration: none;
         }
-        
-        #dateRangeDropdown .date-preset:hover {
-            background: #007bff;
-            border-color: #007bff;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+
+        #dateRangeDropdown.show {
+            display: block !important;
         }
-        
-        #dateRangeDropdown .date-preset:active {
-            transform: translateY(0);
+
+        #dateRangeDropdown .small.text-muted.fw-semibold, .date-range-dropdown .small.text-muted.fw-semibold {
+            color: #4e73df !important;
+            margin-bottom: 10px;
         }
-        
-        /* Modern Date Inputs */
-        #dateRangeDropdown .form-control {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-weight: 500;
-            transition: all 0.2s ease;
+
+        #dateRangeDropdown .date-preset, .date-range-dropdown .date-preset {
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #4e73df;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
-        
-        #dateRangeDropdown .form-control:focus {
-            background: white;
-            border-color: #007bff;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+
+        #dateRangeDropdown .date-preset:hover, .date-range-dropdown .date-preset:hover {
+            background-color: #f8f9fc;
+            border-color: #4e73df;
+            color: #2e59d9;
         }
-        
-        /* Modern Action Buttons */
-        #dateRangeDropdown .btn-outline-secondary {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            color: #6c757d;
-            font-weight: 500;
-            padding: 10px 16px;
-            transition: all 0.2s ease;
+
+        #dateRangeDropdown .date-preset:active, .date-range-dropdown .date-preset:active {
+            background-color: #eaecf4;
         }
-        
-        #dateRangeDropdown .btn-outline-secondary:hover {
-            background: #6c757d;
-            border-color: #6c757d;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+
+        #dateRangeDropdown .form-control, .date-range-dropdown .form-control {
+            border-radius: 8px;
+            border: 1px solid #d1d3e2;
+            padding: 8px 12px;
+            font-size: 14px;
         }
-        
-        #dateRangeDropdown .btn-primary {
-            background: #007bff;
+
+        #dateRangeDropdown .form-control:focus, .date-range-dropdown .form-control:focus {
+            border-color: #bac8f3;
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+
+        #dateRangeDropdown .btn-outline-secondary, .date-range-dropdown .btn-outline-secondary {
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 14px;
+            color: #858796;
+            border: 1px solid #d1d3e2;
+        }
+
+        #dateRangeDropdown .btn-outline-secondary:hover, .date-range-dropdown .btn-outline-secondary:hover {
+            background-color: #f8f9fc;
+            color: #5a5c69;
+        }
+
+        #dateRangeDropdown .btn-primary, .date-range-dropdown .btn-primary {
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 14px;
+            background-color: #4e73df;
             border: none;
-            border-radius: 10px;
-            color: white;
-            font-weight: 500;
-            padding: 10px 16px;
-            transition: all 0.2s ease;
         }
-        
-        #dateRangeDropdown .btn-primary:hover {
-            background: #0056b3;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+
+        #dateRangeDropdown .btn-primary:hover, .date-range-dropdown .btn-primary:hover {
+            background-color: #2e59d9;
+            box-shadow: 0 4px 12px rgba(78, 115, 223, 0.35);
         }
-        
-        /* Responsive Design */
+
         @media (max-width: 768px) {
-            .date-range-picker {
-                font-size: 0.875rem;
-                padding: 10px 14px;
-            }
-            
-            #dateRangeDropdown {
-                min-width: 260px;
-                margin-left: -10px;
-                margin-right: -10px;
+            #dateRangeDropdown, .date-range-dropdown {
+                width: 100%;
+                min-width: unset;
+                left: 0 !important;
+                right: 0 !important;
             }
         }
     </style>
@@ -760,14 +749,6 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Simple Notification System -->
-    <script>
-        window.visitorNotificationData = {
-            trigger: {{ session('play_notification') ? 'true' : 'false' }},
-            message: '{{ session('notification_message', 'New visitor activity') }}'
-        };
-    </script>
-    <script src="{{ asset('js/simple-notification.js') }}?v={{ time() }}"></script>
     @include('partials.visitor-notification')
 
     <script>
@@ -1008,7 +989,7 @@
     
     @if($playNotification)
         <script>
-            console.log('🔔 NOTIFICATION TRIGGERED: {{ $notificationMessage }}');
+            console.log('🔔 NOTIFICATION TRIGGERED:', @json($notificationMessage));
             
             // Enhanced notification system
             function showVisitorNotification() {
@@ -1034,7 +1015,7 @@
                         <span style="font-size: 24px; margin-right: 10px;">🔔</span>
                         <strong style="font-size: 16px;">Visitor Notification</strong>
                     </div>
-                    <div style="font-size: 14px; margin-bottom: 15px;">{{ $notificationMessage }}</div>
+                    <div style="font-size: 14px; margin-bottom: 15px;">${ @json($notificationMessage) }</div>
                     <div style="display: flex; gap: 10px;">
                         <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">Dismiss</button>
                         <button onclick="playNotificationSound()" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">🔊 Play Sound</button>
@@ -1119,10 +1100,10 @@
             function showBrowserNotification() {
                 if ('Notification' in window && Notification.permission === 'granted') {
                     const notification = new Notification('🔔 Visitor Management System', {
-                        body: '{{ $notificationMessage }}',
+                        body: @json($notificationMessage),
                         icon: '/favicon.ico',
                         badge: '/favicon.ico',
-                        tag: 'visitor-{{ $visitorName }}-' + Date.now(),
+                        tag: 'visitor-' + @json($visitorName) + '-' + Date.now(),
                         requireInteraction: true
                     });
                     

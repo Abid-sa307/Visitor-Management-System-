@@ -1,22 +1,26 @@
 @php
-    $from = $from ?? request('from', now()->format('Y-m-d'));
-    $to = $to ?? request('to', now()->format('Y-m-d'));
+    $from = ($from ?: request('from')) ?: now()->format('Y-m-d');
+    $to = ($to ?: request('to')) ?: now()->format('Y-m-d');
+    $instanceId = 'date_range_' . uniqid();
+    $name = $name ?? 'date_range';
 @endphp
 
-<div class="basic-date-range-picker">
+<div class="basic-date-range-picker" id="{{ $instanceId }}">
     <div class="position-relative">
         <button type="button" 
-                id="dateRangeToggle"
-                class="date-range-picker d-flex align-items-center gap-2 w-100">
+                class="date-range-toggle date-range-picker d-flex align-items-center gap-2 w-100">
             <i class="fas fa-calendar-alt"></i>
-            <span id="dateRangeDisplay">Select date range</span>
+            <span class="date-range-display">Select date range</span>
             <i class="fas fa-chevron-down ms-auto"></i>
         </button>
         
+        <!-- Hidden Inputs - Ensuring they have unique IDs for external scripts -->
+        <input type="hidden" name="from" id="{{ $instanceId }}_from" value="{{ $from }}">
+        <input type="hidden" name="to" id="{{ $instanceId }}_to" value="{{ $to }}">
+
         <!-- Dropdown Content -->
-        <div id="dateRangeDropdown" 
-             class="position-absolute top-100 start-0 mt-2 bg-white border rounded-3 shadow-lg p-3 d-none"
-             style="z-index: 1050; min-width: 280px; border: 2px solid rgba(102, 126, 234, 0.2); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);">
+        <div class="date-range-dropdown position-absolute mt-2 bg-white border rounded-3 shadow-lg p-3"
+             style="z-index: 1050; min-width: 280px; border: 2px solid rgba(102, 126, 234, 0.2); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); top: 100%; left: 0;">
             
             <!-- Preset Options -->
             <div class="mb-3">
@@ -41,18 +45,18 @@
             <div class="mb-3">
                 <div class="small text-muted mb-2 fw-semibold" style="color: #667eea; text-transform: uppercase; letter-spacing: 0.5px;">Custom Range</div>
                 <div class="d-flex gap-2 align-items-center">
-                    <input type="date" id="fromDateInput" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
+                    <input type="date" class="from-date-input form-control form-control-sm" value="{{ $from }}" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
                     <span class="text-muted" style="font-weight: 500;">to</span>
-                    <input type="date" id="toDateInput" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
+                    <input type="date" class="to-date-input form-control form-control-sm" value="{{ $to }}" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
                 </div>
             </div>
             
             <!-- Action Buttons -->
             <div class="d-flex gap-2">
-                <button type="button" id="resetDates" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
+                <button type="button" class="reset-dates btn btn-sm btn-outline-secondary" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
                     <i class="fas fa-undo"></i> Reset
                 </button>
-                <button type="button" id="applyDates" class="btn btn-sm btn-primary flex-grow-1">
+                <button type="button" class="apply-dates btn btn-sm btn-primary flex-grow-1">
                     Apply
                 </button>
             </div>
@@ -63,38 +67,67 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const toggle = document.getElementById('dateRangeToggle');
-    const dropdown = document.getElementById('dateRangeDropdown');
-    const display = document.getElementById('dateRangeDisplay');
-    const fromInput = document.getElementById('fromDateInput');
-    const toInput = document.getElementById('toDateInput');
-    const presetButtons = document.querySelectorAll('.date-preset');
-    const resetBtn = document.getElementById('resetDates');
-    const applyBtn = document.getElementById('applyDates');
+    const container = document.getElementById('{{ $instanceId }}');
+    if (!container) return;
+
+    const toggle = container.querySelector('.date-range-toggle');
+    const dropdown = container.querySelector('.date-range-dropdown');
+    const display = container.querySelector('.date-range-display');
+    const fromInput = container.querySelector('.from-date-input');
+    const toInput = container.querySelector('.to-date-input');
+    const hiddenFrom = container.querySelector('input[name="from"]');
+    const hiddenTo = container.querySelector('input[name="to"]');
+    const presetButtons = container.querySelectorAll('.date-preset');
+    const resetBtn = container.querySelector('.reset-dates');
+    const applyBtn = container.querySelector('.apply-dates');
     
+    // Initial state
+    dropdown.style.display = 'none';
+    console.log('📅 DatePicker init: ' + container.id);
+
     // Set initial values
-    const initialFrom = '{{ $from }}';
-    const initialTo = '{{ $to }}';
-    fromInput.value = initialFrom;
-    toInput.value = initialTo;
+    const initialFrom = @json($from);
+    const initialTo = @json($to);
+    console.log('📅 From Blade:', initialFrom, 'To Blade:', initialTo);
+    
+    if (fromInput && initialFrom) fromInput.value = initialFrom;
+    if (toInput && initialTo) toInput.value = initialTo;
+    
+    console.log('📅 Input values after init:', fromInput ? fromInput.value : 'N/A', toInput ? toInput.value : 'N/A');
+    
     updateDisplay();
     
     // Toggle dropdown
     toggle.addEventListener('click', function(e) {
+        console.log('Date range toggle clicked for ' + container.id);
         e.preventDefault();
-        dropdown.classList.toggle('d-none');
+        e.stopPropagation();
+        
+        // Close other dropdowns
+        document.querySelectorAll('.date-range-dropdown').forEach(el => {
+            if (el !== dropdown) el.style.display = 'none';
+        });
+
+        const isShowing = dropdown.style.display === 'none';
+        dropdown.style.display = isShowing ? 'block' : 'none';
+        console.log('Dropdown display set to: ' + dropdown.style.display);
+        toggle.setAttribute('aria-expanded', isShowing);
     });
     
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.basic-date-range-picker')) {
-            dropdown.classList.add('d-none');
+        if (!container.contains(e.target)) {
+            dropdown.style.display = 'none';
+            toggle.setAttribute('aria-expanded', 'false');
         }
     });
     
     // Handle preset buttons
     presetButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const preset = this.dataset.preset;
             const today = new Date();
             let from, to;
@@ -118,52 +151,65 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
             }
             
-            fromInput.value = formatDateForInput(from);
-            toInput.value = formatDateForInput(to);
+            if (fromInput) fromInput.value = formatDateForInput(from);
+            if (toInput) toInput.value = formatDateForInput(to);
             updateDisplay();
-            dropdown.classList.add('d-none');
+            dropdown.style.display = 'none';
             submitForm();
         });
     });
     
     // Handle reset
-    resetBtn.addEventListener('click', function() {
-        fromInput.value = '';
-        toInput.value = '';
-        updateDisplay();
-        dropdown.classList.add('d-none');
-        submitForm();
-    });
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (fromInput) fromInput.value = '';
+            if (toInput) toInput.value = '';
+            updateDisplay();
+            dropdown.style.display = 'none';
+            submitForm();
+        });
+    }
     
     // Handle apply
-    applyBtn.addEventListener('click', function() {
-        if (fromInput.value && toInput.value) {
-            updateDisplay();
-            dropdown.classList.add('d-none');
-            submitForm();
-        }
-    });
+    if (applyBtn) {
+        applyBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (fromInput && toInput && fromInput.value && toInput.value) {
+                updateDisplay();
+                dropdown.style.display = 'none';
+                submitForm();
+            }
+        });
+    }
     
     // Auto-submit on date change
-    fromInput.addEventListener('change', function() {
-        if (this.value && toInput.value) {
-            updateDisplay();
-            submitForm();
-        }
-    });
+    if (fromInput) {
+        fromInput.addEventListener('change', function() {
+            if (this.value && toInput && toInput.value) {
+                updateDisplay();
+            }
+        });
+    }
     
-    toInput.addEventListener('change', function() {
-        if (this.value && fromInput.value) {
-            updateDisplay();
-            submitForm();
-        }
-    });
+    if (toInput) {
+        toInput.addEventListener('change', function() {
+            if (this.value && fromInput && fromInput.value) {
+                updateDisplay();
+            }
+        });
+    }
     
     function updateDisplay() {
-        if (!fromInput.value && !toInput.value) {
+        if (!display) return;
+        if (!fromInput || !toInput || (!fromInput.value && !toInput.value)) {
             display.innerHTML = 'Select date range';
+        } else if (fromInput.value === toInput.value) {
+            display.innerHTML = formatDate(fromInput.value);
         } else {
-            display.innerHTML = formatDate(toInput.value);
+            display.innerHTML = `${formatDate(fromInput.value)} - ${formatDate(toInput.value)}`;
         }
     }
     
@@ -181,27 +227,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function submitForm() {
-        const form = document.querySelector('.basic-date-range-picker').closest('form');
-        if (form) {
-            let fromHidden = form.querySelector('input[name="from"]');
-            let toHidden = form.querySelector('input[name="to"]');
-            
-            if (!fromHidden) {
-                fromHidden = document.createElement('input');
-                fromHidden.type = 'hidden';
-                fromHidden.name = 'from';
-                form.appendChild(fromHidden);
-            }
-            
-            if (!toHidden) {
-                toHidden = document.createElement('input');
-                toHidden.type = 'hidden';
-                toHidden.name = 'to';
-                form.appendChild(toHidden);
-            }
-            
-            fromHidden.value = fromInput.value;
-            toHidden.value = toInput.value;
+        const form = container.closest('form');
+        if (form && hiddenFrom && hiddenTo && fromInput && toInput) {
+            hiddenFrom.value = fromInput.value;
+            hiddenTo.value = toInput.value;
             form.submit();
         }
     }
@@ -221,6 +250,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     .basic-date-range-picker .position-absolute {
         border-radius: 0.75rem !important;
+    }
+
+    .date-range-dropdown {
+        display: none;
+    }
+    
+    .date-range-toggle:hover {
+        background-color: #f8f9fa;
+        border-color: #667eea !important;
+    }
+
+    .date-preset:hover {
+        background-color: #667eea !important;
+        color: white !important;
+        border-color: #667eea !important;
     }
 </style>
 @endpush

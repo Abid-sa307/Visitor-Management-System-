@@ -179,7 +179,7 @@
                                         @endif
                                     </div>
                                 </div>
-                                @else
+                                <!-- @else
                                 <div class="alert alert-info d-flex align-items-center" role="alert">
                                     <i class="bi bi-info-circle-fill fs-4 me-3"></i>
                                     <div>
@@ -187,7 +187,7 @@
                                         <p class="mb-0">Mark In/Out functionality is currently disabled for QR flow visitors. Please contact reception for assistance.</p>
                                     </div>
                                 </div>
-                                @endif
+                                @endif -->
                                 
                              @elseif($visitor->status === 'Rejected')
                                 <div class="alert alert-danger d-flex align-items-center" role="alert">

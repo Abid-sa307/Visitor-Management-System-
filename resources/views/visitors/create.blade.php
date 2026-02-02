@@ -55,7 +55,7 @@
       </div>
     </div>
 
-    <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}"
+    <form action="{{ auth()->guard('company')->check() ? route('company.visitors.store') : route('visitors.store') }}"
         method="POST" enctype="multipart/form-data" id="visitorForm">
       @csrf
 
@@ -95,21 +95,11 @@
                   <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
               @else
-                @if(isset($branches) && $branches->count() > 0)
-                  <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
-                    <option value="">-- Select Branch --</option>
-                    @foreach($branches as $id => $name)
-                      <option value="{{ $id }}" 
-                          {{ old('branch_id', auth()->user()->branch_id) == $id ? 'selected' : '' }}>
-                          {{ $name }}
-                      </option>
-                    @endforeach
-                  </select>
-                  @error('branch_id')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
+                @if(auth()->user()->branch_id && isset($branches[auth()->user()->branch_id]))
+                  <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
+                  <input type="text" class="form-control" value="{{ $branches[auth()->user()->branch_id] }}" readonly>
                 @else
-                  <input type="text" class="form-control" value="No branches available" readonly>
+                  <input type="text" class="form-control" value="No branch assigned" readonly>
                 @endif
               @endif
             </div>
