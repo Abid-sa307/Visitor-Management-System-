@@ -179,15 +179,12 @@
                                         @endif
                                     </div>
                                 </div>
-                                <!-- @else
+                                @else
                                 <div class="alert alert-info d-flex align-items-center" role="alert">
                                     <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-                                    <div>
-                                        <h5 class="alert-heading mb-1">Mark In/Out Disabled</h5>
-                                        <p class="mb-0">Mark In/Out functionality is currently disabled for QR flow visitors. Please contact reception for assistance.</p>
-                                    </div>
+                                    
                                 </div>
-                                @endif -->
+                                @endif
                                 
                              @elseif($visitor->status === 'Rejected')
                                 <div class="alert alert-danger d-flex align-items-center" role="alert">
@@ -223,11 +220,13 @@
                                            class="btn btn-success px-3" 
                                            target="_blank"
                                            title="Print Pass">
+                                           <p>Print Pass</p>
                                             <i class="bi bi-printer"></i>
                                         </a>
                                         <a href="{{ route('public.visitors.pass.pdf', $visitor->id) }}" 
                                            class="btn btn-danger px-3"
                                            title="Download PDF">
+                                           <p>Download PDF</p>
                                             <i class="bi bi-file-pdf"></i>
                                         </a>
                                     </div>
