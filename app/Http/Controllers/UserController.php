@@ -45,7 +45,7 @@ class UserController extends Controller
         $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
     }
 
-    $query = User::query()->with(['company', 'departments']);
+    $query = User::query()->with(['company', 'departments', 'branches']);
 
     // Filter by company for non-super admins
     if (!$isSuper) {

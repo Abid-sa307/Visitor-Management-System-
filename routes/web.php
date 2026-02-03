@@ -12,6 +12,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SecurityCheckController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\Auth\CompanyLoginController;
+use App\Http\Controllers\SecurityQuestionController;
 use App\Models\Company;
 
 /*
@@ -29,6 +32,31 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Public Static Pages
+Route::view('/about', 'about')->name('about');
+Route::view('/contact', 'contact')->name('contact');
+Route::view('/pricing', 'pricing')->name('pricing');
+Route::view('/partner', 'partner')->name('partner');
+
+// Blog
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
+// Auth Routes (Custom)
+Route::get('/company/login', [CompanyLoginController::class, 'showLoginForm'])->name('company.login');
+
+// Solutions / Industries
+Route::view('/industrial-manufacturing-unit', 'pages.industrial-manufacturing-unit')->name('industrial-manufacturing-unit');
+Route::view('/industrial-and-cold-storage', 'pages.industrial-and-cold-storage')->name('industrial-and-cold-storage');
+Route::view('/school-and-colleges', 'pages.school-and-colleges')->name('school-and-colleges');
+Route::view('/resident-societies', 'pages.resident-societies')->name('resident-societies');
+Route::view('/resident-buildings', 'pages.resident-buildings')->name('resident-buildings');
+Route::view('/office-workplace-management', 'pages.office-workplace-management')->name('office-workplace-management');
+Route::view('/healthcare-facilities', 'pages.healthcare-facilities')->name('healthcare-facilities');
+Route::view('/malls-and-events', 'pages.malls-and-events')->name('malls-and-events');
+Route::view('/temple-and-dargah', 'pages.temple-and-dargah')->name('temple-and-dargah');
+
+
 // Dynamic Dropdown Routes (Guard Agnostic)
 Route::prefix('api')->name('api.')->middleware('web')->group(function () {
     Route::get('/companies/{company}/departments', [DepartmentController::class, 'getByCompany'])->name('departments.by_company');
@@ -42,42 +70,128 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Companies
+    // Visitor Management Extra Routes
+    Route::get('visitors/history', [VisitorController::class, 'history'])->name('visitors.history');
+    Route::get('visitors/visits', [VisitorController::class, 'visitsIndex'])->name('visits.index');
+    Route::get('visitors/inout', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
+    Route::get('visitors/approvals', [VisitorController::class, 'approvals'])->name('visitors.approvals');
+    Route::patch('visitors/{visitor}/approve', [VisitorController::class, 'approve'])->name('approvals.approve');
+    Route::patch('visitors/{visitor}/reject', [VisitorController::class, 'reject'])->name('approvals.reject');
+    Route::get('visitors/{visitor}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
+    Route::post('visitors/{visitor}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
+    Route::post('visitors/{visitor}/undo', [VisitorController::class, 'undoVisit'])->name('visitors.visit.undo');
+
+    // Resources (Standard)
     Route::resource('companies', CompanyController::class);
-    
-    // Branches
     Route::resource('branches', BranchController::class);
-    
-    // Departments
-    Route::resource('departments', DepartmentController::class); // Ensure this resource route exists
-    
-    // Visitors
-    Route::resource('visitors', VisitorController::class);
+    Route::resource('departments', DepartmentController::class);
+    Route::resource('visitors', VisitorController::class)->except(['show']);
+    Route::resource('visitor-categories', \App\Http\Controllers\VisitorCategoryController::class);
+    Route::resource('employees', EmployeeController::class);
+    Route::resource('users', UserController::class);
+
+    // Specific Action Routes
     Route::get('visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('visitors.pass');
     Route::get('visitors/{visitor}/pass-pdf', [VisitorController::class, 'downloadPassPdf'])->name('visitors.pass.pdf');
     Route::post('visitors/{visitor}/archive', [VisitorController::class, 'archive'])->name('visitors.archive');
     Route::post('visitors/{visitor}/checkin', [VisitorController::class, 'checkIn'])->name('visitors.checkin');
     Route::post('visitors/{visitor}/checkout', [VisitorController::class, 'checkOut'])->name('visitors.checkout');
 
-    // Visitor Categories
-    Route::resource('visitor-categories', \App\Http\Controllers\VisitorCategoryController::class);
-
-    // Employees
-    Route::resource('employees', EmployeeController::class);
-
-    // QR Codes
+    // QR & Security
+    // QR & Security
     Route::get('/qr-scan', [QrCodeController::class, 'scan'])->name('qr.scan');
     Route::post('/qr-process', [QrCodeController::class, 'process'])->name('qr.process');
-
-    // Security Checks
-    Route::resource('security-checks', SecurityCheckController::class);
+    
+    Route::prefix('security-checks')->name('security-checks.')->group(function() {
+        Route::get('/', [SecurityCheckController::class, 'index'])->name('index');
+        Route::get('/{visitorId}/create', [SecurityCheckController::class, 'create'])->name('create');
+        Route::get('/{visitorId}/checkout', [SecurityCheckController::class, 'createCheckout'])->name('create-checkout');
+        Route::post('/{visitorId}/toggle', [SecurityCheckController::class, 'toggleSecurity'])->name('toggle');
+        Route::get('/{id}/print', [SecurityCheckController::class, 'print'])->name('print');
+    });
+    Route::resource('security-checks', SecurityCheckController::class)->except(['index', 'create']);
+    
+    Route::get('security-questions/create/checkin', [SecurityQuestionController::class, 'createCheckin'])->name('security-questions.create.checkin');
+    Route::get('security-questions/create/checkout', [SecurityQuestionController::class, 'createCheckout'])->name('security-questions.create.checkout');
+    Route::resource('security-questions', SecurityQuestionController::class);
     
     // Reports
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::prefix('reports')->name('reports.')->group(function() {
+        Route::get('/', [ReportController::class, 'visitors'])->name('index');
+        Route::get('/visitors', [ReportController::class, 'visitors'])->name('visitors');
+        Route::get('/visits', [ReportController::class, 'visits'])->name('visits');
+        Route::get('/security', [ReportController::class, 'securityChecks'])->name('security');
+        Route::get('/approval', [ReportController::class, 'approvals'])->name('approval');
+        Route::get('/hourly', [ReportController::class, 'hourlyReport'])->name('hourly');
+        
+        // Final exports matching view names
+        Route::get('/visitors/export', [ReportController::class, 'exportVisitors'])->name('visitors.export');
+        Route::get('/visits/export', [ReportController::class, 'exportVisits'])->name('visits.export');
+        Route::get('/security/export', [ReportController::class, 'exportSecurityChecks'])->name('security.export');
+        Route::get('/approval/export', [ReportController::class, 'exportApprovals'])->name('approval.export');
+        Route::get('/hourly/export', [ReportController::class, 'exportHourlyReport'])->name('hourly.export');
+    });
 
-    // Admin Users
-    Route::resource('users', UserController::class);
+    // --- COMPANY ALIASES (to support old route names in views) ---
+    Route::prefix('company')->name('company.')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        
+        Route::resource('users', UserController::class);
+        Route::resource('departments', DepartmentController::class);
+        Route::resource('branches', BranchController::class);
+        Route::resource('employees', EmployeeController::class);
+        Route::resource('visitor-categories', \App\Http\Controllers\VisitorCategoryController::class);
+        
+        // Aliased extras for visitors (MOVE ABOVE RESOURCE if not using separate prefix, 
+        // but here we have GET visitors/{visitor} from resource so static ones must be first)
+        Route::get('visitors/history', [VisitorController::class, 'history'])->name('visitors.history');
+        Route::get('visitors/visits', [VisitorController::class, 'visitsIndex'])->name('visits.index');
+        Route::get('visitors/approvals', [VisitorController::class, 'approvals'])->name('approvals.index');
+        Route::get('visitors/entry-page', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
+        
+        Route::resource('visitors', VisitorController::class)->except(['show']);
+        
+        Route::prefix('security-checks')->name('security-checks.')->group(function() {
+            Route::get('/', [SecurityCheckController::class, 'index'])->name('index');
+            Route::get('/{visitorId}/create', [SecurityCheckController::class, 'create'])->name('create');
+            Route::get('/{visitorId}/checkout', [SecurityCheckController::class, 'createCheckout'])->name('create-checkout');
+            Route::post('/{visitorId}/toggle', [SecurityCheckController::class, 'toggleSecurity'])->name('toggle');
+            Route::get('/{id}/print', [SecurityCheckController::class, 'print'])->name('print');
+        });
+        Route::resource('security-checks', SecurityCheckController::class)->except(['index', 'create']);
+
+        Route::get('security-questions/create/checkin', [SecurityQuestionController::class, 'createCheckin'])->name('security-questions.create.checkin');
+        Route::get('security-questions/create/checkout', [SecurityQuestionController::class, 'createCheckout'])->name('security-questions.create.checkout');
+        Route::resource('security-questions', SecurityQuestionController::class);
+
+        // More Visitor extras
+        Route::patch('visitors/{visitor}/approve', [VisitorController::class, 'approve'])->name('approvals.approve');
+        Route::patch('visitors/{visitor}/reject', [VisitorController::class, 'reject'])->name('approvals.reject');
+        Route::get('visitors/{visitor}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
+        Route::post('visitors/{visitor}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
+        Route::post('visitors/{visitor}/undo', [VisitorController::class, 'undoVisit'])->name('visitors.visit.undo');
+        Route::get('visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('visitors.pass');
+        
+        Route::post('logout', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'destroy'])->name('logout');
+        
+        // Reports (if specifically named in sidebar)
+        Route::prefix('reports')->name('reports.')->group(function() {
+            Route::get('/visitors', [ReportController::class, 'visitors'])->name('visitors');
+            Route::get('/visits', [ReportController::class, 'visits'])->name('visits');
+            Route::get('/security', [ReportController::class, 'securityChecks'])->name('security');
+            Route::get('/approval', [ReportController::class, 'approvals'])->name('approval');
+            Route::get('/hourly', [ReportController::class, 'hourlyReport'])->name('hourly');
+            
+            // Company Exports
+            Route::get('/visitors/export', [ReportController::class, 'exportVisitors'])->name('visitors.export');
+            Route::get('/visits/export', [ReportController::class, 'exportVisits'])->name('visits.export');
+            Route::get('/security/export', [ReportController::class, 'exportSecurityChecks'])->name('security.export');
+            Route::get('/approval/export', [ReportController::class, 'exportApprovals'])->name('approval.export');
+            Route::get('/hourly/export', [ReportController::class, 'exportHourlyReport'])->name('hourly.export');
+        });
+    });
 });
 
 require __DIR__.'/auth.php';

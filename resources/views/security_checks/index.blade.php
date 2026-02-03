@@ -112,7 +112,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-filter me-1"></i> Apply
                             </button>
-                            <a href="{{ route('security-checks.index') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route($isCompany ? 'company.security-checks.index' : 'security-checks.index') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-undo me-1"></i> Reset
                             </a>
                         </div>

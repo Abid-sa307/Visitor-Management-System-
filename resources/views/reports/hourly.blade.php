@@ -33,6 +33,10 @@
 @endpush
 
 @section('content')
+@php
+    $isCompany = request()->is('company/*');
+    $exportRoute = ($isCompany ? 'company.' : '') . 'reports.hourly.export';
+@endphp
 <div class="container py-4">
     <div class="page-heading mb-4">
         <div>
@@ -43,7 +47,7 @@
             </div>
         </div>
         <div class="page-heading__actions">
-            <form method="GET" action="{{ route('reports.hourly.export') }}" class="d-flex gap-2 flex-wrap" id="exportForm">
+            <form method="GET" action="{{ route($exportRoute) }}" class="d-flex gap-2 flex-wrap" id="exportForm">
                 @foreach(request()->all() as $key => $value)
                     @if(!in_array($key, ['_token', 'page']))
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">

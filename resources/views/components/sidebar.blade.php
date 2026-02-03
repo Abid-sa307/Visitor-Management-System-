@@ -3,7 +3,7 @@
 
     $isCompanyGuard = \Illuminate\Support\Facades\Auth::guard('company')->check();
     $authUser = $isCompanyGuard ? \Illuminate\Support\Facades\Auth::guard('company')->user() : auth()->user();
-    $isCompany = $isCompanyGuard;
+    $isCompany = $authUser && in_array($authUser->role, ['company', 'company_user'], true);
 
     $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
@@ -47,7 +47,7 @@
         [
             'title' => 'Departments',
             'icon' => 'bi-building',
-            'route' => 'departments.index',
+            'route' => $isCompany ? 'company.departments.index' : 'departments.index',
             'page' => 'departments',
         ],
         [
@@ -127,7 +127,7 @@
         [
             'title' => 'In/Out Report',
             'icon' => 'fas fa-door-open',
-            'route' => $isCompany ? 'company.reports.visits' : 'reports.inout',
+            'route' => $isCompany ? 'company.reports.visits' : 'reports.visits',
         ],
         [
             'title' => 'Security Checkpoints',
@@ -258,7 +258,7 @@
 
                     @if($isSuper || $canPage('visitor_categories'))
                         <li class="sidebar-item">
-                            <a class="sidebar-link {{ request()->routeIs('visitor-categories.*') ? 'is-active' : '' }}" href="{{ route('visitor-categories.index') }}" data-sidebar-link>
+                            <a class="sidebar-link {{ request()->routeIs($isCompany ? 'company.visitor-categories.*' : 'visitor-categories.*') ? 'is-active' : '' }}" href="{{ route($isCompany ? 'company.visitor-categories.index' : 'visitor-categories.index') }}" data-sidebar-link>
                                 <span class="sidebar-link__icon"><i class="fas fa-tags"></i></span>
                                 <span>Visitor Categories</span>
                             </a>

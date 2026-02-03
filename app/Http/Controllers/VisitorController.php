@@ -109,7 +109,9 @@ class VisitorController extends Controller
 
     private function isCompany(): bool
     {
-        return Auth::guard('company')->check();
+        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        if (!$u) return false;
+        return in_array($u->role, ['company', 'company_user']);
     }
 
     // Scope queries to company for non-super admins
@@ -135,19 +137,26 @@ class VisitorController extends Controller
         $inCompanyUrl = request()->is('company/*');
         if ($inCompanyUrl || $this->isCompany()) {
             $map = [
-                'dashboard'           => 'company.dashboard',
-                'visitors.index'      => 'company.visitors.index',
-                'visitors.create'     => 'company.visitors.create',
-                'visitors.edit'       => 'company.visitors.edit',
-                'visitors.update'     => 'company.visitors.update',
-                'visitors.store'      => 'company.visitors.store',
-                'visitors.destroy'    => 'company.visitors.destroy',
-                'visitors.history'    => 'company.visitors.history',
-                'visitors.entry.page' => 'company.visitors.entry.page',
-                'visitors.report'     => 'company.visitors.report',
-                'visitors.approvals'  => 'company.visitors.approvals',
-                'visitors.visit.form' => 'company.visitors.visit.form',
-                'visits.index'        => 'company.visits.index',
+                'dashboard'              => 'company.dashboard',
+                'visitors.index'         => 'company.visitors.index',
+                'visitors.create'        => 'company.visitors.create',
+                'visitors.edit'          => 'company.visitors.edit',
+                'visitors.update'        => 'company.visitors.update',
+                'visitors.store'         => 'company.visitors.store',
+                'visitors.destroy'       => 'company.visitors.destroy',
+                'visitors.history'       => 'company.visitors.history',
+                'visitors.entry.page'    => 'company.visitors.entry.page',
+                'visitors.report'        => 'company.visitors.report',
+                'visitors.approvals'     => 'company.visitors.approvals',
+                'visitors.visit.form'    => 'company.visitors.visit.form',
+                'visits.index'           => 'company.visits.index',
+                'users.index'            => 'company.users.index',
+                'users.create'           => 'company.users.create',
+                'users.edit'             => 'company.users.edit',
+                'departments.index'      => 'company.departments.index',
+                'branches.index'         => 'company.branches.index',
+                'employees.index'        => 'company.employees.index',
+                'visitor-categories.index' => 'company.visitor-categories.index',
             ];
             if (isset($map[$name])) return $map[$name];
         }
@@ -2717,6 +2726,38 @@ class VisitorController extends Controller
         }
 
         return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies', 'actionRoute'));
+    }
+
+    /**
+     * Approve a visitor request.
+     */
+    public function approve(Visitor $visitor)
+    {
+        $visitor->update([
+            'status' => 'Approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+        ]);
+
+        return redirect()->back()->with('success', "Visitor {$visitor->name} approved successfully.");
+    }
+
+    /**
+     * Reject a visitor request.
+     */
+    public function reject(Request $request, Visitor $visitor)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:255',
+        ]);
+
+        $visitor->update([
+            'status' => 'Rejected',
+            'rejection_reason' => $request->rejection_reason,
+            'status_changed_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', "Visitor {$visitor->name} rejected.");
     }
 
     /**

@@ -16,8 +16,8 @@ class SecurityCheckController extends Controller
 {
     public function index(Request $request)
     {
-        $isCompany = Auth::guard('company')->check();
-        $authUser = $isCompany ? Auth::guard('company')->user() : Auth::user();
+        $authUser = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $isCompany = $authUser && in_array($authUser->role, ['company', 'company_user'], true);
         $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
         // Base query - only show visitors from companies that have security checks enabled
@@ -291,7 +291,8 @@ class SecurityCheckController extends Controller
                     ->with('security_checkout_id', $securityCheck->id);
             } else {
                 // For check-in, redirect to security checks index
-                return redirect()->route('security-checks.index')
+                $routeName = $request->routeIs('company.*') ? 'company.security-checks.index' : 'security-checks.index';
+                return redirect()->route($routeName)
                     ->with('success', 'Security check completed successfully.');
             }
 

@@ -78,19 +78,18 @@ class ReportController extends Controller
     {
         $query = SecurityCheck::with(['visitor' => function($q) {
             $q->with(['company', 'department', 'branch']);
-        }, 'securityOfficer']);
+        }]);
 
         $filters = [];
         
-        // Apply date range filter
-        if ($request->filled('from')) {
-            $query->whereDate('security_checks.created_at', '>=', $request->from);
-            $filters['from'] = $request->from;
-        }
-        if ($request->filled('to')) {
-            $query->whereDate('security_checks.created_at', '<=', $request->to);
-            $filters['to'] = $request->to;
-        }
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
+        
+        $query->whereDate('security_checks.created_at', '>=', $from)
+              ->whereDate('security_checks.created_at', '<=', $to);
+              
+        $filters['from'] = $from;
+        $filters['to'] = $to;
 
     // Apply company filter
     if ($request->filled('company_id')) {
@@ -166,12 +165,12 @@ class ReportController extends Controller
             }
         }
 
-        $approvals = $query->latest('approved_at')->paginate(20);
+        $visitors = $query->latest('approved_at')->paginate(20);
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
         $branches = $this->getBranches($request);
 
-        return view('visitors.approval_status', compact('approvals', 'companies', 'departments', 'branches') + $filters);
+        return view('visitors.approval_status', compact('visitors', 'companies', 'departments', 'branches') + $filters);
     }
 
     // Hourly Report
@@ -267,15 +266,14 @@ class ReportController extends Controller
     {
         $filters = [];
         
-        if ($request->filled('from')) {
-            $query->whereDate('created_at', '>=', $request->from);
-            $filters['from'] = $request->from;
-        }
+        $from = $request->input('from', now()->format('Y-m-d'));
+        $to = $request->input('to', now()->format('Y-m-d'));
         
-        if ($request->filled('to')) {
-            $query->whereDate('created_at', '<=', $request->to);
-            $filters['to'] = $request->to;
-        }
+        $query->whereDate('created_at', '>=', $from)
+              ->whereDate('created_at', '<=', $to);
+              
+        $filters['from'] = $from;
+        $filters['to'] = $to;
         
         if ($request->filled('company_id')) {
             $query->where('company_id', $request->company_id);

@@ -2,7 +2,8 @@
 
 @section('content')
 @php
-    $reportExportRoute = 'reports.visitors.export';
+    $isCompany = request()->is('company/*');
+    $reportExportRoute = ($isCompany ? 'company.' : '') . 'reports.visitors.export';
 @endphp
 
 <div class="container py-4">

@@ -97,7 +97,9 @@
 
 @section('content')
 @php
-    $exportRoute = 'reports.inout.export';
+    $isCompany = request()->is('company/*');
+    $exportRoute = ($isCompany ? 'company.' : '') . 'reports.visits.export';
+    $baseRoute = ($isCompany ? 'company.' : '') . 'reports.visits';
 @endphp
 
 <div class="container py-4">
@@ -114,7 +116,7 @@
     {{-- =================== FILTERS CARD =================== --}}
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="GET" action="{{ route('reports.inout') }}" id="inoutFilterForm">
+            <form method="GET" action="{{ route($baseRoute) }}" id="inoutFilterForm">
                 <div class="row g-3 align-items-end">
                     {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
@@ -184,7 +186,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter me-1"></i> Apply
                         </button>
-                        <a href="{{ route('reports.inout') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route($baseRoute) }}" class="btn btn-outline-secondary">
                             <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>

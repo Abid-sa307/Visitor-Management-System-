@@ -681,6 +681,7 @@
     <script src="{{ asset('sb-admin/vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+    <script src="{{ asset('sb-admin/vendor/chart.js/Chart.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/js/sb-admin-2.min.js') }}"></script>
     
     <!-- Alpine.js -->
@@ -915,20 +916,17 @@
 
         observer.observe(document.body, { childList: true, subtree: true });
     });
+    </script>
 
-    // Play notification sound and show visual effect when visitor is created
     @php
         $playNotification = session('play_notification', false);
         $visitorName = session('visitor_name', 'Unknown');
         $notificationMessage = session('notification_message', 'New visitor registered');
-        \Log::info('Layout Debug - play_notification: ' . ($playNotification ? 'true' : 'false'));
-        \Log::info('Layout Debug - visitor_name: ' . $visitorName);
-        \Log::info('Layout Debug - notification_message: ' . $notificationMessage);
-        \Log::info('Layout Debug - All session data: ' . json_encode(session()->all()));
     @endphp
     
     @if($playNotification)
         <script>
+            // Play notification sound and show visual effect when visitor is created
             console.log('🔔 NOTIFICATION TRIGGERED:', @json($notificationMessage));
             
             // Enhanced notification system

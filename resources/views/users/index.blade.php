@@ -98,6 +98,8 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
+                            <th>Allotted Branches</th>
+                            <th>Allotted Departments</th>
                             <th>Company</th>
                             <th>Actions</th>
                         </tr>
@@ -119,6 +121,24 @@
                                     $color = $roleColors[$role] ?? 'secondary';
                                 @endphp
                                 <span class="badge bg-{{ $color }} text-uppercase">{{ str_replace('_', ' ', $role) }}</span>
+                            </td>
+                            <td>
+                                @if($user->branches->isNotEmpty())
+                                    @foreach($user->branches as $branch)
+                                        <span class="badge bg-light text-dark border mb-1">{{ $branch->name }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted small">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($user->departments->isNotEmpty())
+                                    @foreach($user->departments as $department)
+                                        <span class="badge bg-light text-dark border mb-1">{{ $department->name }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted small">—</span>
+                                @endif
                             </td>
                             <td>{{ $user->company?->name ?? '—' }}</td>
 

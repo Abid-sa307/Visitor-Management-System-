@@ -59,6 +59,10 @@
 @endpush
 
 @section('content')
+@php
+    $isCompany = request()->is('company/*');
+    $baseRoute = ($isCompany ? 'company.' : '') . 'reports.security';
+@endphp
 <div class="container-fluid px-4">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -128,7 +132,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter me-1"></i> Apply
                         </button>
-                        <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route($baseRoute) }}" class="btn btn-outline-secondary">
                             <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>
@@ -180,13 +184,9 @@
                                 <td>{{ $check->visitor->company->name ?? 'N/A' }}</td>
                                 <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
                                 <td class="text-center">
-                                    @if($check->status === 'approved')
-                                        <span class="badge bg-success">Approved</span>
-                                    @elseif($check->status === 'rejected')
-                                        <span class="badge bg-danger">Rejected</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
+                                    <span class="badge {{ $check->check_type === 'checkin' ? 'bg-info' : 'bg-primary' }}">
+                                        {{ ucfirst($check->check_type ?? 'checkin') }}
+                                    </span>
                                 </td>
                                 <td class="text-center action-buttons">
                                     <button class="btn btn-sm btn-outline-primary" 
@@ -209,7 +209,7 @@
                     @if(request()->hasAny(['company_id', 'department_id', 'branch_id', 'from', 'to']))
                         <p class="text-muted mb-0">
                             Try adjusting your filters or 
-                            <a href="{{ route('reports.security') }}" class="text-primary">clear all filters</a>
+                            <a href="{{ route($baseRoute) }}" class="text-primary">clear all filters</a>
                         </p>
                     @endif
                 </div>
@@ -277,18 +277,14 @@
                             <tr>
                                 <th>Status:</th>
                                 <td>
-                                    @if($check->status === 'approved')
-                                        <span class="badge bg-success">Approved</span>
-                                    @elseif($check->status === 'rejected')
-                                        <span class="badge bg-danger">Rejected</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
+                                    <span class="badge {{ $check->check_type === 'checkin' ? 'bg-info' : 'bg-primary' }}">
+                                        {{ ucfirst($check->check_type ?? 'checkin') }}
+                                    </span>
                                 </td>
                             </tr>
                             <tr>
                                 <th>Checked By:</th>
-                                <td>{{ $check->securityUser->name ?? 'N/A' }}</td>
+                                <td>{{ $check->security_officer_name ?? 'N/A' }}</td>
                             </tr>
                             <tr>
                                 <th>Notes:</th>
