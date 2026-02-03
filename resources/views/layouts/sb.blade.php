@@ -19,6 +19,8 @@
     
     <!-- Face API JS -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         // Simple check to see if face-api is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -253,81 +255,16 @@
     <!-- Modern Date Range Picker Styles -->
     <style>
         /* Modern Form Select Dropdowns */
+        /* Standard Form Select (Reverted) */
         .form-select {
-            background: #007bff;
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: 500;
-            padding: 12px 40px 12px 16px;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            /* Using Bootstrap defaults */
             cursor: pointer;
-            position: relative;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-        }
-        
-        .form-select::after {
-            content: '▼';
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: white;
-            font-size: 14px;
-            pointer-events: none;
-        }
-        
-        .form-select:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
-        }
-        
-        .form-select:hover::after {
-            color: white;
         }
         
         .form-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3), 0 6px 20px rgba(0, 123, 255, 0.4);
-            border-color: transparent;
-        }
-        
-        .form-select:focus::after {
-            color: white;
-        }
-        
-        .form-select:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.7;
-            transform: none;
-            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
-        }
-        
-        .form-select:disabled::after {
-            color: white;
-        }
-        
-        .form-select option {
-            background: white;
-            color: #495057;
-            padding: 10px;
-            font-weight: 500;
-        }
-        
-        .form-select option:hover {
-            background: #f8f9fa;
-            color: #495057;
-        }
-        
-        .form-select option:checked {
-            background: #007bff;
-            color: white;
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
         }
         
         /* Modern Date Range Picker Button */
@@ -945,6 +882,9 @@
                     bindBranchToDepartment(branchSelect, departmentSelect);
                 }
             });
+
+            // Conflicting global handler removed. Specific pages (departments/create, users/_form) handle this.
+            // document.querySelectorAll('select[name="company_id"]').forEach(...)
         };
 
         initialiseBindings();

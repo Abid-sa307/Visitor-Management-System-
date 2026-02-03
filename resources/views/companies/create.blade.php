@@ -119,7 +119,22 @@
                                     </tr>
                                 </thead>
                                 <tbody id="branchesBody">
-                                    <!-- Rows appended here -->
+                                    <tr>
+                                        <td>
+                                            <input name="branches[name][]" class="form-control form-control-sm" value="Main Branch" placeholder="Branch name">
+                                            <small class="text-muted">Main branch (auto-created)</small>
+                                        </td>
+                                        <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Main Phone"></td>
+                                        <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Main Email"></td>
+                                        <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Main Address"></td>
+                                        <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"></td>
+                                        <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"></td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Main branch cannot be removed">
+                                                <i class="fas fa-lock"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -238,6 +253,70 @@
             </form>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const body = document.getElementById('branchesBody');
+    const addBtn = document.getElementById('addBranchBtn');
+    
+    if (addBtn && body) {
+        addBtn.onclick = function() {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td><input name="branches[name][]" class="form-control form-control-sm" placeholder="Branch name"></td><td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td><td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td><td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td><td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300"></td><td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300"></td><td class="text-end"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'tr\').remove()">&times;</button></td>';
+            body.appendChild(row);
+        };
+    }
+    
+    // Security toggle
+    const securityCheckbox = document.getElementById('security_check_service');
+    const noneContainer = document.getElementById('security_check_type_container');
+    const optionsContainer = document.getElementById('security_options_container');
+    const optionsDropdown = document.getElementById('security_checkin_type_enabled');
+    const hiddenField = document.getElementById('security_checkin_type_hidden');
+    
+    function updateSecurityState(isChange) {
+        if (!securityCheckbox) return;
+        if (securityCheckbox.checked) {
+            noneContainer.style.display = 'none';
+            optionsContainer.style.display = 'block';
+            optionsDropdown.disabled = false;
+            
+            // If toggled by user, OR if no value is set, default to 'checkin'
+            if (isChange) {
+                optionsDropdown.value = 'checkin';
+            } else if (!optionsDropdown.value) {
+                optionsDropdown.value = 'checkin';
+            }
+            
+            hiddenField.value = optionsDropdown.value;
+        } else {
+            noneContainer.style.display = 'block';
+            optionsContainer.style.display = 'none';
+            optionsDropdown.disabled = true;
+            hiddenField.value = 'none';
+        }
+    }
+    
+    if (securityCheckbox) {
+        // Initial load: preserve old value if present
+        updateSecurityState(false);
+        
+        // User interaction: force 'checkin' default
+        securityCheckbox.onchange = function() { updateSecurityState(true); };
+        
+        if (optionsDropdown) optionsDropdown.onchange = function() { hiddenField.value = this.value; };
+    }
+    
+    // Toggle labels
+    document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(function(checkbox) {
+        const label = checkbox.parentElement.querySelector('.toggle-label');
+        if (label) {
+            label.textContent = checkbox.checked ? 'Enabled' : 'Disabled';
+            checkbox.onchange = function() { label.textContent = this.checked ? 'Enabled' : 'Disabled'; };
+        }
+    });
+});
+</script>
+
 @push('styles')
 <style>
 .form-check.form-switch .form-check-input {
@@ -275,122 +354,5 @@
 </style>
 @endpush
 
-@push('scripts')
-<script>
-// Simple security toggle functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const securityCheckbox = document.getElementById('security_check_service');
-    const noneContainer = document.getElementById('security_check_type_container');
-    const optionsContainer = document.getElementById('security_options_container');
-    const optionsDropdown = document.getElementById('security_checkin_type_enabled');
-    const hiddenField = document.getElementById('security_checkin_type_hidden');
-    
-    // Function to update security state
-    function updateSecurityState(isChange = false) {
-        if (!securityCheckbox || !noneContainer || !optionsContainer || !optionsDropdown || !hiddenField) {
-            return;
-        }
 
-        if (securityCheckbox.checked) {
-            // Enable security
-            noneContainer.style.display = 'none';
-            optionsContainer.style.display = 'block';
-            optionsDropdown.disabled = false;
-            optionsDropdown.classList.remove('disabled');
-            
-            // If triggered by user change or no value set, default to checkin
-            if (isChange || !optionsDropdown.value) {
-                optionsDropdown.value = 'checkin';
-            }
-            hiddenField.value = optionsDropdown.value;
-        } else {
-            // Disable security
-            noneContainer.style.display = 'block';
-            optionsContainer.style.display = 'none';
-            optionsDropdown.disabled = true;
-            optionsDropdown.classList.add('disabled');
-            hiddenField.value = 'none';
-        }
-    }
-
-    // Initialize if elements exist
-    if (securityCheckbox && noneContainer && optionsContainer) {
-        // Set initial state
-        updateSecurityState(false);
-        
-        // Add event listener
-        securityCheckbox.addEventListener('change', function() {
-            updateSecurityState(true);
-        });
-        
-        // Sync hidden field when dropdown value changes
-        if (optionsDropdown && hiddenField) {
-            optionsDropdown.addEventListener('change', function() {
-                hiddenField.value = this.value;
-            });
-        }
-    }
-    
-    // Toggle labels - update based on checkbox state
-    function updateToggleLabel(checkbox) {
-        const label = checkbox.parentElement.querySelector('.toggle-label');
-        if (label) {
-            label.textContent = checkbox.checked ? 'Enabled' : 'Disabled';
-        }
-    }
-    
-    // Initialize all toggle labels
-    document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(function(checkbox) {
-        // Set initial state
-        updateToggleLabel(checkbox);
-        
-        // Update on change
-        checkbox.addEventListener('change', function() {
-            updateToggleLabel(this);
-        });
-    });
-    
-    // Branch functionality
-    const body = document.getElementById('branchesBody');
-    const addBtn = document.getElementById('addBranchBtn');
-    
-    if (body && body.children.length === 0) {
-        body.innerHTML += `
-            <tr>
-                <td>
-                    <input name="branches[name][]" class="form-control form-control-sm" value="Main Branch" placeholder="Branch name">
-                    <small class="text-muted">Main branch (auto-created)</small>
-                </td>
-                <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Main Phone" value="{{ old('contact_number') }}"></td>
-                <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Main Email" value="{{ old('email') }}"></td>
-                <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Main Address" value="{{ old('address') }}"></td>
-                <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" placeholder="09:00"></td>
-                <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" placeholder="18:00"></td>
-                <td class="text-end">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Main branch cannot be removed">
-                        <i class="fas fa-lock"></i>
-                    </button>
-                </td>
-            </tr>`;
-    }
-    
-    if (addBtn) {
-        addBtn.addEventListener('click', function() {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><input name="branches[name][]" class="form-control form-control-sm" placeholder="Branch name"></td>
-                <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
-                <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
-                <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
-                <td><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" placeholder="09:00"></td>
-                <td><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" placeholder="18:00"></td>
-                <td class="text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
-                </td>`;
-            body.appendChild(row);
-        });
-    }
-});
-</script>
-@endpush
 @endsection

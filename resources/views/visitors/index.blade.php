@@ -109,6 +109,22 @@
     </div>
   </div>
 
+  <div class="mb-4">
+    <form method="GET" action="{{ route('visitors.index') }}" class="d-flex align-items-center gap-2">
+       <div style="width: 300px;">
+           <x-date_range_picker />
+       </div>
+       <button type="submit" class="btn btn-primary shadow-sm">
+           <i class="fas fa-filter me-2"></i>Filter
+       </button>
+       @if(request()->has('date_range'))
+           <a href="{{ route('visitors.index') }}" class="btn btn-outline-secondary shadow-sm">
+               <i class="fas fa-times me-2"></i>Clear
+           </a>
+       @endif
+    </form>
+  </div>
+
   <div class="bg-white p-4 rounded-4 shadow-lg">
 
     <!-- @if(session('success'))

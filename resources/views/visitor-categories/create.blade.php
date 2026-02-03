@@ -78,42 +78,76 @@
     </div>
 </div>
 
-@push('scripts')
 <script>
-    // Dynamic branch loading based on company selection
-    $(document).ready(function() {
-        @if(auth()->user()->role === 'superadmin')
-        $('#company_id').on('change', function() {
-            var companyId = $(this).val();
-            if (companyId) {
-                $('#branch_id').prop('disabled', false);
-                $.ajax({
-                    url: '/api/companies/' + companyId + '/branches',
-                    type: 'GET',
-                    success: function(data) {
-                        console.log('Branch data:', data);
-                        $('#branch_id').empty();
-                        $('#branch_id').append('<option value="">Select Branch (Optional)</option>');
-                        
-                        if (Array.isArray(data)) {
-                            $.each(data, function(index, branch) {
-                                $('#branch_id').append('<option value="' + branch.id + '">' + branch.name + '</option>');
-                            });
-                        } else {
-                            $.each(data, function(key, value) {
-                                $('#branch_id').append('<option value="' + key + '">' + value + '</option>');
-                            });
-                        }
-                    }
-                });
-            } else {
-                $('#branch_id').prop('disabled', true);
-                $('#branch_id').empty();
-                $('#branch_id').append('<option value="">Select Company First</option>');
-            }
-        });
-        @endif
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('Visitor Category Create JS Loaded (Inlined)');
+
+    const companySelect = document.getElementById('company_id');
+    const branchSelect = document.getElementById('branch_id');
+
+    if (!companySelect || !branchSelect) {
+        console.warn('Dropdowns not found - likely not superadmin or view structure changed');
+        return;
+    }
+
+    function loadBranches(companyId) {
+        console.log('Loading branches for company:', companyId);
+        
+        branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+        branchSelect.disabled = true;
+
+        const url = `/api/companies/${companyId}/branches`;
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Branches Data:', data);
+                
+                let branches = [];
+                if (Array.isArray(data)) branches = data;
+                else if (typeof data === 'object' && data !== null) branches = Object.values(data);
+
+                let options = '<option value="">Select Branch (Optional)</option>';
+                if (branches.length === 0) {
+                    options += '<option value="">No branches found</option>';
+                } else {
+                    branches.forEach(branch => {
+                        let selected = '{{ old('branch_id') }}' == branch.id ? 'selected' : '';
+                        options += `<option value="${branch.id}" ${selected}>${branch.name}</option>`;
+                    });
+                }
+                
+                branchSelect.innerHTML = options;
+                branchSelect.disabled = false;
+            })
+            .catch(err => {
+                console.error('Branch load error:', err);
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+                branchSelect.disabled = false;
+            });
+    }
+
+    // LISTENER
+    companySelect.addEventListener('change', function() {
+        if (this.value) {
+            loadBranches(this.value);
+        } else {
+            branchSelect.innerHTML = '<option value="">Select Company First</option>';
+            branchSelect.disabled = true;
+        }
     });
+
+    // INITIALIZATION
+    // If company is selected (e.g. old input on validation error), load branches if empty
+    if (companySelect.value) {
+        // Check if branches are already populated (server-side)
+        // If it has only 1 option (placeholder) or contains "Select Company First", we load.
+        if (branchSelect.options.length <= 1 || branchSelect.innerHTML.includes('Select Company First')) {
+             loadBranches(companySelect.value);
+        }
+    }
+});
 </script>
-@endpush
 @endsection

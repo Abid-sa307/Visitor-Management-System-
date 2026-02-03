@@ -14,22 +14,7 @@ Route::get('/test', function () {
     ]);
 });
 
-// Get branches for a company
-Route::get('/companies/{company}/branches', function (\App\Models\Company $company) {
-    return $company->branches()->get(['id', 'name']);
-});
-
-// Get departments for a company
-Route::get('/companies/{company}/departments', function (\App\Models\Company $company) {
-    return $company->departments()->get(['id', 'name']);
-});
-
-// Get departments for a branch
-Route::get('/branches/{branch}/departments', function (Branch $branch) {
-    return $branch->departments()->get(['id', 'name']);
-});
-
-// Get visitor categories for a branch
+// Visitor categories route (keep for now if not elsewhere)
 Route::get('/branches/{branch}/visitor-categories', function (Branch $branch) {
     $categories = \App\Models\VisitorCategory::where('branch_id', $branch->id)
         ->orderBy('name')
@@ -40,7 +25,7 @@ Route::get('/branches/{branch}/visitor-categories', function (Branch $branch) {
     ]);
 });
 
-// Get employees for a branch
+// Employees route
 Route::get('/branches/{branch}/employees', function (Branch $branch) {
     $employees = \App\Models\Employee::where('branch_id', $branch->id)
         ->orderBy('name')

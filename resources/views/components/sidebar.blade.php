@@ -47,7 +47,7 @@
         [
             'title' => 'Departments',
             'icon' => 'bi-building',
-            'route' => $isCompany ? 'company.departments.index' : 'departments.index',
+            'route' => 'departments.index',
             'page' => 'departments',
         ],
         [

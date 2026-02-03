@@ -429,10 +429,15 @@
             if (!companyId) return;
             
             fetch(`/api/companies/${companyId}/branches`)
-                .then(response => response.json())
-                .then(branches => {
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch branches');
+                    return response.json();
+                })
+                .then(data => {
                     branchOptions.innerHTML = '';
                     const selectedBranches = @json(request('branch_id', []));
+                    
+                    const branches = Array.isArray(data) ? data : Object.entries(data).map(([id, name]) => ({ id, name }));
                     
                     branches.forEach(branch => {
                         const div = document.createElement('div');
@@ -470,7 +475,10 @@
             if (selectedBranches.length === 0) return;
 
             Promise.all(selectedBranches.map(branchId => 
-                fetch(`/api/branches/${branchId}/departments`).then(r => r.json())
+                fetch(`/api/branches/${branchId}/departments`).then(r => {
+                    if (!r.ok) throw new Error('Failed to fetch departments');
+                    return r.json();
+                })
             )).then(results => {
                 const deptMap = [];
                 results.forEach(depts => {

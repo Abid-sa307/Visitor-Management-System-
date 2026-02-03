@@ -204,12 +204,24 @@ class VisitorController extends Controller
 
     /* --------------------------- CRUD --------------------------- */
 
-    public function index()
+    public function index(Request $request)
     {
         $query = $this->companyScope(Visitor::with(['company', 'branch', 'department'])->latest());
+
+        // Date Filtering
+        if ($request->has('date_range')) {
+            $range = $request->input('date_range');
+            if (!empty($range['from'])) {
+                $query->whereDate('visit_date', '>=', $range['from']);
+            }
+            if (!empty($range['to'])) {
+                $query->whereDate('visit_date', '<=', $range['to']);
+            }
+        }
+
         // Show all statuses in company list so nothing is hidden from operators
         // (Dashboard will still hide Pending/Rejected when auto-approve is on)
-        $visitors = $query->paginate(10);
+        $visitors = $query->paginate(10)->withQueryString();
         return view('visitors.index', compact('visitors'));
     }
 

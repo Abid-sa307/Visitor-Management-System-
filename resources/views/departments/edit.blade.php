@@ -4,7 +4,7 @@
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">Edit Department</h1>
-        <a href="{{ route('company.departments.index') }}" class="btn btn-sm btn-secondary shadow-sm">
+        <a href="{{ route('departments.index') }}" class="btn btn-sm btn-secondary shadow-sm">
             <i class="fas fa-arrow-left me-1"></i> Back
         </a>
     </div>
@@ -79,55 +79,69 @@ document.addEventListener('DOMContentLoaded', function () {
     const companySelect = document.getElementById('departmentCompanySelect');
     const branchSelect = document.getElementById('departmentBranchSelect');
 
-    if (!companySelect || !branchSelect || companySelect.tagName !== 'SELECT') {
+    console.log('Department Edit JS Loaded');
+
+    if (!companySelect || !branchSelect) return;
+
+    // Handle read-only company (input type=hidden)
+    if (companySelect.tagName === 'INPUT') {
         return;
     }
 
-    const loadBranches = (companyId) => {
+    function loadBranches(companyId) {
+        console.log('Loading branches for company:', companyId);
         branchSelect.innerHTML = '<option value="">Loading branches...</option>';
         branchSelect.disabled = true;
 
-        if (!companyId) {
-            branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-            branchSelect.disabled = false;
-            return;
-        }
-
-        fetch(`/api/companies/${companyId}/branches`)
-            .then(response => response.json())
-            .then(data => {
-                branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-
-                const branches = Array.isArray(data)
-                    ? data
-                    : Object.entries(data).map(([id, name]) => ({ id, name }));
-
-                branches.forEach(branch => {
-                    const option = document.createElement('option');
-                    option.value = branch.id;
-                    option.textContent = branch.name;
-                    branchSelect.appendChild(option);
-                });
-
-                branchSelect.disabled = branches.length === 0;
-
-                const selected = '{{ old('branch_id', $department->branch_id ?? '') }}';
-                if (selected) {
-                    branchSelect.value = selected;
-                }
+        const url = `/api/companies/${companyId}/branches`;
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
             })
-            .catch(() => {
-                branchSelect.innerHTML = '<option value="">Failed to load branches</option>';
+            .then(data => {
+                console.log('Data Received:', data);
+                
+                let branches = [];
+                if (Array.isArray(data)) {
+                    branches = data;
+                } else if (typeof data === 'object' && data !== null) {
+                    branches = Object.values(data);
+                }
+
+                let options = '<option value="">-- Select Branch --</option>';
+
+                if (branches.length === 0) {
+                     options += '<option value="">No branches found</option>';
+                } else {
+                    branches.forEach(branch => {
+                        // Keep selected value
+                        let isSelected = branch.id == "{{ old('branch_id', $department->branch_id) }}";
+                        options += `<option value="${branch.id}" ${isSelected ? 'selected' : ''}>${branch.name}</option>`;
+                    });
+                }
+                
+                branchSelect.innerHTML = options;
+                branchSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Branch load error:', error);
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
                 branchSelect.disabled = false;
             });
-    };
+    }
 
-    companySelect.addEventListener('change', () => {
-        loadBranches(companySelect.value);
+    companySelect.addEventListener('change', function() {
+        if (this.value) {
+            loadBranches(this.value);
+        } else {
+            branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+            branchSelect.disabled = true;
+        }
     });
 
-    if (companySelect.value) {
-        loadBranches(companySelect.value);
+    if (companySelect.value && branchSelect.options.length <= 1) {
+         loadBranches(companySelect.value);
     }
 });
 </script>

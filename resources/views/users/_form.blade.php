@@ -539,130 +539,232 @@
     </div>
 </div>
 
-@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('User Form JS Loaded (Inlined) - Multi-Select Mode');
+
     const companySelect = document.getElementById('companySelect');
+    
+    // Branch Elements
     const branchDropdown = document.getElementById('branchDropdown');
-    const deptDropdown = document.getElementById('departmentDropdown');
     const branchMenu = document.getElementById('branchDropdownMenu');
-    const deptMenu = document.getElementById('departmentDropdownMenu');
+    const branchList = document.getElementById('branchCheckboxList');
     const branchHidden = document.getElementById('branchHiddenInputs');
+    const branchButtonText = document.getElementById('branchButtonText');
+    
+    // Department Elements
+    const deptDropdown = document.getElementById('departmentDropdown');
+    const deptMenu = document.getElementById('departmentDropdownMenu');
+    const deptList = document.getElementById('departmentList');
     const deptHidden = document.getElementById('departmentHiddenInputs');
+    const deptButtonText = document.getElementById('departmentButtonText');
 
     /* ================= DROPDOWN TOGGLES ================= */
-    branchDropdown.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if(this.classList.contains('disabled')) return;
-        
-        deptMenu.classList.remove('show');
-        branchMenu.classList.toggle('show');
-    });
+    
+    function toggleMenu(menu, otherMenu) {
+        if (otherMenu) otherMenu.classList.remove('show');
+        menu.classList.toggle('show');
+    }
 
-    deptDropdown.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if(this.classList.contains('disabled')) return;
-        
-        branchMenu.classList.remove('show');
-        deptMenu.classList.toggle('show');
-    });
+    if (branchDropdown) {
+        branchDropdown.addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            if(this.classList.contains('disabled')) return;
+            toggleMenu(branchMenu, deptMenu);
+        });
+    }
+
+    if (deptDropdown) {
+        deptDropdown.addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            if(this.classList.contains('disabled')) return;
+            toggleMenu(deptMenu, branchMenu);
+        });
+    }
 
     document.addEventListener('click', () => {
-        branchMenu.classList.remove('show');
-        deptMenu.classList.remove('show');
+        if(branchMenu) branchMenu.classList.remove('show');
+        if(deptMenu) deptMenu.classList.remove('show');
     });
 
     [branchMenu, deptMenu].forEach(m => {
         if(m) m.addEventListener('click', e => e.stopPropagation());
     });
 
-    /* ================= COMPANY CHANGE ================= */
-    function handleCompanyChange(isInitial = false) {
-        const companyId = companySelect?.value;
-        const branchList = document.getElementById('branchCheckboxList');
-        const deptList = document.getElementById('departmentList');
+    /* ================= DATA LOADING ================= */
 
-        if (!companyId) {
-            branchDropdown.classList.add('disabled');
-            deptDropdown.classList.add('disabled');
-            if (branchList) branchList.innerHTML = '<div class="text-center py-3 text-muted small italic">Select a company first</div>';
-            if (deptList) deptList.innerHTML = '<div class="text-center py-3 text-muted small italic">Select a company first</div>';
-            return;
-        }
+    function loadBranches(companyId) {
+        console.log('Loading branches for company:', companyId);
+        if(!branchList) return;
 
-        // UNLOCK
-        branchDropdown.classList.remove('disabled');
-        deptDropdown.classList.remove('disabled');
+        branchList.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+        
+        // Reset selection
+        if(branchHidden) branchHidden.innerHTML = '';
+        if(branchButtonText) branchButtonText.innerHTML = '<span class="text-muted">Select Branches</span>';
 
-        // Only fetch if it's not the initial page load (since Blade handles initial state) 
-        // OR if the company actually changed.
-        if (!isInitial) {
-            branchList.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
-            deptList.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+        fetch(`/api/companies/${companyId}/branches`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Branches Data:', data);
+                let branches = [];
+                if (Array.isArray(data)) branches = data;
+                else if (typeof data === 'object' && data !== null) branches = Object.values(data);
 
-            // Load Branches
-            fetch(`/api/companies/${companyId}/branches`)
-                .then(res => res.json())
-                .then(data => {
-                    branchList.innerHTML = data.length ? data.map(b => `
+                if (branches.length === 0) {
+                    branchList.innerHTML = '<div class="text-center py-3 text-muted small">No branches found</div>';
+                } else {
+                    let html = '';
+                    branches.forEach(b => {
+                        html += `
                         <div class="option-item">
                             <input class="form-check-input branch-checkbox" type="checkbox" value="${b.id}" id="br-${b.id}">
                             <label class="flex-grow-1 mb-0 pointer" for="br-${b.id}">${b.name}</label>
-                        </div>
-                    `).join('') : '<div class="text-center py-3 text-muted small">No branches found</div>';
-                });
+                        </div>`;
+                    });
+                    branchList.innerHTML = html;
+                }
+            })
+            .catch(err => {
+                console.error('Error loading branches:', err);
+                branchList.innerHTML = '<div class="text-center py-3 text-danger small">Error loading branches</div>';
+            });
+    }
 
-            // Load Departments
-            fetch(`/api/companies/${companyId}/departments`)
-                .then(res => res.json())
-                .then(data => {
-                    deptList.innerHTML = data.length ? data.map(d => `
+    function loadDepartments(companyId) {
+        console.log('Loading departments for company:', companyId);
+        if(!deptList) return;
+
+        deptList.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+        
+        // Reset selection
+        if(deptHidden) deptHidden.innerHTML = '';
+        if(deptButtonText) deptButtonText.innerHTML = '<span class="text-muted">Select Departments</span>';
+
+        fetch(`/api/companies/${companyId}/departments`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Departments Data:', data);
+                let depts = [];
+                if (Array.isArray(data)) depts = data;
+                else if (typeof data === 'object' && data !== null) depts = Object.values(data);
+
+                if (depts.length === 0) {
+                    deptList.innerHTML = '<div class="text-center py-3 text-muted small">No departments found</div>';
+                } else {
+                    let html = '';
+                    depts.forEach(d => {
+                        html += `
                         <div class="option-item">
                             <input class="form-check-input department-checkbox" type="checkbox" value="${d.id}" id="dp-${d.id}">
                             <label class="flex-grow-1 mb-0 pointer" for="dp-${d.id}">${d.name}</label>
-                        </div>
-                    `).join('') : '<div class="text-center py-3 text-muted small">No departments found</div>';
-                });
-        }
+                        </div>`;
+                    });
+                    deptList.innerHTML = html;
+                }
+            })
+            .catch(err => {
+                console.error('Error loading departments:', err);
+                deptList.innerHTML = '<div class="text-center py-3 text-danger small">Error loading departments</div>';
+            });
     }
+
+    /* ================= EVENTS ================= */
 
     if (companySelect) {
-        companySelect.addEventListener('change', () => handleCompanyChange(false));
-        // Run on load to unlock if company is present
-        handleCompanyChange(true);
+        companySelect.addEventListener('change', function() {
+            const val = this.value;
+            if (val) {
+                if(branchDropdown) branchDropdown.classList.remove('disabled');
+                if(deptDropdown) deptDropdown.classList.remove('disabled');
+                loadBranches(val);
+                loadDepartments(val);
+            } else {
+                if(branchDropdown) branchDropdown.classList.add('disabled');
+                if(deptDropdown) deptDropdown.classList.add('disabled');
+                if(branchList) branchList.innerHTML = '<div class="text-center py-3 text-muted small italic">Select a company first</div>';
+                if(deptList) deptList.innerHTML = '<div class="text-center py-3 text-muted small italic">Select a company first</div>';
+            }
+        });
+        
+        // Initial state check (only if not relying on PHP pre-rendering)
+        // If PHP didn't render options (e.g. empty strings but valid company), we might trigger load.
+        // But usually PHP handles the edit state.
+        // We only trigger if the lists are empty/placeholder AND we have a company.
+        if (companySelect.value) {
+           const hasBranches = branchList && branchList.querySelectorAll('.option-item').length > 0;
+           const hasDepts = deptList && deptList.querySelectorAll('.option-item').length > 0;
+           
+           if (!hasBranches && !branchList.innerHTML.includes('No branches')) {
+               loadBranches(companySelect.value);
+           }
+           if (!hasDepts && !deptList.innerHTML.includes('No departments')) {
+               loadDepartments(companySelect.value);
+           }
+        }
     }
 
-    /* ================= SELECTION HANDLING ================= */
+    /* ================= SELECTION LOGIC ================= */
+    
+    // Delegation for dynamic elements
     document.addEventListener('change', function(e) {
+        
+        // BRANCH CHECKBOX
         if (e.target.classList.contains('branch-checkbox')) {
-            const checked = document.querySelectorAll('.branch-checkbox:checked');
-            branchHidden.innerHTML = [...checked].map(cb => `<input type="hidden" name="branch_ids[]" value="${cb.value}">`).join('');
-            document.getElementById('branchButtonText').innerHTML = checked.length ? `${checked.length} selected` : '<span class="text-muted">Select Branches</span>';
+            const checkedBoxes = document.querySelectorAll('.branch-checkbox:checked');
+            if (branchHidden) {
+                branchHidden.innerHTML = Array.from(checkedBoxes)
+                    .map(cb => `<input type="hidden" name="branch_ids[]" value="${cb.value}">`)
+                    .join('');
+            }
+            if (branchButtonText) {
+                branchButtonText.innerHTML = checkedBoxes.length > 0
+                    ? `${checkedBoxes.length} selected`
+                    : '<span class="text-muted">Select Branches</span>';
+            }
         }
 
+        // DEPARTMENT CHECKBOX
         if (e.target.classList.contains('department-checkbox')) {
-            const checked = document.querySelectorAll('.department-checkbox:checked');
-            deptHidden.innerHTML = [...checked].map(cb => `<input type="hidden" name="department_ids[]" value="${cb.value}">`).join('');
-            document.getElementById('departmentButtonText').innerHTML = checked.length ? `${checked.length} selected` : '<span class="text-muted">Select Departments</span>';
+            const checkedBoxes = document.querySelectorAll('.department-checkbox:checked');
+            if (deptHidden) {
+                deptHidden.innerHTML = Array.from(checkedBoxes)
+                    .map(cb => `<input type="hidden" name="department_ids[]" value="${cb.value}">`)
+                    .join('');
+            }
+            if (deptButtonText) {
+                deptButtonText.innerHTML = checkedBoxes.length > 0
+                    ? `${checkedBoxes.length} selected`
+                    : '<span class="text-muted">Select Departments</span>';
+            }
         }
     });
 
+    // Select All Handlers
     document.getElementById('selectAllBranches')?.addEventListener('click', () => {
         const boxes = document.querySelectorAll('.branch-checkbox');
-        const anyUnchecked = [...boxes].some(b => !b.checked);
-        boxes.forEach(b => { b.checked = anyUnchecked; b.dispatchEvent(new Event('change')); });
+        const allChecked = Array.from(boxes).every(b => b.checked);
+        boxes.forEach(b => { b.checked = !allChecked; b.dispatchEvent(new Event('change', {bubbles:true})); });
     });
 
     document.getElementById('selectAllDepartments')?.addEventListener('click', () => {
         const boxes = document.querySelectorAll('.department-checkbox');
-        const anyUnchecked = [...boxes].some(b => !b.checked);
-        boxes.forEach(b => { b.checked = anyUnchecked; b.dispatchEvent(new Event('change')); });
+        const allChecked = Array.from(boxes).every(b => b.checked);
+        boxes.forEach(b => { b.checked = !allChecked; b.dispatchEvent(new Event('change', {bubbles:true})); });
     });
 
-    document.getElementById('applyBranches')?.addEventListener('click', () => branchMenu.classList.remove('show'));
-    document.getElementById('applyDepartments')?.addEventListener('click', () => deptMenu.classList.remove('show'));
+    document.getElementById('applyBranches')?.addEventListener('click', () => {
+        if(branchMenu) branchMenu.classList.remove('show');
+    });
+    document.getElementById('applyDepartments')?.addEventListener('click', () => {
+        if(deptMenu) deptMenu.classList.remove('show');
+    });
+
 });
 </script>
-@endpush

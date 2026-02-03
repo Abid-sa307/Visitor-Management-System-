@@ -4,7 +4,7 @@
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">Add Department</h1>
-        <a href="{{ route('company.departments.index') }}" class="btn btn-sm btn-secondary shadow-sm">
+        <a href="{{ route('departments.index') }}" class="btn btn-sm btn-secondary shadow-sm">
             <i class="fas fa-arrow-left me-1"></i> Back
         </a>
     </div>
@@ -38,13 +38,16 @@
                     <select name="company_id" id="departmentCompanySelect" class="form-select" required>
                         <option value="">-- Select Company --</option>
                         @foreach($companies as $company)
-                            <option value="{{ $company->id }}" {{ old('company_id') == $company->id ? 'selected' : '' }}>
+                            <option value="{{ $company->id }}" 
+                                {{ (old('company_id') == $company->id || (!old('company_id') && count($companies) == 1)) ? 'selected' : '' }}>
                                 {{ $company->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
+                
+                
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Branch</label>
                     <select name="branch_id" id="departmentBranchSelect" class="form-select" required>
@@ -56,7 +59,7 @@
                         @endforeach
                     </select>
                 </div>
-                
+
                 <div class="text-end">
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="fas fa-save me-1"></i> Save Department
@@ -66,59 +69,86 @@
         </div>
     </div>
 </div>
-@push('scripts')
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const companySelect = document.getElementById('departmentCompanySelect');
     const branchSelect = document.getElementById('departmentBranchSelect');
 
-    if (!companySelect || !branchSelect) return;
+    console.log('Department Create JS Loaded (Inlined)');
 
-    companySelect.addEventListener('change', () => {
-        const companyId = companySelect.value;
+    if (!companySelect || !branchSelect) {
+        console.error('Critical Error: Dropdowns not found');
+        return;
+    }
+
+    function loadBranches(companyId) {
+        console.log('Loading branches for company:', companyId);
+        
+        // Show loading state
         branchSelect.innerHTML = '<option value="">Loading branches...</option>';
         branchSelect.disabled = true;
 
-        if (!companyId) {
-            branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-            branchSelect.disabled = false;
-            return;
-        }
+        const url = `/api/companies/${companyId}/branches`;
+        console.log('Fetching URL:', url);
 
-        fetch(`/api/companies/${companyId}/branches`)
-            .then(response => response.json())
-            .then(data => {
-                branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-
-                const branches = Array.isArray(data)
-                    ? data
-                    : Object.entries(data).map(([id, name]) => ({ id, name }));
-
-                branches.forEach(branch => {
-                    const option = document.createElement('option');
-                    option.value = branch.id;
-                    option.textContent = branch.name;
-                    branchSelect.appendChild(option);
-                });
-
-                branchSelect.disabled = branches.length === 0;
-
-                const oldBranch = '{{ old('branch_id') }}';
-                if (oldBranch) {
-                    branchSelect.value = oldBranch;
-                }
+        fetch(url)
+            .then(response => {
+                console.log('Response Status:', response.status);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
             })
-            .catch(() => {
-                branchSelect.innerHTML = '<option value="">Failed to load branches</option>';
+            .then(data => {
+                console.log('Data Received:', data);
+                
+                let branches = [];
+                if (Array.isArray(data)) {
+                    branches = data;
+                } else if (typeof data === 'object' && data !== null) {
+                    branches = Object.values(data);
+                }
+                
+                console.log('Normalized Branches:', branches);
+
+                let options = '<option value="">-- Select Branch --</option>';
+
+                if (branches.length === 0) {
+                    options += '<option value="">No branches found</option>';
+                    console.warn('No branches found for company ' + companyId);
+                } else {
+                    branches.forEach(branch => {
+                         let selected = '{{ old('branch_id') }}' == branch.id ? 'selected' : '';
+                         options += `<option value="${branch.id}" ${selected}>${branch.name}</option>`;
+                    });
+                }
+                
+                branchSelect.innerHTML = options;
+                branchSelect.disabled = false;
+                console.log('Dropdown updated with ' + branches.length + ' branches.');
+            })
+            .catch(error => {
+                console.error('Branch load error:', error);
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
                 branchSelect.disabled = false;
             });
+    }
+
+    // LISTENER
+    companySelect.addEventListener('change', function() {
+        console.log('Company successfully changed to:', this.value);
+        if (this.value) {
+            loadBranches(this.value);
+        } else {
+             branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+             branchSelect.disabled = true;
+        }
     });
 
+    // INITIALIZATION
     if (companySelect.value) {
-        const event = new Event('change');
-        companySelect.dispatchEvent(event);
+        console.log('Initial company value found:', companySelect.value);
+        loadBranches(companySelect.value);
     }
 });
 </script>
-@endpush
 @endsection

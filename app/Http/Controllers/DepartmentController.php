@@ -78,27 +78,14 @@ class DepartmentController extends Controller
 
     public function create()
     {
-        // Super admin can choose any company, others only their own
-        if (auth()->user()->role === 'superadmin') {
-            $companies = Company::all();
+        $user = auth()->user();
+        
+        if ($user->role === 'superadmin') {
+            $companies = Company::orderBy('name')->get();
             $branches = collect();
         } else {
-            $companies = Company::where('id', auth()->user()->company_id)->get();
-            $user = auth()->user();
-            // Get user's assigned branch IDs from the pivot table
-            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
-            
-            if (!empty($userBranchIds)) {
-                $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
-            }
+            $companies = Company::where('id', $user->company_id)->get();
+            $branches = Branch::where('company_id', $user->company_id)->orderBy('name')->get();
         }
 
         return view('departments.create', compact('companies', 'branches'));
@@ -145,7 +132,6 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
-        // Restrict edit if not same company
         if (auth()->user()->role !== 'superadmin' && $department->company_id !== auth()->user()->company_id) {
             abort(403, 'Unauthorized action.');
         }
@@ -155,21 +141,7 @@ class DepartmentController extends Controller
             $branches = Branch::where('company_id', $department->company_id)->get();
         } else {
             $companies = Company::where('id', auth()->user()->company_id)->get();
-            $user = auth()->user();
-            // Get user's assigned branch IDs from the pivot table
-            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
-            
-            if (!empty($userBranchIds)) {
-                $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
-            }
+            $branches = Branch::where('company_id', auth()->user()->company_id)->get();
         }
 
         return view('departments.edit', compact('department', 'companies', 'branches'));
@@ -225,25 +197,13 @@ class DepartmentController extends Controller
             ->with('success', 'Department deleted successfully');
     }
 
-    /**
-     * Get departments by company (API)
-     */
     public function getByCompany(Company $company)
     {
-        try {
-            $departments = $company->departments()->select('id', 'name', 'company_id')->get();
-            
-            return response()->json($departments)
-                ->header('Content-Type', 'application/json')
-                ->header('Access-Control-Allow-Origin', '*')
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        } catch (\Exception $e) {
-            \Log::error('Error fetching departments: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Failed to load departments',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+        $departments = $company->departments()->select('id', 'name', 'company_id')->get();
+        return response()->json($departments)
+            ->header('Content-Type', 'application/json')
+            ->header('Access-Control-Allow-Origin', '*')
+            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     }
 
     /**

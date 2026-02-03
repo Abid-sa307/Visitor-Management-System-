@@ -149,7 +149,7 @@
                             </td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
-                                    <a href="{{ route('companies.branches', $company) }}"
+                                    <a href="{{ route('branches.index', ['company_id' => $company->id]) }}"
                                        class="action-btn action-btn--view action-btn--icon"
                                        title="View Branches">
                                         <i class="fas fa-code-branch"></i>

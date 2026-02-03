@@ -285,6 +285,93 @@
     </div>
 </div>
 
+<script>
+function markForDeletion(button) {
+  const row = button.closest('tr');
+  const deleteMarker = row.querySelector('.delete-marker');
+  deleteMarker.value = '1';
+  row.style.opacity = '0.5';
+  row.style.textDecoration = 'line-through';
+  button.innerHTML = 'Undo';
+  button.onclick = function() { undoDeletion(this); };
+}
+
+function undoDeletion(button) {
+  const row = button.closest('tr');
+  const deleteMarker = row.querySelector('.delete-marker');
+  deleteMarker.value = '0';
+  row.style.opacity = '1';
+  row.style.textDecoration = 'none';
+  button.innerHTML = '&times;';
+  button.onclick = function() { markForDeletion(this); };
+}
+
+window.clearOperationTime = function(fieldId) {
+  const input = document.getElementById(fieldId);
+  if (input) input.value = '';
+};
+
+document.addEventListener('DOMContentLoaded', function(){
+  const body = document.getElementById('branchesBody');
+  const addBtn = document.getElementById('addBranchBtn');
+  const securityCheckbox = document.getElementById('security_check_service');
+  const noneContainer = document.getElementById('security_none_container');
+  const optionsContainer = document.getElementById('security_options_container');
+  const optionsDropdown = document.getElementById('security_checkin_type_enabled');
+  const hiddenField = document.getElementById('security_checkin_type_hidden');
+  
+  function toggleSecurityDropdown(isChange) {
+    if (!securityCheckbox) return;
+    if (securityCheckbox.checked) {
+      noneContainer.style.display = 'none';
+      optionsContainer.style.display = 'block';
+      optionsDropdown.disabled = false;
+      
+      // If toggled by user, OR if no value is set, default to 'checkin'
+      if (isChange) {
+          optionsDropdown.value = 'checkin';
+      } else if (!optionsDropdown.value) {
+          optionsDropdown.value = 'checkin';
+      }
+      
+      hiddenField.value = optionsDropdown.value;
+    } else {
+      noneContainer.style.display = 'block';
+      optionsContainer.style.display = 'none';
+      optionsDropdown.disabled = true;
+      hiddenField.value = 'none';
+    }
+  }
+  
+  if (securityCheckbox) {
+    // Initial load: don't force 'checkin' if we have old/existing data
+    toggleSecurityDropdown(false);
+    
+    // User interaction: force 'checkin' default
+    securityCheckbox.onchange = function() { toggleSecurityDropdown(true); };
+    
+    if (optionsDropdown) optionsDropdown.onchange = function() { hiddenField.value = this.value; };
+  }
+  
+  document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(function(checkbox) {
+    const label = checkbox.parentElement.querySelector('.toggle-label');
+    if (label) {
+      label.textContent = checkbox.checked ? 'Enabled' : 'Disabled';
+      checkbox.onchange = function() { label.textContent = this.checked ? 'Enabled' : 'Disabled'; };
+    }
+  });
+  
+  if (addBtn && body) {
+    addBtn.onclick = function() {
+      const tr = document.createElement('tr');
+      const timestamp = Date.now();
+      tr.innerHTML = '<td><input type="hidden" name="branches[id][]" value=""><input name="branches[name][]" class="form-control form-control-sm" placeholder="Branch name"></td><td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td><td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td><td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td><td><div class="d-flex"><input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" id="start_time_' + timestamp + '"><button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime(\'start_time_' + timestamp + '\')" title="Clear Start Time"><i class="fas fa-eraser"></i></button></div></td><td><div class="d-flex"><input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" id="end_time_' + timestamp + '"><button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime(\'end_time_' + timestamp + '\')" title="Clear End Time"><i class="fas fa-eraser"></i></button></div></td><td class="text-end"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest(\'tr\').remove()">&times;</button><input type="hidden" name="branches[deleted][]" value="0" class="delete-marker"></td>';
+      body.appendChild(tr);
+    };
+  }
+});
+</script>
+
 @push('styles')
 <style>
 .form-check.form-switch .form-check-input {
@@ -324,237 +411,5 @@
 
 @endsection
 
-@push('scripts')
-<script>
-function markForDeletion(button) {
-  const row = button.closest('tr');
-  const deleteMarker = row.querySelector('.delete-marker');
-  deleteMarker.value = '1';
-  row.style.opacity = '0.5';
-  row.style.textDecoration = 'line-through';
-  button.innerHTML = 'Undo';
-  button.onclick = function() { undoDeletion(this); };
-}
 
-function undoDeletion(button) {
-  const row = button.closest('tr');
-  const deleteMarker = row.querySelector('.delete-marker');
-  deleteMarker.value = '0';
-  row.style.opacity = '1';
-  row.style.textDecoration = 'none';
-  button.innerHTML = '&times;';
-  button.onclick = function() { markForDeletion(this); };
-}
-
-document.addEventListener('DOMContentLoaded', function(){
-  const body = document.getElementById('branchesBody');
-  const addBtn = document.getElementById('addBranchBtn');
-  const securityCheckbox = document.getElementById('security_check_service');
-  const noneDropdown = document.getElementById('security_checkin_type');
-  const optionsDropdown = document.getElementById('security_checkin_type_enabled');
-  const hiddenField = document.getElementById('security_checkin_type_hidden');
-  const noneContainer = document.getElementById('security_none_container');
-  const optionsContainer = document.getElementById('security_options_container');
-  
-  // Function to toggle dropdown state
-  function toggleSecurityDropdown(isChange = false) {
-    if (securityCheckbox.checked) {
-      // Show options dropdown, hide none dropdown
-      noneContainer.style.display = 'none';
-      optionsContainer.style.display = 'block';
-      optionsDropdown.disabled = false;
-      optionsDropdown.classList.remove('disabled');
-      // Set current value if it exists, otherwise default to 'checkin'
-      if (isChange || !optionsDropdown.value) {
-        optionsDropdown.value = 'checkin';
-      }
-      hiddenField.value = optionsDropdown.value;
-    } else {
-      // Show none dropdown, hide options dropdown
-      noneContainer.style.display = 'block';
-      optionsContainer.style.display = 'none';
-      noneDropdown.disabled = true;
-      noneDropdown.value = 'none';
-      optionsDropdown.disabled = true;
-      optionsDropdown.classList.add('disabled');
-      // When unchecked, set to 'none'
-      hiddenField.value = 'none';
-    }
-  }
-  
-  // Sync hidden field when dropdown value changes
-  if (optionsDropdown) {
-    optionsDropdown.addEventListener('change', function() {
-      hiddenField.value = this.value;
-    });
-  }
-  
-  // Initialize dropdown state on page load
-  toggleSecurityDropdown(false);
-  
-  // Add event listener to checkbox
-  if (securityCheckbox) {
-    securityCheckbox.addEventListener('change', function() {
-      toggleSecurityDropdown(true);
-    });
-  }
-  
-  // Update toggle labels dynamically
-  const toggleInputs = document.querySelectorAll('.form-check-input[type="checkbox"]');
-  toggleInputs.forEach(input => {
-    const label = input.nextElementSibling.querySelector('.toggle-label');
-    if (label) {
-      // Set initial label
-      label.textContent = input.checked ? 'Enabled' : 'Disabled';
-      
-      // Update label on change
-      input.addEventListener('change', function() {
-        label.textContent = this.checked ? 'Enabled' : 'Disabled';
-      });
-    }
-  });
-  
-  function markForDeletion(button) {
-    const row = button.closest('tr');
-    const deleteMarker = row.querySelector('.delete-marker');
-    deleteMarker.value = '1';
-    row.style.opacity = '0.5';
-    row.style.textDecoration = 'line-through';
-    button.innerHTML = 'Undo';
-    button.onclick = function() { undoDeletion(this); };
-  }
-
-  function undoDeletion(button) {
-    const row = button.closest('tr');
-    const deleteMarker = row.querySelector('.delete-marker');
-    deleteMarker.value = '0';
-    row.style.opacity = '1';
-    row.style.textDecoration = 'none';
-    button.innerHTML = '&times;';
-    button.onclick = function() { markForDeletion(this); };
-  }
-  
-  const makeRow = () => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>
-        <input type="hidden" name="branches[id][]" value="">
-        <input name="branches[name][]" class="form-control form-control-sm" placeholder="Branch name">
-      </td>
-      <td><input name="branches[phone][]" class="form-control form-control-sm" placeholder="Phone"></td>
-      <td><input name="branches[email][]" type="email" class="form-control form-control-sm" placeholder="Email"></td>
-      <td><input name="branches[address][]" class="form-control form-control-sm" placeholder="Address"></td>
-      <td>
-        <div class="d-flex">
-          <input type="time" name="branches[start_time][]" class="form-control form-control-sm" step="300" id="start_time_${Date.now()}">
-          <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('start_time_${Date.now()}')" title="Clear Start Time">
-            <i class="fas fa-eraser"></i>
-          </button>
-        </div>
-      </td>
-      <td>
-        <div class="d-flex">
-          <input type="time" name="branches[end_time][]" class="form-control form-control-sm" step="300" id="end_time_${Date.now()}">
-          <button type="button" class="btn btn-outline-warning btn-sm ms-1" onclick="clearOperationTime('end_time_${Date.now()}')" title="Clear End Time">
-            <i class="fas fa-eraser"></i>
-          </button>
-        </div>
-      </td>
-      <td class="text-end">
-        <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">&times;</button>
-        <input type="hidden" name="branches[deleted][]" value="0" class="delete-marker">
-      </td>`;
-    return tr;
-  };
-  
-
-  
-  if (addBtn) addBtn.addEventListener('click', ()=> {
-    const newRow = makeRow();
-    
-    // Add real-time validation for branch names
-    const nameInput = newRow.querySelector('input[name="branches[name][]"]');
-    nameInput.addEventListener('blur', function() {
-      validateBranchName(this);
-    });
-    
-    body.appendChild(newRow);
-  });
-  
-  // Function to validate branch name uniqueness
-  function validateBranchName(input) {
-    const allNameInputs = body.querySelectorAll('input[name="branches[name][]"]');
-    const currentName = input.value.trim().toLowerCase();
-    const isMainBranch = input.value.trim() === 'Main Branch';
-    
-    if (currentName === '') {
-      input.classList.remove('is-invalid');
-      return true;
-    }
-    
-    let duplicateFound = false;
-    allNameInputs.forEach(nameInput => {
-      if (nameInput !== input && nameInput.value.trim().toLowerCase() === currentName) {
-        duplicateFound = true;
-      }
-    });
-    
-    if (duplicateFound && !isMainBranch) {
-      input.classList.add('is-invalid');
-      
-      // Remove existing error message if any
-      const existingError = input.parentNode.querySelector('.invalid-feedback');
-      if (existingError) {
-        existingError.remove();
-      }
-      
-      // Add error message
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'invalid-feedback';
-      errorDiv.textContent = 'Branch name already exists. Please use a different name.';
-      input.parentNode.appendChild(errorDiv);
-      
-      return false;
-    } else {
-      input.classList.remove('is-invalid');
-      const existingError = input.parentNode.querySelector('.invalid-feedback');
-      if (existingError) {
-        existingError.remove();
-      }
-      return true;
-    }
-  }
-  
-  // Add validation to existing branch name inputs
-  document.addEventListener('DOMContentLoaded', function() {
-    const existingNameInputs = body.querySelectorAll('input[name="branches[name][]"]');
-    existingNameInputs.forEach(input => {
-      if (!input.readOnly) { // Don't validate readonly main branch
-        input.addEventListener('blur', function() {
-          validateBranchName(this);
-        });
-      }
-    });
-  });
-  
-  // Make the clear function globally accessible
-  window.clearOperationTime = function(fieldId) {
-    const input = document.getElementById(fieldId);
-    
-    if (input) {
-      input.value = '';
-      console.log('Cleared field:', fieldId);
-    } else {
-      console.log('Field not found:', fieldId);
-    }
-  };
-  
-  // Function to clear both operation times (kept for backward compatibility)
-  window.clearOperationTimes = function(startId, endId) {
-    window.clearOperationTime(startId);
-    window.clearOperationTime(endId);
-  };
-});
-</script>
-@endpush
 
