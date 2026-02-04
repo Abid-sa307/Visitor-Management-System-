@@ -34,6 +34,15 @@ Route::get('/branches/{branch}/employees', function (Branch $branch) {
     return response()->json($employees);
 });
 
+// Departments route
+Route::get('/branches/{branch}/departments', function (Branch $branch) {
+    $departments = \App\Models\Department::where('branch_id', $branch->id)
+        ->orderBy('name')
+        ->get(['id', 'name']);
+    
+    return response()->json($departments);
+});
+
 // Get face recognition setting for a company
 Route::get('/companies/{company}/face-recognition', function (\App\Models\Company $company) {
     return response()->json([

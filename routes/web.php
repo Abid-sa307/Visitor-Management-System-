@@ -134,6 +134,9 @@ Route::prefix('public')->name('public.')->group(function() {
     Route::post('/company/{company}/visitor/{visitor}/visit/undo', [VisitorController::class, 'undoVisit'])->name('visitor.visit.undo');
     Route::get('/visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('visitors.pass');
     Route::get('/visitors/{visitor}/pass-pdf', [VisitorController::class, 'downloadPassPdf'])->name('visitors.pass.pdf');
+    
+    // Public QR Code for Branch (Path-based)
+    Route::get('/companies/{company}/branches/{branch}', [QRManagementController::class, 'show'])->name('companies.branches.show');
 });
 
 Route::middleware('auth')->group(function() {

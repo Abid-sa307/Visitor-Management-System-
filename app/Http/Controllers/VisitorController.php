@@ -2800,44 +2800,112 @@ class VisitorController extends Controller
     // Approvals listing (non-report)
     public function approvals(Request $request)
     {
-        $query = $this->companyScope(Visitor::with(['company', 'department', 'category']));
+        // 1. User & Role Setup (matching DashboardController)
+        $isCompanyUser = Auth::guard('company')->check();
+        $user = $isCompanyUser ? Auth::guard('company')->user() : Auth::user();
+        $isSuper = ($user->role ?? null) === 'superadmin';
 
-        if ($this->isCompany() && (auth()->user()->company?->auto_approve_visitors)) {
-            $query->where('status', 'Approved');
+        // 2. Filter Inputs
+        $selectedCompany    = $request->input('company_id') ?? ($isCompanyUser ? $user->company_id : null);
+        $selectedBranch     = $request->input('branch_id');
+        $selectedDepartment = $request->input('department_id');
+
+        // Handle array inputs for multi-select (matching DashboardController)
+        $branchIds = is_array($selectedBranch) ? $selectedBranch : ($selectedBranch ? [$selectedBranch] : []);
+        $departmentIds = is_array($selectedDepartment) ? $selectedDepartment : ($selectedDepartment ? [$selectedDepartment] : []);
+
+        // 3. Build Query
+        $query = Visitor::with(['company', 'department', 'category', 'branch'])->latest();
+
+        // Apply Company Scope (Role Based)
+        if ($isCompanyUser || in_array(($user->role ?? null), ['company', 'company_user'])) {
+            $query->where('company_id', $user->company_id);
+            if ($user->company?->auto_approve_visitors) {
+                $query->where('status', 'Approved');
+            }
+        } elseif ($isSuper && $selectedCompany) {
+            $query->where('company_id', $selectedCompany);
         }
 
+        // Apply Branch Filters
+        if (!empty($branchIds)) {
+            $query->whereIn('branch_id', $branchIds);
+        }
+
+        // Apply Department Filters
+        if (!empty($departmentIds)) {
+            $query->whereIn('department_id', $departmentIds);
+        }
+
+        // Apply Status Filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
+        // Apply Date Range
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('created_at', [
+                Carbon::parse($request->from)->startOfDay(),
+                Carbon::parse($request->to)->endOfDay()
+            ]);
         }
 
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+        $visitors = $query->paginate(10)->appends($request->query());
+
+        // 4. Prepare Filter Data (Exact match to DashboardController logic)
+        $branches    = collect();
+        $departments = collect();
+
+        if ($isCompanyUser || in_array(($user->role ?? null), ['company', 'company_user'])) {
+            // Get user's assigned branch IDs
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Filter branches by user's assigned branches
+                $branches = Branch::whereIn('id', $userBranchIds)->pluck('name', 'id');
+                
+                // Get user's assigned department IDs
+                $userDepartmentIds = $user->departments()->pluck('departments.id')->toArray();
+                
+                if (!empty($userDepartmentIds)) {
+                    // Filter departments by user's assigned departments
+                    $departments = Department::whereIn('id', $userDepartmentIds)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id');
+                } else {
+                    // Fallback: filter departments by user's assigned branches
+                    $departments = Department::whereIn('branch_id', $userBranchIds)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id');
+                }
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->pluck('name', 'id');
+                    $departments = Department::where('branch_id', $user->branch_id)
+                        ->where('company_id', $user->company_id)
+                        ->pluck('name', 'id');
+                } else {
+                    // If no branches assigned, get all company branches/departments
+                    $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+                    $departments = Department::where('company_id', $user->company_id)->pluck('name', 'id');
+                }
+            }
+            
+            if ($branches->isEmpty()) $branches = collect(['none' => 'None']);
+
+        } elseif ($isSuper && $selectedCompany) {
+            $branches    = Branch::where('company_id', $selectedCompany)->pluck('name', 'id');
+            $departments = Department::where('company_id', $selectedCompany)->pluck('name', 'id');
+            
+            if ($branches->isEmpty()) $branches = collect(['none' => 'None']);
         }
 
-        $visitors = $query->latest()->paginate(10)->appends($request->query());
+        // Companies List
+        $companies = $isSuper ? Company::orderBy('name')->pluck('name', 'id') : [];
+        $actionRoute = 'visitors.update';
 
-        $departments = Department::when(
-            !$this->isSuper(),
-            fn($q) => $q->where('company_id', auth()->user()->company_id)
-        )->when(
-            $request->filled('company_id'),
-            fn($q) => $q->where('company_id', $request->company_id)
-        )->orderBy('name')->get();
-
-        // Prepare data for view
-        $isSuper = $this->isSuper();
-        $companies = [];
-        $actionRoute = 'visitors.update'; // Route for approve/reject actions
-        
-        if ($isSuper) {
-            $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
-        }
-
-        return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies', 'actionRoute'));
+        return view('visitors.approvals', compact('visitors', 'departments', 'branches', 'isSuper', 'companies', 'actionRoute'));
     }
 
     /**
