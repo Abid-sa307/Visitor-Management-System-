@@ -34,18 +34,16 @@ window.playSimpleNotification = function (message = 'New visitor activity') {
                 osc.type = 'sine'; // Soft sine wave
                 osc.frequency.value = freq;
 
-                // Gentle repeating pattern every 3 seconds
-                for (let i = 0; i < 5; i++) { // 5 repetitions over 15 seconds
-                    const startTime = ctx.currentTime + (i * 3) + (index * 0.2); // Stagger notes
+                // Single gentle chime
+                const startTime = ctx.currentTime + (index * 0.1); // Slight stagger (arpeggio)
 
-                    // Soft attack and release envelope
-                    gain.gain.setValueAtTime(0, startTime);
-                    gain.gain.linearRampToValueAtTime(0.08, startTime + 0.1); // Very gentle volume
-                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8); // Soft fade
-                }
+                // Soft attack and release envelope
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.1, startTime + 0.05); // Very gentle volume
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 1.2); // Fade out over 1s
 
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 15);
+                osc.start(startTime);
+                osc.stop(startTime + 1.2);
             });
 
             console.log('Soft 15s notification chime playing...');

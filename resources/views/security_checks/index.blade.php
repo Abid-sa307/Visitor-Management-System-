@@ -64,6 +64,9 @@
                         </select>
                     </div>
                     @endif
+                    @if(auth()->user()->role !== 'superadmin')
+                        <input type="hidden" id="filterCompany" value="{{ auth()->user()->company_id }}">
+                    @endif
 
                         {{-- 3️⃣ Branch --}}
                     <div class="col-lg-2 col-md-6">
@@ -79,7 +82,17 @@
                                     <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
                                 </div>
                                 <hr class="my-1">
-                                <div id="branchOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <div id="branchOptions" style="max-height: 120px; overflow-y: auto;">
+                                    @foreach($branches as $id => $name)
+                                        <div class="form-check">
+                                            <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="{{ $id }}" id="branch_{{ $id }}" 
+                                                {{ (is_array(request('branch_id')) && in_array($id, request('branch_id'))) || request('branch_id') == $id ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="branch_{{ $id }}">
+                                                {{ $name }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
                                 <hr class="my-1">
                                 <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
                             </div>
@@ -100,7 +113,17 @@
                                     <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
                                 </div>
                                 <hr class="my-1">
-                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;">
+                                    @foreach($departments as $id => $name)
+                                        <div class="form-check">
+                                            <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="{{ $id }}" id="dept_{{ $id }}"
+                                                {{ (is_array(request('department_id')) && in_array($id, request('department_id'))) || request('department_id') == $id ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="dept_{{ $id }}">
+                                                {{ $name }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
                                 <hr class="my-1">
                                 <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('departmentDropdownMenu').style.display='none'">Apply</button>
                             </div>

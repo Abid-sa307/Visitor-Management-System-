@@ -90,7 +90,7 @@
             'title' => 'Visitor Approvals',
             'icon' => 'bi-check2-circle',
             'route' => $isCompany ? 'company.approvals.index' : 'visitors.approvals',
-            'page' => 'approvals',
+            'page' => 'visitor_approval',
         ],
         [
             'title' => 'Visitor In & Out',
