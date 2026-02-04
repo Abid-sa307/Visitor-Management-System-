@@ -164,7 +164,7 @@ Route::middleware('auth')->group(function() {
         Route::get('/visits', [ReportController::class, 'visits'])->name('visits');
         Route::get('/security', [ReportController::class, 'securityChecks'])->name('security');
         Route::get('/approval', [ReportController::class, 'approvals'])->name('approval');
-        Route::get('/hourly', [ReportController::class, 'hourlyReport'])->name('hourly');
+        Route::get('/hourly', [ReportController::class, 'reports_hourly'])->name('hourly');
         
         // Final exports matching view names
         Route::get('/visitors/export', [ReportController::class, 'exportVisitors'])->name('visitors.export');

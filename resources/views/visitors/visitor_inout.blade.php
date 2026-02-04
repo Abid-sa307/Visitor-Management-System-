@@ -130,9 +130,9 @@
                         <label for="company_id" class="form-label">Company</label>
                         <select name="company_id" id="company_id" class="form-select">
                             <option value="">All Companies</option>
-                            @foreach($companies as $company)
-                                <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>
-                                    {{ $company->name }}
+                            @foreach($companies as $id => $name)
+                                <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
                                 </option>
                             @endforeach
                         </select>
