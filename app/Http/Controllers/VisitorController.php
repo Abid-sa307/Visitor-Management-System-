@@ -122,8 +122,22 @@ class VisitorController extends Controller
         // If not superadmin, filter by company and branch
         if (!$this->isSuper()) {
             $query->where('company_id', $u->company_id);
-            if (!empty($u->branch_id)) {
-                $query->where('branch_id', $u->branch_id);
+            
+            // Collect all allowed branch IDs
+            $allowedBranchIds = collect();
+            
+            if ($u->branch_id) {
+                $allowedBranchIds->push($u->branch_id);
+            }
+            
+            if ($u->branches()->exists()) {
+                $allowedBranchIds = $allowedBranchIds->merge($u->branches()->pluck('branches.id'));
+            }
+            
+            $allowedBranchIds = $allowedBranchIds->unique()->filter();
+            
+            if ($allowedBranchIds->isNotEmpty()) {
+                $query->whereIn('branch_id', $allowedBranchIds);
             }
         }
         
@@ -190,16 +204,23 @@ class VisitorController extends Controller
 
     private function getDepartments($branchId = null)
     {
+        $query = Department::query();
+        
         if ($branchId) {
-            return Department::where('branch_id', $branchId)->orderBy('name')->get();
+            $query->where('branch_id', $branchId);
         }
 
-        if ($this->isSuper()) {
-            return Department::orderBy('name')->get();
+        if (!$this->isSuper()) {
+            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+            $query->where('company_id', $u->company_id);
+            
+            // Filter by assigned departments if user has any assigned
+            if ($u->departments()->exists()) {
+                $query->whereIn('id', $u->departments()->pluck('departments.id'));
+            }
         }
 
-        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-        return Department::where('company_id', $u->company_id)->orderBy('name')->get();
+        return $query->orderBy('name')->get();
     }
 
 
@@ -267,16 +288,79 @@ class VisitorController extends Controller
         $visitors = $query->paginate(10);
         
         // Get filter data
-        $companies = $this->isSuper() ? Company::pluck('name', 'id') : [];
+    $companies = $this->isSuper() ? Company::pluck('name', 'id') : [];
+    
+    $branches = [];
+    $departments = [];
+    
+    // Determine the company ID to use for fetching branches/departments
+    $filterCompanyId = $request->input('company_id');
+    
+    if (!$this->isSuper()) {
+        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $filterCompanyId = $u->company_id;
+    }
+
+    if ($filterCompanyId) {
+        // Fetch branches for the company
+        $branchQuery = Branch::where('company_id', $filterCompanyId);
         
-        $branches = [];
-        $departments = [];
-        if ($request->filled('company_id')) {
-            $branches = Branch::where('company_id', $request->company_id)->pluck('name', 'id');
-            $departments = Department::where('company_id', $request->company_id)->pluck('name', 'id');
+        // If not super admin, filter branches by user's assignment
+        if (!$this->isSuper()) {
+             $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+             if (!empty($u->branch_id)) {
+                 // The user might have multiple branches via pivot, or one via column. 
+                 // Based on our previous fixes, we should check the pivot/relationship helper.
+                 // For now, let's use the 'branches' relationship if available, or fallback to 'branch_id' column if simple.
+                 // Actually, checking how `companyScope` worked:
+                 // if ($u->branches()->exists()) ...
+                 
+                 // Let's act consistent with getByCompany API:
+                 $branchQuery->whereHas('users', function($q) use ($u) {
+                     $q->where('users.id', $u->id);
+                 });
+                 // Note: If the user is assigned ALL branches via some other logic, this might be too restrictive?
+                 // But strictly speaking, company users should see their assigned branches.
+                 // Let's double check if we can trust the 'branches' relationship.
+                 // Earlier we saw: $branches = $user->branches()->orderBy('name')->get(...)
+                 
+                 // SIMPLER: Use the user's branches directly if they have any.
+                 if ($u->branches()->exists()) {
+                    // Use only assigned branches
+                    $branchIds = $u->branches()->pluck('branches.id');
+                    $branchQuery->whereIn('id', $branchIds);
+                 } elseif ($u->branch_id) {
+                     // Fallback to single branch column if specific column is used
+                    $branchQuery->where('id', $u->branch_id);
+                 }
+                 // If neither, perhaps they see all branches of the company? (e.g. company admin?)
+                 // Assuming implicit access to all if no specific assignment? 
+                 // Standard logic in this app seems to be: if company user, show assigned. If none assigned, show company's.
+             }
         }
         
-        return view('visits.index', compact('visitors', 'companies', 'branches', 'departments'));
+        $branches = $branchQuery->pluck('name', 'id');
+        
+        $departmentQuery = Department::where('company_id', $filterCompanyId);
+        
+        // Filter by selected branches in request
+        if ($request->filled('branch_id')) {
+            $selectedBranchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $departmentQuery->whereIn('branch_id', $selectedBranchIds);
+        }
+
+        // Filter by user's assigned departments if applicable
+        if (!$this->isSuper()) {
+             $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+             if ($u->departments()->exists()) {
+                 $departmentQuery->whereIn('id', $u->departments()->pluck('departments.id'));
+             }
+        }
+        
+        $departments = $departmentQuery->pluck('name', 'id');
+    }
+    
+    return view('visits.index', compact('visitors', 'companies', 'branches', 'departments'));
     }
 
     public function create()
@@ -1065,14 +1149,26 @@ class VisitorController extends Controller
         $selectedBranchId = $visitor->branch_id ?? ($branches->first()->id ?? null);
         $departments = $selectedBranchId ? $this->getDepartments($selectedBranchId) : collect();
 
+        // STRICT FILTERING: Visitor Categories
         $visitorCategories = VisitorCategory::query()
-            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
-            ->when($companyId && !$selectedBranchId, fn($q) => $q->where('company_id', $companyId)->whereNull('branch_id'))
+            ->where('company_id', $companyId)
+            ->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                // If branch selected, show categories for that branch OR global categories (null branch)
+                $q->where(function($sub) use ($selectedBranchId) {
+                    $sub->where('branch_id', $selectedBranchId)
+                        ->orWhereNull('branch_id');
+                });
+            }, function($q) {
+                // If no branch, show only global categories
+                $q->whereNull('branch_id');
+            })
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        // Get employees for the selected branch
+        // STRICT FILTERING: Employees
+        // Always filter by company_id first
         $employees = \App\Models\Employee::query()
+            ->where('company_id', $companyId)
             ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->orderBy('name')
             ->get(['id', 'name', 'designation']);
@@ -1125,12 +1221,13 @@ class VisitorController extends Controller
                 'current_status' => $visitor->status
             ]);
 
-            $validated = $request->validate([
+            $validator = \Validator::make($request->all(), [
                 'company_id'          => 'required|exists:companies,id',
                 'department_id'       => 'required|exists:departments,id',
                 'branch_id'           => 'nullable|exists:branches,id',
                 'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-                'person_to_visit'     => 'required|string',
+                'person_to_visit'     => 'required_without:person_to_visit_manual|nullable|string',
+                'person_to_visit_manual' => 'nullable|string',
                 'purpose'             => 'nullable|string',
                 'visitor_company'     => 'nullable|string',
                 'visitor_website'     => 'nullable|string',
@@ -1141,6 +1238,13 @@ class VisitorController extends Controller
                 'workman_policy_photo'=> 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,tiff,webp|max:5120',
                 'status'              => 'sometimes|in:Pending,Approved,Rejected',
             ]);
+
+            if ($validator->fails()) {
+                \Log::error('Visit Submission Validation Failed:', $validator->errors()->toArray());
+                return redirect()->back()->withErrors($validator)->withInput();
+            }
+
+            $validated = $validator->validated();
 
             // Start a database transaction
             \DB::beginTransaction();
@@ -1238,6 +1342,8 @@ class VisitorController extends Controller
                 } else {
                     \Log::info('Visit form submitted - Visitor notifications DISABLED');
                 }
+
+                \DB::commit();
 
                 // Determine the appropriate redirect route based on user type
                 return redirect()->route($this->panelRoute('visits.index'))

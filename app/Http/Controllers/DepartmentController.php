@@ -203,7 +203,22 @@ class DepartmentController extends Controller
 
     public function getByCompany(Company $company)
     {
-        $departments = $company->departments()->select('id', 'name', 'company_id')->get();
+        $query = $company->departments()->select('id', 'name', 'company_id');
+
+        // Filter by user's assigned departments
+        $user = auth()->user();
+        if ($user && $user->role !== 'superadmin' && $user->departments()->exists()) {
+             $query->whereIn('id', $user->departments()->pluck('departments.id'));
+        }
+
+        // Filter by specific branch(es) if provided
+        if (request()->filled('branch_id')) {
+            $branchIds = is_array(request('branch_id')) ? request('branch_id') : [request('branch_id')];
+            $query->whereIn('branch_id', $branchIds);
+        }
+
+        $departments = $query->orderBy('name')->get();
+        
         return response()->json($departments)
             ->header('Content-Type', 'application/json')
             ->header('Access-Control-Allow-Origin', '*')

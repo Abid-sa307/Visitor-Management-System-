@@ -17,27 +17,27 @@ class Visitor extends Model
     protected $fillable = [
         'company_id',
         'branch_id',
-        'name',
-        'visitor_company',
+        'department_id',
         'visitor_category_id',
+        'name',
         'email',
         'phone',
         'face_encoding',
         'face_image',
-        'department_id',
         'purpose',
         'person_to_visit',
-        'visit_date',
+        'visit_date', // Scheduled visit date
+        'visitor_company',
         'visitor_website',
         'vehicle_type',
         'vehicle_number',
         'goods_in_car',
         'documents',
+        'document_path',
         'workman_policy',
         'workman_policy_photo',
         'status',
         'in_time',
-        'document_path',
         'out_time',
         'last_status',
         'status_changed_at',
@@ -45,12 +45,9 @@ class Visitor extends Model
         'approved_at',
         'rejected_by',
         'reject_reason',
-        'vehicle_type',
-        'vehicle_number',
-        'goods_in_car',
-        'visitor_website',
         'security_checkin_time',
-        'security_checkout_time'
+        'security_checkout_time',
+        'visit_completed_at'
     ];
     
     /**
