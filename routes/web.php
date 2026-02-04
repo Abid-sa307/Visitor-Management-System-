@@ -126,11 +126,15 @@ Route::middleware('auth')->group(function () {
 
 // Public routes (no auth required)
 Route::prefix('public')->name('public.')->group(function() {
-    Route::get('/company/{company}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])->name('visitor.show');
-    Route::get('/company/{company}/visitor/{visitor}/visit/edit', [QRManagementController::class, 'showVisitForm'])->name('visitor.visit.edit');
-    Route::get('/company/{company}/branch/{branch}/visitor/{visitor}/visit/edit', [QRManagementController::class, 'showVisitForm'])->name('visitor.visit.edit.branch');
-    Route::post('/company/{company}/visitor/{visitor}/visit/store', [QRManagementController::class, 'storeVisit'])->name('visitor.visit.store');
-    Route::post('/company/{company}/branch/{branch}/visitor/{visitor}/visit/store', [QRManagementController::class, 'storeVisit'])->name('visitor.visit.store.branch');
+    Route::get('/companies/{company}/visitors/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])->name('visitor.show');
+    
+    // Legacy-style routes as requested
+    Route::get('/companies/{company}/visitors/{visitor}/visit', [QRManagementController::class, 'showVisitForm'])->name('visitor.visit.form');
+    Route::get('/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [QRManagementController::class, 'showVisitFormWithBranch'])->name('visitor.visit.form.branch');
+    
+    Route::post('/companies/{company}/visitors/{visitor}/visit', [QRManagementController::class, 'storeVisit'])->name('visitor.visit.store');
+    Route::post('/companies/{company}/branches/{branch}/visitors/{visitor}/visit', [QRManagementController::class, 'storeVisitWithBranch'])->name('visitor.visit.store.branch');
+
     Route::post('/company/{company}/visitor/{visitor}/visit/undo', [VisitorController::class, 'undoVisit'])->name('visitor.visit.undo');
     Route::get('/visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('visitors.pass');
     Route::get('/visitors/{visitor}/pass-pdf', [VisitorController::class, 'downloadPassPdf'])->name('visitors.pass.pdf');

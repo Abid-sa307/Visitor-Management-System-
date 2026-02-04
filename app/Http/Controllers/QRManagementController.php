@@ -184,7 +184,7 @@ public function __construct()
         $branchId = session('scanned_branch_id');
         
         // Redirect to the next step
-        $redirectUrl = route('public.visitor.show', [
+        $redirectUrl = route('public.visitor.visit.form', [
             'company' => $company->id,
             'visitor' => $visitor->id
         ]);
@@ -274,7 +274,8 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             'department_id'        => $validated['department_id'],
             'purpose'              => $validated['purpose'],
             'visit_date'           => $validated['visit_date'] ?? $visitor->visit_date ?? now()->format('Y-m-d'),
-            'status'               => $visitor->status === 'Approved' ? 'Approved' : 'Pending',
+            'status'               => ($visitor->status === 'Approved' || $company->auto_approve_visitors) ? 'Approved' : 'Pending',
+            'approved_at'          => ($visitor->status === 'Approved' ? $visitor->approved_at : ($company->auto_approve_visitors ? now() : null)),
             'visitor_company'      => $validated['visitor_company'] ?? null,
             'branch_id'            => $validated['branch_id'] ?? null,
             'visitor_category_id'  => $request->input('visitor_category_id') ?: null,
@@ -302,11 +303,11 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             return response()->json([
                 'success' => true,
                 'message' => 'Visit details updated successfully!',
-                'redirect' => "/public/company/{$company->id}/visitor/{$visitor->id}"
+                'redirect' => route('public.visitor.show', ['company' => $company->id, 'visitor' => $visitor->id])
             ]);
         }
 
-        return redirect("/public/company/{$company->id}/visitor/{$visitor->id}")
+        return redirect()->route('public.visitor.show', ['company' => $company->id, 'visitor' => $visitor->id])
             ->with('success', 'Visit details updated successfully!')
             ->with('show_pass_button', true);
 
@@ -828,5 +829,28 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
                 'message' => 'Error processing QR code: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Show the visit form with branch context (adapter for route with branch param).
+     */
+    public function showVisitFormWithBranch(Company $company, $branchId, \App\Models\Visitor $visitor)
+    {
+        // Set the branch in session/request so the main method can pick it up
+        request()->merge(['branch' => $branchId]);
+        session(['scanned_branch_id' => $branchId]);
+        
+        return $this->showVisitForm($company, $visitor);
+    }
+
+    /**
+     * Store request with branch context (adapter for route with branch param).
+     */
+    public function storeVisitWithBranch(Company $company, $branchId, \App\Models\Visitor $visitor, \Illuminate\Http\Request $request)
+    {
+        // Set the branch in request so validation/logic works
+        $request->merge(['branch_id' => $branchId]);
+        
+        return $this->storeVisit($company, $visitor, $request);
     }
 }
