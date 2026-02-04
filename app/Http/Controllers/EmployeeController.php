@@ -14,8 +14,8 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
-        $isCompany = Auth::guard('company')->check();
-        $authUser = $isCompany ? Auth::guard('company')->user() : Auth::user();
+        // Get authenticated user (company routes use 'auth' middleware with web guard)
+        $authUser = auth()->user();
         $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
         // Base query with relationships
@@ -37,9 +37,22 @@ class EmployeeController extends Controller
             if ($companyId) {
                 $employeeQuery->where('company_id', $companyId);
             }
-        } elseif ($isCompany && $authUser) {
+        } else {
+            // Company users - filter by their company
             $companyId = $authUser->company_id;
             $employeeQuery->where('company_id', $companyId);
+            
+            // Filter by user's assigned branches
+            $userBranchIds = $authUser->branches()->pluck('branches.id')->toArray();
+            \Log::info('Employee Index - Branch Filter', [
+                'user_id' => $authUser->id,
+                'user_role' => $authUser->role,
+                'company_id' => $companyId,
+                'branch_ids' => $userBranchIds
+            ]);
+            if (!empty($userBranchIds)) {
+                $employeeQuery->whereIn('branch_id', $userBranchIds);
+            }
         }
 
         // Department filter
@@ -58,10 +71,16 @@ class EmployeeController extends Controller
         // Get branches based on company selection
         $branches = [];
         if ($companyId) {
-            $branches = \App\Models\Branch::where('company_id', $companyId)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
+            if ($isSuper) {
+                // Superadmin sees all branches
+                $branches = \App\Models\Branch::where('company_id', $companyId)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } else {
+                // Company users see only their assigned branches
+                $branches = $authUser->branches()->orderBy('name')->pluck('name', 'branches.id')->toArray();
+            }
         }
 
         // Get departments based on company selection
@@ -79,7 +98,6 @@ class EmployeeController extends Controller
             'branches' => $branches,
             'companies' => $companies,
             'isSuper' => $isSuper,
-            'isCompany' => $isCompany,
             'from' => $fromDate,
             'to' => $toDate,
         ]);
@@ -96,7 +114,8 @@ class EmployeeController extends Controller
             $departments = [];
         } else {
             $companies = [$user->company_id => $user->company->name];
-            $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+            // Get only branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->pluck('name', 'branches.id');
             $departments = [];
         }
         
@@ -147,7 +166,8 @@ class EmployeeController extends Controller
             $departments = Department::where('branch_id', $employee->branch_id)->pluck('name', 'id');
         } else {
             $companies = [$employee->company_id => $employee->company->name];
-            $branches = Branch::where('company_id', $employee->company_id)->pluck('name', 'id');
+            // Get only branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->pluck('name', 'branches.id');
             $departments = Department::where('branch_id', $employee->branch_id)->pluck('name', 'id');
         }
         

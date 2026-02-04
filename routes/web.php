@@ -15,6 +15,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\Auth\CompanyLoginController;
 use App\Http\Controllers\SecurityQuestionController;
+use App\Http\Controllers\QRManagementController;
 use App\Models\Company;
 
 /*
@@ -56,6 +57,10 @@ Route::view('/healthcare-facilities', 'pages.healthcare-facilities')->name('heal
 Route::view('/malls-and-events', 'pages.malls-and-events')->name('malls-and-events');
 Route::view('/temple-and-dargah', 'pages.temple-and-dargah')->name('temple-and-dargah');
 
+// Public QR Code Routes (no auth required) - MUST be before any middleware groups
+Route::get('/companies/{company}/public/qr', [QRManagementController::class, 'show'])->name('companies.public.qr');
+Route::get('/companies/{company}/public-qr', [QRManagementController::class, 'show'])->name('companies.public-qr'); // Alias with hyphen
+
 
 // Dynamic Dropdown Routes (Guard Agnostic)
 Route::prefix('api')->name('api.')->middleware('web')->group(function () {
@@ -74,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::get('visitors/history', [VisitorController::class, 'history'])->name('visitors.history');
     Route::get('visitors/visits', [VisitorController::class, 'visitsIndex'])->name('visits.index');
     Route::get('visitors/inout', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
+    Route::post('visitors/{visitor}/toggle-entry', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
     Route::get('visitors/approvals', [VisitorController::class, 'approvals'])->name('visitors.approvals');
     Route::patch('visitors/{visitor}/approve', [VisitorController::class, 'approve'])->name('approvals.approve');
     Route::patch('visitors/{visitor}/reject', [VisitorController::class, 'reject'])->name('approvals.reject');
@@ -89,7 +95,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('visitor-categories', \App\Http\Controllers\VisitorCategoryController::class);
     Route::resource('employees', EmployeeController::class);
     Route::resource('users', UserController::class);
-
+    
     // Specific Action Routes
     Route::get('visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('visitors.pass');
     Route::get('visitors/{visitor}/pass-pdf', [VisitorController::class, 'downloadPassPdf'])->name('visitors.pass.pdf');
@@ -97,7 +103,40 @@ Route::middleware('auth')->group(function () {
     Route::post('visitors/{visitor}/checkin', [VisitorController::class, 'checkIn'])->name('visitors.checkin');
     Route::post('visitors/{visitor}/checkout', [VisitorController::class, 'checkOut'])->name('visitors.checkout');
 
-    // QR & Security
+    // QR Management
+    Route::prefix('qr')->name('qr.')->group(function() {
+        Route::get('/management', [QRManagementController::class, 'index'])->name('index');
+        Route::get('/companies/{company}/qr', [QRManagementController::class, 'show'])->name('show');
+        Route::get('/companies/{company}/qr/download', [QRManagementController::class, 'download'])->name('download');
+        Route::get('/scan/{company}/{branch?}', [QRManagementController::class, 'scan'])->name('scan');
+        
+        // Public visitor routes
+        Route::get('/visitor/create/{company}', [QRManagementController::class, 'createVisitor'])->name('visitor.create');
+        Route::get('/visitor/create/{company}/{branch}', [QRManagementController::class, 'createVisitor'])->name('visitor.create.branch');
+        Route::post('/visitor/store/{company}', [QRManagementController::class, 'storeVisitor'])->name('visitor.store');
+        Route::post('/visitor/store/{company}/{branch}', [QRManagementController::class, 'storeVisitor'])->name('visitor.store.branch');
+    });
+    
+    // Legacy route alias for qr-management.index
+    Route::get('/qr-management', [QRManagementController::class, 'index'])->name('qr-management.index');
+    
+    // Public visitor routes (outside auth middleware)
+});
+
+
+// Public routes (no auth required)
+Route::prefix('public')->name('public.')->group(function() {
+    Route::get('/company/{company}/visitor/{visitor}', [QRManagementController::class, 'publicVisitorIndex'])->name('visitor.show');
+    Route::get('/company/{company}/visitor/{visitor}/visit/edit', [QRManagementController::class, 'showVisitForm'])->name('visitor.visit.edit');
+    Route::get('/company/{company}/branch/{branch}/visitor/{visitor}/visit/edit', [QRManagementController::class, 'showVisitForm'])->name('visitor.visit.edit.branch');
+    Route::post('/company/{company}/visitor/{visitor}/visit/store', [QRManagementController::class, 'storeVisit'])->name('visitor.visit.store');
+    Route::post('/company/{company}/branch/{branch}/visitor/{visitor}/visit/store', [QRManagementController::class, 'storeVisit'])->name('visitor.visit.store.branch');
+    Route::post('/company/{company}/visitor/{visitor}/visit/undo', [VisitorController::class, 'undoVisit'])->name('visitor.visit.undo');
+    Route::get('/visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('visitors.pass');
+    Route::get('/visitors/{visitor}/pass-pdf', [VisitorController::class, 'downloadPassPdf'])->name('visitors.pass.pdf');
+});
+
+Route::middleware('auth')->group(function() {
     // QR & Security
     Route::get('/qr-scan', [QrCodeController::class, 'scan'])->name('qr.scan');
     Route::post('/qr-process', [QrCodeController::class, 'process'])->name('qr.process');
@@ -150,6 +189,7 @@ Route::middleware('auth')->group(function () {
         Route::get('visitors/visits', [VisitorController::class, 'visitsIndex'])->name('visits.index');
         Route::get('visitors/approvals', [VisitorController::class, 'approvals'])->name('approvals.index');
         Route::get('visitors/entry-page', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
+        Route::post('visitors/{visitor}/toggle-entry', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
         
         Route::resource('visitors', VisitorController::class)->except(['show']);
         

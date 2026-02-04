@@ -41,7 +41,8 @@ public function __construct()
         'storeVisitor',
         'showVisitForm',
         'storePublicVisit',
-        'publicVisitorIndex'
+        'publicVisitorIndex',
+        'show'
     ]);
 }
 
@@ -78,9 +79,8 @@ public function __construct()
         return view('qr-management.index', compact('companies'));
     }
 
-    /**
-     * Display the QR code for a specific company or branch.
-     */
+
+
     /**
      * Display the QR code scanning page for public visitor registration.
      *
@@ -472,59 +472,76 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
      */
     public function show(Company $company, Branch $branch = null)
     {
-        $user = auth()->user();
-        $isSuperAdmin = $user->is_super_admin || $user->hasRole('super_admin') || $user->role === 'superadmin';
-        
-        // Debugging info
-        \Log::info('QR Management Show Access', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'is_super_admin' => $user->is_super_admin,
-            'role' => $user->role,
-            'hasRole(super_admin)' => $user->hasRole('super_admin'),
-            'isSuperAdmin' => $isSuperAdmin,
-            'user_company_id' => $user->company_id,
-            'requested_company_id' => $company->id
-        ]);
-        
-        // Check if user has access to this company
-        if (!$isSuperAdmin && $user->company_id != $company->id) {
-            abort(403, 'You do not have access to this company\'s QR code.');
+        // Check if a specific branch was requested via query parameter (for public access)
+        $branchId = request()->query('branch_id');
+        if (!$branch && $branchId) {
+            $branch = $company->branches()->find($branchId);
         }
         
-        // If branch is provided, ensure it belongs to the company
-        if ($branch && $branch->company_id !== $company->id) {
-            abort(404, 'Branch not found for this company.');
-        }
+        // Check if user is authenticated
+        $isAuthenticated = auth()->check();
         
-        // Load company data with relationships
-        $company->loadCount('branches', 'departments')
-               ->load(['branches' => function($query) {
-                   $query->orderBy('name');
-               }]);
-        
-        // Generate QR code URL
-        $qrUrl = url('/qr/scan/' . $company->id);
-        
-        // If branch is provided, add it to the URL
-        if ($branch) {
-            $qrUrl .= '/' . $branch->id;
-        }
-        
-        // Generate QR code with the URL
-        $qrCodeSvg = QrCode::format('svg')
-            ->size(300)
-            ->errorCorrection('H')
-            ->generate($qrUrl);
+        if ($isAuthenticated) {
+            // Authenticated user - show admin QR management view
+            $user = auth()->user();
+            $isSuperAdmin = $user->is_super_admin || $user->hasRole('super_admin') || $user->role === 'superadmin';
             
-        $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg);
-        
-        return view('qr-management.show', [
-            'company' => $company,
-            'branch' => $branch,
-            'qrCode' => $qrCodeBase64,
-            'isSuperAdmin' => $isSuperAdmin
-        ]);
+            // Check if user has access to this company
+            if (!$isSuperAdmin && $user->company_id != $company->id) {
+                abort(403, 'You do not have access to this company\'s QR code.');
+            }
+            
+            // If branch is provided, ensure it belongs to the company
+            if ($branch && $branch->company_id !== $company->id) {
+                abort(404, 'Branch not found for this company.');
+            }
+            
+            // Load company data with relationships
+            $company->loadCount('branches', 'departments')
+                   ->load(['branches' => function($query) {
+                       $query->orderBy('name');
+                   }]);
+            
+            // Generate QR code URL
+            $qrUrl = url('/qr/scan/' . $company->id);
+            
+            // If branch is provided, add it to the URL
+            if ($branch) {
+                $qrUrl .= '/' . $branch->id;
+            }
+            
+            // Generate QR code with the URL
+            $qrCodeSvg = QrCode::format('svg')
+                ->size(300)
+                ->errorCorrection('H')
+                ->generate($qrUrl);
+                
+            $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg);
+            
+            return view('qr-management.show', [
+                'company' => $company,
+                'branch' => $branch,
+                'qrCode' => $qrCodeBase64,
+                'isSuperAdmin' => $isSuperAdmin
+            ]);
+        } else {
+            // Public access - show public QR code view
+            $branchName = $branch ? $branch->name : null;
+            
+            // Generate the URL for the QR code
+            if ($branch) {
+                $url = route('qr.scan', ['company' => $company->id, 'branch' => $branch->id]);
+            } else {
+                $url = route('qr.scan', ['company' => $company->id]);
+            }
+            
+            // Generate QR code
+            $qrCode = QrCode::size(300)
+                ->margin(2)
+                ->generate($url);
+            
+            return view('companies.public-qr', compact('company', 'qrCode', 'url', 'branchName'));
+        }
     }
 
     /**

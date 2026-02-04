@@ -71,11 +71,10 @@
                 </div>
             </div>
         <div class="row g-2">
-            <div class="col-md-3">
-                <label class="form-label">Date</label>
-                <input type="date" name="date" class="form-select form-select-sm" 
-                       value="{{ $selectedDate ?? now()->format('Y-m-d') }}">
-            </div>
+            <div class="col-lg-4 col-md-6">
+                        <label>Date Range</label>
+                        @include('components.basic_date_range', ['from' => $from ?? now()->format('Y-m-d'), 'to' => $to ?? now()->format('Y-m-d')])
+                    </div>
 
             @if(auth()->user()->role === 'superadmin')
             <div class="col-md-3">

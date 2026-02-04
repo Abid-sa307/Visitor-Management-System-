@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Branch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BranchController extends Controller
 {
@@ -132,7 +133,22 @@ class BranchController extends Controller
     // API Methods
     public function getByCompany(Company $company)
     {
-        $branches = $company->branches()->orderBy('name')->get(['id', 'name']);
+        // Check both guards for authenticated user
+        $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : auth()->user();
+        
+        // Superadmin sees all branches
+        if ($user && in_array($user->role, ['superadmin', 'super', 'super_admin'], true)) {
+            $branches = $company->branches()->orderBy('name')->get(['id', 'name']);
+        } else {
+            // Company users see only their assigned branches
+            $branches = $company->branches()
+                ->whereHas('users', function($query) use ($user) {
+                    $query->where('users.id', $user->id);
+                })
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+        
         return response()->json($branches);
     }
 

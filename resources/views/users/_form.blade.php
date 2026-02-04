@@ -448,7 +448,7 @@
                 $moduleGroups = [
                     'Foundation' => ['dashboard', 'reports'],
                     'Organization' => ['departments', 'employees', 'users'],
-                    'Visitors' => ['visitors', 'visit_details', 'visitor_inout', 'visitor_history', 'visitor_categories'],
+                    'Visitors' => ['visitors', 'visit_details','visitor_approval', 'visitor_inout', 'visitor_history', 'visitor_categories'],
                     'Security' => ['security_checks', 'security_questions', 'qr_scanner'],
                 ];
                 $groupIcons = [
@@ -480,7 +480,7 @@
                                             @case('visitor_inout') In & Out @break
                                             @case('visitor_history') History @break
                                             @case('visitor_categories') Categories @break
-                                            @case('security_checks') Health Checks @break
+                                            @case('security_checks') Security Checks @break
                                             @case('security_questions') Questions @break
                                             @case('qr_scanner') QR Scanner @break
                                             @default {{ str_replace('_', ' ', $module) }}

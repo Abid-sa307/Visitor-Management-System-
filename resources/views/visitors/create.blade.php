@@ -95,10 +95,25 @@
                   <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
               @else
-                @if(auth()->user()->branch_id && isset($branches[auth()->user()->branch_id]))
-                  <input type="hidden" name="branch_id" value="{{ auth()->user()->branch_id }}">
-                  <input type="text" class="form-control" value="{{ $branches[auth()->user()->branch_id] }}" readonly>
+                @if(isset($branches) && $branches->count() > 1)
+                  {{-- Multiple branches: show dropdown --}}
+                  <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror" required>
+                    <option value="">-- Select Branch --</option>
+                    @foreach($branches as $id => $name)
+                      <option value="{{ $id }}" {{ old('branch_id') == $id ? 'selected' : '' }}>
+                        {{ $name }}
+                      </option>
+                    @endforeach
+                  </select>
+                  @error('branch_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
+                @elseif(isset($branches) && $branches->count() === 1)
+                  {{-- Single branch: lock it --}}
+                  <input type="hidden" name="branch_id" value="{{ $branches->keys()->first() }}">
+                  <input type="text" class="form-control" value="{{ $branches->first() }}" readonly>
                 @else
+                  {{-- No branches assigned --}}
                   <input type="text" class="form-control" value="No branch assigned" readonly>
                 @endif
               @endif

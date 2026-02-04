@@ -35,23 +35,16 @@
                 </div>
             @endif
 
-            {{-- Branch Selection --}}
+            {{-- Branch Selection (Locked) --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Branch</label>
-                <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
-                    <option value="">-- Select Branch --</option>
-                    @foreach($branches as $branch)
-                        <option value="{{ $branch->id }}" 
-                            {{ old('branch_id', $visitor->branch_id ?? $selectedBranchId ?? '') == $branch->id ? 'selected' : '' }}>
-                            {{ $branch->name }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('branch_id')
-                    <div class="invalid-feedback d-block">
-                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
-                    </div>
-                @enderror
+                @php
+                    // Always show the visitor's actual branch, even if not in user's assigned branches
+                    $branchName = $visitor->branch ? $visitor->branch->name : 'No branch assigned';
+                @endphp
+                <input type="hidden" name="branch_id" value="{{ $visitor->branch_id }}">
+                <input type="text" class="form-control" value="{{ $branchName }}" readonly>
+                <small class="text-muted">Branch cannot be changed after visitor creation</small>
             </div>
 
             {{-- Department & Visitor Category --}}

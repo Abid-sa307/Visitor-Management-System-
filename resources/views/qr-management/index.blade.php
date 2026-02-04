@@ -84,7 +84,7 @@
                                     <td>{{ $item->email ?? '—' }}</td>
                                     <td>{{ $item->phone ?? '—' }}</td>
                                     <td>
-                                        <a href="{{ route('companies.public.qr', $item->company_id) }}?branch_id={{ $item->id }}" 
+                                        <a href="{{ route('companies.public-qr', $item->company_id) }}?branch_id={{ $item->id }}" 
                                            class="action-btn action-btn--view"
                                            target="_blank">
                                             <i class="fas fa-qrcode me-1"></i> View QR

@@ -103,7 +103,7 @@
       <h1 class="page-heading__title">Visitor Ledger</h1>
     </div>
     <div class="page-heading__actions">
-      <a href="{{ route('visitors.create') }}" class="btn btn-primary btn-lg shadow-sm">
+      <a href="{{ $isCompany ? route('company.visitors.create') : route('visitors.create') }}" class="btn btn-primary btn-lg shadow-sm">
         <i class="fas fa-user-plus me-2"></i> Add Visitor
       </a>
     </div>

@@ -85,7 +85,8 @@ class DepartmentController extends Controller
             $branches = collect();
         } else {
             $companies = Company::where('id', $user->company_id)->get();
-            $branches = Branch::where('company_id', $user->company_id)->orderBy('name')->get();
+            // Only show branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->get();
         }
 
         return view('departments.create', compact('companies', 'branches'));
@@ -132,16 +133,19 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
-        if (auth()->user()->role !== 'superadmin' && $department->company_id !== auth()->user()->company_id) {
+        $user = auth()->user();
+        
+        if ($user->role !== 'superadmin' && $department->company_id !== $user->company_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        if (auth()->user()->role === 'superadmin') {
+        if ($user->role === 'superadmin') {
             $companies = Company::all();
             $branches = Branch::where('company_id', $department->company_id)->get();
         } else {
-            $companies = Company::where('id', auth()->user()->company_id)->get();
-            $branches = Branch::where('company_id', auth()->user()->company_id)->get();
+            $companies = Company::where('id', $user->company_id)->get();
+            // Only show branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->get();
         }
 
         return view('departments.edit', compact('department', 'companies', 'branches'));

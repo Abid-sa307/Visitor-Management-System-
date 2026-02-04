@@ -310,15 +310,14 @@ class VisitorController extends Controller
             ->get();
         
         // Get branches for company users
-        $branches = collect();
-        if (!$this->isSuper()) {
-            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-            $branches = \App\Models\Branch::where('company_id', $u->company_id)
-                ->orderBy('name')
-                ->pluck('name', 'id');
-        }
+    $branches = collect();
+    if (!$this->isSuper()) {
+        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        // Get only branches assigned to this user
+        $branches = $u->branches()->orderBy('name')->pluck('name', 'branches.id');
+    }
 
-        return view('visitors.create', compact('companies', 'departments', 'categories', 'branches'));
+    return view('visitors.create', compact('companies', 'departments', 'categories', 'branches'));
     }
     
     public function store(Request $request)
@@ -405,7 +404,8 @@ class VisitorController extends Controller
             if (!$this->isSuper()) {
                 $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
                 $validated['company_id'] = $u->company_id;
-                if (!empty($u->branch_id)) {
+                // Only set branch_id if not provided in request (preserve user's selection)
+                if (empty($validated['branch_id']) && !empty($u->branch_id)) {
                     $validated['branch_id'] = $u->branch_id;
                 }
             }
@@ -1051,10 +1051,16 @@ class VisitorController extends Controller
         
         $companyId = $visitor->company_id ?? ($companies->first()->id ?? null);
 
-        $branches = Branch::query()
-            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        // Get branches - for super admin get all, for company users get only assigned branches
+        if ($isSuper) {
+            $branches = Branch::query()
+                ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        } else {
+            // Get only branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->get(['branches.id', 'branches.name']);
+        }
 
         $selectedBranchId = $visitor->branch_id ?? ($branches->first()->id ?? null);
         $departments = $selectedBranchId ? $this->getDepartments($selectedBranchId) : collect();
