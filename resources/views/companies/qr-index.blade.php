@@ -5,7 +5,7 @@
     <div class="page-heading mb-4">
         <div>
             <div class="page-heading__eyebrow">Integrity</div>
-            <h1 class="page-heading__title">QR Code Management</h1>
+            <h1 class="page-heading__title">QR-Code Management</h1>
             <div class="page-heading__meta">
                 Distribute branded QR checkpoints for every tenant and branch to streamline self-service arrivals.
             </div>

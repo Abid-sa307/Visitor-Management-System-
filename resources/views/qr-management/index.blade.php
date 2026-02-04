@@ -29,7 +29,7 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h4 text-gray-800">QR Code Management</h1>
+        <h1 class="h4 text-gray-800">QR-Code Management</h1>
         <a href="{{ route('dashboard') }}" class="action-btn action-btn--view">
             <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
         </a>
