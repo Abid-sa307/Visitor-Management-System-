@@ -225,7 +225,7 @@ class ReportController extends Controller
         $departments = $this->getDepartments($request);
         $branches = $this->getBranches($request);
         
-        return view('reports.hourly', [
+        return view('visitors.reports_hourly', [
             'hourlyData' => $hourlyData,
             'selectedDate' => $request->date ?? now()->format('Y-m-d'),
             'companies' => $companies,
