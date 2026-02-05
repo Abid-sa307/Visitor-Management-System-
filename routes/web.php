@@ -70,6 +70,13 @@ Route::get('/qr/visitor/create/{company}/{branch}', [QRManagementController::cla
 Route::post('/qr/visitor/store/{company}', [QRManagementController::class, 'storeVisitor'])->name('qr.visitor.store');
 Route::post('/qr/visitor/store/{company}/{branch}', [QRManagementController::class, 'storeVisitor'])->name('qr.visitor.store.branch');
 
+// Public Visitor Mark In/Out Route (for visitors to mark themselves in/out)
+Route::post('/visitors/{visitor}/toggle-entry', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
+
+// Public Visitor Pass Routes (for visitors to print/download their passes)
+Route::get('/public/visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('public.visitors.pass');
+Route::get('/public/visitors/{visitor}/pass/pdf', [VisitorController::class, 'showPassPdf'])->name('public.visitors.pass.pdf');
+
 
 // Dynamic Dropdown Routes (Guard Agnostic)
 Route::prefix('api')->name('api.')->middleware('web')->group(function () {
@@ -88,7 +95,6 @@ Route::middleware('auth')->group(function () {
     Route::get('visitors/history', [VisitorController::class, 'history'])->name('visitors.history');
     Route::get('visitors/visits', [VisitorController::class, 'visitsIndex'])->name('visits.index');
     Route::get('visitors/inout', [VisitorController::class, 'entryPage'])->name('visitors.entry.page');
-    Route::post('visitors/{visitor}/toggle-entry', [VisitorController::class, 'toggleEntry'])->name('visitors.entry.toggle');
     Route::get('visitors/approvals', [VisitorController::class, 'approvals'])->name('visitors.approvals');
     Route::patch('visitors/{visitor}/approve', [VisitorController::class, 'approve'])->name('approvals.approve');
     Route::patch('visitors/{visitor}/reject', [VisitorController::class, 'reject'])->name('approvals.reject');

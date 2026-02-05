@@ -1641,12 +1641,16 @@ class VisitorController extends Controller
         }
 
         $visitor = Visitor::findOrFail($id);
-        $this->authorizeVisitor($visitor);
-
+        
         // Check if this is a QR flow visitor and if the company allows mark in/out in QR flow
         $isPublicRequest = request()->has('public') || 
                           (request()->header('referer') && str_contains(request()->header('referer'), '/public/')) ||
                           (request()->query('public') == '1');
+        
+        // Only authorize if not a public request
+        if (!$isPublicRequest) {
+            $this->authorizeVisitor($visitor);
+        }
         
         if ($isPublicRequest && !$visitor->company->mark_in_out_in_qr_flow) {
             $message = 'Mark in/out is not allowed for QR flow visitors for this company.';
@@ -1859,20 +1863,11 @@ class VisitorController extends Controller
                                (request()->query('public') == '1');
             
             if ($isPublicRequest) {
-                // If visitor has completed their visit (checked out), clear session and show fresh public index
-                if ($visitor->out_time && $visitor->status === 'Completed') {
-                    // Clear the visitor from session so they see a fresh public index
-                    session()->forget('current_visitor_id');
-                    
-                    return redirect()->route('qr.scan', ['company' => $visitor->company_id])
-                        ->with('success', $message)
-                        ->with('play_notification', $playNotification ?? false)
-                        ->with('visit_completed', true);
-                } else {
-                    return redirect()->route('public.visitor.show', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
-                        ->with('success', $message)
-                        ->with('play_notification', $playNotification ?? false);
-                }
+                // Always redirect back to the public visitor page to show the updated status
+                return redirect()->route('public.visitor.show', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
+                    ->with('success', $message)
+                    ->with('play_notification', $playNotification ?? false)
+                    ->with('visit_completed', $visitor->out_time && $visitor->status === 'Completed');
             }
 
             return redirect()->route('visitors.entry.page')
@@ -2981,5 +2976,33 @@ class VisitorController extends Controller
         } catch (\Exception $e) {
             return response()->json(['enabled' => false], 404);
         }
+    }
+
+    /**
+     * Show visitor pass for printing (public access)
+     *
+     * @param  int  $id
+     * @return \Illuminate\View\View
+     */
+    public function showPass($id)
+    {
+        $visitor = Visitor::with(['company', 'branch', 'department'])->findOrFail($id);
+        $company = $visitor->company;
+        
+        return view('visitors.pass', compact('visitor', 'company'));
+    }
+
+    /**
+     * Download visitor pass as PDF (public access)
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function showPassPdf($id)
+    {
+        $visitor = Visitor::with(['company', 'branch', 'department'])->findOrFail($id);
+        $company = $visitor->company;
+        
+        return view('visitors.pass_pdf', compact('visitor', 'company'));
     }
 }
