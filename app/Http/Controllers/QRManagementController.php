@@ -40,6 +40,9 @@ public function __construct()
         'createVisitor', 
         'storeVisitor',
         'showVisitForm',
+        'showVisitFormWithBranch',
+        'storeVisit',
+        'storeVisitWithBranch',
         'storePublicVisit',
         'publicVisitorIndex',
         'show'

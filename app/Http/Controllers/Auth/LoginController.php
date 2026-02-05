@@ -76,13 +76,22 @@ class LoginController extends Controller
                     Session::put('otp_required', true);
                     Session::put('otp_email', $user->email);
                     
+                    // Force session save to ensure data persists
+                    Session::save();
+                    
                     // Log the user out until OTP is verified
                     Auth::logout();
                     
-                    // Log OTP generation
+                    // Log OTP generation with session ID
                     Log::info('OTP generated and sent', [
                         'user_id' => $user->id,
-                        'email' => $user->email
+                        'email' => $user->email,
+                        'session_id' => Session::getId(),
+                        'session_data' => [
+                            'otp_user_id' => Session::get('otp_user_id'),
+                            'otp_required' => Session::get('otp_required'),
+                            'otp_email' => Session::get('otp_email')
+                        ]
                     ]);
                     
                     // Redirect to OTP verification page

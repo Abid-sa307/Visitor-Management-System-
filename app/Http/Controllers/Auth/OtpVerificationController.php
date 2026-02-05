@@ -25,7 +25,22 @@ class OtpVerificationController extends Controller
      */
     public function showOtpForm(Request $request)
     {
+        // Log session state for debugging
+        Log::info('OTP form accessed', [
+            'session_id' => Session::getId(),
+            'has_otp_required' => Session::has('otp_required'),
+            'has_otp_user_id' => Session::has('otp_user_id'),
+            'otp_required_value' => Session::get('otp_required'),
+            'otp_user_id_value' => Session::get('otp_user_id'),
+            'all_session_data' => $request->session()->all()
+        ]);
+        
         if (!Session::has('otp_required') || !Session::has('otp_user_id')) {
+            Log::warning('OTP verification request without required session data', [
+                'session_id' => Session::getId(),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
             return redirect()->route('login')->with('error', 'Invalid OTP verification request.');
         }
         

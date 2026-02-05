@@ -61,6 +61,15 @@ Route::view('/temple-and-dargah', 'pages.temple-and-dargah')->name('temple-and-d
 Route::get('/companies/{company}/public/qr', [QRManagementController::class, 'show'])->name('companies.public.qr');
 Route::get('/companies/{company}/public-qr', [QRManagementController::class, 'show'])->name('companies.public-qr'); // Alias with hyphen
 
+// Public QR Scan Route (for visitors to fill information)
+Route::get('/qr/scan/{company}/{branch?}', [QRManagementController::class, 'scan'])->name('qr.scan');
+
+// Public Visitor Registration Routes (for visitors to register themselves)
+Route::get('/qr/visitor/create/{company}', [QRManagementController::class, 'createVisitor'])->name('qr.visitor.create');
+Route::get('/qr/visitor/create/{company}/{branch}', [QRManagementController::class, 'createVisitor'])->name('qr.visitor.create.branch');
+Route::post('/qr/visitor/store/{company}', [QRManagementController::class, 'storeVisitor'])->name('qr.visitor.store');
+Route::post('/qr/visitor/store/{company}/{branch}', [QRManagementController::class, 'storeVisitor'])->name('qr.visitor.store.branch');
+
 
 // Dynamic Dropdown Routes (Guard Agnostic)
 Route::prefix('api')->name('api.')->middleware('web')->group(function () {
@@ -103,18 +112,11 @@ Route::middleware('auth')->group(function () {
     Route::post('visitors/{visitor}/checkin', [VisitorController::class, 'checkIn'])->name('visitors.checkin');
     Route::post('visitors/{visitor}/checkout', [VisitorController::class, 'checkOut'])->name('visitors.checkout');
 
-    // QR Management
+    // QR Management (Auth Required)
     Route::prefix('qr')->name('qr.')->group(function() {
         Route::get('/management', [QRManagementController::class, 'index'])->name('index');
         Route::get('/companies/{company}/qr', [QRManagementController::class, 'show'])->name('show');
         Route::get('/companies/{company}/qr/download', [QRManagementController::class, 'download'])->name('download');
-        Route::get('/scan/{company}/{branch?}', [QRManagementController::class, 'scan'])->name('scan');
-        
-        // Public visitor routes
-        Route::get('/visitor/create/{company}', [QRManagementController::class, 'createVisitor'])->name('visitor.create');
-        Route::get('/visitor/create/{company}/{branch}', [QRManagementController::class, 'createVisitor'])->name('visitor.create.branch');
-        Route::post('/visitor/store/{company}', [QRManagementController::class, 'storeVisitor'])->name('visitor.store');
-        Route::post('/visitor/store/{company}/{branch}', [QRManagementController::class, 'storeVisitor'])->name('visitor.store.branch');
     });
     
     // Legacy route alias for qr-management.index
