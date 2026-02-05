@@ -11,7 +11,7 @@
             </div>
         </div>
         <div class="page-heading__actions">
-            <a href="{{ route('employees.create') }}" class="btn btn-primary btn-lg shadow-sm">
+            <a href="{{ route(request()->route()->getName() === 'company.employees.index' ? 'company.employees.create' : 'employees.create') }}" class="btn btn-primary btn-lg shadow-sm">
                 <i class="fas fa-user-plus me-2"></i> Add Employee
             </a>
         </div>
@@ -83,7 +83,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter me-1"></i> Apply
                     </button>
-                    <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route(request()->route()->getName() === 'company.employees.index' ? 'company.employees.index' : 'employees.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-undo me-1"></i> Reset
                     </a>
                 </div>
@@ -136,12 +136,12 @@
                             <td>{{ $emp->phone ?? '—' }}</td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
-                                    <a href="{{ route('employees.edit', $emp->id) }}"
+                                    <a href="{{ route(request()->route()->getName() === 'company.employees.index' ? 'company.employees.edit' : 'employees.edit', $emp->id) }}"
                                        class="action-btn action-btn--edit action-btn--icon"
                                        title="Edit Employee">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('employees.destroy', $emp->id) }}"
+                                    <form action="{{ route(request()->route()->getName() === 'company.employees.index' ? 'company.employees.destroy' : 'employees.destroy', $emp->id) }}"
                                           method="POST"
                                           onsubmit="return confirm('Are you sure you want to delete this employee?')">
                                         @csrf

@@ -22,7 +22,7 @@
             </div>
         </div>
         <div class="page-heading__actions">
-            <a href="{{ route('visitor-categories.create') }}" class="btn btn-primary btn-lg shadow-sm">
+            <a href="{{ route(request()->route()->getName() === 'company.visitor-categories.index' ? 'company.visitor-categories.create' : 'visitor-categories.create') }}" class="btn btn-primary btn-lg shadow-sm">
                 <i class="fas fa-plus me-2"></i> Add Category
             </a>
         </div>
@@ -84,13 +84,13 @@
                             </td>
                             <td class="action-buttons">
                                 <div class="d-flex flex-wrap gap-2">
-                                    <a href="{{ route('visitor-categories.edit', $category) }}" 
+                                    <a href="{{ route(request()->route()->getName() === 'company.visitor-categories.index' ? 'company.visitor-categories.edit' : 'visitor-categories.edit', $category) }}" 
                                        class="action-btn action-btn--edit action-btn--icon" 
                                        data-bs-toggle="tooltip" 
                                        title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('visitor-categories.destroy', $category) }}" 
+                                    <form action="{{ route(request()->route()->getName() === 'company.visitor-categories.index' ? 'company.visitor-categories.destroy' : 'visitor-categories.destroy', $category) }}" 
                                           method="POST" 
                                           class="d-inline"
                                           onsubmit="return confirm('Are you sure you want to delete this category? This action cannot be undone.');">

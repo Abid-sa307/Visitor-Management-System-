@@ -1315,6 +1315,32 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<script>
+// Pass server-side data to JavaScript for company users
+window.serverBranches = @json($branches ?? []);
+
+// Get full department data with branch_id
+@php
+    $departmentsWithBranchId = [];
+    if (!empty($departments) && count($departments) > 0) {
+        // $departments is a collection from pluck('name', 'id'), so keys are the IDs
+        $departmentIds = array_keys($departments->toArray());
+        
+        if (!empty($departmentIds)) {
+            $depts = \App\Models\Department::whereIn('id', $departmentIds)->get(['id', 'name', 'branch_id']);
+            foreach ($depts as $dept) {
+                $departmentsWithBranchId[$dept->id] = [
+                    'name' => $dept->name,
+                    'branch_id' => $dept->branch_id
+                ];
+            }
+        }
+    }
+@endphp
+
+window.serverDepartments = @json($departmentsWithBranchId);
+</script>
+
 <script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
 <script>
 window.toggleAllBranches = function() {

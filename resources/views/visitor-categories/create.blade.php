@@ -6,7 +6,7 @@
         <div class="card-header">Create Visitor Category</div>
 
         <div class="card-body">
-            <form method="POST" action="{{ route('visitor-categories.store') }}">
+            <form method="POST" action="{{ request()->is('company/*') ? route('company.visitor-categories.store') : route('visitor-categories.store') }}">
                 @csrf
 
                 <div class="mb-3">
@@ -69,7 +69,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i> Save
                     </button>
-                    <a href="{{ route('visitor-categories.index') }}" class="btn btn-secondary">
+                    <a href="{{ url()->previous() }}" class="btn btn-secondary">
                         <i class="fas fa-times me-1"></i> Cancel
                     </a>
                 </div>

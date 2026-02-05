@@ -190,6 +190,32 @@
 @endsection
 
 @push('scripts')
+<script>
+// Pass server-side data to JavaScript for company users
+window.serverBranches = @json($branches ?? []);
+
+// Get full department data with branch_id
+@php
+    $departmentsWithBranchId = [];
+    if (!empty($departments) && count($departments) > 0) {
+        // $departments is a collection, get the IDs
+        $departmentIds = $departments->pluck('id')->toArray();
+        
+        if (!empty($departmentIds)) {
+            $depts = \App\Models\Department::whereIn('id', $departmentIds)->get(['id', 'name', 'branch_id']);
+            foreach ($depts as $dept) {
+                $departmentsWithBranchId[$dept->id] = [
+                    'name' => $dept->name,
+                    'branch_id' => $dept->branch_id
+                ];
+            }
+        }
+    }
+@endphp
+
+window.serverDepartments = @json($departmentsWithBranchId);
+</script>
+
 <script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -199,8 +225,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updateDropdownStates() {
         if (companySelect) {
+            // For superadmin with company selector
             const hasCompany = companySelect.value !== '';
-            if (branchBtn) branchBtn.disabled = !hasCompany;
+            if (branchBtn) {
+                branchBtn.disabled = !hasCompany;
+                branchBtn.style.opacity = hasCompany ? '1' : '0.5';
+                branchBtn.style.cursor = hasCompany ? 'pointer' : 'not-allowed';
+            }
+        } else {
+            // For company users without company selector, unlock branch dropdown
+            if (branchBtn) {
+                branchBtn.disabled = false;
+                branchBtn.style.opacity = '1';
+                branchBtn.style.cursor = 'pointer';
+            }
         }
     }
     
@@ -255,10 +293,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 departmentButton.disabled = false;
                 departmentButton.style.opacity = '1';
                 departmentButton.style.cursor = 'pointer';
+                
+                // Filter departments by selected branches
+                const checkedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
+                if (window.cascadingDropdowns) {
+                    window.cascadingDropdowns.filterDepartmentsByBranches(checkedBranches);
+                }
             } else {
                 departmentButton.disabled = true;
                 departmentButton.style.opacity = '0.5';
                 departmentButton.style.cursor = 'not-allowed';
+                
+                // Clear departments
+                if (window.cascadingDropdowns) {
+                    window.cascadingDropdowns.clearDepartmentSelection();
+                }
             }
         }
     }
@@ -315,10 +364,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 departmentButton.disabled = false;
                 departmentButton.style.opacity = '1';
                 departmentButton.style.cursor = 'pointer';
+                
+                // Filter departments by selected branches
+                const checkedBranches = Array.from(checkboxes).map(cb => cb.value);
+                if (window.cascadingDropdowns) {
+                    window.cascadingDropdowns.filterDepartmentsByBranches(checkedBranches);
+                }
             } else {
                 departmentButton.disabled = true;
                 departmentButton.style.opacity = '0.5';
                 departmentButton.style.cursor = 'not-allowed';
+                
+                // Clear departments
+                if (window.cascadingDropdowns) {
+                    window.cascadingDropdowns.clearDepartmentSelection();
+                }
             }
         }
     }
@@ -363,6 +423,12 @@ document.addEventListener('DOMContentLoaded', function() {
         cb.addEventListener('change', () => {
             updateDropdownText(branchCheckboxes, branchText, 'All Branches');
             selectAllBranches.checked = branchCheckboxes.length > 0 && Array.from(branchCheckboxes).every(cb => cb.checked);
+            
+            // Filter departments by selected branches
+            const checkedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
+            if (checkedBranches.length > 0 && window.cascadingDropdowns) {
+                window.cascadingDropdowns.filterDepartmentsByBranches(checkedBranches);
+            }
         });
     });
 

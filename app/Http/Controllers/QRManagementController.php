@@ -54,9 +54,12 @@ public function __construct()
      */
     public function index()
     {
-        $query = Company::with('branches')
-            ->when(auth()->user()->role !== 'superadmin', function($q) {
-                $q->where('id', auth()->user()->company_id);
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+        
+        $query = Company::query()
+            ->when(!$isSuperAdmin, function($q) use ($user) {
+                $q->where('id', $user->company_id);
             })
             ->orderBy('name');
 
@@ -75,6 +78,23 @@ public function __construct()
         }
 
         $companies = $query->get();
+        
+        // For company users, filter branches to only show assigned ones
+        if (!$isSuperAdmin) {
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            $companies->each(function($company) use ($userBranchIds) {
+                // Filter branches to only include those assigned to the user
+                $company->setRelation('branches', 
+                    $company->branches->filter(function($branch) use ($userBranchIds) {
+                        return in_array($branch->id, $userBranchIds);
+                    })
+                );
+            });
+        } else {
+            // For superadmin, load all branches
+            $companies->load('branches');
+        }
 
         return view('qr-management.index', compact('companies'));
     }

@@ -4,7 +4,7 @@
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">Add New Employee</h1>
-        <a href="{{ route('employees.index') }}" class="btn btn-sm btn-secondary shadow-sm">
+        <a href="{{ url()->previous() }}" class="btn btn-sm btn-secondary shadow-sm">
             <i class="fas fa-arrow-left me-1"></i> Back
         </a>
     </div>
@@ -21,7 +21,7 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <form action="{{ route('employees.store') }}" method="POST">
+            <form action="{{ request()->is('company/*') ? route('company.employees.store') : route('employees.store') }}" method="POST">
                 @csrf
 
                 <div class="row">
@@ -29,7 +29,7 @@
                         <label class="form-label fw-semibold">Company <span class="text-danger">*</span></label>
                         <select name="company_id" id="company_id" class="form-select" required {{ !$isSuper ? 'readonly' : '' }}>
                             @foreach($companies as $id => $name)
-                                <option value="{{ $id }}" {{ old('company_id', array_key_first($companies->toArray())) == $id ? 'selected' : '' }}>
+                                <option value="{{ $id }}" {{ old('company_id', array_key_first((array)$companies)) == $id ? 'selected' : '' }}>
                                     {{ $name }}
                                 </option>
                             @endforeach
