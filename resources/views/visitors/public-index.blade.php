@@ -231,7 +231,7 @@
                             <!-- Pass Button and Update Visit Button -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
                                 <div class="btn-group" role="group">
-                                    @if($visitor->status === 'Approved' || $visitor->status === 'Completed' || ($visitor->status !== 'Rejected' && $visitor->visitor_pass))
+                                    @if(in_array(trim($visitor->status), ['Approved', 'Completed']) || ($visitor->status !== 'Rejected' && $visitor->visitor_pass))
                                         <a href="{{ route('public.visitors.pass', $visitor->id) }}" 
                                            class="btn btn-success px-3" 
                                            target="_blank"

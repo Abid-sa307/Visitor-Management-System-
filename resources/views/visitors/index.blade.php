@@ -166,14 +166,14 @@
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                   @php
                     $isCompleted = $visitor->out_time !== null;
-                    $isApproved = $visitor->status === 'Approved';
+                    $isApproved = trim($visitor->status) === 'Approved';
                     $visitFormFilled = $visitor->visit_completed_at !== null;
                     
-                    // Edit button: locked if approved
+                    // Edit button: locked if approved or completed
                     $editDisabled = $isApproved || $isCompleted;
                     
-                    // Pass button: unlocked only if visit form is filled
-                    $passDisabled = !$visitFormFilled;
+                    // Pass button: unlocked if approved OR visit form is filled
+                    $passDisabled = !($isApproved || $visitFormFilled);
                     
                     // Delete button: locked if completed
                     $deleteDisabled = $isCompleted;
@@ -201,19 +201,22 @@
                             disabled style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fas fa-print"></i>
                     </button>
+                    <button class="action-btn action-btn--view action-btn--icon" 
+                            title="Download locked (visit form not filled)" 
+                            disabled style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fas fa-file-pdf"></i>
+                    </button>
                   @else
-                    <div class="btn-group" role="group">
-                      <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
-                         class="action-btn action-btn--view action-btn--icon"
-                         title="Print Pass">
-                        <i class="fas fa-print"></i>
-                      </a>
-                      <a href="{{ route('visitors.pass.pdf', $visitor->id) }}"
-                         class="action-btn action-btn--view action-btn--icon"
-                         title="Download PDF">
-                        <i class="fas fa-file-pdf"></i>
-                      </a>
-                    </div>
+                    <a href="{{ route('visitors.pass', $visitor->id) }}" target="_blank"
+                       class="action-btn action-btn--view action-btn--icon me-1"
+                       title="Print Pass">
+                      <i class="fas fa-print"></i>
+                    </a>
+                    <a href="{{ route('visitors.pass.pdf', $visitor->id) }}"
+                       class="action-btn action-btn--view action-btn--icon"
+                       title="Download PDF">
+                      <i class="fas fa-file-pdf"></i>
+                    </a>
                   @endif
 
                   {{-- Delete --}}
