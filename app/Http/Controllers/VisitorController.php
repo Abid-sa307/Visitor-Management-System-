@@ -846,12 +846,6 @@ class VisitorController extends Controller
             try {
                 $notificationService = new GoogleNotificationService();
                 $notificationService->sendApprovalNotification($visitor->company, $visitor);
-                
-                // Simple notification: Set session flash for frontend
-                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
-                    session()->flash('play_notification', true);
-                    session()->flash('notification_message', "{$visitor->name} - Approved");
-                }
             } catch (\Throwable $e) {
                 \Log::error('Failed to send approval notification: ' . $e->getMessage());
             }
@@ -1832,6 +1826,24 @@ class VisitorController extends Controller
                 }
             } catch (\Throwable $e) {
                 \Log::error('Failed to send mark-in/out notification: ' . $e->getMessage());
+            }
+
+            // Send email to visitor for mark in/out
+            try {
+                if (!empty($visitor->email)) {
+                    // Load relationships for email display
+                    $visitor->load(['company', 'branch', 'department']);
+                    
+                    if ($action === 'in' || ($action !== 'out' && $action !== 'undo_in' && $action !== 'undo_out' && $visitor->in_time)) {
+                        // Send check-in confirmation email
+                        \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorStatusChangedMail($visitor, 'checked_in'), $visitor->email);
+                    } elseif ($action === 'out' || $visitor->out_time) {
+                        // Send check-out confirmation email
+                        \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorStatusChangedMail($visitor, 'checked_out'), $visitor->email);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send visitor mark-in/out email: ' . $e->getMessage());
             }
 
             if (request()->ajax()) {
@@ -2913,6 +2925,25 @@ class VisitorController extends Controller
             'approved_at' => now(),
             'approved_by' => auth()->id(),
         ]);
+
+        // Send approval email to visitor
+        if (!empty($visitor->email)) {
+            try {
+                // Load relationships for email display
+                $visitor->load(['company', 'branch', 'department']);
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+            } catch (\Throwable $e) {
+                \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
+            }
+        }
+        
+        // Send notification to company users
+        try {
+            $notificationService = new \App\Services\GoogleNotificationService();
+            $notificationService->sendApprovalNotification($visitor->company, $visitor);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send approval notification: ' . $e->getMessage());
+        }
 
         return redirect()->back()->with('success', "Visitor {$visitor->name} approved successfully.");
     }

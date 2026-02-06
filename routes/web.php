@@ -7,7 +7,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\QrCodeController;
+// use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SecurityCheckController;
 use App\Http\Controllers\ReportController;
@@ -153,8 +153,8 @@ Route::prefix('public')->name('public.')->group(function() {
 
 Route::middleware('auth')->group(function() {
     // QR & Security
-    Route::get('/qr-scan', [QrCodeController::class, 'scan'])->name('qr.scan');
-    Route::post('/qr-process', [QrCodeController::class, 'process'])->name('qr.process');
+    // Route::get('/qr-scan', [QrCodeController::class, 'scan'])->name('qr.scan');
+    // Route::post('/qr-process', [QrCodeController::class, 'process'])->name('qr.process');
     
     Route::prefix('security-checks')->name('security-checks.')->group(function() {
         Route::get('/', [SecurityCheckController::class, 'index'])->name('index');

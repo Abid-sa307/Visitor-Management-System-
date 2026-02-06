@@ -194,15 +194,8 @@ public function __construct()
         // Create visitor
         $visitor = Visitor::create($visitorData);
 
-        // Send email notification to visitor
-        try {
-            if (!empty($visitor->email)) {
-                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
-            }
-        } catch (\Throwable $e) {
-            \Log::warning('VisitorCreated mail dispatch failed: '.$e->getMessage());
-        }
-
+        // Note: Email will be sent after visit form completion with complete details
+        
         // Check if branch was stored in session
         $branchId = session('scanned_branch_id');
         
@@ -312,6 +305,17 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
         ]);
         
         $visitor->save();
+
+        // Send email notification with complete visit details
+        try {
+            if (!empty($visitor->email)) {
+                // Load relationships for email display
+                $visitor->load(['company', 'branch', 'department']);
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Visit details email dispatch failed: '.$e->getMessage());
+        }
 
         // Send approval email if visitor was auto-approved or status changed to approved
         try {
