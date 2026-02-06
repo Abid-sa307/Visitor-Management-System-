@@ -588,6 +588,7 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
         $isSuperAdmin = $user->is_super_admin || $user->hasRole('super_admin') || $user->role === 'superadmin';
         
         // Debugging info
+        // Debugging info
         \Log::info('QR Management Download Access', [
             'user_id' => $user->id,
             'email' => $user->email,
@@ -602,10 +603,17 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
         // Check if user has access to this company
         if (!$isSuperAdmin && $user->company_id != $company->id) {
             abort(403, 'You do not have permission to download this QR code.');
-        }
+        } # RE-ADDED MISSING PERMISSION CHECK
         
         // If branch is provided, ensure it belongs to the company
-        if ($branch && $branch->company_id !== $company->id) {
+        // Using loose comparison (!=) to handle potential string/int mismatches
+        if ($branch && $branch->company_id != $company->id) {
+             \Log::error('QR 404: Branch company mismatch', [
+                'branch_company_id' => $branch->company_id,
+                'branch_company_type' => gettype($branch->company_id),
+                'target_company_id' => $company->id,
+                'target_company_type' => gettype($company->id)
+            ]);
             abort(404, 'Branch not found for this company.');
         }
         
