@@ -425,33 +425,60 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadBranchesByCompany(companyId) {
         if (!companyId) return;
         
+        // Ensure unlocked locally in case listener didn't, but keep wait cursor
+        if (branchBtn) {
+             branchBtn.removeAttribute('disabled');
+             branchBtn.disabled = false;
+             branchBtn.style.opacity = '1';
+             branchBtn.style.cursor = 'wait';
+        }
+
         fetch(`/api/companies/${companyId}/branches`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(branches => {
                 branchOptions.innerHTML = '';
                 const selectedBranches = @json(request('branch_id', []));
                 
-                branches.forEach(branch => {
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    const isChecked = selectedBranches.includes(branch.id.toString());
-                    div.innerHTML = `
-                        <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${branch.id}" id="branch_${branch.id}" onchange="updateBranchText()" ${isChecked ? 'checked' : ''}>
-                        <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
-                    `;
-                    branchOptions.appendChild(div);
-                });
+                if (Array.isArray(branches) && branches.length > 0) {
+                    branches.forEach(branch => {
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        const isChecked = selectedBranches.includes(branch.id.toString());
+                        div.innerHTML = `
+                            <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${branch.id}" id="branch_${branch.id}" onchange="updateBranchText()" ${isChecked ? 'checked' : ''}>
+                            <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
+                        `;
+                        branchOptions.appendChild(div);
+                    });
+                } else {
+                     branchOptions.innerHTML = '<div class="p-2 text-muted small">No branches found</div>';
+                }
                 
                 updateBranchText();
                 updateSelectAllBranchesState();
                 
                 if (branchBtn) {
+                    branchBtn.removeAttribute('disabled');
+                    branchBtn.disabled = false;
+                    branchBtn.style.opacity = '1';
+                    branchBtn.style.cursor = 'pointer'; // Reset cursor
+                }
+            })
+            .catch(error => {
+                console.error('Error loading branches:', error);
+                branchOptions.innerHTML = '<div class="p-2 text-danger small">Error loading branches</div>';
+                if (branchBtn) {
+                    branchBtn.removeAttribute('disabled');
                     branchBtn.disabled = false;
                     branchBtn.style.opacity = '1';
                     branchBtn.style.cursor = 'pointer';
                 }
-            })
-            .catch(error => console.error('Error loading branches:', error));
+            });
     }
     
     // Load departments by selected branches
@@ -506,24 +533,35 @@ document.addEventListener('DOMContentLoaded', function() {
     initDepartments();
     
     // Handle company change
+    // Handle company change
     if (companySelect) {
         companySelect.addEventListener('change', function() {
             const companyId = this.value;
             
-            // Reset dropdowns
+            // Reset dropdowns content but don't lock immediately unless no company selected
             branchOptions.innerHTML = '';
             departmentOptions.innerHTML = '';
-            branchBtn.disabled = true;
-            branchBtn.style.opacity = '0.5';
-            branchBtn.style.cursor = 'not-allowed';
-            departmentBtn.disabled = true;
-            departmentBtn.style.opacity = '0.5';
-            departmentBtn.style.cursor = 'not-allowed';
             document.getElementById('branchText').textContent = 'All Branches';
             document.getElementById('departmentText').textContent = 'All Departments';
             
-            if (companyId) {
-                loadBranchesByCompany(companyId);
+            if (!companyId) {
+                // Only lock if no company is selected
+                branchBtn.disabled = true;
+                branchBtn.style.opacity = '0.5';
+                branchBtn.style.cursor = 'not-allowed';
+                departmentBtn.disabled = true;
+                departmentBtn.style.opacity = '0.5';
+                departmentBtn.style.cursor = 'not-allowed';
+            } else {
+                 // Ensure they are unlocked while loading (or let the loader handle it)
+                 // We will show a loading state in the button text maybe?
+                 if (branchBtn) {
+                    branchBtn.removeAttribute('disabled');
+                    branchBtn.disabled = false;
+                    branchBtn.style.opacity = '1';
+                    branchBtn.style.cursor = 'wait'; // Show wait cursor
+                 }
+                 loadBranchesByCompany(companyId);
             }
         });
     }
