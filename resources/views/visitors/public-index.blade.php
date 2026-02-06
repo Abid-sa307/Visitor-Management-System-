@@ -230,23 +230,28 @@
                             
                             <!-- Pass Button and Update Visit Button -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
-                                @if($visitor->status === 'Approved' || $visitor->status === 'Completed' || $visitor->visitor_pass || session('show_pass_button'))
-                                    <div class="btn-group" role="group">
+                                <div class="btn-group" role="group">
+                                    @if($visitor->status === 'Approved' || $visitor->status === 'Completed' || ($visitor->status !== 'Rejected' && $visitor->visitor_pass))
                                         <a href="{{ route('public.visitors.pass', $visitor->id) }}" 
                                            class="btn btn-success px-3" 
                                            target="_blank"
                                            title="Print Pass">
-                                           <p>Print Pass</p>
-                                            <i class="bi bi-printer"></i>
+                                            <i class="bi bi-printer me-2"></i>Print Pass
                                         </a>
                                         <a href="{{ route('public.visitors.pass.pdf', $visitor->id) }}" 
                                            class="btn btn-danger px-3"
                                            title="Download PDF">
-                                           <p>Download PDF</p>
-                                            <i class="bi bi-file-pdf"></i>
+                                            <i class="bi bi-file-pdf me-2"></i>Download PDF
                                         </a>
-                                    </div>
-                                @endif
+                                    @else
+                                        <button type="button" class="btn btn-secondary px-3" disabled title="Pass available after approval">
+                                            <i class="bi bi-lock-fill me-2"></i>Print Pass
+                                        </button>
+                                        <button type="button" class="btn btn-secondary px-3" disabled title="Pass available after approval">
+                                            <i class="bi bi-lock-fill me-2"></i>Download PDF
+                                        </button>
+                                    @endif
+                                </div>
                                 @if($visitor->status === 'Pending')
                                     <a href="{{ isset($branch) && $branch ? route('public.visitor.visit.form.branch', ['company' => $company->id, 'branch' => $branch->id, 'visitor' => $visitor->id]) : route('public.visitor.visit.form', ['company' => $company->id, 'visitor' => $visitor->id]) }}" 
                                        class="btn btn-outline-primary px-4">
