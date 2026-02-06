@@ -499,8 +499,15 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
      * @return \Illuminate\View\View
      */
     public function show(Company $company, Branch $branch = null)
-    {
-        // Check if a specific branch was requested via query parameter (for public access)
+{
+    \Log::info('Public QR Show Hit', [
+        'company_id' => $company->id,
+        'branch_id' => $branch ? $branch->id : 'null',
+        'request_branch_id' => request()->query('branch_id'),
+        'user_auth' => auth()->check()
+    ]);
+
+    // Check if a specific branch was requested via query parameter (for public access)
         $branchId = request()->query('branch_id');
         if (!$branch && $branchId) {
             $branch = $company->branches()->find($branchId);
