@@ -257,11 +257,16 @@ public function showVisitForm(Company $company, \App\Models\Visitor $visitor)
     $branchId = request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
     $branchModel = null;
     
-    // Get necessary data for the form
-    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)->get();
+    // Check if a specific branch was passed in the request or session
+    $branchId = request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
+    $branchModel = null;
     
-    // Filter departments by branch if selected
+    // Filter data by branch if selected
     if ($branchId) {
+        $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
+            ->where('branch_id', $branchId)
+            ->get();
+            
         $departments = \App\Models\Department::where('company_id', $company->id)
             ->where('branch_id', $branchId)
             ->get();
@@ -273,6 +278,7 @@ public function showVisitForm(Company $company, \App\Models\Visitor $visitor)
         $branchModel = $company->branches()->find($branchId);
         $branches = $branchModel ? collect([$branchModel]) : $company->branches;
     } else {
+        $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)->get();
         $departments = \App\Models\Department::where('company_id', $company->id)->get();
         $employees = \App\Models\Employee::where('company_id', $company->id)->get();
         $branches = $company->branches;
