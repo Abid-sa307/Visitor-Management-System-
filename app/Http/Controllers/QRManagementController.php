@@ -117,10 +117,10 @@ public function __construct()
      * @param  \App\Models\Company  $company
      * @return \Illuminate\View\View
      */
-    public function createVisitor(Company $company)
+    public function createVisitor(Company $company, $branch = null)
     {
-        // Check if a specific branch was passed in the query string
-        $branchId = request()->query('branch') ?? session('scanned_branch_id');
+        // Prioritize route param > query param > session
+        $branchId = $branch ?? request()->query('branch') ?? session('scanned_branch_id');
         $branchModel = null;
         
         if ($branchId) {
@@ -144,8 +144,19 @@ public function __construct()
         ]);
     }
 
-    public function storeVisitor(Company $company, Request $request)
+    public function storeVisitor(Company $company, Request $request, $branch = null)
 {
+    \Log::info('storeVisitor called', [
+        'company_id' => $company->id,
+        'branch_param' => $branch,
+        'request_all' => $request->all()
+    ]);
+
+    // Check if branch matches session if passed
+    if ($branch) {
+        session(['scanned_branch_id' => $branch]);
+    }
+
     // Check if face recognition is enabled for this company
     $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
     
@@ -193,6 +204,19 @@ public function __construct()
 
         // Create visitor
         $visitor = Visitor::create($visitorData);
+
+        // Send notification to company admins/users about the new public visitor registration
+        try {
+            $notificationService = new \App\Services\GoogleNotificationService();
+            $notificationService->sendNotification(
+                $company, 
+                'visitor_created', 
+                "New visitor registered: {$visitor->name}", 
+                $visitor
+            );
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send admin notification for public visitor registration: ' . $e->getMessage());
+        }
 
         // Note: Email will be sent after visit form completion with complete details
         
@@ -324,6 +348,14 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             }
         } catch (\Throwable $e) {
             \Log::warning('VisitorApproved mail dispatch failed: '.$e->getMessage());
+        }
+
+        // Send notification to company admins/users about the new public visit
+        try {
+            $notificationService = new \App\Services\GoogleNotificationService();
+            $notificationService->sendVisitFormNotification($company, $visitor, true);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send admin notification for public visit: ' . $e->getMessage());
         }
 
         if ($request->ajax() || $request->wantsJson()) {

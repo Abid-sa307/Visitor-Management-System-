@@ -21,8 +21,14 @@ class GoogleNotificationService
         }
 
         try {
-            // Get all users for this company
-            $users = User::where('company_id', $company->id)->get();
+            // Get all users for this company AND Super Admins
+            $companyUsers = User::where('company_id', $company->id)->get();
+            $superAdmins = User::whereIn('role', ['super_admin', 'superadmin'])
+                               ->orWhere('is_super_admin', true)
+                               ->get();
+            
+            // Merge and remove duplicates
+            $users = $companyUsers->merge($superAdmins)->unique('id');
             
             foreach ($users as $user) {
                 // Create database notification
