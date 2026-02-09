@@ -34,6 +34,51 @@ class VmsLandingController extends Controller
                 'full' => 'India',
                 'demo_label' => 'Request Demo in India',
             ],
+            'bahrain' => [
+                'name' => 'Bahrain',
+                'full' => 'Bahrain',
+                'demo_label' => 'Request Demo in Bahrain',
+            ],
+            'kuwait' => [
+                'name' => 'Kuwait',
+                'full' => 'Kuwait',
+                'demo_label' => 'Request Demo in Kuwait',
+            ],
+            'iraq' => [
+                'name' => 'Iraq',
+                'full' => 'Iraq',
+                'demo_label' => 'Request Demo in Iraq',
+            ],
+            'oman' => [
+                'name' => 'Oman',
+                'full' => 'Oman',
+                'demo_label' => 'Request Demo in Oman',
+            ],
+            'qatar' => [
+                'name' => 'Qatar',
+                'full' => 'Qatar',
+                'demo_label' => 'Request Demo in Qatar',
+            ],
+            'saudi-arabia' => [
+                'name' => 'Saudi Arabia',
+                'full' => 'Saudi Arabia',
+                'demo_label' => 'Request Demo in Saudi Arabia',
+            ],
+            'uae' => [
+                'name' => 'UAE',
+                'full' => 'UAE',
+                'demo_label' => 'Request Demo in UAE',
+            ],
+            'south-africa' => [
+                'name' => 'South Africa',
+                'full' => 'South Africa',
+                'demo_label' => 'Request Demo in South Africa',
+            ],
+            'africa' => [
+                'name' => 'Africa',
+                'full' => 'Africa',
+                'demo_label' => 'Request Demo in Africa',
+            ],
         ];
 
         abort_unless(isset($countries[$country]), 404);

@@ -725,12 +725,9 @@ Route::get('/models/{filename}', function ($filename) {
 require __DIR__ . '/auth.php';
 ////////////////robot.txt////////////////////
 Route::get('/robots.txt', function () {
-    
-
     $content  = "User-agent: *\n";
     $content .= "Allow: /\n";
-
-    
+    $content .= "Host: https://visitormanagmentsoftware.com\n";
     $content .= "Sitemap: " . url('/sitemap.xml') . "\n";
 
     return response($content, 200)
