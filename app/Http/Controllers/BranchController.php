@@ -162,7 +162,11 @@ class BranchController extends Controller
                     $query->whereIn('id', $user->departments->pluck('id'));
                 }
             }
-            return response()->json($query->get(['id', 'name']));
+            $departments = $query->with('branch')->get()->map(function($d) {
+                $d->name = $d->name_with_branch;
+                return $d;
+            });
+            return response()->json($departments);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to load departments', 'message' => $e->getMessage()], 500);
         }

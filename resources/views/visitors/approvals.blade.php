@@ -11,11 +11,11 @@
                     {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
                         @php
-                            $from = request('from', now()->format('Y-m-d'));
-                            $to = request('to', now()->format('Y-m-d'));
+                            $from = request('from');
+                            $to = request('to');
                         @endphp
                         <label class="form-label">Date Range</label>
-                        @include('components.basic_date_range', ['from' => $from, 'to' => $to])
+                        @include('components.basic_date_range', ['from' => $from, 'to' => $to, 'allow_empty' => true])
                     </div>
 
                     {{-- 2️⃣ Company Dropdown (superadmin only) --}}
@@ -343,7 +343,7 @@
                 departmentBtn.disabled = false;
                 departmentBtn.style.opacity = '1';
                 departmentBtn.style.cursor = 'pointer';
-                // Note: We might want to call loadDepartmentsByBranches() here if it's dynamic
+                loadDepartmentsByBranches();
             } else {
                 departmentBtn.disabled = true;
                 departmentBtn.style.opacity = '0.5';
@@ -485,7 +485,19 @@
                 const deptMap = [];
                 results.forEach(depts => {
                     // Normalize data
-                    const deptArray = Array.isArray(depts) ? depts : Object.entries(depts).map(([id, name]) => ({ id, name }));
+                    // Normalize data with robust checking
+                    let deptArray = [];
+                    if (Array.isArray(depts)) {
+                        deptArray = depts;
+                    } else if (depts.data && Array.isArray(depts.data)) {
+                        deptArray = depts.data;
+                    } else {
+                        // Handle object format {id: name, ...} or {id: {name: ...}, ...}
+                        deptArray = Object.entries(depts || {}).map(([key, val]) => {
+                            if (typeof val === 'object' && val !== null) return { id: key, ...val };
+                            return { id: key, name: val };
+                        });
+                    }
                     
                     deptArray.forEach(dept => {
                         if (!deptMap.find(d => d.id == dept.id)) {

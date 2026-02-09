@@ -52,21 +52,174 @@
                 @endif
 
                 <!-- Role Filter -->
-               <!-- Replace the Role Filter section with this Search Bar -->
-<div class="col-lg-3 col-md-6">
-    <label for="search" class="form-label">Search</label>
-    <div class="input-group">
-        <input type="text" 
-               name="search" 
-               id="search" 
-               class="form-control" 
-               placeholder="Name or email..."
-               value="{{ request('search') }}">
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-search"></i>
-        </button>
-    </div>
-</div>
+                <!-- Branch Dropdown (Multi-select) -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Branch</label>
+                    <div class="position-relative">
+                        <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchBtn" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if($isSuper && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
+                            <span id="branchText">All Branches</span>
+                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                        </button>
+                        <div class="border rounded bg-white position-absolute w-100 p-2" id="branchDropdownMenu" style="max-height: 200px; overflow-y: auto; display: none; z-index: 1000; top: 100%;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllBranches" onchange="toggleAllBranches()">
+                                <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
+                            </div>
+                            <hr class="my-1">
+                            <div id="branchOptions" style="max-height: 120px; overflow-y: auto;">
+                                @if(!empty($branches))
+                                    @foreach($branches as $id => $name)
+                                            <div class="form-check">
+                                                <input class="form-check-input branch-checkbox" type="checkbox" name="branch_ids[]" value="{{ $id }}" id="branch_{{ $id }}" onchange="updateBranchText()" {{ in_array($id, (array)request('branch_ids', [])) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="branch_{{ $id }}">{{ $name }}</label>
+                                            </div>
+                                    @endforeach
+                                @endif
+                            </div>
+                            <hr class="my-1">
+                            <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
+                        </div>
+                    </div>
+                </div>
+
+@push('scripts')
+<script>
+    function toggleAllBranches() {
+        const selectAll = document.getElementById('selectAllBranches');
+        const checkboxes = document.querySelectorAll('.branch-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBranchText();
+        updateSelectAllBranchesState();
+    }
+
+    function updateSelectAllBranchesState() {
+        const selectAll = document.getElementById('selectAllBranches');
+        const checkboxes = document.querySelectorAll('.branch-checkbox');
+        if (checkboxes.length === 0) {
+            selectAll.checked = false;
+            selectAll.disabled = true;
+        } else {
+            selectAll.disabled = false;
+            selectAll.checked = checkboxes.length === document.querySelectorAll('.branch-checkbox:checked').length;
+        }
+    }
+
+    function updateBranchText() {
+        const checkboxes = document.querySelectorAll('.branch-checkbox:checked');
+        const text = document.getElementById('branchText');
+        if (checkboxes.length === 0) {
+            text.textContent = 'All Branches';
+        } else if (checkboxes.length === 1) {
+            text.textContent = checkboxes[0].nextElementSibling.textContent;
+        } else {
+            text.textContent = `${checkboxes.length} branches selected`;
+        }
+        updateSelectAllBranchesState();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const companySelect = document.getElementById('company_id');
+        const branchBtn = document.getElementById('branchBtn');
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#branchBtn') && !e.target.closest('#branchDropdownMenu')) {
+                document.getElementById('branchDropdownMenu').style.display = 'none';
+            }
+        });
+
+        // Initialize state
+        updateBranchText();
+        updateSelectAllBranchesState();
+
+        // Handle company change
+        if (companySelect) {
+            companySelect.addEventListener('change', function() {
+                const companyId = this.value;
+                const branchOptions = document.getElementById('branchOptions');
+                
+                // Clear existing
+                branchOptions.innerHTML = '<div class="text-muted small p-2">Loading...</div>';
+                document.getElementById('branchText').textContent = 'Loading...';
+                
+                if (!companyId) {
+                     branchOptions.innerHTML = '<div class="text-muted small p-2">Select a company first</div>';
+                     document.getElementById('branchText').textContent = 'All Branches';
+                     branchBtn.disabled = true;
+                     branchBtn.style.opacity = '0.5';
+                     branchBtn.style.cursor = 'not-allowed';
+                     return;
+                }
+
+                // Enable button temporarily/permanently
+                branchBtn.disabled = true; 
+                
+                fetch(`/api/companies/${companyId}/branches`)
+                    .then(response => response.json())
+                    .then(data => {
+                        branchOptions.innerHTML = '';
+                        // robust parsing
+                        let branches = [];
+                        if (Array.isArray(data)) {
+                            branches = data;
+                        } else if (data.data && Array.isArray(data.data)) {
+                            branches = data.data;
+                        } else {
+                            branches = Object.entries(data || {}).map(([key, val]) => {
+                                if (typeof val === 'object' && val !== null) return { id: key, ...val };
+                                return { id: key, name: val };
+                            });
+                        }
+
+                        if (branches.length === 0) {
+                             branchOptions.innerHTML = '<div class="text-muted small p-2">No branches found</div>';
+                        } else {
+                            const selectedIds = @json(request('branch_ids', []));
+                            branches.forEach(branch => {
+                                const div = document.createElement('div');
+                                div.className = 'form-check';
+                                const isChecked = selectedIds.includes(branch.id.toString());
+                                div.innerHTML = `
+                                    <input class="form-check-input branch-checkbox" type="checkbox" name="branch_ids[]" value="${branch.id}" id="branch_${branch.id}" onchange="updateBranchText()" ${isChecked ? 'checked' : ''}>
+                                    <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
+                                `;
+                                branchOptions.appendChild(div);
+                            });
+                        }
+                        
+                        updateBranchText();
+                        updateSelectAllBranchesState();
+                        
+                        branchBtn.disabled = false;
+                        branchBtn.style.opacity = '1';
+                        branchBtn.style.cursor = 'pointer';
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        branchOptions.innerHTML = '<div class="text-danger small p-2">Error loading branches</div>';
+                        branchBtn.disabled = false; // Allow retry?
+                    });
+            });
+        }
+    });
+</script>
+@endpush
+
+                <!-- Search Bar -->
+                <div class="col-lg-3 col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <div class="input-group">
+                        <input type="text"
+                               name="search"
+                               id="search"
+                               class="form-control"
+                               placeholder="Name or email..."
+                               value="{{ request('search') }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Buttons -->
                 <div class="col-12 d-flex flex-wrap gap-2 mt-3">

@@ -172,8 +172,8 @@
                     // Edit button: locked if approved or completed
                     $editDisabled = $isApproved || $isCompleted;
                     
-                    // Pass button: unlocked if approved OR visit form is filled
-                    $passDisabled = !($isApproved || $visitFormFilled);
+                    // Pass button: unlocked if approved OR visit form is filled OR completed
+                    $passDisabled = !($isApproved || $visitFormFilled || $isCompleted);
                     
                     // Delete button: locked if completed
                     $deleteDisabled = $isCompleted;
@@ -212,7 +212,7 @@
                        title="Print Pass">
                       <i class="fas fa-print"></i>
                     </a>
-                    <a href="{{ route('visitors.pass.pdf', $visitor->id) }}"
+                    <a href="{{ route('visitors.pass.pdf', $visitor->id) }}" target="_blank"
                        class="action-btn action-btn--view action-btn--icon"
                        title="Download PDF">
                       <i class="fas fa-file-pdf"></i>

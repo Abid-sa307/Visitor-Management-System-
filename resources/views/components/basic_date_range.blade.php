@@ -1,8 +1,21 @@
 @php
-    // Force default to today if not provided
-    $from = ($from ?? request('from')) ?: now()->format('Y-m-d');
-    $to = ($to ?? request('to')) ?: now()->format('Y-m-d');
+    $allowEmpty = $allow_empty ?? false;
+    $requestFrom = $from ?? request('from');
+    $requestTo = $to ?? request('to');
+    
+    // If allowEmpty is true, we ONLY default if explicit values are provided, otherwise null.
+    // If allowEmpty is false (default), we default to now() if values are missing.
+    
+    if (!$allowEmpty) {
+        $from = $requestFrom ?: now()->format('Y-m-d');
+        $to = $requestTo ?: now()->format('Y-m-d');
+    } else {
+        $from = $requestFrom;
+        $to = $requestTo;
+    }
+    
     $id = 'date_range_' . rand(1000, 9999);
+    $hasDate = !empty($from) && !empty($to);
 @endphp
 
 <div class="position-relative w-100" id="container_{{ $id }}">
@@ -12,9 +25,13 @@
             id="toggle_{{ $id }}"
             onclick="const m = document.getElementById('menu_{{ $id }}'); const isHidden = m.style.display === 'none'; document.querySelectorAll('.drp-menu-v2').forEach(x => x.style.display='none'); m.style.display = isHidden ? 'block' : 'none'; event.stopPropagation();"
             style="min-height: 48px; border-radius: 10px; border: 1px solid #d1d3e2; background: white; padding: 0.75rem 1rem;">
-        <span class="text-primary fw-bold">
+        <span class="text-primary fw-bold" id="label_{{ $id }}">
             <i class="fas fa-calendar-alt me-2"></i>
-            {{ date('d/m/Y', strtotime($from)) }} - {{ date('d/m/Y', strtotime($to)) }}
+            @if($hasDate)
+                {{ date('d/m/Y', strtotime($from)) }} - {{ date('d/m/Y', strtotime($to)) }}
+            @else
+                Select Date Range
+            @endif
         </span>
         <i class="fas fa-chevron-down opacity-50 small"></i>
     </button>

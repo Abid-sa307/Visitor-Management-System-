@@ -98,72 +98,29 @@
     </div>
 
     @push('scripts')
+    <script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
     <script>
-        function toggleAllBranches() {
+        // Multi-select functions
+        window.toggleAllBranches = function() {
             const selectAll = document.getElementById('selectAllBranches');
             const checkboxes = document.querySelectorAll('.branch-checkbox');
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
-            updateBranchText();
-            updateSelectAllBranchesState();
+            window.updateBranchText();
             
-            // Unlock department dropdown when branches are selected
-            const anyChecked = document.querySelectorAll('.branch-checkbox:checked').length > 0;
-            const departmentBtn = document.querySelector('[data-dropdown="department"]');
-            if (departmentBtn) {
-                if (anyChecked) {
-                    departmentBtn.disabled = false;
-                    departmentBtn.style.opacity = '1';
-                    departmentBtn.style.cursor = 'pointer';
-                } else {
-                    departmentBtn.disabled = true;
-                    departmentBtn.style.opacity = '0.5';
-                    departmentBtn.style.cursor = 'not-allowed';
-                }
+            // Trigger change event so cascading-dropdowns.js detects the update and loads departments
+            if (checkboxes.length > 0) {
+                checkboxes[0].dispatchEvent(new Event('change', { bubbles: true }));
             }
-        }
+        };
 
-        function toggleAllDepartments() {
+        window.toggleAllDepartments = function() {
             const selectAll = document.getElementById('selectAllDepartments');
             const checkboxes = document.querySelectorAll('.department-checkbox');
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
-            updateDepartmentText();
-            updateSelectAllDepartmentsState();
-        }
+            window.updateDepartmentText();
+        };
 
-        function updateSelectAllBranchesState() {
-            const selectAll = document.getElementById('selectAllBranches');
-            const checkboxes = document.querySelectorAll('.branch-checkbox');
-            if (checkboxes.length === 0) {
-                selectAll.checked = false;
-                selectAll.disabled = true;
-            } else {
-                selectAll.disabled = false;
-                selectAll.checked = checkboxes.length === document.querySelectorAll('.branch-checkbox:checked').length;
-            }
-        }
-
-        function updateSelectAllDepartmentsState() {
-            const selectAll = document.getElementById('selectAllDepartments');
-            const checkboxes = document.querySelectorAll('.department-checkbox');
-            if (checkboxes.length === 0) {
-                selectAll.checked = false;
-                selectAll.disabled = true;
-            } else {
-                selectAll.disabled = false;
-                selectAll.checked = checkboxes.length === document.querySelectorAll('.department-checkbox:checked').length;
-            }
-        }
-
-        function applyBranches() {
-            document.getElementById('branchDropdownMenu').style.display = 'none';
-            loadDepartmentsByBranches();
-        }
-
-        function applyDepartments() {
-            document.getElementById('departmentDropdownMenu').style.display = 'none';
-        }
-
-        function updateBranchText() {
+        window.updateBranchText = function() {
             const checkboxes = document.querySelectorAll('.branch-checkbox:checked');
             const text = document.getElementById('branchText');
             if (checkboxes.length === 0) {
@@ -173,25 +130,9 @@
             } else {
                 text.textContent = `${checkboxes.length} branches selected`;
             }
-            updateSelectAllBranchesState();
-            
-            // Unlock department dropdown when branches are selected
-            const anyChecked = checkboxes.length > 0;
-            const departmentBtn = document.querySelector('[data-dropdown="department"]');
-            if (departmentBtn) {
-                if (anyChecked) {
-                    departmentBtn.disabled = false;
-                    departmentBtn.style.opacity = '1';
-                    departmentBtn.style.cursor = 'pointer';
-                } else {
-                    departmentBtn.disabled = true;
-                    departmentBtn.style.opacity = '0.5';
-                    departmentBtn.style.cursor = 'not-allowed';
-                }
-            }
-        }
+        };
 
-        function updateDepartmentText() {
+        window.updateDepartmentText = function() {
             const checkboxes = document.querySelectorAll('.department-checkbox:checked');
             const text = document.getElementById('departmentText');
             if (checkboxes.length === 0) {
@@ -201,154 +142,26 @@
             } else {
                 text.textContent = `${checkboxes.length} departments selected`;
             }
-            updateSelectAllDepartmentsState();
-        }
+        };
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const companySelect = document.getElementById('company_id');
-            const branchBtn = document.querySelector('[data-dropdown="branch"]');
-            const departmentBtn = document.querySelector('[data-dropdown="department"]');
-            const branchOptions = document.getElementById('branchOptions');
-            const departmentOptions = document.getElementById('departmentOptions');
-            
-            let allBranches = @json($branches ?? []);
-            let allDepartments = @json($departments ?? []);
-            
-            console.log('Initial branches:', allBranches);
-            console.log('Initial departments:', allDepartments);
-            
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('#branchBtn') && !e.target.closest('#branchDropdownMenu')) {
-                    document.getElementById('branchDropdownMenu').style.display = 'none';
-                }
-                if (!e.target.closest('#departmentBtn') && !e.target.closest('#departmentDropdownMenu')) {
-                    document.getElementById('departmentDropdownMenu').style.display = 'none';
-                }
-            });
-            
-            // Initialize branches
-            function initBranches(skipDeptLoad = false) {
-                branchOptions.innerHTML = '';
-                const branches = Array.isArray(allBranches) ? allBranches : Object.entries(allBranches).map(([id, name]) => ({id, name}));
-                const selectedBranches = @json(request('branch_id', []));
-                branches.forEach(branch => {
-                    const isChecked = selectedBranches.includes(branch.id.toString());
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    const checkbox = document.createElement('input');
-                    checkbox.className = 'form-check-input branch-checkbox';
-                    checkbox.type = 'checkbox';
-                    checkbox.name = 'branch_id[]';
-                    checkbox.value = branch.id;
-                    checkbox.id = `branch_${branch.id}`;
-                    checkbox.checked = isChecked;
-                    checkbox.onchange = function() { updateBranchText(); };
-                    
-                    const label = document.createElement('label');
-                    label.className = 'form-check-label';
-                    label.htmlFor = `branch_${branch.id}`;
-                    label.textContent = branch.name;
-                    
-                    div.appendChild(checkbox);
-                    div.appendChild(label);
-                    branchOptions.appendChild(div);
-                });
-                updateBranchText();
-                updateSelectAllBranchesState();
-                if (branches.length > 0) {
-                    branchBtn.disabled = false;
-                    branchBtn.style.opacity = '1';
-                    branchBtn.style.cursor = 'pointer';
-                }
-                if (!skipDeptLoad && selectedBranches.length > 0 && deptCount === 0) {
-                    loadDepartmentsByBranches();
-                }
-            }
-            
-            // Initialize departments
-            function initDepartments() {
-                departmentOptions.innerHTML = '';
-                const departments = Array.isArray(allDepartments) ? allDepartments : Object.entries(allDepartments).map(([id, name]) => ({id, name}));
-                const selectedDepartments = @json(request('department_id', []));
-                departments.forEach(dept => {
-                    const isChecked = selectedDepartments.includes(dept.id.toString());
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    div.innerHTML = `
-                        <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
-                        <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
-                    `;
-                    departmentOptions.appendChild(div);
-                });
-                updateDepartmentText();
-                updateSelectAllDepartmentsState();
-                if (departments.length > 0) {
-                    departmentBtn.disabled = false;
-                    departmentBtn.style.opacity = '1';
-                    departmentBtn.style.cursor = 'pointer';
-                }
-            }
-            
-            // Initialize on load
-            const branchCount = Array.isArray(allBranches) ? allBranches.length : Object.keys(allBranches).length;
-            const deptCount = Array.isArray(allDepartments) ? allDepartments.length : Object.keys(allDepartments).length;
-            if (branchCount > 0) initBranches(true); // Skip dept load on initial render
-            if (deptCount > 0) initDepartments();
-            
-            // Load departments by selected branches
-            window.loadDepartmentsByBranches = function() {
-                const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
-                
-                departmentOptions.innerHTML = '';
-                departmentBtn.disabled = true;
-                departmentBtn.style.opacity = '0.5';
-                departmentBtn.style.cursor = 'not-allowed';
-                document.getElementById('departmentText').textContent = 'All Departments';
-                
-                if (selectedBranches.length === 0) return;
+        window.applyBranches = function() {
+            document.getElementById('branchDropdownMenu').style.display = 'none';
+            // Logic to reload departments is handled by cascading-dropdowns.js change listeners
+        };
 
-                Promise.all(selectedBranches.map(branchId => 
-                    fetch(`/api/branches/${branchId}/departments`).then(r => r.json())
-                )).then(results => {
-                    const deptMap = [];
-                    results.forEach(depts => {
-                        depts.forEach(dept => {
-                            if (!deptMap.find(d => d.id == dept.id)) {
-                                deptMap.push(dept);
-                            }
-                        });
-                    });
-                    allDepartments = deptMap;
-                    initDepartments();
-                }).catch(error => console.error('Error loading departments:', error));
-            };
-            
-            if (companySelect) {
-                companySelect.addEventListener('change', function() {
-                    const companyId = this.value;
-                    
-                    branchOptions.innerHTML = '';
-                    departmentOptions.innerHTML = '';
-                    branchBtn.disabled = true;
-                    branchBtn.style.opacity = '0.5';
-                    branchBtn.style.cursor = 'not-allowed';
-                    departmentBtn.disabled = true;
-                    departmentBtn.style.opacity = '0.5';
-                    departmentBtn.style.cursor = 'not-allowed';
-                    document.getElementById('branchText').textContent = 'All Branches';
-                    document.getElementById('departmentText').textContent = 'All Departments';
-                    
-                    if (companyId) {
-                        fetch(`/api/companies/${companyId}/branches`)
-                            .then(response => response.json())
-                            .then(data => {
-                                allBranches = data;
-                                initBranches();
-                            })
-                            .catch(error => console.error('Error loading branches:', error));
-                    }
-                });
+        window.applyDepartments = function() {
+            document.getElementById('departmentDropdownMenu').style.display = 'none';
+        };
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#branchBtn') && !e.target.closest('#branchDropdownMenu')) {
+                const menu = document.getElementById('branchDropdownMenu');
+                if (menu) menu.style.display = 'none';
+            }
+            if (!e.target.closest('#departmentBtn') && !e.target.closest('#departmentDropdownMenu')) {
+                const menu = document.getElementById('departmentDropdownMenu');
+                if (menu) menu.style.display = 'none';
             }
         });
     </script>

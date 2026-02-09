@@ -321,95 +321,10 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const companySelect = document.getElementById('company_id');
-        const branchSelect = document.getElementById('branch_id');
-        const departmentSelect = document.getElementById('department_id');
-
-        // Function to handle API errors
-        function handleApiError(error) {
-            console.error('API Error:', error);
-            // You can show an error message to the user here if needed
-            // For example: showToast('Error loading data. Please try again.', 'error');
-        }
-
-        // Function to load branches
-        function loadBranches(companyId) {
-            if (!companyId) return;
-            
-            fetch(`/api/companies/${companyId}/branches`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    if (branchSelect) {
-                        // Store current value to maintain selection
-                        const currentValue = branchSelect.value;
-                        branchSelect.innerHTML = '<option value="">All Branches</option>';
-                        
-                        // Add new options
-                        const branches = Array.isArray(data)
-                            ? data
-                            : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
-
-                        if (branches && branches.length) {
-                            branches.forEach(branch => {
-                                const option = new Option(branch.name, branch.id);
-                                option.selected = (branch.id == currentValue);
-                                branchSelect.add(option);
-                            });
-                        }
-                        
-                        branchSelect.disabled = false;
-                    }
-                })
-                .catch(handleApiError);
-        }
-
-        // Function to load departments
-        function loadDepartments(companyId) {
-            if (!departmentSelect) return;
-            departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
-            departmentSelect.disabled = true;
-        }
-
-        // Handle company change - load branches and departments
-        if (companySelect) {
-            companySelect.addEventListener('change', function() {
-                const companyId = this.value;
-                
-                // Reset and disable dependent dropdowns
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">Loading branches...</option>';
-                    branchSelect.disabled = true;
-                }
-                
-                if (departmentSelect) {
-                    departmentSelect.innerHTML = '<option value="">Loading departments...</option>';
-                    departmentSelect.disabled = true;
-                }
-
-                // If a company is selected, load branches and departments
-                if (companyId) {
-                    loadBranches(companyId);
-                    loadDepartments(companyId);
-                    
-                    // If this is a superadmin, submit the form to filter by company
-                    const isSuperAdmin = companySelect.dataset.isSuper === '1';
-                    if (isSuperAdmin && filterForm) {
-                        filterForm.submit();
-                    }
-                } else {
-                    // If no company is selected, enable the dropdowns but keep them empty
-                    if (branchSelect) branchSelect.disabled = (companySelect.dataset.isSuper === '1');
-                    if (departmentSelect) {
-                        departmentSelect.innerHTML = '<option value="">Select a branch first</option>';
-                        departmentSelect.disabled = true;
-                    }
-                }
-            });
-        }
-
+        const filterForm = document.getElementById('securityFilterForm');
+        
         // Handle quick range buttons
+        const quickRangeButtons = document.querySelectorAll('.quick-range-btn'); // Assuming class name
         quickRangeButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const range = this.dataset.range;
@@ -439,6 +354,9 @@
                         break;
                 }
 
+                const fromDate = document.querySelector('input[name="from"]');
+                const toDate = document.querySelector('input[name="to"]');
+
                 if (fromDate) {
                     fromDate.value = from.toISOString().split('T')[0];
                 }
@@ -447,89 +365,9 @@
                 }
 
                 // Submit the form
-                document.getElementById('filterForm').submit();
+                if (filterForm) filterForm.submit();
             });
         });
-
-        // Dynamic dropdown loading
-        if (companySelect) {
-            companySelect.addEventListener('change', function() {
-                const companyId = this.value;
-                
-                // Reset department and branch dropdowns
-                departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                if (branchSelect) {
-                    branchSelect.innerHTML = '<option value="">All Branches</option>';
-                }
-                
-                // Enable/disable dropdowns based on company selection
-                departmentSelect.disabled = !companyId && {{ $isSuper ? 'true' : 'false' }};
-                if (branchSelect) branchSelect.disabled = !companyId && {{ $isSuper ? 'true' : 'false' }};
-                
-                if (companyId) {
-                    // Load branches for selected company
-                    if (branchSelect) {
-                        fetch(`/api/companies/${companyId}/branches`)
-                            .then(response => response.json())
-                            .then(branches => {
-                                branches.forEach(branch => {
-                                    const option = document.createElement('option');
-                                    option.value = branch.id;
-                                    option.textContent = branch.name;
-                                    branchSelect.appendChild(option);
-                                });
-                            })
-                            .catch(error => console.error('Error loading branches:', error));
-                    }
-                    
-                    // Load departments for selected company
-                    fetch(`/api/companies/${companyId}/departments`)
-                        .then(response => response.json())
-                        .then(departments => {
-                            departments.forEach(dept => {
-                                const option = document.createElement('option');
-                                option.value = dept.id;
-                                option.textContent = dept.name;
-                                departmentSelect.appendChild(option);
-                            });
-                        })
-                        .catch(error => console.error('Error loading departments:', error));
-                }
-            });
-        }
-        
-        // Handle branch change to load departments
-        if (branchSelect) {
-            branchSelect.addEventListener('change', function() {
-                const branchId = this.value;
-                
-                // Reset department dropdown
-                departmentSelect.innerHTML = '<option value="">All Departments</option>';
-                
-                if (branchId) {
-                    // Load departments for selected branch
-                    fetch(`/api/branches/${branchId}/departments`)
-                        .then(response => response.json())
-                        .then(departments => {
-                            departments.forEach(dept => {
-                                const option = document.createElement('option');
-                                option.value = dept.id;
-                                option.textContent = dept.name;
-                                departmentSelect.appendChild(option);
-                            });
-                        })
-                        .catch(error => console.error('Error loading departments:', error));
-                }
-            });
-        }
-
-        // Auto-submit when company changes (for superadmin) - remove this to allow dynamic loading
-        // Only auto-submit for non-superadmin or if explicitly needed
-        if (companySelect && {{ $isSuper ? 'false' : 'true' }}) {
-            companySelect.addEventListener('change', function() {
-                document.getElementById('filterForm').submit();
-            });
-        }
 
         // Handle security check-in/out forms with notifications
         document.querySelectorAll('form[action*="security-checks"]').forEach(form => {
@@ -539,7 +377,9 @@
                 
                 const submitBtn = form.querySelector('button[type="submit"]');
                 const originalText = submitBtn.innerHTML;
-                const action = form.querySelector('input[name="action"]').value;
+                const actionInput = form.querySelector('input[name="action"]');
+                // Ensure action input exists before accessing value
+                const action = actionInput ? actionInput.value : 'unknown';
                 
                 console.log('DEBUG: Form action:', form.action);
                 console.log('DEBUG: Action value:', action);
@@ -563,25 +403,28 @@
                     if (data.success) {
                         console.log('DEBUG: Security check-in/out successful');
                         // Show notification for check-in/out
-                        const visitorName = form.closest('tr').querySelector('td:first-child').textContent.trim();
+                        const visitorNameCell = form.closest('tr').querySelector('td:first-child');
+                        const visitorName = visitorNameCell ? visitorNameCell.textContent.trim() : 'Visitor';
                         const location = '{{ auth()->user()->company->name ?? "Security" }}';
                         
                         console.log('DEBUG: Action:', action);
                         console.log('DEBUG: Visitor name:', visitorName);
                         console.log('DEBUG: Location:', location);
                         
-                        if (action === 'checkin') {
-                            console.log('DEBUG: Triggering check-in notification');
-                            showPersistentNotification('Visitor Checked In', {
-                                visitorName: visitorName,
-                                location: location
-                            });
-                        } else if (action === 'checkout') {
-                            console.log('DEBUG: Triggering check-out notification');
-                            showPersistentNotification('Visitor Checked Out', {
-                                visitorName: visitorName,
-                                location: location
-                            });
+                        if (typeof showPersistentNotification === 'function') {
+                            if (action === 'checkin') {
+                                console.log('DEBUG: Triggering check-in notification');
+                                showPersistentNotification('Visitor Checked In', {
+                                    visitorName: visitorName,
+                                    location: location
+                                });
+                            } else if (action === 'checkout') {
+                                console.log('DEBUG: Triggering check-out notification');
+                                showPersistentNotification('Visitor Checked Out', {
+                                    visitorName: visitorName,
+                                    location: location
+                                });
+                            }
                         }
                         
                         // Reload page to show updated status

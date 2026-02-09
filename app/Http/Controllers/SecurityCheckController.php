@@ -23,10 +23,10 @@ class SecurityCheckController extends Controller
         // Base query - only show visitors from companies that have security checks enabled
         $visitorQuery = Visitor::query()
             ->with(['company', 'department', 'branch'])
-            ->whereHas('company', function($query) {
-                // Only show visitors from companies with security check service enabled
-                $query->where('security_check_service', true);
-            })
+            // ->whereHas('company', function($query) {
+            //     // Only show visitors from companies with security check service enabled
+            //     $query->where('security_check_service', true);
+            // })
             ->latest('created_at');
 
         // Apply date range filter if provided
@@ -71,12 +71,14 @@ class SecurityCheckController extends Controller
 
         // Branch filter (override if explicitly selected)
         if ($request->filled('branch_id')) {
-            $visitorQuery->where('branch_id', $request->input('branch_id'));
+            $branchIds = is_array($request->input('branch_id')) ? $request->input('branch_id') : [$request->input('branch_id')];
+            $visitorQuery->whereIn('branch_id', $branchIds);
         }
 
         // Department filter
         if ($request->filled('department_id')) {
-            $visitorQuery->where('department_id', $request->input('department_id'));
+            $departmentIds = is_array($request->input('department_id')) ? $request->input('department_id') : [$request->input('department_id')];
+            $visitorQuery->whereIn('department_id', $departmentIds);
         }
 
         $visitors = $visitorQuery->paginate(10)->appends($request->query());

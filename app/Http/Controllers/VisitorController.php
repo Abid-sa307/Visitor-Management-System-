@@ -220,7 +220,9 @@ class VisitorController extends Controller
             }
         }
 
-        return $query->orderBy('name')->get();
+        return $query->with('branch')->orderBy('name')->get()->each(function($department) {
+            $department->name = $department->name . ($department->branch ? ' - ' . $department->branch->name : '');
+        });
     }
 
 
@@ -357,7 +359,7 @@ class VisitorController extends Controller
              }
         }
         
-        $departments = $departmentQuery->pluck('name', 'id');
+        $departments = $departmentQuery->with('branch')->get()->pluck('name_with_branch', 'id');
     }
     
     return view('visits.index', compact('visitors', 'companies', 'branches', 'departments'));
@@ -2249,27 +2251,21 @@ class VisitorController extends Controller
             \Log::info('Approval Report - Department IDs filter: ' . json_encode($request->department_ids));
         }
 
-        // Apply date range filter - default to current date
-        $from = $request->input('from', now()->format('Y-m-d'));
-        $to = $request->input('to', now()->format('Y-m-d'));
-        $currentDate = now()->format('Y-m-d');
+        // Apply date range filter
+        $from = $request->input('from');
+        $to = $request->input('to');
         
         // Debug logging
         \Log::info('Approval Report Date Filter:', [
-            'request_from' => $request->input('from'),
-            'request_to' => $request->input('to'),
             'from' => $from,
             'to' => $to,
-            'current_date' => $currentDate,
-            'from_equals_current' => ($from === $currentDate),
-            'to_equals_current' => ($to === $currentDate)
         ]);
         
         if ($from && $to) {
-            if ($from === $to && $from === $currentDate) {
-                // If both dates are current date, show only current date
+            if ($from === $to) {
+                // If both dates are same
                 $query->whereDate('updated_at', '=', $from);
-                \Log::info('Using single date filter for current date');
+                \Log::info('Using single date filter');
             } else {
                 // If date range is specified, use the range
                 $query->whereDate('updated_at', '>=', $from);
@@ -2277,9 +2273,7 @@ class VisitorController extends Controller
                 \Log::info('Using date range filter');
             }
         } else {
-            // Default to current date
-            $query->whereDate('updated_at', '=', $currentDate);
-            \Log::info('Using default current date filter');
+            \Log::info('No date filter applied - showing all history');
         }
 
         // Log the final SQL query for debugging
@@ -2878,12 +2872,11 @@ class VisitorController extends Controller
                     // Filter departments by user's assigned departments
                     $departments = Department::whereIn('id', $userDepartmentIds)
                         ->where('company_id', $user->company_id)
-                        ->pluck('name', 'id');
+                        ->with('branch')->get()->pluck('name_with_branch', 'id');
                 } else {
-                    // Fallback: filter departments by user's assigned branches
                     $departments = Department::whereIn('branch_id', $userBranchIds)
                         ->where('company_id', $user->company_id)
-                        ->pluck('name', 'id');
+                        ->with('branch')->get()->pluck('name_with_branch', 'id');
                 }
             } else {
                 // Fallback to single branch if user has branch_id set
@@ -2891,11 +2884,11 @@ class VisitorController extends Controller
                     $branches = Branch::where('id', $user->branch_id)->pluck('name', 'id');
                     $departments = Department::where('branch_id', $user->branch_id)
                         ->where('company_id', $user->company_id)
-                        ->pluck('name', 'id');
+                        ->with('branch')->get()->pluck('name_with_branch', 'id');
                 } else {
                     // If no branches assigned, get all company branches/departments
                     $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
-                    $departments = Department::where('company_id', $user->company_id)->pluck('name', 'id');
+                    $departments = Department::where('company_id', $user->company_id)->with('branch')->get()->pluck('name_with_branch', 'id');
                 }
             }
             
@@ -2903,7 +2896,7 @@ class VisitorController extends Controller
 
         } elseif ($isSuper && $selectedCompany) {
             $branches    = Branch::where('company_id', $selectedCompany)->pluck('name', 'id');
-            $departments = Department::where('company_id', $selectedCompany)->pluck('name', 'id');
+            $departments = Department::where('company_id', $selectedCompany)->with('branch')->get()->pluck('name_with_branch', 'id');
             
             if ($branches->isEmpty()) $branches = collect(['none' => 'None']);
         }

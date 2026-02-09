@@ -49,4 +49,9 @@ class Department extends Model
     {
         return $this->belongsToMany(User::class);
     }
+
+    public function getNameWithBranchAttribute()
+    {
+        return $this->name . ($this->branch ? ' - ' . $this->branch->name : '');
+    }
 }

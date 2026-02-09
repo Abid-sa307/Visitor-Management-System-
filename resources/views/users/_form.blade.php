@@ -423,7 +423,7 @@
                                                    value="{{ $dept->id }}" id="dept-{{ $dept->id }}"
                                                    {{ in_array($dept->id, $preselectedDeptIds, true) ? 'checked' : '' }}>
                                             <label class="flex-grow-1 mb-0 pointer" for="dept-{{ $dept->id }}">
-                                                {{ $dept->name }}
+                                                {{ $dept->name_with_branch }}
                                             </label>
                                         </div>
                                     @empty

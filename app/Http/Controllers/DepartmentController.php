@@ -203,7 +203,13 @@ class DepartmentController extends Controller
 
     public function getByCompany(Company $company)
     {
-        $query = $company->departments()->select('id', 'name', 'company_id');
+        \Log::info('DepartmentController::getByCompany', [
+            'company_id' => $company->id,
+            'request_branch_id' => request('branch_id'),
+            'user_id' => auth()->id(),
+        ]);
+
+        $query = $company->departments()->select('id', 'name', 'company_id', 'branch_id');
 
         // Filter by user's assigned departments
         $user = auth()->user();
@@ -217,9 +223,12 @@ class DepartmentController extends Controller
             $query->whereIn('branch_id', $branchIds);
         }
 
-        $departments = $query->orderBy('name')->get();
-        
-        return response()->json($departments)
+        $departments = $query->with('branch')->orderBy('name')->get()->map(function($d) {
+             $d->name = $d->name_with_branch;
+             return $d;
+        });
+
+        return response()->json($departments->values())
             ->header('Content-Type', 'application/json')
             ->header('Access-Control-Allow-Origin', '*')
             ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

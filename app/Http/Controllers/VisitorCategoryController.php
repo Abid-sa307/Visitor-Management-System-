@@ -9,16 +9,60 @@ use Illuminate\Http\Request;
 
 class VisitorCategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = VisitorCategory::with('company')
-            ->when(auth()->user()->role !== 'superadmin', function($q) {
-                return $q->where('company_id', auth()->user()->company_id);
-            })
-            ->latest()
-            ->paginate(10);
+        $user = auth()->user();
+        $isSuper = $user->role === 'superadmin' || $user->role === 'super_admin';
+        
+        $query = VisitorCategory::with('company');
 
-        return view('visitor-categories.index', compact('categories'));
+        if (!$isSuper) {
+            $query->where('company_id', $user->company_id);
+        }
+
+        // Filter by company (Super Admin only)
+        if ($isSuper && $request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        // Filter by branch (Multi-select)
+        $branchIds = $request->input('branch_ids');
+        if (!$branchIds && $request->filled('branch_id')) {
+            $branchIds = [$request->input('branch_id')];
+        }
+        
+        if (!empty($branchIds)) {
+            $query->whereIn('branch_id', (array)$branchIds);
+        }
+
+        $categories = $query->latest()->paginate(10);
+
+        // Data for filters
+        $companies = [];
+        $branches = [];
+
+        if ($isSuper) {
+            $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
+            if ($request->filled('company_id')) {
+                $branches = Branch::where('company_id', $request->company_id)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } else {
+                $branches = Branch::orderBy('name')->pluck('name', 'id')->toArray();
+            }
+        } else {
+            // For company users, get their company's branches
+            // Respect user's branch assignment if any?
+            // Usually keeping it consistently "Company Branches" for filtering is safer for now, 
+            // similar to User controller logic.
+            $branches = Branch::where('company_id', $user->company_id)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        }
+
+        return view('visitor-categories.index', compact('categories', 'companies', 'branches', 'isSuper'));
     }
 
     public function create()

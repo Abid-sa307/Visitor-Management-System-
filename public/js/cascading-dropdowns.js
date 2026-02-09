@@ -213,7 +213,17 @@ class CascadingDropdowns {
         })
             .then(r => r.json())
             .then(data => {
-                const branches = Array.isArray(data) ? data : (data.data || Object.entries(data || {}).map(([id, name]) => ({ id, name })));
+                let branches = [];
+                if (Array.isArray(data)) {
+                    branches = data;
+                } else if (data.data && Array.isArray(data.data)) {
+                    branches = data.data;
+                } else {
+                    branches = Object.entries(data || {}).map(([key, val]) => {
+                        if (typeof val === 'object' && val !== null) return { id: key, ...val };
+                        return { id: key, name: val };
+                    });
+                }
 
                 branchOptions.innerHTML = '';
                 if (branches.length > 0) {
@@ -264,7 +274,17 @@ class CascadingDropdowns {
         })
             .then(r => r.json())
             .then(data => {
-                const departments = Array.isArray(data) ? data : Object.entries(data || {}).map(([id, name]) => ({ id, name }));
+                let departments = [];
+                if (Array.isArray(data)) {
+                    departments = data;
+                } else if (data.data && Array.isArray(data.data)) {
+                    departments = data.data;
+                } else {
+                    departments = Object.entries(data || {}).map(([key, val]) => {
+                        if (typeof val === 'object' && val !== null) return { id: key, ...val };
+                        return { id: key, name: val };
+                    });
+                }
 
                 departmentOptions.innerHTML = '';
                 if (departments.length > 0) {

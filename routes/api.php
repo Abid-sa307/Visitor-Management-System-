@@ -37,8 +37,15 @@ Route::get('/branches/{branch}/employees', function (Branch $branch) {
 // Departments route
 Route::get('/branches/{branch}/departments', function (Branch $branch) {
     $departments = \App\Models\Department::where('branch_id', $branch->id)
+        ->with('branch')
         ->orderBy('name')
-        ->get(['id', 'name']);
+        ->get()
+        ->map(function ($department) {
+            return [
+                'id' => $department->id,
+                'name' => $department->name_with_branch
+            ];
+        });
     
     return response()->json($departments);
 });
