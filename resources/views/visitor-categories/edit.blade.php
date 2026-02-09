@@ -6,7 +6,7 @@
         <div class="card-header">Edit Visitor Category</div>
 
         <div class="card-body">
-            <form method="POST" action="{{ route('visitor-categories.update', $visitorCategory) }}">
+            <form method="POST" action="{{ request()->is('company/*') ? route('company.visitor-categories.update', $visitorCategory) : route('visitor-categories.update', $visitorCategory) }}">
                 @csrf
                 @method('PUT')
 
@@ -74,7 +74,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i> Update
                     </button>
-                    <a href="{{ route('visitor-categories.index') }}" class="btn btn-secondary">
+                    <a href="{{ url()->previous() }}" class="btn btn-secondary">
                         <i class="fas fa-times me-1"></i> Cancel
                     </a>
                 </div>

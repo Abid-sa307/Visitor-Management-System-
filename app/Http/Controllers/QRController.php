@@ -256,7 +256,6 @@ class QRController extends Controller
         // Set default values for required fields if they're empty
         $validated['name'] = $validated['name'] ?? 'Guest Visitor';
         $validated['phone'] = $validated['phone'] ?? 'Not Provided';
-        $validated['purpose'] = $validated['purpose'] ?? 'General Visit';
         
         try {
             // Create visitor with only the provided fields
@@ -264,17 +263,19 @@ class QRController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'] ?? null,
                 'phone' => $validated['phone'],
-                'purpose' => $validated['purpose'],
+                'purpose' => $validated['purpose'] ?? null,
                 'visit_date' => $validated['visit_date'] ?? now()->format('Y-m-d'),
                 'company_id' => $company->id,
                 'is_approved' => $company->auto_approve_visitors,
             ];
             
+            // Log for debugging
+            \Log::info('Visitor registration data:', $visitorData);
+            
             // Set status based on auto approval
             if ($company->auto_approve_visitors) {
                 $visitorData['status'] = 'Approved';
                 $visitorData['approved_at'] = now();
-                // Don't set visit_completed_at here - only set when form is actually completed
             } else {
                 $visitorData['status'] = 'Pending';
             }
@@ -320,18 +321,40 @@ class QRController extends Controller
                 }
             }
             
+            // Handle single document upload
+            if ($request->hasFile('document')) {
+                $file = $request->file('document');
+                $path = $file->store('visitor-documents', 'public');
+                $visitor->face_image = $visitor->face_image ?? null; // Ensure other fields are set
+            }
+
             // Save the visitor
             $visitor->save();
             
             // Store visitor ID in session
             session(['current_visitor_id' => $visitor->id]);
             
-            // Handle document uploads
+            // Handle multiple document uploads (from documents[] field)
             if ($request->hasFile('documents')) {
                 foreach ($request->file('documents') as $file) {
                     $path = $file->store('visitor-documents', 'public');
+                    if (method_exists($visitor, 'documents')) {
+                        $visitor->documents()->create([
+                            'file_path' => $path,
+                            'file_name' => $file->getClientOriginalName(),
+                            'file_type' => $file->getClientMimeType(),
+                            'file_size' => $file->getSize(),
+                        ]);
+                    }
+                }
+            }
+            
+            // Also handle the single 'document' field for the documents relation
+            if ($request->hasFile('document')) {
+                $file = $request->file('document');
+                if (method_exists($visitor, 'documents')) {
                     $visitor->documents()->create([
-                        'file_path' => $path,
+                        'file_path' => $path, // from above
                         'file_name' => $file->getClientOriginalName(),
                         'file_type' => $file->getClientMimeType(),
                         'file_size' => $file->getSize(),
@@ -348,12 +371,15 @@ class QRController extends Controller
                 $routeParams = ['company' => $company->id, 'visitor' => $visitor->id];
             }
             
+            \Log::info('Visitor registration successful, redirecting to:', ['route' => $route, 'params' => $routeParams]);
+
             return redirect()
                 ->route($route, $routeParams)
                 ->with('success', 'Visitor registered successfully! Please complete the visit form.')
                 ->with('visitor_name', $visitor->name);
                 
         } catch (\Exception $e) {
+            \Log::error('Visitor registration error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()
                 ->withInput()
                 ->with('error', 'Error registering visitor: ' . $e->getMessage());
@@ -409,17 +435,38 @@ public function storeVisit(Request $request, Company $company, $branch = null)
 /**
  * Show the public visit form (no auth required)
  */
-public function showPublicVisitForm(Company $company, $branch = null, Request $request = null)
-{
-    $request = $request ?? request(); // Get the request instance if not injected
-    
-    $branchModel = null;
-    if ($branch) {
-        $branchModel = $company->branches()->find($branch);
-    }
-    
-    // Get visitor ID from query parameter or route parameter
-    $visitorId = $request->query('visitor') ?? $request->route('visitor');
+    public function showPublicVisitForm(Company $company, $branch = null, $visitor = null, Request $request = null)
+    {
+        $request = $request ?? request(); // Get the request instance if not injected
+        
+        // Handle parameters that might be swapped or missing depending on route
+        // Route 1: /companies/{company}/visitors/{visitor}/visit
+        // Route 2: /companies/{company}/branches/{branch}/visitors/{visitor}/visit
+        
+        if ($visitor === null && $branch !== null) {
+            // If only two parameters provided, $branch might actually be the visitor ID
+            // or we might be in the branch route and visitor is the 3rd param.
+            // But Laravel fills them in order.
+        }
+        
+        // Re-align based on route name if needed, but safer to check what $branch and $visitor are
+        $routeName = $request->route()->getName();
+        $isBranchRoute = str_contains($routeName, '.branch');
+
+        if ($isBranchRoute) {
+            $branchId = $branch;
+            $vId = $visitor;
+        } else {
+            $branchId = null;
+            $vId = $branch; // In non-branch route, the 2nd param is {visitor}
+        }
+
+        $branchModel = null;
+        if ($branchId) {
+            $branchModel = $company->branches()->find($branchId);
+        }
+        
+        $visitorId = $vId ?? $request->query('visitor');
     
     if (!$visitorId) {
         return redirect()->back()->with('error', 'No visitor specified.');
@@ -544,23 +591,30 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
             $visitor->update($validated);
 
             // Send notification if enabled
-            $notificationService = new GoogleNotificationService();
-            $notificationService->sendVisitFormNotification($company, $visitor, true);
+    $notificationService = new GoogleNotificationService();
+    $notificationService->sendVisitFormNotification($company, $visitor, true);
 
-            // Redirect to public-index page with success message
-            if ($branch) {
-                return redirect()->route('public.visitor.show', [
-                    'company' => $company->id, 
-                    'branch' => $branch, 
-                    'visitor' => $visitor->id
-                ])->with('success', 'Visit details submitted successfully!');
-            } else {
-                return redirect()->route('public.visitor.show', [
-                    'company' => $company->id, 
-                    'visitor' => $visitor->id
-                ])->with('success', 'Visit details submitted successfully!');
-            }
-        }
+    // Check if user is authenticated (company user logged in)
+    if (auth()->guard('company')->check()) {
+        // Redirect authenticated company users to their visits dashboard
+        return redirect()->route('company.visits.index')
+            ->with('success', 'Visit details submitted successfully!');
+    }
+
+    // Redirect public users to visitor show page with success message
+    if ($branch) {
+        return redirect()->route('public.visitor.show', [
+            'company' => $company->id, 
+            'branch' => $branch, 
+            'visitor' => $visitor->id
+        ])->with('success', 'Visit details submitted successfully!');
+    } else {
+        return redirect()->route('public.visitor.show', [
+            'company' => $company->id, 
+            'visitor' => $visitor->id
+        ])->with('success', 'Visit details submitted successfully!');
+    }
+}
         /**
          * Show the form for editing a visitor's details (public interface)
          *
@@ -569,17 +623,30 @@ public function showPublicVisitForm(Company $company, $branch = null, Request $r
          * @param  int  $branch  Branch ID (optional)
          * @return \Illuminate\View\View
          */
-        public function editPublicVisit(Company $company, $visitor, $branch = null)
+        public function editPublicVisit(Company $company, $branchId = null, $visitorId = null)
         {
-            // Find visitor if not already an object
-            if (!is_object($visitor)) {
-                $visitor = Visitor::findOrFail($visitor);
+            $request = request();
+            $routeName = $request->route()->getName();
+            $isBranchRoute = str_contains($routeName, '.branch');
+
+            if ($isBranchRoute) {
+                // Route: /companies/{company}/branches/{branch}/visitors/{visitor}/edit
+                $vId = $visitorId;
+                $bId = $branchId;
+            } else {
+                // Route: /companies/{company}/visitors/{visitor}/edit
+                // Here $branchId is actually {visitor}
+                $vId = $branchId;
+                $bId = null;
             }
+
+            // Find visitor
+            $visitor = Visitor::findOrFail($vId);
             
             // Get branch model if branch ID is provided
             $branchModel = null;
-            if ($branch) {
-                $branchModel = $company->branches()->find($branch);
+            if ($bId) {
+                $branchModel = $company->branches()->find($bId);
             }
             
             // Get necessary data for the form

@@ -11,11 +11,11 @@
                     {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
                         @php
-                            $from = request('from', now()->format('Y-m-d'));
-                            $to = request('to', now()->format('Y-m-d'));
+                            $from = request('from');
+                            $to = request('to');
                         @endphp
                         <label class="form-label">Date Range</label>
-                        @include('components.basic_date_range', ['from' => $from, 'to' => $to])
+                        @include('components.basic_date_range', ['from' => $from, 'to' => $to, 'allow_empty' => true])
                     </div>
 
                     {{-- 2️⃣ Company Dropdown (superadmin only) --}}
@@ -49,7 +49,18 @@
                                     <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
                                 </div>
                                 <hr class="my-1">
-                                <div id="branchOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                            <div id="branchOptions" style="max-height: 120px; overflow-y: auto;">
+                                @if(isset($branches) && count($branches) > 0)
+                                    @foreach($branches as $id => $name)
+                                        @if($id !== 'none')
+                                            <div class="form-check">
+                                                <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="{{ $id }}" id="branch_{{ $id }}" onchange="updateBranchText()" {{ in_array($id, (array)request('branch_id', [])) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="branch_{{ $id }}">{{ $name }}</label>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            </div>
                                 <hr class="my-1">
                                 <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('branchDropdownMenu').style.display='none'">Apply</button>
                             </div>
@@ -70,7 +81,16 @@
                                     <label class="form-check-label fw-bold" for="selectAllDepartments">Select All</label>
                                 </div>
                                 <hr class="my-1">
-                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;"></div>
+                                <div id="departmentOptions" style="max-height: 120px; overflow-y: auto;">
+                                    @if(isset($departments) && count($departments) > 0)
+                                        @foreach($departments as $id => $name)
+                                            <div class="form-check">
+                                                <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="{{ $id }}" id="department_{{ $id }}" onchange="updateDepartmentText()" {{ in_array($id, (array)request('department_id', [])) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="department_{{ $id }}">{{ $name }}</label>
+                                            </div>
+                                        @endforeach
+                                    @endif
+                                </div>
                                 <hr class="my-1">
                                 <button type="button" class="btn btn-sm btn-primary w-100" onclick="document.getElementById('departmentDropdownMenu').style.display='none'">Apply</button>
                             </div>
@@ -318,6 +338,8 @@
         const departmentBtn = document.getElementById('departmentBtn');
         if (departmentBtn) {
             if (anyChecked) {
+                // If branches are checked, we should trigger a department reload if they changed
+                // But for now just unlock UI
                 departmentBtn.disabled = false;
                 departmentBtn.style.opacity = '1';
                 departmentBtn.style.cursor = 'pointer';
@@ -347,8 +369,6 @@
         const companySelect = document.getElementById('company_id');
         const branchBtn = document.getElementById('branchBtn');
         const departmentBtn = document.getElementById('departmentBtn');
-        const branchOptions = document.getElementById('branchOptions');
-        const departmentOptions = document.getElementById('departmentOptions');
         
         // Close dropdowns when clicking outside
         document.addEventListener('click', function(e) {
@@ -360,79 +380,53 @@
             }
         });
         
-        // Initialize branches
+        // Initialize branches (Just update text state)
         function initBranches() {
-            branchOptions.innerHTML = '';
-            const selectedBranches = @json(request('branch_id', []));
-            
-            // Add branches from server data if available
-            @if(isset($branches) && count($branches) > 0)
-                @foreach($branches as $id => $name)
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    const isChecked = selectedBranches.includes('{{ $id }}');
-                    div.innerHTML = `
-                        <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="{{ $id }}" id="branch_{{ $id }}" onchange="updateBranchText()" ${isChecked ? 'checked' : ''}>
-                        <label class="form-check-label" for="branch_{{ $id }}">{{ $name }}</label>
-                    `;
-                    branchOptions.appendChild(div);
-                @endforeach
-            @endif
-            
             updateBranchText();
             updateSelectAllBranchesState();
             
-            // Enable branch button if branches are available
-            @if(isset($branches) && count($branches) > 0)
+            // Enable branch button if branches are available (HTML check)
+            const branchOptions = document.getElementById('branchOptions');
+            if (branchOptions && branchOptions.children.length > 0) {
                 if (branchBtn) {
                     branchBtn.disabled = false;
                     branchBtn.style.opacity = '1';
                     branchBtn.style.cursor = 'pointer';
                 }
-            @endif
+            }
         }
         
-        // Initialize departments
+        // Initialize departments (Just update text state)
         function initDepartments() {
-            departmentOptions.innerHTML = '';
-            const selectedDepartments = @json(request('department_id', []));
-            
-            // Add departments from server data if available
-            @if(isset($departments) && count($departments) > 0)
-                @foreach($departments as $id => $name)
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    const isChecked = selectedDepartments.includes('{{ $id }}');
-                    div.innerHTML = `
-                        <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="{{ $id }}" id="department_{{ $id }}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
-                        <label class="form-check-label" for="department_{{ $id }}">{{ $name }}</label>
-                    `;
-                    departmentOptions.appendChild(div);
-                @endforeach
-            @endif
-            
             updateDepartmentText();
             updateSelectAllDepartmentsState();
             
-            // Enable department button if departments are available
-            @if(isset($departments) && count($departments) > 0)
+            // Enable department button if departments are available (HTML check)
+            const departmentOptions = document.getElementById('departmentOptions');
+            if (departmentOptions && departmentOptions.children.length > 0) {
                 if (departmentBtn) {
                     departmentBtn.disabled = false;
                     departmentBtn.style.opacity = '1';
                     departmentBtn.style.cursor = 'pointer';
                 }
-            @endif
+            }
         }
         
         // Load branches by company
         function loadBranchesByCompany(companyId) {
+            const branchOptions = document.getElementById('branchOptions');
             if (!companyId) return;
             
             fetch(`/api/companies/${companyId}/branches`)
-                .then(response => response.json())
-                .then(branches => {
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch branches');
+                    return response.json();
+                })
+                .then(data => {
                     branchOptions.innerHTML = '';
                     const selectedBranches = @json(request('branch_id', []));
+                    
+                    const branches = Array.isArray(data) ? data : Object.entries(data).map(([id, name]) => ({ id, name }));
                     
                     branches.forEach(branch => {
                         const div = document.createElement('div');
@@ -460,38 +454,75 @@
         // Load departments by selected branches
         function loadDepartmentsByBranches() {
             const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
+            const departmentOptions = document.getElementById('departmentOptions');
             
-            departmentOptions.innerHTML = '';
-            departmentBtn.disabled = true;
-            departmentBtn.style.opacity = '0.5';
-            departmentBtn.style.cursor = 'not-allowed';
-            document.getElementById('departmentText').textContent = 'All Departments';
+            // If no branches selected but we are initialized, maybe we shouldn't clear? 
+            // Dashboard logic says: if no branches selected, lock dept unless initialized differently.
+            // But here we'll follow previous logic: clear depts if branch selection changes.
             
-            if (selectedBranches.length === 0) return;
-
+            // However, initially, we might have depts without branches selected (if logic allows).
+            // But usually depts depend on branches.
+            
+            if (selectedBranches.length === 0) {
+                // If branches deselected, clear depts? Or keep if not strictly dependent?
+                // Let's clear to be safe and dynamic
+                departmentOptions.innerHTML = '';
+                departmentBtn.disabled = true;
+                departmentBtn.style.opacity = '0.5';
+                departmentBtn.style.cursor = 'not-allowed';
+                document.getElementById('departmentText').textContent = 'All Departments';
+                return;
+            }
+            
+            departmentOptions.innerHTML = '<div class="text-muted">Loading...</div>';
+            
             Promise.all(selectedBranches.map(branchId => 
-                fetch(`/api/branches/${branchId}/departments`).then(r => r.json())
+                fetch(`/api/branches/${branchId}/departments`).then(r => {
+                    if (!r.ok) throw new Error('Failed to fetch departments');
+                    return r.json();
+                })
             )).then(results => {
                 const deptMap = [];
                 results.forEach(depts => {
-                    depts.forEach(dept => {
+                    // Normalize data
+                    // Normalize data with robust checking
+                    let deptArray = [];
+                    if (Array.isArray(depts)) {
+                        deptArray = depts;
+                    } else if (depts.data && Array.isArray(depts.data)) {
+                        deptArray = depts.data;
+                    } else {
+                        // Handle object format {id: name, ...} or {id: {name: ...}, ...}
+                        deptArray = Object.entries(depts || {}).map(([key, val]) => {
+                            if (typeof val === 'object' && val !== null) return { id: key, ...val };
+                            return { id: key, name: val };
+                        });
+                    }
+                    
+                    deptArray.forEach(dept => {
                         if (!deptMap.find(d => d.id == dept.id)) {
                             deptMap.push(dept);
                         }
                     });
                 });
                 
+                departmentOptions.innerHTML = '';
                 const selectedDepartments = @json(request('department_id', []));
-                deptMap.forEach(dept => {
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    const isChecked = selectedDepartments.includes(dept.id.toString());
-                    div.innerHTML = `
-                        <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
-                        <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
-                    `;
-                    departmentOptions.appendChild(div);
-                });
+                
+                if (deptMap.length === 0) {
+                    departmentOptions.innerHTML = '<div class="text-muted">No departments available</div>';
+                } else {
+                    deptMap.forEach(dept => {
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        const isChecked = selectedDepartments.includes(dept.id.toString());
+                        div.innerHTML = `
+                            <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
+                            <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
+                        `;
+                        departmentOptions.appendChild(div);
+                    });
+                }
                 
                 updateDepartmentText();
                 updateSelectAllDepartmentsState();
@@ -501,7 +532,10 @@
                     departmentBtn.style.opacity = '1';
                     departmentBtn.style.cursor = 'pointer';
                 }
-            }).catch(error => console.error('Error loading departments:', error));
+            }).catch(error => {
+                console.error('Error loading departments:', error);
+                departmentOptions.innerHTML = '<div class="text-muted">Error</div>';
+            });
         }
         
         // Initialize on load
@@ -514,14 +548,24 @@
                 const companyId = this.value;
                 
                 // Reset dropdowns
-                branchOptions.innerHTML = '';
-                departmentOptions.innerHTML = '';
-                branchBtn.disabled = true;
-                branchBtn.style.opacity = '0.5';
-                branchBtn.style.cursor = 'not-allowed';
-                departmentBtn.disabled = true;
-                departmentBtn.style.opacity = '0.5';
-                departmentBtn.style.cursor = 'not-allowed';
+                document.getElementById('branchDropdownMenu').style.display = 'none'; // Close menu
+                
+                const bo = document.getElementById('branchOptions');
+                const doo = document.getElementById('departmentOptions');
+                if(bo) bo.innerHTML = '';
+                if(doo) doo.innerHTML = '';
+                
+                if(branchBtn) {
+                    branchBtn.disabled = true;
+                    branchBtn.style.opacity = '0.5';
+                    branchBtn.style.cursor = 'not-allowed';
+                }
+                if(departmentBtn) {
+                    departmentBtn.disabled = true;
+                    departmentBtn.style.opacity = '0.5';
+                    departmentBtn.style.cursor = 'not-allowed';
+                }
+
                 document.getElementById('branchText').textContent = 'All Branches';
                 document.getElementById('departmentText').textContent = 'All Departments';
                 

@@ -22,7 +22,7 @@
     },
     
     selectPreset(preset) {
-        const today = new Date();
+        const today = new Date();  
         let from, to;
         
         switch(preset) {

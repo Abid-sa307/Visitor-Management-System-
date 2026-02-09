@@ -4,7 +4,7 @@
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">Add New Employee</h1>
-        <a href="{{ route('employees.index') }}" class="btn btn-sm btn-secondary shadow-sm">
+        <a href="{{ url()->previous() }}" class="btn btn-sm btn-secondary shadow-sm">
             <i class="fas fa-arrow-left me-1"></i> Back
         </a>
     </div>
@@ -21,7 +21,7 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <form action="{{ route('employees.store') }}" method="POST">
+            <form action="{{ request()->is('company/*') ? route('company.employees.store') : route('employees.store') }}" method="POST">
                 @csrf
 
                 <div class="row">
@@ -29,7 +29,7 @@
                         <label class="form-label fw-semibold">Company <span class="text-danger">*</span></label>
                         <select name="company_id" id="company_id" class="form-select" required {{ !$isSuper ? 'readonly' : '' }}>
                             @foreach($companies as $id => $name)
-                                <option value="{{ $id }}" {{ old('company_id', array_key_first($companies->toArray())) == $id ? 'selected' : '' }}>
+                                <option value="{{ $id }}" {{ old('company_id', array_key_first((array)$companies)) == $id ? 'selected' : '' }}>
                                     {{ $name }}
                                 </option>
                             @endforeach
@@ -102,100 +102,198 @@
     </div>
 </div>
 
-@push('scripts')
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('Employee Create JS Loaded (Inlined)');
+
+    const companySelect = document.getElementById('company_id');
+    const branchSelect = document.getElementById('branch_id');
+    const departmentDropdownBtn = document.getElementById('departmentDropdownBtn');
+    const departmentDropdownText = document.getElementById('departmentDropdownText');
+    const departmentCheckboxList = document.getElementById('departmentCheckboxList');
+    
     let selectedDepts = [];
 
-    function updateDropdownText() {
-        const text = selectedDepts.length === 0 ? 'Select Departments' : selectedDepts.length + ' department(s) selected';
-        $('#departmentDropdownText').text(text);
+    if (!companySelect || !branchSelect) {
+        console.error('Critical Error: Dropdowns not found');
+        return;
     }
 
-    // Toggle dropdown
-    $('#departmentDropdownBtn').on('click', function(e) {
-        e.stopPropagation();
-        if (!$(this).prop('disabled')) {
-            $('#departmentCheckboxList').toggle();
-        }
-    });
+    // --- Helper Functions ---
 
-    // Close dropdown when clicking outside
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('#departmentCheckboxList, #departmentDropdownBtn').length) {
-            $('#departmentCheckboxList').hide();
-        }
-    });
+    function updateDropdownText() {
+        const text = selectedDepts.length === 0 
+            ? 'Select Departments' 
+            : selectedDepts.length + ' department(s) selected';
+        departmentDropdownText.textContent = text;
+    }
 
-    // Prevent closing when clicking inside
-    $('#departmentCheckboxList').on('click', function(e) {
-        e.stopPropagation();
-    });
-
-    // Handle checkbox changes
-    $(document).on('change', '.dept-checkbox', function() {
-        const val = $(this).val();
-        if ($(this).is(':checked')) {
-            if (!selectedDepts.includes(val)) selectedDepts.push(val);
-        } else {
-            selectedDepts = selectedDepts.filter(id => id !== val);
-        }
-        updateDropdownText();
-    });
-
-    $('#company_id').on('change', function() {
-        const companyId = $(this).val();
-        $('#branch_id').prop('disabled', false).empty().append('<option value="">-- Select Branch --</option>');
-        $('#departmentDropdownBtn').prop('disabled', true);
-        $('#departmentDropdownText').text('Select Branch First');
-        $('#departmentCheckboxList').hide().html('<div class="p-3"><p class="text-muted mb-0">Select a branch first</p></div>');
-        selectedDepts = [];
+    function loadBranches(companyId) {
+        console.log('Loading branches for company:', companyId);
         
-        if (companyId) {
-            $.get('/api/companies/' + companyId + '/branches', function(data) {
-                $.each(data, function(i, branch) {
-                    $('#branch_id').append('<option value="' + branch.id + '">' + branch.name + '</option>');
-                });
-            });
-        }
-    });
+        branchSelect.innerHTML = '<option value="">Loading branches...</option>';
+        branchSelect.disabled = true;
 
-    $('#branch_id').on('change', function() {
-        const branchId = $(this).val();
-        selectedDepts = [];
-        
-        if (branchId) {
-            $('#departmentDropdownBtn').prop('disabled', false);
-            $('#departmentDropdownText').text('Loading...');
-            $.get('/api/branches/' + branchId + '/departments', function(data) {
-                let html = '<div class="p-3">';
-                if (data.length === 0) {
-                    html += '<p class="text-muted mb-0">No departments available</p>';
-                    $('#departmentDropdownBtn').prop('disabled', true);
-                    $('#departmentDropdownText').text('No Departments');
+        // Reset Departments
+        resetDepartments('Select Branch First');
+
+        const url = `/api/companies/${companyId}/branches`;
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Branches Data:', data);
+                
+                let branches = [];
+                if (Array.isArray(data)) branches = data;
+                else if (typeof data === 'object' && data !== null) branches = Object.values(data);
+
+                let options = '<option value="">-- Select Branch --</option>';
+                if (branches.length === 0) {
+                    options += '<option value="">No branches found</option>';
                 } else {
-                    $.each(data, function(i, dept) {
-                        html += '<div class="form-check mb-2">';
-                        html += '<input class="form-check-input dept-checkbox" type="checkbox" name="department_ids[]" value="' + dept.id + '" id="dept_' + dept.id + '">';
-                        html += '<label class="form-check-label" for="dept_' + dept.id + '">' + dept.name + '</label>';
-                        html += '</div>';
+                    branches.forEach(branch => {
+                        let selected = '{{ old('branch_id') }}' == branch.id ? 'selected' : '';
+                        options += `<option value="${branch.id}" ${selected}>${branch.name}</option>`;
                     });
-                    updateDropdownText();
                 }
-                html += '</div>';
-                $('#departmentCheckboxList').html(html);
+                
+                branchSelect.innerHTML = options;
+                branchSelect.disabled = false;
+            })
+            .catch(err => {
+                console.error('Branch load error:', err);
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
             });
-        } else {
-            $('#departmentDropdownBtn').prop('disabled', true);
-            $('#departmentDropdownText').text('Select Branch First');
-            $('#departmentCheckboxList').hide().html('<div class="p-3"><p class="text-muted mb-0">Select a branch first</p></div>');
+    }
+
+    function loadDepartments(branchId) {
+        console.log('Loading departments for branch:', branchId);
+        
+        departmentDropdownBtn.disabled = true;
+        departmentDropdownText.textContent = 'Loading...';
+        departmentCheckboxList.innerHTML = '<div class="p-3">Loading...</div>';
+
+        const url = `/api/branches/${branchId}/departments`;
+        fetch(url)
+             .then(res => {
+                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                 return res.json();
+             })
+             .then(data => {
+                 console.log('Departments Data:', data);
+                 
+                 let html = '<div class="p-3">';
+                 if (data.length === 0) {
+                     html += '<p class="text-muted mb-0">No departments available</p>';
+                     departmentDropdownBtn.disabled = true;
+                     departmentDropdownText.textContent = 'No Departments';
+                 } else {
+                     data.forEach(dept => {
+                         html += `
+                             <div class="form-check mb-2">
+                                 <input class="form-check-input dept-checkbox" type="checkbox" name="department_ids[]" value="${dept.id}" id="dept_${dept.id}">
+                                 <label class="form-check-label" for="dept_${dept.id}">${dept.name}</label>
+                             </div>`;
+                     });
+                     departmentDropdownBtn.disabled = false;
+                     updateDropdownText();
+                 }
+                 html += '</div>';
+                 departmentCheckboxList.innerHTML = html;
+                 
+                 // Re-attach listeners to new checkboxes
+                 attachCheckboxListeners();
+             })
+             .catch(err => {
+                 console.error('Dept load error:', err);
+                 departmentDropdownText.textContent = 'Error loading departments';
+             });
+    }
+
+    function resetDepartments(msg) {
+        departmentDropdownBtn.disabled = true;
+        departmentDropdownText.textContent = msg;
+        departmentCheckboxList.innerHTML = `<div class="p-3"><p class="text-muted mb-0">${msg}</p></div>`;
+        departmentCheckboxList.style.display = 'none';
+        selectedDepts = [];
+    }
+
+    function attachCheckboxListeners() {
+        const checkboxes = departmentCheckboxList.querySelectorAll('.dept-checkbox');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (this.checked) {
+                    if (!selectedDepts.includes(this.value)) selectedDepts.push(this.value);
+                } else {
+                    selectedDepts = selectedDepts.filter(id => id !== this.value);
+                }
+                updateDropdownText();
+            });
+        });
+    }
+
+    // --- Event Listeners ---
+
+    companySelect.addEventListener('change', function() {
+        if (this.value) loadBranches(this.value);
+        else {
+            branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+            branchSelect.disabled = true;
+            resetDepartments('Select Branch First');
         }
     });
 
-    @if(!$isSuper && $branches->isNotEmpty())
-        $('#branch_id').trigger('change');
-    @endif
+    branchSelect.addEventListener('change', function() {
+        if (this.value) loadDepartments(this.value);
+        else resetDepartments('Select Branch First');
+    });
+
+    // Custom Dropdown Toggle
+    if(departmentDropdownBtn) {
+        departmentDropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!this.disabled) {
+                departmentCheckboxList.style.display = departmentCheckboxList.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    }
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        if (departmentCheckboxList && departmentDropdownBtn && 
+            !departmentCheckboxList.contains(e.target) && 
+            !departmentDropdownBtn.contains(e.target)) {
+            departmentCheckboxList.style.display = 'none';
+        }
+    });
+
+    if (departmentCheckboxList) {
+        departmentCheckboxList.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
+    // --- Initialization ---
+    // If Logic: if company selected but no branches, load branches.
+    // If branch selected, load departments.
+    
+    // Check if company is pre-selected
+    if (companySelect.value) {
+        // If branches empty or just placeholder, load.
+        // But for superadmin/edit, server might populate it.
+        // We trigger load if branch select has no data options or if explicitly changing user flow.
+        // Safe bet: if branch is not selected, load it.
+        // If branch IS selected, we probably have data, so load departments.
+        
+        if (branchSelect.value) {
+            loadDepartments(branchSelect.value);
+        } else if (branchSelect.options.length <= 1) {
+            loadBranches(companySelect.value);
+        }
+    }
 });
 </script>
-@endpush
 @endsection

@@ -78,27 +78,15 @@ class DepartmentController extends Controller
 
     public function create()
     {
-        // Super admin can choose any company, others only their own
-        if (auth()->user()->role === 'superadmin') {
-            $companies = Company::all();
+        $user = auth()->user();
+        
+        if ($user->role === 'superadmin') {
+            $companies = Company::orderBy('name')->get();
             $branches = collect();
         } else {
-            $companies = Company::where('id', auth()->user()->company_id)->get();
-            $user = auth()->user();
-            // Get user's assigned branch IDs from the pivot table
-            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
-            
-            if (!empty($userBranchIds)) {
-                $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
-            }
+            $companies = Company::where('id', $user->company_id)->get();
+            // Only show branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->get();
         }
 
         return view('departments.create', compact('companies', 'branches'));
@@ -145,31 +133,19 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
-        // Restrict edit if not same company
-        if (auth()->user()->role !== 'superadmin' && $department->company_id !== auth()->user()->company_id) {
+        $user = auth()->user();
+        
+        if ($user->role !== 'superadmin' && $department->company_id !== $user->company_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        if (auth()->user()->role === 'superadmin') {
+        if ($user->role === 'superadmin') {
             $companies = Company::all();
             $branches = Branch::where('company_id', $department->company_id)->get();
         } else {
-            $companies = Company::where('id', auth()->user()->company_id)->get();
-            $user = auth()->user();
-            // Get user's assigned branch IDs from the pivot table
-            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
-            
-            if (!empty($userBranchIds)) {
-                $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
-            }
+            $companies = Company::where('id', $user->company_id)->get();
+            // Only show branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->get();
         }
 
         return view('departments.edit', compact('department', 'companies', 'branches'));
@@ -225,25 +201,37 @@ class DepartmentController extends Controller
             ->with('success', 'Department deleted successfully');
     }
 
-    /**
-     * Get departments by company (API)
-     */
     public function getByCompany(Company $company)
     {
-        try {
-            $departments = $company->departments()->select('id', 'name', 'company_id')->get();
-            
-            return response()->json($departments)
-                ->header('Content-Type', 'application/json')
-                ->header('Access-Control-Allow-Origin', '*')
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        } catch (\Exception $e) {
-            \Log::error('Error fetching departments: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Failed to load departments',
-                'message' => $e->getMessage()
-            ], 500);
+        \Log::info('DepartmentController::getByCompany', [
+            'company_id' => $company->id,
+            'request_branch_id' => request('branch_id'),
+            'user_id' => auth()->id(),
+        ]);
+
+        $query = $company->departments()->select('id', 'name', 'company_id', 'branch_id');
+
+        // Filter by user's assigned departments
+        $user = auth()->user();
+        if ($user && $user->role !== 'superadmin' && $user->departments()->exists()) {
+             $query->whereIn('id', $user->departments()->pluck('departments.id'));
         }
+
+        // Filter by specific branch(es) if provided
+        if (request()->filled('branch_id')) {
+            $branchIds = is_array(request('branch_id')) ? request('branch_id') : [request('branch_id')];
+            $query->whereIn('branch_id', $branchIds);
+        }
+
+        $departments = $query->with('branch')->orderBy('name')->get()->map(function($d) {
+             $d->name = $d->name_with_branch;
+             return $d;
+        });
+
+        return response()->json($departments->values())
+            ->header('Content-Type', 'application/json')
+            ->header('Access-Control-Allow-Origin', '*')
+            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     }
 
     /**

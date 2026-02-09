@@ -4,7 +4,7 @@
 <div class="container-fluid px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 text-gray-800">Edit Employee</h1>
-        <a href="{{ route('employees.index') }}" class="btn btn-sm btn-secondary shadow-sm">
+        <a href="{{ url()->previous() }}" class="btn btn-sm btn-secondary shadow-sm">
             <i class="fas fa-arrow-left me-1"></i> Back
         </a>
     </div>
@@ -21,7 +21,7 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <form method="POST" action="{{ route('employees.update', $employee->id) }}">
+            <form method="POST" action="{{ request()->is('company/*') ? route('company.employees.update', $employee->id) : route('employees.update', $employee->id) }}">
                 @csrf
                 @method('PUT')
 

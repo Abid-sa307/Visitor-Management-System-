@@ -40,8 +40,12 @@ public function __construct()
         'createVisitor', 
         'storeVisitor',
         'showVisitForm',
+        'showVisitFormWithBranch',
+        'storeVisit',
+        'storeVisitWithBranch',
         'storePublicVisit',
-        'publicVisitorIndex'
+        'publicVisitorIndex',
+        'show'
     ]);
 }
 
@@ -53,9 +57,12 @@ public function __construct()
      */
     public function index()
     {
-        $query = Company::with('branches')
-            ->when(auth()->user()->role !== 'superadmin', function($q) {
-                $q->where('id', auth()->user()->company_id);
+        $user = auth()->user();
+        $isSuperAdmin = $user->role === 'superadmin';
+        
+        $query = Company::query()
+            ->when(!$isSuperAdmin, function($q) use ($user) {
+                $q->where('id', $user->company_id);
             })
             ->orderBy('name');
 
@@ -74,13 +81,29 @@ public function __construct()
         }
 
         $companies = $query->get();
+        
+        // For company users, filter branches to only show assigned ones
+        if (!$isSuperAdmin) {
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            $companies->each(function($company) use ($userBranchIds) {
+                // Filter branches to only include those assigned to the user
+                $company->setRelation('branches', 
+                    $company->branches->filter(function($branch) use ($userBranchIds) {
+                        return in_array($branch->id, $userBranchIds);
+                    })
+                );
+            });
+        } else {
+            // For superadmin, load all branches
+            $companies->load('branches');
+        }
 
         return view('qr-management.index', compact('companies'));
     }
 
-    /**
-     * Display the QR code for a specific company or branch.
-     */
+
+
     /**
      * Display the QR code scanning page for public visitor registration.
      *
@@ -94,10 +117,10 @@ public function __construct()
      * @param  \App\Models\Company  $company
      * @return \Illuminate\View\View
      */
-    public function createVisitor(Company $company)
+    public function createVisitor(Company $company, $branch = null)
     {
-        // Check if a specific branch was passed in the query string
-        $branchId = request()->query('branch') ?? session('scanned_branch_id');
+        // Prioritize route param > query param > session
+        $branchId = $branch ?? request()->query('branch') ?? session('scanned_branch_id');
         $branchModel = null;
         
         if ($branchId) {
@@ -121,8 +144,19 @@ public function __construct()
         ]);
     }
 
-    public function storeVisitor(Company $company, Request $request)
+    public function storeVisitor(Company $company, Request $request, $branch = null)
 {
+    \Log::info('storeVisitor called', [
+        'company_id' => $company->id,
+        'branch_param' => $branch,
+        'request_all' => $request->all()
+    ]);
+
+    // Check if branch matches session if passed
+    if ($branch) {
+        session(['scanned_branch_id' => $branch]);
+    }
+
     // Check if face recognition is enabled for this company
     $faceRecognitionEnabled = $company->face_recognition_enabled ?? false;
     
@@ -171,20 +205,26 @@ public function __construct()
         // Create visitor
         $visitor = Visitor::create($visitorData);
 
-        // Send email notification to visitor
+        // Send notification to company admins/users about the new public visitor registration
         try {
-            if (!empty($visitor->email)) {
-                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
-            }
+            $notificationService = new \App\Services\GoogleNotificationService();
+            $notificationService->sendNotification(
+                $company, 
+                'visitor_created', 
+                "New visitor registered: {$visitor->name}", 
+                $visitor
+            );
         } catch (\Throwable $e) {
-            \Log::warning('VisitorCreated mail dispatch failed: '.$e->getMessage());
+            \Log::error('Failed to send admin notification for public visitor registration: ' . $e->getMessage());
         }
 
+        // Note: Email will be sent after visit form completion with complete details
+        
         // Check if branch was stored in session
         $branchId = session('scanned_branch_id');
         
         // Redirect to the next step
-        $redirectUrl = route('public.visitor.show', [
+        $redirectUrl = route('public.visitor.visit.form', [
             'company' => $company->id,
             'visitor' => $visitor->id
         ]);
@@ -213,19 +253,34 @@ public function __construct()
  */
 public function showVisitForm(Company $company, \App\Models\Visitor $visitor)
 {
-    // Get necessary data for the form
-    $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)->get();
-    $departments = \App\Models\Department::where('company_id', $company->id)->get();
-    $employees = \App\Models\Employee::where('company_id', $company->id)->get();
+    // Check if a specific branch was passed in the request or session
+    $branchId = request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
+    $branchModel = null;
     
     // Check if a specific branch was passed in the request or session
     $branchId = request()->route('branch') ?? request()->query('branch') ?? session('scanned_branch_id');
     $branchModel = null;
     
+    // Filter data by branch if selected
     if ($branchId) {
+        $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)
+            ->where('branch_id', $branchId)
+            ->get();
+            
+        $departments = \App\Models\Department::where('company_id', $company->id)
+            ->where('branch_id', $branchId)
+            ->get();
+        
+        $employees = \App\Models\Employee::where('company_id', $company->id)
+            ->where('branch_id', $branchId)
+            ->get();
+            
         $branchModel = $company->branches()->find($branchId);
         $branches = $branchModel ? collect([$branchModel]) : $company->branches;
     } else {
+        $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)->get();
+        $departments = \App\Models\Department::where('company_id', $company->id)->get();
+        $employees = \App\Models\Employee::where('company_id', $company->id)->get();
         $branches = $company->branches;
     }
 
@@ -274,7 +329,8 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             'department_id'        => $validated['department_id'],
             'purpose'              => $validated['purpose'],
             'visit_date'           => $validated['visit_date'] ?? $visitor->visit_date ?? now()->format('Y-m-d'),
-            'status'               => $visitor->status === 'Approved' ? 'Approved' : 'Pending',
+            'status'               => ($visitor->status === 'Approved' || $company->auto_approve_visitors) ? 'Approved' : 'Pending',
+            'approved_at'          => ($visitor->status === 'Approved' ? $visitor->approved_at : ($company->auto_approve_visitors ? now() : null)),
             'visitor_company'      => $validated['visitor_company'] ?? null,
             'branch_id'            => $validated['branch_id'] ?? null,
             'visitor_category_id'  => $request->input('visitor_category_id') ?: null,
@@ -289,6 +345,17 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
         
         $visitor->save();
 
+        // Send email notification with complete visit details
+        try {
+            if (!empty($visitor->email)) {
+                // Load relationships for email display
+                $visitor->load(['company', 'branch', 'department']);
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Visit details email dispatch failed: '.$e->getMessage());
+        }
+
         // Send approval email if visitor was auto-approved or status changed to approved
         try {
             if ($visitor->status === 'Approved' && !empty($visitor->email)) {
@@ -298,15 +365,23 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             \Log::warning('VisitorApproved mail dispatch failed: '.$e->getMessage());
         }
 
+        // Send notification to company admins/users about the new public visit
+        try {
+            $notificationService = new \App\Services\GoogleNotificationService();
+            $notificationService->sendVisitFormNotification($company, $visitor, true);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send admin notification for public visit: ' . $e->getMessage());
+        }
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Visit details updated successfully!',
-                'redirect' => "/public/company/{$company->id}/visitor/{$visitor->id}"
+                'redirect' => route('public.visitor.show', ['company' => $company->id, 'visitor' => $visitor->id])
             ]);
         }
 
-        return redirect("/public/company/{$company->id}/visitor/{$visitor->id}")
+        return redirect()->route('public.visitor.show', ['company' => $company->id, 'visitor' => $visitor->id])
             ->with('success', 'Visit details updated successfully!')
             ->with('show_pass_button', true);
 
@@ -472,59 +547,76 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
      */
     public function show(Company $company, Branch $branch = null)
     {
-        $user = auth()->user();
-        $isSuperAdmin = $user->is_super_admin || $user->hasRole('super_admin') || $user->role === 'superadmin';
-        
-        // Debugging info
-        \Log::info('QR Management Show Access', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'is_super_admin' => $user->is_super_admin,
-            'role' => $user->role,
-            'hasRole(super_admin)' => $user->hasRole('super_admin'),
-            'isSuperAdmin' => $isSuperAdmin,
-            'user_company_id' => $user->company_id,
-            'requested_company_id' => $company->id
-        ]);
-        
-        // Check if user has access to this company
-        if (!$isSuperAdmin && $user->company_id != $company->id) {
-            abort(403, 'You do not have access to this company\'s QR code.');
+        // Check if a specific branch was requested via query parameter (for public access)
+        $branchId = request()->query('branch_id');
+        if (!$branch && $branchId) {
+            $branch = $company->branches()->find($branchId);
         }
         
-        // If branch is provided, ensure it belongs to the company
-        if ($branch && $branch->company_id !== $company->id) {
-            abort(404, 'Branch not found for this company.');
-        }
+        // Check if user is authenticated
+        $isAuthenticated = auth()->check();
         
-        // Load company data with relationships
-        $company->loadCount('branches', 'departments')
-               ->load(['branches' => function($query) {
-                   $query->orderBy('name');
-               }]);
-        
-        // Generate QR code URL
-        $qrUrl = url('/qr/scan/' . $company->id);
-        
-        // If branch is provided, add it to the URL
-        if ($branch) {
-            $qrUrl .= '/' . $branch->id;
-        }
-        
-        // Generate QR code with the URL
-        $qrCodeSvg = QrCode::format('svg')
-            ->size(300)
-            ->errorCorrection('H')
-            ->generate($qrUrl);
+        if ($isAuthenticated) {
+            // Authenticated user - show admin QR management view
+            $user = auth()->user();
+            $isSuperAdmin = $user->is_super_admin || $user->hasRole('super_admin') || $user->role === 'superadmin';
             
-        $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg);
-        
-        return view('qr-management.show', [
-            'company' => $company,
-            'branch' => $branch,
-            'qrCode' => $qrCodeBase64,
-            'isSuperAdmin' => $isSuperAdmin
-        ]);
+            // Check if user has access to this company
+            if (!$isSuperAdmin && $user->company_id != $company->id) {
+                abort(403, 'You do not have access to this company\'s QR code.');
+            }
+            
+            // If branch is provided, ensure it belongs to the company
+            if ($branch && $branch->company_id != $company->id) {
+                abort(404, 'Branch not found for this company.');
+            }
+            
+            // Load company data with relationships
+            $company->loadCount('branches', 'departments')
+                   ->load(['branches' => function($query) {
+                       $query->orderBy('name');
+                   }]);
+            
+            // Generate QR code URL
+            $qrUrl = url('/qr/scan/' . $company->id);
+            
+            // If branch is provided, add it to the URL
+            if ($branch) {
+                $qrUrl .= '/' . $branch->id;
+            }
+            
+            // Generate QR code with the URL
+            $qrCodeSvg = QrCode::format('svg')
+                ->size(300)
+                ->errorCorrection('H')
+                ->generate($qrUrl);
+                
+            $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg);
+            
+            return view('qr-management.show', [
+                'company' => $company,
+                'branch' => $branch,
+                'qrCode' => $qrCodeBase64,
+                'isSuperAdmin' => $isSuperAdmin
+            ]);
+        } else {
+            // Public access - show public QR code view
+            $branchName = $branch ? $branch->name : null;
+            
+            // Generate the URL for the QR code
+            if ($branch) {
+                $url = route('qr.scan', ['company' => $company->id, 'branch' => $branch->id]);
+            } else {
+                $url = route('qr.scan', ['company' => $company->id]);
+            }
+            
+            // Generate QR code
+            $qrCode = QrCode::size(300)
+                ->margin(2)
+                ->generate($url);
+            
+            return view('companies.public-qr', compact('company', 'qrCode', 'url', 'branchName'));
+        }
     }
 
     /**
@@ -535,25 +627,14 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
         $user = auth()->user();
         $isSuperAdmin = $user->is_super_admin || $user->hasRole('super_admin') || $user->role === 'superadmin';
         
-        // Debugging info
-        \Log::info('QR Management Download Access', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'is_super_admin' => $user->is_super_admin,
-            'role' => $user->role,
-            'hasRole(super_admin)' => $user->hasRole('super_admin'),
-            'isSuperAdmin' => $isSuperAdmin,
-            'user_company_id' => $user->company_id,
-            'requested_company_id' => $company->id
-        ]);
-        
         // Check if user has access to this company
         if (!$isSuperAdmin && $user->company_id != $company->id) {
             abort(403, 'You do not have permission to download this QR code.');
-        }
+        } 
         
         // If branch is provided, ensure it belongs to the company
-        if ($branch && $branch->company_id !== $company->id) {
+        // Using loose comparison (!=) to handle potential string/int mismatches
+        if ($branch && $branch->company_id != $company->id) {
             abort(404, 'Branch not found for this company.');
         }
         
@@ -811,5 +892,28 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
                 'message' => 'Error processing QR code: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Show the visit form with branch context (adapter for route with branch param).
+     */
+    public function showVisitFormWithBranch(Company $company, $branchId, \App\Models\Visitor $visitor)
+    {
+        // Set the branch in session/request so the main method can pick it up
+        request()->merge(['branch' => $branchId]);
+        session(['scanned_branch_id' => $branchId]);
+        
+        return $this->showVisitForm($company, $visitor);
+    }
+
+    /**
+     * Store request with branch context (adapter for route with branch param).
+     */
+    public function storeVisitWithBranch(Company $company, $branchId, \App\Models\Visitor $visitor, \Illuminate\Http\Request $request)
+    {
+        // Set the branch in request so validation/logic works
+        $request->merge(['branch_id' => $branchId]);
+        
+        return $this->storeVisit($company, $visitor, $request);
     }
 }

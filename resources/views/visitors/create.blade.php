@@ -55,7 +55,7 @@
       </div>
     </div>
 
-    <form action="{{ auth()->user()->role === 'company' ? route('company.visitors.store') : route('visitors.store') }}"
+    <form action="{{ auth()->guard('company')->check() ? route('company.visitors.store') : route('visitors.store') }}"
         method="POST" enctype="multipart/form-data" id="visitorForm">
       @csrf
 
@@ -95,21 +95,26 @@
                   <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
               @else
-                @if(isset($branches) && $branches->count() > 0)
-                  <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
+                @if(isset($branches) && $branches->count() > 1)
+                  {{-- Multiple branches: show dropdown --}}
+                  <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror" required>
                     <option value="">-- Select Branch --</option>
                     @foreach($branches as $id => $name)
-                      <option value="{{ $id }}" 
-                          {{ old('branch_id', auth()->user()->branch_id) == $id ? 'selected' : '' }}>
-                          {{ $name }}
+                      <option value="{{ $id }}" {{ old('branch_id') == $id ? 'selected' : '' }}>
+                        {{ $name }}
                       </option>
                     @endforeach
                   </select>
                   @error('branch_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
+                @elseif(isset($branches) && $branches->count() === 1)
+                  {{-- Single branch: lock it --}}
+                  <input type="hidden" name="branch_id" value="{{ $branches->keys()->first() }}">
+                  <input type="text" class="form-control" value="{{ $branches->first() }}" readonly>
                 @else
-                  <input type="text" class="form-control" value="No branches available" readonly>
+                  {{-- No branches assigned --}}
+                  <input type="text" class="form-control" value="No branch assigned" readonly>
                 @endif
               @endif
             </div>

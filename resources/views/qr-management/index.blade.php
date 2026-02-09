@@ -29,7 +29,7 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h4 text-gray-800">QR Code Management</h1>
+        <h1 class="h4 text-gray-800">QR-Code Management</h1>
         <a href="{{ route('dashboard') }}" class="action-btn action-btn--view">
             <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
         </a>
@@ -84,7 +84,7 @@
                                     <td>{{ $item->email ?? '—' }}</td>
                                     <td>{{ $item->phone ?? '—' }}</td>
                                     <td>
-                                        <a href="{{ route('companies.public.qr', $item->company_id) }}?branch_id={{ $item->id }}" 
+                                        <a href="{{ route('public.companies.branches.show', ['company' => $item->company_id, 'branch' => $item->id]) }}" 
                                            class="action-btn action-btn--view"
                                            target="_blank">
                                             <i class="fas fa-qrcode me-1"></i> View QR

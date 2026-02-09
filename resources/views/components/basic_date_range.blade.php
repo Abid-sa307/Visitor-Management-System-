@@ -1,226 +1,109 @@
 @php
-    $from = $from ?? request('from', now()->format('Y-m-d'));
-    $to = $to ?? request('to', now()->format('Y-m-d'));
+    $allowEmpty = $allow_empty ?? false;
+    $requestFrom = $from ?? request('from');
+    $requestTo = $to ?? request('to');
+    
+    // If allowEmpty is true, we ONLY default if explicit values are provided, otherwise null.
+    // If allowEmpty is false (default), we default to now() if values are missing.
+    
+    if (!$allowEmpty) {
+        $from = $requestFrom ?: now()->format('Y-m-d');
+        $to = $requestTo ?: now()->format('Y-m-d');
+    } else {
+        $from = $requestFrom;
+        $to = $requestTo;
+    }
+    
+    $id = 'date_range_' . rand(1000, 9999);
+    $hasDate = !empty($from) && !empty($to);
 @endphp
 
-<div class="basic-date-range-picker">
-    <div class="position-relative">
-        <button type="button" 
-                id="dateRangeToggle"
-                class="date-range-picker d-flex align-items-center gap-2 w-100">
-            <i class="fas fa-calendar-alt"></i>
-            <span id="dateRangeDisplay">Select date range</span>
-            <i class="fas fa-chevron-down ms-auto"></i>
-        </button>
+<div class="position-relative w-100" id="container_{{ $id }}">
+    <label class="form-label d-none d-md-block" style="visibility: hidden;">Date Range</label>
+    <button type="button" 
+            class="btn btn-outline-secondary w-100 text-start d-flex align-items-center justify-content-between"
+            id="toggle_{{ $id }}"
+            onclick="const m = document.getElementById('menu_{{ $id }}'); const isHidden = m.style.display === 'none'; document.querySelectorAll('.drp-menu-v2').forEach(x => x.style.display='none'); m.style.display = isHidden ? 'block' : 'none'; event.stopPropagation();"
+            style="min-height: 48px; border-radius: 10px; border: 1px solid #d1d3e2; background: white; padding: 0.75rem 1rem;">
+        <span class="text-primary fw-bold" id="label_{{ $id }}">
+            <i class="fas fa-calendar-alt me-2"></i>
+            @if($hasDate)
+                {{ date('d/m/Y', strtotime($from)) }} - {{ date('d/m/Y', strtotime($to)) }}
+            @else
+                Select Date Range
+            @endif
+        </span>
+        <i class="fas fa-chevron-down opacity-50 small"></i>
+    </button>
+
+    <div id="menu_{{ $id }}" 
+         class="drp-menu-v2 shadow-lg border rounded-3 bg-white p-3"
+         style="display: none; position: absolute; top: 100%; left: 0; z-index: 2000; min-width: 310px; margin-top: 8px; border: 1px solid #e3e6f0 !important;">
         
-        <!-- Dropdown Content -->
-        <div id="dateRangeDropdown" 
-             class="position-absolute top-100 start-0 mt-2 bg-white border rounded-3 shadow-lg p-3 d-none"
-             style="z-index: 1050; min-width: 280px; border: 2px solid rgba(102, 126, 234, 0.2); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);">
-            
-            <!-- Preset Options -->
-            <div class="mb-3">
-                <div class="small text-muted mb-2 fw-semibold" style="color: #667eea; text-transform: uppercase; letter-spacing: 0.5px;">Quick Select</div>
-                <div class="d-grid gap-1">
-                    <button type="button" class="btn btn-sm btn-outline-secondary text-start date-preset" data-preset="today" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
-                        Today
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary text-start date-preset" data-preset="yesterday" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
-                        Yesterday
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary text-start date-preset" data-preset="thisMonth" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
-                        This Month
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary text-start date-preset" data-preset="lastMonth" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
-                        Last Month
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Custom Range -->
-            <div class="mb-3">
-                <div class="small text-muted mb-2 fw-semibold" style="color: #667eea; text-transform: uppercase; letter-spacing: 0.5px;">Custom Range</div>
-                <div class="d-flex gap-2 align-items-center">
-                    <input type="date" id="fromDateInput" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
-                    <span class="text-muted" style="font-weight: 500;">to</span>
-                    <input type="date" id="toDateInput" class="form-control form-control-sm" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
-                </div>
-            </div>
-            
-            <!-- Action Buttons -->
-            <div class="d-flex gap-2">
-                <button type="button" id="resetDates" class="btn btn-sm btn-outline-secondary" style="border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.3s ease;">
-                    <i class="fas fa-undo"></i> Reset
-                </button>
-                <button type="button" id="applyDates" class="btn btn-sm btn-primary flex-grow-1">
-                    Apply
-                </button>
+        <div class="mb-3">
+            <p class="small fw-bold text-uppercase text-muted mb-2" style="letter-spacing: 0.5px; font-size: 0.7rem;">Quick Select</p>
+            <div class="d-flex flex-wrap gap-1">
+                <button type="button" class="btn btn-sm btn-light border flex-grow-1" onclick="updateDRPV2('{{ $id }}', '{{ now()->format('Y-m-d') }}', '{{ now()->format('Y-m-d') }}')">Today</button>
+                <button type="button" class="btn btn-sm btn-light border flex-grow-1" onclick="updateDRPV2('{{ $id }}', '{{ now()->subDay()->format('Y-m-d') }}', '{{ now()->subDay()->format('Y-m-d') }}')">Yesterday</button>
+                <button type="button" class="btn btn-sm btn-light border flex-grow-1" onclick="updateDRPV2('{{ $id }}', '{{ now()->startOfMonth()->format('Y-m-d') }}', '{{ now()->format('Y-m-d') }}')">This Month</button>
+                <button type="button" class="btn btn-sm btn-light border flex-grow-1" onclick="updateDRPV2('{{ $id }}', '{{ now()->subMonth()->startOfMonth()->format('Y-m-d') }}', '{{ now()->subMonth()->endOfMonth()->format('Y-m-d') }}')">Last Month</button>
             </div>
         </div>
+
+        <hr class="my-3 opacity-50">
+
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <label class="small fw-bold mb-1">From</label>
+                <input type="date" id="inp_f_{{ $id }}" class="form-control form-control-sm" value="{{ $from }}">
+            </div>
+            <div class="col-6">
+                <label class="small fw-bold mb-1">To</label>
+                <input type="date" id="inp_t_{{ $id }}" class="form-control form-control-sm" value="{{ $to }}">
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            <button type="button" class="btn btn-primary btn-sm py-2 fw-bold" onclick="applyDRPV2('{{ $id }}')">
+                <i class="fas fa-filter me-1"></i> Apply Filter
+            </button>
+            <button type="button" class="btn btn-link btn-sm text-muted text-decoration-none" onclick="document.getElementById('menu_{{ $id }}').style.display='none'">Close</button>
+        </div>
     </div>
+
+    {{-- Real inputs that get submitted --}}
+    <input type="hidden" name="from" id="hid_f_{{ $id }}" value="{{ $from }}">
+    <input type="hidden" name="to" id="hid_t_{{ $id }}" value="{{ $to }}">
 </div>
 
-@push('scripts')
+@once
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const toggle = document.getElementById('dateRangeToggle');
-    const dropdown = document.getElementById('dateRangeDropdown');
-    const display = document.getElementById('dateRangeDisplay');
-    const fromInput = document.getElementById('fromDateInput');
-    const toInput = document.getElementById('toDateInput');
-    const presetButtons = document.querySelectorAll('.date-preset');
-    const resetBtn = document.getElementById('resetDates');
-    const applyBtn = document.getElementById('applyDates');
+    window.updateDRPV2 = function(id, f, t) {
+        document.getElementById('inp_f_' + id).value = f;
+        document.getElementById('inp_t_' + id).value = t;
+        applyDRPV2(id);
+    };
     
-    // Set initial values
-    const initialFrom = '{{ $from }}';
-    const initialTo = '{{ $to }}';
-    fromInput.value = initialFrom;
-    toInput.value = initialTo;
-    updateDisplay();
-    
-    // Toggle dropdown
-    toggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        dropdown.classList.toggle('d-none');
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.basic-date-range-picker')) {
-            dropdown.classList.add('d-none');
-        }
-    });
-    
-    // Handle preset buttons
-    presetButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const preset = this.dataset.preset;
-            const today = new Date();
-            let from, to;
-            
-            switch(preset) {
-                case 'today':
-                    from = to = today;
-                    break;
-                case 'yesterday':
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    from = to = yesterday;
-                    break;
-                case 'thisMonth':
-                    from = new Date(today.getFullYear(), today.getMonth(), 1);
-                    to = today;
-                    break;
-                case 'lastMonth':
-                    from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                    to = new Date(today.getFullYear(), today.getMonth(), 0);
-                    break;
-            }
-            
-            fromInput.value = formatDateForInput(from);
-            toInput.value = formatDateForInput(to);
-            updateDisplay();
-            dropdown.classList.add('d-none');
-            submitForm();
-        });
-    });
-    
-    // Handle reset
-    resetBtn.addEventListener('click', function() {
-        fromInput.value = '';
-        toInput.value = '';
-        updateDisplay();
-        dropdown.classList.add('d-none');
-        submitForm();
-    });
-    
-    // Handle apply
-    applyBtn.addEventListener('click', function() {
-        if (fromInput.value && toInput.value) {
-            updateDisplay();
-            dropdown.classList.add('d-none');
-            submitForm();
-        }
-    });
-    
-    // Auto-submit on date change
-    fromInput.addEventListener('change', function() {
-        if (this.value && toInput.value) {
-            updateDisplay();
-            submitForm();
-        }
-    });
-    
-    toInput.addEventListener('change', function() {
-        if (this.value && fromInput.value) {
-            updateDisplay();
-            submitForm();
-        }
-    });
-    
-    function updateDisplay() {
-        if (!fromInput.value && !toInput.value) {
-            display.innerHTML = 'Select date range';
-        } else {
-            display.innerHTML = formatDate(toInput.value);
-        }
-    }
-    
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        const [year, month, day] = dateString.split('-');
-        return `${day}-${month}-${year}`;
-    }
-    
-    function formatDateForInput(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-    
-    function submitForm() {
-        const form = document.querySelector('.basic-date-range-picker').closest('form');
-        if (form) {
-            let fromHidden = form.querySelector('input[name="from"]');
-            let toHidden = form.querySelector('input[name="to"]');
-            
-            if (!fromHidden) {
-                fromHidden = document.createElement('input');
-                fromHidden.type = 'hidden';
-                fromHidden.name = 'from';
-                form.appendChild(fromHidden);
-            }
-            
-            if (!toHidden) {
-                toHidden = document.createElement('input');
-                toHidden.type = 'hidden';
-                toHidden.name = 'to';
-                form.appendChild(toHidden);
-            }
-            
-            fromHidden.value = fromInput.value;
-            toHidden.value = toInput.value;
-            form.submit();
-        }
-    }
-});
-</script>
-@endpush
+    window.applyDRPV2 = function(id) {
+        const fromVal = document.getElementById('inp_f_' + id).value;
+        const toVal = document.getElementById('inp_t_' + id).value;
+        
+        document.getElementById('hid_f_' + id).value = fromVal;
+        document.getElementById('hid_t_' + id).value = toVal;
+        
+        const form = document.getElementById('hid_f_' + id).closest('form');
+        if (form) form.submit();
+    };
 
-@push('styles')
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.position-relative')) {
+            document.querySelectorAll('.drp-menu-v2').forEach(m => m.style.display = 'none');
+        }
+    });
+</script>
 <style>
-    .basic-date-range-picker {
-        min-width: 250px;
-    }
-    
-    .basic-date-range-picker .btn {
-        border-radius: 0.5rem;
-    }
-    
-    .basic-date-range-picker .position-absolute {
-        border-radius: 0.75rem !important;
+    .drp-menu-v2 {
+        box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important;
     }
 </style>
-@endpush
+@endonce

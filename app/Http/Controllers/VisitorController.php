@@ -110,7 +110,8 @@ class VisitorController extends Controller
     private function isCompany(): bool
     {
         $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-        return (($u->role ?? null) === 'company');
+        if (!$u) return false;
+        return in_array($u->role, ['company', 'company_user']);
     }
 
     // Scope queries to company for non-super admins
@@ -121,8 +122,22 @@ class VisitorController extends Controller
         // If not superadmin, filter by company and branch
         if (!$this->isSuper()) {
             $query->where('company_id', $u->company_id);
-            if (!empty($u->branch_id)) {
-                $query->where('branch_id', $u->branch_id);
+            
+            // Collect all allowed branch IDs
+            $allowedBranchIds = collect();
+            
+            if ($u->branch_id) {
+                $allowedBranchIds->push($u->branch_id);
+            }
+            
+            if ($u->branches()->exists()) {
+                $allowedBranchIds = $allowedBranchIds->merge($u->branches()->pluck('branches.id'));
+            }
+            
+            $allowedBranchIds = $allowedBranchIds->unique()->filter();
+            
+            if ($allowedBranchIds->isNotEmpty()) {
+                $query->whereIn('branch_id', $allowedBranchIds);
             }
         }
         
@@ -136,16 +151,26 @@ class VisitorController extends Controller
         $inCompanyUrl = request()->is('company/*');
         if ($inCompanyUrl || $this->isCompany()) {
             $map = [
-                'dashboard'           => 'company.dashboard',
-                'visitors.index'      => 'company.visitors.index',
-                'visitors.create'     => 'company.visitors.create',
-                'visitors.edit'       => 'company.visitors.edit',
-                'visitors.update'     => 'company.visitors.update',
-                'visitors.store'      => 'company.visitors.store',
-                'visitors.destroy'    => 'company.visitors.destroy',
-                'visitors.history'    => 'company.visitors.history',
-                'visitors.entry.page' => 'company.visitors.entry.page',
-                'visitors.report'     => 'company.visitors.report',
+                'dashboard'              => 'company.dashboard',
+                'visitors.index'         => 'company.visitors.index',
+                'visitors.create'        => 'company.visitors.create',
+                'visitors.edit'          => 'company.visitors.edit',
+                'visitors.update'        => 'company.visitors.update',
+                'visitors.store'         => 'company.visitors.store',
+                'visitors.destroy'       => 'company.visitors.destroy',
+                'visitors.history'       => 'company.visitors.history',
+                'visitors.entry.page'    => 'company.visitors.entry.page',
+                'visitors.report'        => 'company.visitors.report',
+                'visitors.approvals'     => 'company.visitors.approvals',
+                'visitors.visit.form'    => 'company.visitors.visit.form',
+                'visits.index'           => 'company.visits.index',
+                'users.index'            => 'company.users.index',
+                'users.create'           => 'company.users.create',
+                'users.edit'             => 'company.users.edit',
+                'departments.index'      => 'company.departments.index',
+                'branches.index'         => 'company.branches.index',
+                'employees.index'        => 'company.employees.index',
+                'visitor-categories.index' => 'company.visitor-categories.index',
             ];
             if (isset($map[$name])) return $map[$name];
         }
@@ -179,16 +204,25 @@ class VisitorController extends Controller
 
     private function getDepartments($branchId = null)
     {
+        $query = Department::query();
+        
         if ($branchId) {
-            return Department::where('branch_id', $branchId)->orderBy('name')->get();
+            $query->where('branch_id', $branchId);
         }
 
-        if ($this->isSuper()) {
-            return Department::orderBy('name')->get();
+        if (!$this->isSuper()) {
+            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+            $query->where('company_id', $u->company_id);
+            
+            // Filter by assigned departments if user has any assigned
+            if ($u->departments()->exists()) {
+                $query->whereIn('id', $u->departments()->pluck('departments.id'));
+            }
         }
 
-        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-        return Department::where('company_id', $u->company_id)->orderBy('name')->get();
+        return $query->with('branch')->orderBy('name')->get()->each(function($department) {
+            $department->name = $department->name . ($department->branch ? ' - ' . $department->branch->name : '');
+        });
     }
 
 
@@ -202,12 +236,24 @@ class VisitorController extends Controller
 
     /* --------------------------- CRUD --------------------------- */
 
-    public function index()
+    public function index(Request $request)
     {
         $query = $this->companyScope(Visitor::with(['company', 'branch', 'department'])->latest());
+
+        // Date Filtering
+        if ($request->has('date_range')) {
+            $range = $request->input('date_range');
+            if (!empty($range['from'])) {
+                $query->whereDate('visit_date', '>=', $range['from']);
+            }
+            if (!empty($range['to'])) {
+                $query->whereDate('visit_date', '<=', $range['to']);
+            }
+        }
+
         // Show all statuses in company list so nothing is hidden from operators
         // (Dashboard will still hide Pending/Rejected when auto-approve is on)
-        $visitors = $query->paginate(10);
+        $visitors = $query->paginate(10)->withQueryString();
         return view('visitors.index', compact('visitors'));
     }
 
@@ -244,16 +290,79 @@ class VisitorController extends Controller
         $visitors = $query->paginate(10);
         
         // Get filter data
-        $companies = $this->isSuper() ? Company::pluck('name', 'id') : [];
+    $companies = $this->isSuper() ? Company::pluck('name', 'id') : [];
+    
+    $branches = [];
+    $departments = [];
+    
+    // Determine the company ID to use for fetching branches/departments
+    $filterCompanyId = $request->input('company_id');
+    
+    if (!$this->isSuper()) {
+        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $filterCompanyId = $u->company_id;
+    }
+
+    if ($filterCompanyId) {
+        // Fetch branches for the company
+        $branchQuery = Branch::where('company_id', $filterCompanyId);
         
-        $branches = [];
-        $departments = [];
-        if ($request->filled('company_id')) {
-            $branches = Branch::where('company_id', $request->company_id)->pluck('name', 'id');
-            $departments = Department::where('company_id', $request->company_id)->pluck('name', 'id');
+        // If not super admin, filter branches by user's assignment
+        if (!$this->isSuper()) {
+             $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+             if (!empty($u->branch_id)) {
+                 // The user might have multiple branches via pivot, or one via column. 
+                 // Based on our previous fixes, we should check the pivot/relationship helper.
+                 // For now, let's use the 'branches' relationship if available, or fallback to 'branch_id' column if simple.
+                 // Actually, checking how `companyScope` worked:
+                 // if ($u->branches()->exists()) ...
+                 
+                 // Let's act consistent with getByCompany API:
+                 $branchQuery->whereHas('users', function($q) use ($u) {
+                     $q->where('users.id', $u->id);
+                 });
+                 // Note: If the user is assigned ALL branches via some other logic, this might be too restrictive?
+                 // But strictly speaking, company users should see their assigned branches.
+                 // Let's double check if we can trust the 'branches' relationship.
+                 // Earlier we saw: $branches = $user->branches()->orderBy('name')->get(...)
+                 
+                 // SIMPLER: Use the user's branches directly if they have any.
+                 if ($u->branches()->exists()) {
+                    // Use only assigned branches
+                    $branchIds = $u->branches()->pluck('branches.id');
+                    $branchQuery->whereIn('id', $branchIds);
+                 } elseif ($u->branch_id) {
+                     // Fallback to single branch column if specific column is used
+                    $branchQuery->where('id', $u->branch_id);
+                 }
+                 // If neither, perhaps they see all branches of the company? (e.g. company admin?)
+                 // Assuming implicit access to all if no specific assignment? 
+                 // Standard logic in this app seems to be: if company user, show assigned. If none assigned, show company's.
+             }
         }
         
-        return view('visits.index', compact('visitors', 'companies', 'branches', 'departments'));
+        $branches = $branchQuery->pluck('name', 'id');
+        
+        $departmentQuery = Department::where('company_id', $filterCompanyId);
+        
+        // Filter by selected branches in request
+        if ($request->filled('branch_id')) {
+            $selectedBranchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $departmentQuery->whereIn('branch_id', $selectedBranchIds);
+        }
+
+        // Filter by user's assigned departments if applicable
+        if (!$this->isSuper()) {
+             $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+             if ($u->departments()->exists()) {
+                 $departmentQuery->whereIn('id', $u->departments()->pluck('departments.id'));
+             }
+        }
+        
+        $departments = $departmentQuery->with('branch')->get()->pluck('name_with_branch', 'id');
+    }
+    
+    return view('visits.index', compact('visitors', 'companies', 'branches', 'departments'));
     }
 
     public function create()
@@ -287,19 +396,26 @@ class VisitorController extends Controller
             ->get();
         
         // Get branches for company users
-        $branches = collect();
-        if (!$this->isSuper()) {
-            $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
-            $branches = \App\Models\Branch::where('company_id', $u->company_id)
-                ->orderBy('name')
-                ->pluck('name', 'id');
-        }
+    $branches = collect();
+    if (!$this->isSuper()) {
+        $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        // Get only branches assigned to this user
+        $branches = $u->branches()->orderBy('name')->pluck('name', 'branches.id');
+    }
 
-        return view('visitors.create', compact('companies', 'departments', 'categories', 'branches'));
+    return view('visitors.create', compact('companies', 'departments', 'categories', 'branches'));
     }
     
     public function store(Request $request)
     {
+        \Log::info('=== VISITOR CREATE START ===', [
+            'user_guard' => auth()->guard('company')->check() ? 'company' : 'web',
+            'user_id' => auth()->guard('company')->check() ? auth()->guard('company')->id() : auth()->id(),
+            'company_id' => $request->input('company_id'),
+            'branch_id' => $request->input('branch_id'),
+            'request_data' => $request->except(['photo', 'face_image', 'documents'])
+        ]);
+        
         // Check if current time is within branch operation hours for selected branch
         if ($request->filled('branch_id')) {
             $branchId = $request->input('branch_id');
@@ -313,7 +429,7 @@ class VisitorController extends Controller
                 if ($currentTime < $startTime || $currentTime > $endTime) {
                     $errorMessage = "Visitor cannot be added before or after operational time. Branch operating hours are {$startTime} to {$endTime}.";
                     
-                    return redirect()->route('visitors.index')
+                    return redirect()->route($this->panelRoute('visitors.index'))
                         ->with('error', $errorMessage)
                         ->with('alert', $errorMessage)
                         ->withInput();
@@ -374,7 +490,8 @@ class VisitorController extends Controller
             if (!$this->isSuper()) {
                 $u = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
                 $validated['company_id'] = $u->company_id;
-                if (!empty($u->branch_id)) {
+                // Only set branch_id if not provided in request (preserve user's selection)
+                if (empty($validated['branch_id']) && !empty($u->branch_id)) {
                     $validated['branch_id'] = $u->branch_id;
                 }
             }
@@ -448,14 +565,14 @@ class VisitorController extends Controller
             $status = 'Pending';
             $approvedAt = null;
 
-            // Don't auto-approve until visit form is completed
-            // if (!empty($validated['company_id'])) {
-            //     $company = Company::find($validated['company_id']);
-            //     if ($company && (int) $company->auto_approve_visitors === 1) {
-            //         $status = 'Approved';
-            //         $approvedAt = now();
-            //     }
-            // }
+            // Auto-approval logic
+            if (!empty($validated['company_id'])) {
+                $company = Company::find($validated['company_id']);
+                if ($company && (int) $company->auto_approve_visitors === 1) {
+                    $status = 'Approved';
+                    $approvedAt = now();
+                }
+            }
 
             $validated['status'] = $status;
             if (\Schema::hasColumn('visitors', 'approved_at')) {
@@ -563,8 +680,15 @@ class VisitorController extends Controller
             }
 
             // Always redirect to visit form after visitor creation
-            $route = $this->isSuper() ? 'visitors.visit.form' : 'company.visitors.visit.form';
+            $route = $this->panelRoute('visitors.visit.form');
             $message = 'Visitor registered successfully. Please complete the visit form.';
+            
+            \Log::info('=== VISITOR CREATE REDIRECT ===', [
+                'visitor_id' => $visitor->id,
+                'route' => $route,
+                'isSuper' => $this->isSuper(),
+                'isCompany' => $this->isCompany(),
+            ]);
 
             // Check if notification should trigger
             if ($visitor->company && $visitor->company->enable_visitor_notifications) {
@@ -724,12 +848,6 @@ class VisitorController extends Controller
             try {
                 $notificationService = new GoogleNotificationService();
                 $notificationService->sendApprovalNotification($visitor->company, $visitor);
-                
-                // Simple notification: Set session flash for frontend
-                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
-                    session()->flash('play_notification', true);
-                    session()->flash('notification_message', "{$visitor->name} - Approved");
-                }
             } catch (\Throwable $e) {
                 \Log::error('Failed to send approval notification: ' . $e->getMessage());
             }
@@ -999,7 +1117,7 @@ class VisitorController extends Controller
 
         // Check if visitor has already completed the visit form (and it hasn't been undone)
         if ($visitor->visit_completed_at && ($visitor->department_id || $visitor->person_to_visit || $visitor->purpose)) {
-            return redirect()->route('visitors.index')
+            return redirect()->route($this->panelRoute('visitors.index'))
                 ->with('error', 'Visitor has already completed the visit form.');
         }
 
@@ -1013,22 +1131,40 @@ class VisitorController extends Controller
         
         $companyId = $visitor->company_id ?? ($companies->first()->id ?? null);
 
-        $branches = Branch::query()
-            ->when($companyId, fn($q) => $q->where('company_id', $companyId))
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        // Get branches - for super admin get all, for company users get only assigned branches
+        if ($isSuper) {
+            $branches = Branch::query()
+                ->when($companyId, fn($q) => $q->where('company_id', $companyId))
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        } else {
+            // Get only branches assigned to this user
+            $branches = $user->branches()->orderBy('name')->get(['branches.id', 'branches.name']);
+        }
 
         $selectedBranchId = $visitor->branch_id ?? ($branches->first()->id ?? null);
         $departments = $selectedBranchId ? $this->getDepartments($selectedBranchId) : collect();
 
+        // STRICT FILTERING: Visitor Categories
         $visitorCategories = VisitorCategory::query()
-            ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
-            ->when($companyId && !$selectedBranchId, fn($q) => $q->where('company_id', $companyId)->whereNull('branch_id'))
+            ->where('company_id', $companyId)
+            ->when($selectedBranchId, function($q) use ($selectedBranchId) {
+                // If branch selected, show categories for that branch OR global categories (null branch)
+                $q->where(function($sub) use ($selectedBranchId) {
+                    $sub->where('branch_id', $selectedBranchId)
+                        ->orWhereNull('branch_id');
+                });
+            }, function($q) {
+                // If no branch, show only global categories
+                $q->whereNull('branch_id');
+            })
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        // Get employees for the selected branch
+        // STRICT FILTERING: Employees
+        // Always filter by company_id first
         $employees = \App\Models\Employee::query()
+            ->where('company_id', $companyId)
             ->when($selectedBranchId, fn($q) => $q->where('branch_id', $selectedBranchId))
             ->orderBy('name')
             ->get(['id', 'name', 'designation']);
@@ -1081,12 +1217,13 @@ class VisitorController extends Controller
                 'current_status' => $visitor->status
             ]);
 
-            $validated = $request->validate([
+            $validator = \Validator::make($request->all(), [
                 'company_id'          => 'required|exists:companies,id',
                 'department_id'       => 'required|exists:departments,id',
                 'branch_id'           => 'nullable|exists:branches,id',
                 'visitor_category_id' => 'nullable|exists:visitor_categories,id',
-                'person_to_visit'     => 'required|string',
+                'person_to_visit'     => 'required_without:person_to_visit_manual|nullable|string',
+                'person_to_visit_manual' => 'nullable|string',
                 'purpose'             => 'nullable|string',
                 'visitor_company'     => 'nullable|string',
                 'visitor_website'     => 'nullable|string',
@@ -1097,6 +1234,13 @@ class VisitorController extends Controller
                 'workman_policy_photo'=> 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,tiff,webp|max:5120',
                 'status'              => 'sometimes|in:Pending,Approved,Rejected',
             ]);
+
+            if ($validator->fails()) {
+                \Log::error('Visit Submission Validation Failed:', $validator->errors()->toArray());
+                return redirect()->back()->withErrors($validator)->withInput();
+            }
+
+            $validated = $validator->validated();
 
             // Start a database transaction
             \DB::beginTransaction();
@@ -1195,20 +1339,14 @@ class VisitorController extends Controller
                     \Log::info('Visit form submitted - Visitor notifications DISABLED');
                 }
 
+                \DB::commit();
+
                 // Determine the appropriate redirect route based on user type
-                if (auth()->guard('company')->check()) {
-                    return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.')
-                        ->with('play_notification', $playNotification)
-                        ->with('visitor_name', $visitor->name)
-                        ->with('notification_message', $notificationMessage);
-                } else {
-                    return redirect()->route('visits.index')
-                        ->with('success', 'Visit submitted successfully.')
-                        ->with('play_notification', $playNotification)
-                        ->with('visitor_name', $visitor->name)
-                        ->with('notification_message', $notificationMessage);
-                }
+                return redirect()->route($this->panelRoute('visits.index'))
+                    ->with('success', 'Visit submitted successfully.')
+                    ->with('play_notification', $playNotification)
+                    ->with('visitor_name', $visitor->name)
+                    ->with('notification_message', $notificationMessage);
 
             } catch (\Exception $e) {
                 \DB::rollBack();
@@ -1499,12 +1637,16 @@ class VisitorController extends Controller
         }
 
         $visitor = Visitor::findOrFail($id);
-        $this->authorizeVisitor($visitor);
-
+        
         // Check if this is a QR flow visitor and if the company allows mark in/out in QR flow
         $isPublicRequest = request()->has('public') || 
                           (request()->header('referer') && str_contains(request()->header('referer'), '/public/')) ||
                           (request()->query('public') == '1');
+        
+        // Only authorize if not a public request
+        if (!$isPublicRequest) {
+            $this->authorizeVisitor($visitor);
+        }
         
         if ($isPublicRequest && !$visitor->company->mark_in_out_in_qr_flow) {
             $message = 'Mark in/out is not allowed for QR flow visitors for this company.';
@@ -1612,7 +1754,7 @@ class VisitorController extends Controller
                 
                 $visitor->in_time = now();
                 $message = 'Visitor checked in successfully.';
-                $playNotification = true;
+                $playNotification = !$isPublicRequest;
                 
             } elseif ($action === 'out' || ($visitor->in_time && !$visitor->out_time)) {
                 // Check if visitor has completed visit form (check both visit_completed_at and required fields)
@@ -1657,8 +1799,7 @@ class VisitorController extends Controller
                     $visitor->status = 'Completed';
                 }
                 $message = 'Visitor checked out successfully.';
-                $playNotification = true;
-                $playNotification = true;
+                $playNotification = !$isPublicRequest;
             }
 
             // Update status history if status changed
@@ -1680,13 +1821,31 @@ class VisitorController extends Controller
                     // Also trigger security check-out notification if applicable (though usually security check is separate)
                 }
                 
-                // Simple notification: Set session flash for frontend
-                if ($visitor->company && $visitor->company->enable_visitor_notifications) {
+                // Simple notification: Set session flash for frontend (only for company users)
+                if (!$isPublicRequest && $visitor->company && $visitor->company->enable_visitor_notifications) {
                     session()->flash('play_notification', true);
                     session()->flash('notification_message', "{$visitor->name} - " . ($action === 'in' ? 'Checked In' : 'Checked Out'));
                 }
             } catch (\Throwable $e) {
                 \Log::error('Failed to send mark-in/out notification: ' . $e->getMessage());
+            }
+
+            // Send email to visitor for mark in/out
+            try {
+                if (!empty($visitor->email)) {
+                    // Load relationships for email display
+                    $visitor->load(['company', 'branch', 'department']);
+                    
+                    if ($action === 'in' || ($action !== 'out' && $action !== 'undo_in' && $action !== 'undo_out' && $visitor->in_time)) {
+                        // Send check-in confirmation email
+                        \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorStatusChangedMail($visitor, 'checked_in'), $visitor->email);
+                    } elseif ($action === 'out' || $visitor->out_time) {
+                        // Send check-out confirmation email
+                        \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorStatusChangedMail($visitor, 'checked_out'), $visitor->email);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Failed to send visitor mark-in/out email: ' . $e->getMessage());
             }
 
             if (request()->ajax()) {
@@ -1718,20 +1877,11 @@ class VisitorController extends Controller
                                (request()->query('public') == '1');
             
             if ($isPublicRequest) {
-                // If visitor has completed their visit (checked out), clear session and show fresh public index
-                if ($visitor->out_time && $visitor->status === 'Completed') {
-                    // Clear the visitor from session so they see a fresh public index
-                    session()->forget('current_visitor_id');
-                    
-                    return redirect()->route('qr.scan', ['company' => $visitor->company_id])
-                        ->with('success', $message)
-                        ->with('play_notification', $playNotification ?? false)
-                        ->with('visit_completed', true);
-                } else {
-                    return redirect()->route('public.visitor.show', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
-                        ->with('success', $message)
-                        ->with('play_notification', $playNotification ?? false);
-                }
+                // Always redirect back to the public visitor page to show the updated status
+                return redirect()->route('public.visitor.show', ['company' => $visitor->company_id, 'visitor' => $visitor->id])
+                    ->with('success', $message)
+                    ->with('play_notification', $playNotification ?? false)
+                    ->with('visit_completed', $visitor->out_time && $visitor->status === 'Completed');
             }
 
             return redirect()->route('visitors.entry.page')
@@ -2101,27 +2251,21 @@ class VisitorController extends Controller
             \Log::info('Approval Report - Department IDs filter: ' . json_encode($request->department_ids));
         }
 
-        // Apply date range filter - default to current date
-        $from = $request->input('from', now()->format('Y-m-d'));
-        $to = $request->input('to', now()->format('Y-m-d'));
-        $currentDate = now()->format('Y-m-d');
+        // Apply date range filter
+        $from = $request->input('from');
+        $to = $request->input('to');
         
         // Debug logging
         \Log::info('Approval Report Date Filter:', [
-            'request_from' => $request->input('from'),
-            'request_to' => $request->input('to'),
             'from' => $from,
             'to' => $to,
-            'current_date' => $currentDate,
-            'from_equals_current' => ($from === $currentDate),
-            'to_equals_current' => ($to === $currentDate)
         ]);
         
         if ($from && $to) {
-            if ($from === $to && $from === $currentDate) {
-                // If both dates are current date, show only current date
+            if ($from === $to) {
+                // If both dates are same
                 $query->whereDate('updated_at', '=', $from);
-                \Log::info('Using single date filter for current date');
+                \Log::info('Using single date filter');
             } else {
                 // If date range is specified, use the range
                 $query->whereDate('updated_at', '>=', $from);
@@ -2129,9 +2273,7 @@ class VisitorController extends Controller
                 \Log::info('Using date range filter');
             }
         } else {
-            // Default to current date
-            $query->whereDate('updated_at', '=', $currentDate);
-            \Log::info('Using default current date filter');
+            \Log::info('No date filter applied - showing all history');
         }
 
         // Log the final SQL query for debugging
@@ -2659,44 +2801,162 @@ class VisitorController extends Controller
     // Approvals listing (non-report)
     public function approvals(Request $request)
     {
-        $query = $this->companyScope(Visitor::with(['company', 'department', 'category']));
+        // 1. User & Role Setup (matching DashboardController)
+        $isCompanyUser = Auth::guard('company')->check();
+        $user = $isCompanyUser ? Auth::guard('company')->user() : Auth::user();
+        $isSuper = ($user->role ?? null) === 'superadmin';
 
-        if ($this->isCompany() && (auth()->user()->company?->auto_approve_visitors)) {
-            $query->where('status', 'Approved');
+        // 2. Filter Inputs
+        $selectedCompany    = $request->input('company_id') ?? ($isCompanyUser ? $user->company_id : null);
+        $selectedBranch     = $request->input('branch_id');
+        $selectedDepartment = $request->input('department_id');
+
+        // Handle array inputs for multi-select (matching DashboardController)
+        $branchIds = is_array($selectedBranch) ? $selectedBranch : ($selectedBranch ? [$selectedBranch] : []);
+        $departmentIds = is_array($selectedDepartment) ? $selectedDepartment : ($selectedDepartment ? [$selectedDepartment] : []);
+
+        // 3. Build Query
+        $query = Visitor::with(['company', 'department', 'category', 'branch'])->latest();
+
+        // Apply Company Scope (Role Based)
+        if ($isCompanyUser || in_array(($user->role ?? null), ['company', 'company_user'])) {
+            $query->where('company_id', $user->company_id);
+            if ($user->company?->auto_approve_visitors) {
+                $query->where('status', 'Approved');
+            }
+        } elseif ($isSuper && $selectedCompany) {
+            $query->where('company_id', $selectedCompany);
         }
 
+        // Apply Branch Filters
+        if (!empty($branchIds)) {
+            $query->whereIn('branch_id', $branchIds);
+        }
+
+        // Apply Department Filters
+        if (!empty($departmentIds)) {
+            $query->whereIn('department_id', $departmentIds);
+        }
+
+        // Apply Status Filter
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
+        // Apply Date Range
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('created_at', [
+                Carbon::parse($request->from)->startOfDay(),
+                Carbon::parse($request->to)->endOfDay()
+            ]);
         }
 
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
+        $visitors = $query->paginate(10)->appends($request->query());
+
+        // 4. Prepare Filter Data (Exact match to DashboardController logic)
+        $branches    = collect();
+        $departments = collect();
+
+        if ($isCompanyUser || in_array(($user->role ?? null), ['company', 'company_user'])) {
+            // Get user's assigned branch IDs
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                // Filter branches by user's assigned branches
+                $branches = Branch::whereIn('id', $userBranchIds)->pluck('name', 'id');
+                
+                // Get user's assigned department IDs
+                $userDepartmentIds = $user->departments()->pluck('departments.id')->toArray();
+                
+                if (!empty($userDepartmentIds)) {
+                    // Filter departments by user's assigned departments
+                    $departments = Department::whereIn('id', $userDepartmentIds)
+                        ->where('company_id', $user->company_id)
+                        ->with('branch')->get()->pluck('name_with_branch', 'id');
+                } else {
+                    $departments = Department::whereIn('branch_id', $userBranchIds)
+                        ->where('company_id', $user->company_id)
+                        ->with('branch')->get()->pluck('name_with_branch', 'id');
+                }
+            } else {
+                // Fallback to single branch if user has branch_id set
+                if ($user->branch_id) {
+                    $branches = Branch::where('id', $user->branch_id)->pluck('name', 'id');
+                    $departments = Department::where('branch_id', $user->branch_id)
+                        ->where('company_id', $user->company_id)
+                        ->with('branch')->get()->pluck('name_with_branch', 'id');
+                } else {
+                    // If no branches assigned, get all company branches/departments
+                    $branches = Branch::where('company_id', $user->company_id)->pluck('name', 'id');
+                    $departments = Department::where('company_id', $user->company_id)->with('branch')->get()->pluck('name_with_branch', 'id');
+                }
+            }
+            
+            if ($branches->isEmpty()) $branches = collect(['none' => 'None']);
+
+        } elseif ($isSuper && $selectedCompany) {
+            $branches    = Branch::where('company_id', $selectedCompany)->pluck('name', 'id');
+            $departments = Department::where('company_id', $selectedCompany)->with('branch')->get()->pluck('name_with_branch', 'id');
+            
+            if ($branches->isEmpty()) $branches = collect(['none' => 'None']);
         }
 
-        $visitors = $query->latest()->paginate(10)->appends($request->query());
+        // Companies List
+        $companies = $isSuper ? Company::orderBy('name')->pluck('name', 'id') : [];
+        $actionRoute = 'visitors.update';
 
-        $departments = Department::when(
-            !$this->isSuper(),
-            fn($q) => $q->where('company_id', auth()->user()->company_id)
-        )->when(
-            $request->filled('company_id'),
-            fn($q) => $q->where('company_id', $request->company_id)
-        )->orderBy('name')->get();
+        return view('visitors.approvals', compact('visitors', 'departments', 'branches', 'isSuper', 'companies', 'actionRoute'));
+    }
 
-        // Prepare data for view
-        $isSuper = $this->isSuper();
-        $companies = [];
-        $actionRoute = 'visitors.update'; // Route for approve/reject actions
+    /**
+     * Approve a visitor request.
+     */
+    public function approve(Visitor $visitor)
+    {
+        $visitor->update([
+            'status' => 'Approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+        ]);
+
+        // Send approval email to visitor
+        if (!empty($visitor->email)) {
+            try {
+                // Load relationships for email display
+                $visitor->load(['company', 'branch', 'department']);
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+            } catch (\Throwable $e) {
+                \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
+            }
+        }
         
-        if ($isSuper) {
-            $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
+        // Send notification to company users
+        try {
+            $notificationService = new \App\Services\GoogleNotificationService();
+            $notificationService->sendApprovalNotification($visitor->company, $visitor);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send approval notification: ' . $e->getMessage());
         }
 
-        return view('visitors.approvals', compact('visitors', 'departments', 'isSuper', 'companies', 'actionRoute'));
+        return redirect()->back()->with('success', "Visitor {$visitor->name} approved successfully.");
+    }
+
+    /**
+     * Reject a visitor request.
+     */
+    public function reject(Request $request, Visitor $visitor)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:255',
+        ]);
+
+        $visitor->update([
+            'status' => 'Rejected',
+            'rejection_reason' => $request->rejection_reason,
+            'status_changed_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', "Visitor {$visitor->name} rejected.");
     }
 
     /**
@@ -2740,5 +3000,33 @@ class VisitorController extends Controller
         } catch (\Exception $e) {
             return response()->json(['enabled' => false], 404);
         }
+    }
+
+    /**
+     * Show visitor pass for printing (public access)
+     *
+     * @param  int  $id
+     * @return \Illuminate\View\View
+     */
+    public function showPass($id)
+    {
+        $visitor = Visitor::with(['company', 'branch', 'department'])->findOrFail($id);
+        $company = $visitor->company;
+        
+        return view('visitors.pass', compact('visitor', 'company'));
+    }
+
+    /**
+     * Download visitor pass as PDF (public access)
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function showPassPdf($id)
+    {
+        $visitor = Visitor::with(['company', 'branch', 'department'])->findOrFail($id);
+        $company = $visitor->company;
+        
+        return view('visitors.pass_pdf', compact('visitor', 'company'));
     }
 }

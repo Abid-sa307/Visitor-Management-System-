@@ -45,7 +45,7 @@ class UserController extends Controller
         $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
     }
 
-    $query = User::query()->with(['company', 'departments']);
+    $query = User::query()->with(['company', 'departments', 'branches']);
 
     // Filter by company for non-super admins
     if (!$isSuper) {
@@ -78,11 +78,42 @@ class UserController extends Controller
         ]);
     }
 
+    // Filter by branch (handle both single and multi-select for compatibility)
+    $branchIds = $request->input('branch_ids');
+    if (!$branchIds && $request->filled('branch_id')) {
+        $branchIds = [$request->input('branch_id')];
+    }
+    
+    if (!empty($branchIds)) {
+        $query->whereHas('branches', function($q) use ($branchIds) {
+            $q->whereIn('branches.id', (array)$branchIds);
+        });
+    }
+
     $users = $query->latest()->paginate(15);
+
+    // Get branches for dropdown
+    $branches = [];
+    if ($isSuper) {
+        if ($request->filled('company_id')) {
+            $branches = \App\Models\Branch::where('company_id', $request->company_id)
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        } else {
+            $branches = \App\Models\Branch::orderBy('name')->pluck('name', 'id')->toArray();
+        }
+    } elseif ($isCompany) {
+        $branches = \App\Models\Branch::where('company_id', auth()->user()->company_id)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+    }
 
     return view('users.index', [
         'users' => $users,
         'companies' => $companies,
+        'branches' => $branches,
         'isSuper' => $isSuper,
         'isCompany' => $isCompany,
         'from' => $request->input('from', now()->subDays(30)->format('Y-m-d')),

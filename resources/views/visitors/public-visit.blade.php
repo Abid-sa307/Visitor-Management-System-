@@ -371,6 +371,48 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // Function to update departments based on selected branch
+    function updateDepartments(branchId) {
+        const departmentSelect = document.querySelector('select[name="department_id"]');
+        if (!departmentSelect) return;
+        
+        // Get current selected value
+        const currentSelected = departmentSelect.value;
+        
+        // Fetch departments for the selected branch
+        fetch(`/api/branches/${branchId}/departments`)
+            .then(response => response.json())
+            .then(departments => {
+                // Clear existing options
+                departmentSelect.innerHTML = '<option value="">-- Select Department --</option>';
+                
+                // Add new options
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    if (dept.id == currentSelected) {
+                        option.selected = true;
+                    }
+                    departmentSelect.appendChild(option);
+                });
+                
+                // If no departments available
+                if (departments.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = 'No departments available';
+                    departmentSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching departments:', error);
+                // On error, keep the default option
+                departmentSelect.innerHTML = '<option value="">-- Select Department --</option>';
+            });
+    }
+
     if (form) {
         // Handle form submission - just show loading state, don't prevent default
         form.addEventListener('submit', function(e) {
@@ -403,6 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
             branchSelect.addEventListener('change', function() {
                 updateVisitorCategories(this.value);
                 updateEmployees(this.value);
+                updateDepartments(this.value);
             });
         }
     }

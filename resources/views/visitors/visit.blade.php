@@ -7,11 +7,12 @@
 
         {{-- Determine form action dynamically based on user role --}}
         @php
-            $user = auth()->user();
-            $formAction = $user->role === 'company' 
+            $user = auth()->guard('company')->check() ? auth()->guard('company')->user() : auth()->user();
+            $isCompanyUser = auth()->guard('company')->check();
+            $formAction = $isCompanyUser
                           ? route('company.visitors.visit.submit', $visitor->id)
                           : route('visitors.visit.submit', $visitor->id);
-            $isSuper = $user->role === 'superadmin';
+            $isSuper = !$isCompanyUser && ($user->role === 'superadmin' || $user->role === 'super');
         @endphp
 
         <form action="{{ $formAction }}" method="POST" enctype="multipart/form-data">
@@ -24,7 +25,7 @@
                     <i class="fas fa-undo me-2"></i>
                     <strong>Visit Form Recently Submitted</strong>
                     <p class="mb-2 mt-2">The visit form was submitted recently. You can undo this submission within 30 minutes.</p>
-                    <form action="{{ $user->role === 'company' ? route('company.visitors.visit.undo', $visitor->id) : route('visitors.visit.undo', $visitor->id) }}" method="POST" class="d-inline">
+                    <form action="{{ $isCompanyUser ? route('company.visitors.visit.undo', $visitor->id) : route('visitors.visit.undo', $visitor->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PUT')
                         <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to undo the visit form submission? This will clear all visit details.')">
@@ -34,23 +35,16 @@
                 </div>
             @endif
 
-            {{-- Branch Selection --}}
+            {{-- Branch Selection (Locked) --}}
             <div class="mb-3">
                 <label class="form-label fw-semibold">Branch</label>
-                <select name="branch_id" id="branchSelect" class="form-select @error('branch_id') is-invalid @enderror">
-                    <option value="">-- Select Branch --</option>
-                    @foreach($branches as $branch)
-                        <option value="{{ $branch->id }}" 
-                            {{ old('branch_id', $visitor->branch_id ?? $selectedBranchId ?? '') == $branch->id ? 'selected' : '' }}>
-                            {{ $branch->name }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('branch_id')
-                    <div class="invalid-feedback d-block">
-                        <i class="fas fa-exclamation-circle"></i> {{ $message }}
-                    </div>
-                @enderror
+                @php
+                    // Always show the visitor's actual branch, even if not in user's assigned branches
+                    $branchName = $visitor->branch ? $visitor->branch->name : 'No branch assigned';
+                @endphp
+                <input type="hidden" name="branch_id" value="{{ $visitor->branch_id }}">
+                <input type="text" class="form-control" value="{{ $branchName }}" readonly>
+                <small class="text-muted">Branch cannot be changed after visitor creation</small>
             </div>
 
             {{-- Department & Visitor Category --}}

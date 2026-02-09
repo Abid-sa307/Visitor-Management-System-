@@ -16,21 +16,21 @@ class SecurityCheckController extends Controller
 {
     public function index(Request $request)
     {
-        $isCompany = Auth::guard('company')->check();
-        $authUser = $isCompany ? Auth::guard('company')->user() : Auth::user();
+        $authUser = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+        $isCompany = $authUser && in_array($authUser->role, ['company', 'company_user'], true);
         $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
         // Base query - only show visitors from companies that have security checks enabled
         $visitorQuery = Visitor::query()
             ->with(['company', 'department', 'branch'])
-            ->whereHas('company', function($query) {
-                // Only show visitors from companies with security check service enabled
-                $query->where('security_check_service', true);
-            })
+            // ->whereHas('company', function($query) {
+            //     // Only show visitors from companies with security check service enabled
+            //     $query->where('security_check_service', true);
+            // })
             ->latest('created_at');
 
         // Apply date range filter if provided
-        $fromDate = $request->input('from') ?: now()->subDays(30)->format('Y-m-d');
+        $fromDate = $request->input('from') ?: now()->format('Y-m-d');
         $toDate = $request->input('to') ?: now()->format('Y-m-d');
         $visitorQuery->whereDate('created_at', '>=', $fromDate)
                     ->whereDate('created_at', '<=', $toDate);
@@ -46,29 +46,39 @@ class SecurityCheckController extends Controller
             $companyId = $authUser->company_id;
             $visitorQuery->where('company_id', $companyId);
             
-            // Apply branch filter for company users only if not explicitly selecting a different branch
-            if (!$request->filled('branch_id') && $authUser->branch_id) {
-                $visitorQuery->where('branch_id', $authUser->branch_id);
+            // Apply branch filter for company users
+            if (!$request->filled('branch_id')) {
+                // Collect all allowed branch IDs
+                $allowedBranchIds = collect();
+                if ($authUser->branch_id) $allowedBranchIds->push($authUser->branch_id);
+                if ($authUser->branches()->exists()) {
+                    $allowedBranchIds = $allowedBranchIds->merge($authUser->branches()->pluck('branches.id'));
+                }
+                $allowedBranchIds = $allowedBranchIds->unique()->filter()->values();
+                
+                if ($allowedBranchIds->isNotEmpty()) {
+                    $visitorQuery->whereIn('branch_id', $allowedBranchIds);
+                }
             }
             
             \Log::info('Security Check Index - Company User Filter', [
                 'user_id' => $authUser->id,
                 'company_id' => $companyId,
-                'user_branch_id' => $authUser->branch_id,
+                'allowed_branches' => $allowedBranchIds ?? 'all',
                 'request_branch_id' => $request->input('branch_id'),
-                'query_sql' => $visitorQuery->toSql(),
-                'query_bindings' => $visitorQuery->getBindings()
             ]);
         }
 
         // Branch filter (override if explicitly selected)
         if ($request->filled('branch_id')) {
-            $visitorQuery->where('branch_id', $request->input('branch_id'));
+            $branchIds = is_array($request->input('branch_id')) ? $request->input('branch_id') : [$request->input('branch_id')];
+            $visitorQuery->whereIn('branch_id', $branchIds);
         }
 
         // Department filter
         if ($request->filled('department_id')) {
-            $visitorQuery->where('department_id', $request->input('department_id'));
+            $departmentIds = is_array($request->input('department_id')) ? $request->input('department_id') : [$request->input('department_id')];
+            $visitorQuery->whereIn('department_id', $departmentIds);
         }
 
         $visitors = $visitorQuery->paginate(10)->appends($request->query());
@@ -80,88 +90,56 @@ class SecurityCheckController extends Controller
         }
 
         // Get branches based on company selection or user's company
-        $branches = [];
-        if ($companyId) {
-            $branches = \App\Models\Branch::where('company_id', $companyId)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
-        } elseif (!$isSuper && $authUser) {
-            // For non-superadmin, get their assigned branches
-            // Get user's assigned branch IDs from the pivot table
-            $userBranchIds = $authUser->branches()->pluck('branches.id')->toArray();
+
+
+    // Get branches based on company selection or user's company
+    $branches = [];
+    $departments = [];
+
+    if ($companyId) {
+        $branches = \App\Models\Branch::where('company_id', $companyId)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
             
-            if (!empty($userBranchIds)) {
-                // Filter branches by user's assigned branches
-                $branches = \App\Models\Branch::whereIn('id', $userBranchIds)
-                    ->orderBy('name')
-                    ->pluck('name', 'id')
-                    ->toArray();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($authUser->branch_id) {
-                    $branches = \App\Models\Branch::where('id', $authUser->branch_id)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->toArray();
-                } else {
-                    // If no branches assigned, get all company branches
-                    $branches = \App\Models\Branch::where('company_id', $authUser->company_id)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->toArray();
-                }
-            }
+        $departments = \App\Models\Department::where('company_id', $companyId)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+    } elseif (!$isSuper && $authUser) {
+        // Collect all assigned branch IDs
+        $userBranchIds = collect();
+        if ($authUser->branch_id) $userBranchIds->push($authUser->branch_id);
+        if ($authUser->branches()->exists()) $userBranchIds = $userBranchIds->merge($authUser->branches()->pluck('branches.id'));
+        $userBranchIds = $userBranchIds->unique()->filter()->values()->toArray();
+
+        // Populate Branches
+        if (!empty($userBranchIds)) {
+             $branches = \App\Models\Branch::whereIn('id', $userBranchIds)->orderBy('name')->pluck('name', 'id')->toArray();
+        } else {
+             $branches = \App\Models\Branch::where('company_id', $authUser->company_id)->orderBy('name')->pluck('name', 'id')->toArray();
         }
 
-        // Get departments based on company selection or user's company
-        $departments = [];
-        if ($companyId) {
-            $departments = \App\Models\Department::where('company_id', $companyId)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
-        } elseif (!$isSuper && $authUser) {
-            // For non-superadmin, get their assigned departments
-            // Get user's assigned branch IDs from the pivot table
-            $userBranchIds = $authUser->branches()->pluck('branches.id')->toArray();
-            
-            if (!empty($userBranchIds)) {
-                // Get user's assigned department IDs from the pivot table
-                $userDepartmentIds = $authUser->departments()->pluck('departments.id')->toArray();
-                
-                if (!empty($userDepartmentIds)) {
-                    // Filter departments by user's assigned departments
-                    $departments = \App\Models\Department::whereIn('id', $userDepartmentIds)
-                        ->where('company_id', $authUser->company_id)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->toArray();
-                } else {
-                    // Fallback: filter departments by user's assigned branches
-                    $departments = \App\Models\Department::whereIn('branch_id', $userBranchIds)
-                        ->where('company_id', $authUser->company_id)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->toArray();
-                }
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($authUser->branch_id) {
-                    $departments = \App\Models\Department::where('branch_id', $authUser->branch_id)
-                        ->where('company_id', $authUser->company_id)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->toArray();
-                } else {
-                    // If no branches assigned, get all company departments
-                    $departments = \App\Models\Department::where('company_id', $authUser->company_id)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->toArray();
-                }
-            }
+        // Populate Departments based on branch selection or assignments
+        $deptQuery = \App\Models\Department::where('company_id', $authUser->company_id);
+        
+        // Filter departments by selected branches in request
+        if ($request->filled('branch_id')) {
+             $selectedBranchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+             $deptQuery->whereIn('branch_id', $selectedBranchIds);
+        } elseif (!empty($userBranchIds)) {
+             // If no specific branch selected, limit to user's assigned branches
+             $deptQuery->whereIn('branch_id', $userBranchIds);
         }
+
+        // Filter by user's specifically assigned departments
+        if ($authUser->departments()->exists()) {
+             $deptQuery->whereIn('id', $authUser->departments()->pluck('departments.id'));
+        }
+
+        $departments = $deptQuery->orderBy('name')->pluck('name', 'id')->toArray();
+    }
+
 
         return view('security_checks.index', [
             'visitors' => $visitors,
@@ -291,7 +269,8 @@ class SecurityCheckController extends Controller
                     ->with('security_checkout_id', $securityCheck->id);
             } else {
                 // For check-in, redirect to security checks index
-                return redirect()->route('security-checks.index')
+                $routeName = $request->routeIs('company.*') ? 'company.security-checks.index' : 'security-checks.index';
+                return redirect()->route($routeName)
                     ->with('success', 'Security check completed successfully.');
             }
 

@@ -2,6 +2,13 @@
 <html>
 <head>
     <title>Visitor Pass - {{ $visitor->name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
     <style>
         @page {
             size: 90mm 54mm;
@@ -43,49 +50,67 @@
             padding: 6px 6px 4px 8px;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .pass-left::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            transform: rotate(45deg);
         }
 
         .company-logo {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.3);
+            max-width: 60px;
+            max-height: 24px;
+            object-fit: contain;
             margin-bottom: 4px;
-            object-fit: cover;
         }
 
         .company-name-text {
-            font-size: 7px;
+            font-size: 9px;
             font-weight: 600;
-            line-height: 1.2;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            text-align: center;
+            line-height: 1.1;
         }
 
-        .visitor-badge {
-            background: rgba(255,255,255,0.2);
-            border-radius: 4px;
-            padding: 2px 4px;
-            font-size: 6px;
-            font-weight: 500;
+        .company-address-text {
+            font-size: 7px;
+            font-weight: 400;
             text-align: center;
-            margin-top: auto;
-            border: 1px solid rgba(255,255,255,0.3);
+            color: #6b7280;
+            line-height: 1.2;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .visitor-photo {
+            width: 55px;
+            height: 70px;
+            border-radius: 6px;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(15,23,42,0.25);
+            overflow: hidden;
+        }
+
+        .visitor-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .visitor-name {
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+            text-align: center;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .visitor-id {
+            margin-top: 4px;
+            font-size: 9px;
+            background: rgba(255,255,255,0.16);
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-weight: 500;
         }
 
         /* Right Panel */
@@ -110,86 +135,60 @@
             font-weight: 700;
             color: #1d4ed8;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
-        .pass-id {
+        .company-address {
             font-size: 7px;
             color: #6b7280;
-            font-weight: 500;
+            margin-top: 2px;
+            line-height: 1.3;
         }
 
         .details {
-            flex: 1;
-            margin-bottom: 2px;
+            margin-top: 2px;
+            font-size: 8.5px;
         }
 
         .detail-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 2px;
-            min-height: 8px;
         }
 
         .detail-label {
-            font-size: 6px;
+            width: 38%;
+            font-weight: 600;
             color: #6b7280;
-            font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            flex: 0 0 auto;
+            font-size: 7px;
         }
 
         .detail-value {
-            font-size: 6px;
-            color: #374151;
-            font-weight: 600;
-            text-align: right;
-            flex: 1;
-            margin-left: 4px;
-            word-break: break-word;
-        }
-
-        .detail-value.highlight {
-            color: #1d4ed8;
-            font-weight: 700;
-        }
-
-        hr {
-            border: none;
-            border-top: 1px dashed #d1d5db;
-            margin: 2px 0;
+            width: 62%;
+            font-weight: 500;
+            color: #111827;
+            font-size: 8.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .barcode-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: -2px;
+            text-align: center;
+            margin-top: 2px;
         }
 
         .barcode {
-            font-family: 'Courier New', monospace;
-            font-size: 8px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            color: #374151;
-            background: #f9fafb;
-            padding: 1px 3px;
-            border: 1px solid #e5e7eb;
-            border-radius: 2px;
-            text-align: center;
-            min-width: 40px;
+            font-family: 'Libre Barcode 39', cursive;
+            font-size: 26px;
+            line-height: 1;
+            color: #111827;
         }
 
         .barcode-label {
-            font-size: 5px;
+            font-size: 7px;
             color: #6b7280;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 1px;
+            margin-top: -2px;
         }
 
         .pass-footer {
@@ -197,16 +196,14 @@
             margin-top: 3px;
             padding-top: 2px;
             text-align: center;
-            font-size: 5px;
+            font-size: 7px;
             color: #6b7280;
-            font-weight: 500;
-            line-height: 1.2;
         }
 
-        /* Print styles */
         @media print {
             body {
-                background: none;
+                background: #ffffff;
+                margin: 0;
                 padding: 0;
             }
 
@@ -215,8 +212,14 @@
                 border: 1px solid #d1d5db;
             }
 
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+            .no-print {
+                display: none !important;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
     </style>
 </head>
@@ -231,9 +234,7 @@
                 <div class="company-name-text">
                     {{ $company->name ?? 'Company Name' }}
                 </div>
-            </div>
-            <div class="visitor-badge">
-                VISITOR
+                
             </div>
         </div>
 
@@ -242,9 +243,6 @@
             <div class="pass-header">
                 <div>
                     <div class="pass-title">Visitor Pass</div>
-                </div>
-                <div class="pass-id">
-                    ID: {{ str_pad($visitor->id, 6, '0', STR_PAD_LEFT) }}
                 </div>
             </div>
 
@@ -255,6 +253,14 @@
                         {{ $visitor->branch->name ?? 'N/A' }}
                     </div>
                 </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Branch Address:</div>
+                    <div class="detail-value">
+                        {{ $visitor->branch->address ?? 'N/A' }}
+                    </div>
+                </div>
+
 
                 <div class="detail-row">
                     <div class="detail-label">department:</div>
@@ -271,15 +277,22 @@
                 </div>
 
                 <div class="detail-row">
+                    <div class="detail-label">Visitor category:</div>
+                    <div class="detail-value">
+                        {{ $visitor->category->name ?? 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="detail-row">
                     <div class="detail-label">purpose:</div>
                     <div class="detail-value">
                         {{ $visitor->purpose ?? 'N/A' }}
                     </div>
                 </div>
                 <hr>
-                <div class="detail-row">
-                    <div class="detail-label">Name:</div>
-                    <div class="detail-value highlight">
+                  <div class="detail-row">
+                    <div class="detail-label">Visitor Name:</div>
+                    <div class="detail-value">
                         {{ $visitor->name ?? 'N/A' }}
                     </div>
                 </div>
@@ -313,5 +326,20 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Auto-print & close window
+        window.onload = function () {
+            setTimeout(function () {
+                window.print();
+            }, 300);
+
+            window.onafterprint = function () {
+                setTimeout(function () {
+                    window.close();
+                }, 300);
+            };
+        };
+    </script>
 </body>
 </html>

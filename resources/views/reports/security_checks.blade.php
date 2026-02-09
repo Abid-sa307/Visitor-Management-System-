@@ -59,6 +59,10 @@
 @endpush
 
 @section('content')
+@php
+    $isCompany = request()->is('company/*');
+    $baseRoute = ($isCompany ? 'company.' : '') . 'reports.security';
+@endphp
 <div class="container-fluid px-4">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -128,7 +132,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter me-1"></i> Apply
                         </button>
-                        <a href="{{ route('reports.security') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route($baseRoute) }}" class="btn btn-outline-secondary">
                             <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>
@@ -180,13 +184,9 @@
                                 <td>{{ $check->visitor->company->name ?? 'N/A' }}</td>
                                 <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
                                 <td class="text-center">
-                                    @if($check->status === 'approved')
-                                        <span class="badge bg-success">Approved</span>
-                                    @elseif($check->status === 'rejected')
-                                        <span class="badge bg-danger">Rejected</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
+                                    <span class="badge {{ $check->check_type === 'checkin' ? 'bg-info' : 'bg-primary' }}">
+                                        {{ ucfirst($check->check_type ?? 'checkin') }}
+                                    </span>
                                 </td>
                                 <td class="text-center action-buttons">
                                     <button class="btn btn-sm btn-outline-primary" 
@@ -209,7 +209,7 @@
                     @if(request()->hasAny(['company_id', 'department_id', 'branch_id', 'from', 'to']))
                         <p class="text-muted mb-0">
                             Try adjusting your filters or 
-                            <a href="{{ route('reports.security') }}" class="text-primary">clear all filters</a>
+                            <a href="{{ route($baseRoute) }}" class="text-primary">clear all filters</a>
                         </p>
                     @endif
                 </div>
@@ -277,18 +277,14 @@
                             <tr>
                                 <th>Status:</th>
                                 <td>
-                                    @if($check->status === 'approved')
-                                        <span class="badge bg-success">Approved</span>
-                                    @elseif($check->status === 'rejected')
-                                        <span class="badge bg-danger">Rejected</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
+                                    <span class="badge {{ $check->check_type === 'checkin' ? 'bg-info' : 'bg-primary' }}">
+                                        {{ ucfirst($check->check_type ?? 'checkin') }}
+                                    </span>
                                 </td>
                             </tr>
                             <tr>
                                 <th>Checked By:</th>
-                                <td>{{ $check->securityUser->name ?? 'N/A' }}</td>
+                                <td>{{ $check->security_officer_name ?? 'N/A' }}</td>
                             </tr>
                             <tr>
                                 <th>Notes:</th>
@@ -317,67 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Format date as YYYY-MM-DD
-    function formatDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    // Get the first day of the month
-    function getFirstDayOfMonth(date) {
-        return new Date(date.getFullYear(), date.getMonth(), 1);
-    }
-
-    // Get the last day of the month
-    function getLastDayOfMonth(date) {
-        return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    }
-
-    // Handle quick date buttons
-    document.querySelectorAll('.quick-date').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const range = this.dataset.range;
-            const today = new Date();
-            let from, to;
-
-            switch(range) {
-                case 'today':
-                    from = to = new Date();
-                    break;
-                case 'yesterday':
-                    const yesterday = new Date();
-                    yesterday.setDate(today.getDate() - 1);
-                    from = to = yesterday;
-                    break;
-                case 'this-month':
-                    from = getFirstDayOfMonth(today);
-                    to = getLastDayOfMonth(today);
-                    break;
-                case 'last-month':
-                    const lastMonth = new Date(today);
-                    lastMonth.setMonth(today.getMonth() - 1);
-                    from = getFirstDayOfMonth(lastMonth);
-                    to = getLastDayOfMonth(lastMonth);
-                    break;
-                default:
-                    return;
-            }
-
-            // Update input fields
-            document.getElementById('from').value = formatDate(from);
-            document.getElementById('to').value = formatDate(to);
-            
-            // Submit the form
-            document.getElementById('filterForm').submit();
-        });
-    });
-
-    // Handle company change to load departments and branches
+    // Cascading dropdown logic for Company -> Branch -> Department
     const companySelect = document.getElementById('company_id');
     const departmentSelect = document.getElementById('department_id');
     const branchSelect = document.getElementById('branch_id');
@@ -424,23 +360,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Validate date range
-    const fromDateInput = document.getElementById('from');
-    const toDateInput = document.getElementById('to');
-
-    if (fromDateInput && toDateInput) {
-        fromDateInput.addEventListener('change', function() {
-            if (this.value > toDateInput.value) {
-                toDateInput.value = this.value;
-            }
-        });
-
-        toDateInput.addEventListener('change', function() {
-            if (this.value < fromDateInput.value) {
-                fromDateInput.value = this.value;
-            }
-        });
-    }
+    // Tooltips and other initializations can be added here
 });
 </script>
 @endpush

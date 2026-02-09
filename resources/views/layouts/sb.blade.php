@@ -19,6 +19,8 @@
     
     <!-- Face API JS -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         // Simple check to see if face-api is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -253,81 +255,16 @@
     <!-- Modern Date Range Picker Styles -->
     <style>
         /* Modern Form Select Dropdowns */
+        /* Standard Form Select (Reverted) */
         .form-select {
-            background: #007bff;
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: 500;
-            padding: 12px 40px 12px 16px;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            /* Using Bootstrap defaults */
             cursor: pointer;
-            position: relative;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-        }
-        
-        .form-select::after {
-            content: '▼';
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: white;
-            font-size: 14px;
-            pointer-events: none;
-        }
-        
-        .form-select:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
-        }
-        
-        .form-select:hover::after {
-            color: white;
         }
         
         .form-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3), 0 6px 20px rgba(0, 123, 255, 0.4);
-            border-color: transparent;
-        }
-        
-        .form-select:focus::after {
-            color: white;
-        }
-        
-        .form-select:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.7;
-            transform: none;
-            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
-        }
-        
-        .form-select:disabled::after {
-            color: white;
-        }
-        
-        .form-select option {
-            background: white;
-            color: #495057;
-            padding: 10px;
-            font-weight: 500;
-        }
-        
-        .form-select option:hover {
-            background: #f8f9fa;
-            color: #495057;
-        }
-        
-        .form-select option:checked {
-            background: #007bff;
-            color: white;
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
         }
         
         /* Modern Date Range Picker Button */
@@ -386,29 +323,15 @@
             transform: rotate(180deg);
         }
         
-        /* Modern Dropdown */
-        #dateRangeDropdown {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            animation: dropIn 0.3s ease-out;
+        .date-range-dropdown.show, 
+        .dropdown-menu.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
-        
-        @keyframes dropIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
+
         /* Modern Section Headers */
-        #dateRangeDropdown .small.text-muted.fw-semibold {
+        .date-range-dropdown .small.text-muted.fw-semibold {
             color: #007bff !important;
             font-weight: 600 !important;
             font-size: 0.75rem !important;
@@ -418,7 +341,7 @@
         }
         
         /* Modern Preset Buttons */
-        #dateRangeDropdown .date-preset {
+        .date-range-dropdown .date-preset {
             background: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 10px;
@@ -427,82 +350,85 @@
             padding: 10px 16px;
             transition: all 0.2s ease;
             text-align: left;
+            display: block;
+            margin-bottom: 4px;
+            text-decoration: none;
         }
-        
-        #dateRangeDropdown .date-preset:hover {
-            background: #007bff;
-            border-color: #007bff;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+
+        #dateRangeDropdown.show {
+            display: block !important;
         }
-        
-        #dateRangeDropdown .date-preset:active {
-            transform: translateY(0);
+
+        #dateRangeDropdown .small.text-muted.fw-semibold, .date-range-dropdown .small.text-muted.fw-semibold {
+            color: #4e73df !important;
+            margin-bottom: 10px;
         }
-        
-        /* Modern Date Inputs */
-        #dateRangeDropdown .form-control {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-weight: 500;
-            transition: all 0.2s ease;
+
+        #dateRangeDropdown .date-preset, .date-range-dropdown .date-preset {
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #4e73df;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
-        
-        #dateRangeDropdown .form-control:focus {
-            background: white;
-            border-color: #007bff;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+
+        #dateRangeDropdown .date-preset:hover, .date-range-dropdown .date-preset:hover {
+            background-color: #f8f9fc;
+            border-color: #4e73df;
+            color: #2e59d9;
         }
-        
-        /* Modern Action Buttons */
-        #dateRangeDropdown .btn-outline-secondary {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            color: #6c757d;
-            font-weight: 500;
-            padding: 10px 16px;
-            transition: all 0.2s ease;
+
+        #dateRangeDropdown .date-preset:active, .date-range-dropdown .date-preset:active {
+            background-color: #eaecf4;
         }
-        
-        #dateRangeDropdown .btn-outline-secondary:hover {
-            background: #6c757d;
-            border-color: #6c757d;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+
+        #dateRangeDropdown .form-control, .date-range-dropdown .form-control {
+            border-radius: 8px;
+            border: 1px solid #d1d3e2;
+            padding: 8px 12px;
+            font-size: 14px;
         }
-        
-        #dateRangeDropdown .btn-primary {
-            background: #007bff;
+
+        #dateRangeDropdown .form-control:focus, .date-range-dropdown .form-control:focus {
+            border-color: #bac8f3;
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+
+        #dateRangeDropdown .btn-outline-secondary, .date-range-dropdown .btn-outline-secondary {
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 14px;
+            color: #858796;
+            border: 1px solid #d1d3e2;
+        }
+
+        #dateRangeDropdown .btn-outline-secondary:hover, .date-range-dropdown .btn-outline-secondary:hover {
+            background-color: #f8f9fc;
+            color: #5a5c69;
+        }
+
+        #dateRangeDropdown .btn-primary, .date-range-dropdown .btn-primary {
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 14px;
+            background-color: #4e73df;
             border: none;
-            border-radius: 10px;
-            color: white;
-            font-weight: 500;
-            padding: 10px 16px;
-            transition: all 0.2s ease;
         }
-        
-        #dateRangeDropdown .btn-primary:hover {
-            background: #0056b3;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+
+        #dateRangeDropdown .btn-primary:hover, .date-range-dropdown .btn-primary:hover {
+            background-color: #2e59d9;
+            box-shadow: 0 4px 12px rgba(78, 115, 223, 0.35);
         }
-        
-        /* Responsive Design */
+
         @media (max-width: 768px) {
-            .date-range-picker {
-                font-size: 0.875rem;
-                padding: 10px 14px;
-            }
-            
-            #dateRangeDropdown {
-                min-width: 260px;
-                margin-left: -10px;
-                margin-right: -10px;
+            #dateRangeDropdown, .date-range-dropdown {
+                width: 100%;
+                min-width: unset;
+                left: 0 !important;
+                right: 0 !important;
             }
         }
     </style>
@@ -755,19 +681,12 @@
     <script src="{{ asset('sb-admin/vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+    <script src="{{ asset('sb-admin/vendor/chart.js/Chart.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/js/sb-admin-2.min.js') }}"></script>
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Simple Notification System -->
-    <script>
-        window.visitorNotificationData = {
-            trigger: {{ session('play_notification') ? 'true' : 'false' }},
-            message: '{{ session('notification_message', 'New visitor activity') }}'
-        };
-    </script>
-    <script src="{{ asset('js/simple-notification.js') }}?v={{ time() }}"></script>
     @include('partials.visitor-notification')
 
     <script>
@@ -964,6 +883,9 @@
                     bindBranchToDepartment(branchSelect, departmentSelect);
                 }
             });
+
+            // Conflicting global handler removed. Specific pages (departments/create, users/_form) handle this.
+            // document.querySelectorAll('select[name="company_id"]').forEach(...)
         };
 
         initialiseBindings();
@@ -994,198 +916,15 @@
 
         observer.observe(document.body, { childList: true, subtree: true });
     });
+    </script>
 
-    // Play notification sound and show visual effect when visitor is created
     @php
         $playNotification = session('play_notification', false);
         $visitorName = session('visitor_name', 'Unknown');
         $notificationMessage = session('notification_message', 'New visitor registered');
-        \Log::info('Layout Debug - play_notification: ' . ($playNotification ? 'true' : 'false'));
-        \Log::info('Layout Debug - visitor_name: ' . $visitorName);
-        \Log::info('Layout Debug - notification_message: ' . $notificationMessage);
-        \Log::info('Layout Debug - All session data: ' . json_encode(session()->all()));
     @endphp
     
-    @if($playNotification)
-        <script>
-            console.log('🔔 NOTIFICATION TRIGGERED: {{ $notificationMessage }}');
-            
-            // Enhanced notification system
-            function showVisitorNotification() {
-                // Create visual notification
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 12px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                    z-index: 9999;
-                    max-width: 400px;
-                    font-family: Arial, sans-serif;
-                    animation: slideIn 0.5s ease-out;
-                `;
-                
-                notification.innerHTML = `
-                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <span style="font-size: 24px; margin-right: 10px;">🔔</span>
-                        <strong style="font-size: 16px;">Visitor Notification</strong>
-                    </div>
-                    <div style="font-size: 14px; margin-bottom: 15px;">{{ $notificationMessage }}</div>
-                    <div style="display: flex; gap: 10px;">
-                        <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">Dismiss</button>
-                        <button onclick="playNotificationSound()" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">🔊 Play Sound</button>
-                    </div>
-                `;
-                
-                // Add animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes slideIn {
-                        from { transform: translateX(100%); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
-                    }
-                `;
-                document.head.appendChild(style);
-                
-                document.body.appendChild(notification);
-                
-                // Auto-remove after 10 seconds
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 10000);
-            }
-            
-            function playNotificationSound() {
-                console.log('🔊 Playing notification sound...');
-                
-                // Try different audio sources
-                const audioSources = [
-                    '/sounds/mixkit-bell-notification-933.wav',
-                    '{{ asset("sounds/mixkit-bell-notification-933.wav") }}',
-                    'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ=='
-                ];
-                
-                let attempt = 0;
-                
-                function tryNextSource() {
-                    if (attempt >= audioSources.length) {
-                        console.log('❌ All audio sources failed, trying beep sound');
-                        // Fallback to generated beep sound
-                        try {
-                            if (typeof createBeepSound === 'function') {
-                                createBeepSound();
-                                console.log('✅ Beep sound played successfully');
-                            } else {
-                                console.log('❌ Beep sound function not available');
-                            }
-                        } catch (e) {
-                            console.log('❌ Beep sound failed:', e.message);
-                        }
-                        return;
-                    }
-                    
-                    try {
-                        const audio = new Audio(audioSources[attempt]);
-                        audio.volume = 0.6;
-                        
-                        audio.addEventListener('canplaythrough', () => {
-                            console.log(`✅ Audio source ${attempt + 1} ready`);
-                        });
-                        
-                        audio.play().then(() => {
-                            console.log(`✅ Notification sound played successfully (source ${attempt + 1})`);
-                        }).catch(e => {
-                            console.log(`❌ Audio source ${attempt + 1} failed:`, e.message);
-                            attempt++;
-                            tryNextSource();
-                        });
-                        
-                    } catch (e) {
-                        console.log(`❌ Audio source ${attempt + 1} creation failed:`, e.message);
-                        attempt++;
-                        tryNextSource();
-                    }
-                }
-                
-                tryNextSource();
-            }
-            
-            function showBrowserNotification() {
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    const notification = new Notification('🔔 Visitor Management System', {
-                        body: '{{ $notificationMessage }}',
-                        icon: '/favicon.ico',
-                        badge: '/favicon.ico',
-                        tag: 'visitor-{{ $visitorName }}-' + Date.now(),
-                        requireInteraction: true
-                    });
-                    
-                    notification.onclick = function() {
-                        window.focus();
-                        notification.close();
-                    };
-                    
-                    setTimeout(() => {
-                        notification.close();
-                    }, 8000);
-                }
-            }
-            
-            // Immediate actions
-            showVisitorNotification();
-            playNotificationSound();
-            
-            // DOM loaded actions
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('🚀 DOM loaded - enhancing notification experience');
-                
-                // Request browser notification permission
-                if ('Notification' in window && Notification.permission === 'default') {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            showBrowserNotification();
-                        }
-                    });
-                } else if (Notification.permission === 'granted') {
-                    showBrowserNotification();
-                }
-                
-                // Flash browser tab
-                const originalTitle = document.title;
-                let flashCount = 0;
-                const flashInterval = setInterval(() => {
-                    document.title = flashCount % 2 === 0 ? '🔔 New Visitor!' : originalTitle;
-                    flashCount++;
-                    if (flashCount > 8) {
-                        clearInterval(flashInterval);
-                        document.title = originalTitle;
-                    }
-                }, 1000);
-                
-                // Retry sound after user interaction
-                document.addEventListener('click', function playSoundOnClick() {
-                    playNotificationSound();
-                    document.removeEventListener('click', playSoundOnClick);
-                }, { once: true });
-            });
-            
-            // Keep trying sound for 10 seconds
-            let retryCount = 0;
-            const soundRetryInterval = setInterval(() => {
-                playNotificationSound();
-                retryCount++;
-                if (retryCount >= 10) {
-                    clearInterval(soundRetryInterval);
-                }
-            }, 1000);
-        </script>
-    @endif
+
 
     @stack('scripts')
 </body>

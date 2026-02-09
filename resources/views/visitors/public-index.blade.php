@@ -34,6 +34,22 @@
                     @if($visitor)
                         <!-- Visitor Exists -->
                         <div class="p-4">
+                            <!-- Success/Error Messages -->
+                            @if(session('success'))
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    {{ session('success') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif
+                            @if(session('error'))
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {{ session('error') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif
+                            
                             <!-- Status Alert -->
                             @if($visitor->status === 'Approved')
                                 <div class="alert alert-success d-flex align-items-center" role="alert">
@@ -67,9 +83,10 @@
                                     $hasSecurityCheck = $visitor->securityChecks()->exists();
                                     $hasCheckInSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkin')->exists();
                                     $hasCheckOutSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkout')->exists();
+                                    $securityServiceEnabled = $visitor->company->security_check_service ?? false;
                                     $securityType = $visitor->company->security_checkin_type ?? '';
-                                    $needsSecurityCheckIn = in_array($securityType, ['checkin', 'both']) && !$hasCheckInSecurityCheck;
-                                    $needsSecurityCheckOut = in_array($securityType, ['checkout', 'both']) && !$hasCheckOutSecurityCheck;
+                                    $needsSecurityCheckIn = $securityServiceEnabled && in_array($securityType, ['checkin', 'both']) && !$hasCheckInSecurityCheck;
+                                    $needsSecurityCheckOut = $securityServiceEnabled && in_array($securityType, ['checkout', 'both']) && !$hasCheckOutSecurityCheck;
                                     $hasFaceRecognition = $visitor->company && $visitor->company->face_recognition_enabled;
                                     $hasFaceEncoding = !empty($visitor->face_encoding) && $visitor->face_encoding !== 'null' && $visitor->face_encoding !== '[]';
                                     $markInOutEnabled = $visitor->company && $visitor->company->mark_in_out_in_qr_flow;
@@ -181,10 +198,7 @@
                                 @else
                                 <div class="alert alert-info d-flex align-items-center" role="alert">
                                     <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-                                    <div>
-                                        <h5 class="alert-heading mb-1">Mark In/Out Disabled</h5>
-                                        <p class="mb-0">Mark In/Out functionality is currently disabled for QR flow visitors. Please contact reception for assistance.</p>
-                                    </div>
+                                    
                                 </div>
                                 @endif
                                 
@@ -216,23 +230,30 @@
                             
                             <!-- Pass Button and Update Visit Button -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
-                                @if($visitor->status === 'Approved' || $visitor->status === 'Completed' || $visitor->visitor_pass || session('show_pass_button'))
-                                    <div class="btn-group" role="group">
+                                <div class="btn-group" role="group">
+                                    @if(in_array(trim($visitor->status), ['Approved', 'Completed']) || ($visitor->status !== 'Rejected' && $visitor->visitor_pass))
                                         <a href="{{ route('public.visitors.pass', $visitor->id) }}" 
                                            class="btn btn-success px-3" 
                                            target="_blank"
                                            title="Print Pass">
-                                            <i class="bi bi-printer"></i>
+                                            <i class="bi bi-printer me-2"></i>Print Pass
                                         </a>
                                         <a href="{{ route('public.visitors.pass.pdf', $visitor->id) }}" 
                                            class="btn btn-danger px-3"
                                            title="Download PDF">
-                                            <i class="bi bi-file-pdf"></i>
+                                            <i class="bi bi-file-pdf me-2"></i>Download PDF
                                         </a>
-                                    </div>
-                                @endif
+                                    @else
+                                        <button type="button" class="btn btn-secondary px-3" disabled title="Pass available after approval">
+                                            <i class="bi bi-lock-fill me-2"></i>Print Pass
+                                        </button>
+                                        <button type="button" class="btn btn-secondary px-3" disabled title="Pass available after approval">
+                                            <i class="bi bi-lock-fill me-2"></i>Download PDF
+                                        </button>
+                                    @endif
+                                </div>
                                 @if($visitor->status === 'Pending')
-                                    <a href="{{ isset($branch) && $branch ? route('public.visitor.visit.edit.branch', ['company' => $company, 'branch' => $branch, 'visitor' => $visitor]) : route('public.visitor.visit.edit', ['company' => $company, 'visitor' => $visitor]) }}" 
+                                    <a href="{{ isset($branch) && $branch ? route('public.visitor.visit.form.branch', ['company' => $company->id, 'branch' => $branch->id, 'visitor' => $visitor->id]) : route('public.visitor.visit.form', ['company' => $company->id, 'visitor' => $visitor->id]) }}" 
                                        class="btn btn-outline-primary px-4">
                                         <i class="bi bi-pencil-square me-2"></i> Update Visit Information
                                     </a>

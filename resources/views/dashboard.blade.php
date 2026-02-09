@@ -1,6 +1,11 @@
 @extends('layouts.sb')
 
 @section('content')
+@php
+    $isCompanyGuard = Auth::guard('company')->check();
+    $isCompany = request()->is('company/*') || $isCompanyGuard;
+    $baseRoute = ($isCompany ? 'company.' : '') . 'dashboard';
+@endphp
 <div class="dashboard-hero fade-in-up">
     <div>
         <p class="hero-eyebrow">Overview</p>
@@ -40,7 +45,7 @@
         </div>
     </div>
     <div class="filter-card__body">
-        <form method="GET" action="{{ route('dashboard') }}" id="dashboardFilterForm">
+        <form method="GET" action="{{ route($baseRoute) }}" id="dashboardFilterForm">
             <div class="row g-3 align-items-end">
 
                 {{-- 1️⃣ Date Range (first) --}}
@@ -134,7 +139,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter me-1"></i> Apply
                     </button>
-                    <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route($baseRoute) }}" class="btn btn-outline-secondary">
                         <i class="fas fa-undo me-1"></i> Reset
                     </a>
                 </div>
@@ -303,7 +308,6 @@
 </div>
 
 {{-- =================== SCRIPTS =================== --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 @push('scripts')
 <script>
@@ -634,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const anyChecked = document.querySelectorAll('.branch-checkbox:checked').length > 0;
             const departmentButton = document.querySelector('[data-dropdown="department"]');
             const companySelect = document.getElementById('company_id');
-            const companyId = companySelect ? companySelect.value : "{{ auth()->user()->company_id ?? '' }}";
+            const companyId = companySelect ? companySelect.value : @json(auth()->user()->company_id ?? '');
             
             if (anyChecked && companyId) {
                 if (departmentButton) {
@@ -713,21 +717,21 @@ document.addEventListener('DOMContentLoaded', function () {
             type: 'bar',
             data: @json($chartData ?? []),
             labels: @json($chartLabels ?? []),
-            color: 'rgba(75, 192, 192, 0.6)'
+            color: 'rgba(78, 115, 223, 0.8)'
         },
         hour: {
             el: 'hourChartCanvas',
             type: 'bar',
             data: @json($hourData ?? []),
             labels: @json($hourLabels ?? []),
-            color: 'rgba(255, 99, 132, 0.6)'
+            color: 'rgba(28, 200, 138, 0.8)'
         },
         day: {
             el: 'dayChartCanvas',
             type: 'line',
             data: @json($dayWiseData ?? []),
             labels: @json($dayWiseLabels ?? []),
-            color: 'rgba(54, 162, 235, 0.6)',
+            color: 'rgba(255, 159, 64, 0.8)',
             fill: true
         },
         dept: {
@@ -736,54 +740,47 @@ document.addEventListener('DOMContentLoaded', function () {
             data: @json($deptCounts ?? []),
             labels: @json($deptLabels ?? []),
             colors: [
-                'rgba(40, 167, 69, 0.8)',
-                'rgba(23, 162, 184, 0.8)',
-                'rgba(255, 193, 7, 0.8)',
-                'rgba(220, 53, 69, 0.8)',
-                'rgba(108, 117, 125, 0.8)'
+                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'
             ]
         }
     };
 
-    // Debug: Log chart data to console
-    // Safely logging data
-    try {
-        console.log('Day Wise Data:', @json($dayWiseData ?? []));
-        console.log('Day Wise Labels:', @json($dayWiseLabels ?? []));
-    } catch(e) {
-        console.warn('Error content logging:', e);
-    }
-
     Object.values(charts).forEach(({el, type, labels, data, color, colors, fill}) => {
         const ctx = document.getElementById(el);
         if (!ctx) return;
+
+        // Determine background and border colors
+        let backgroundColor = colors || color;
+        let borderColor = colors || (color ? color.replace('0.8', '1') : null);
 
         new Chart(ctx, {
             type,
             data: {
                 labels,
                 datasets: [{
-                    label: el.replace('ChartCanvas', ''),
+                    label: 'Count',
                     data,
-                    backgroundColor: colors ?? [color],
-                    borderColor: colors ?? [color.replace('0.6', '1')],
+                    backgroundColor,
+                    borderColor,
                     borderWidth: 1,
-                    borderRadius: type === 'bar' ? 6 : 0,
                     fill: fill ?? false,
-                    tension: type === 'line' ? 0.3 : 0
+                    lineTension: 0.3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: true, position: 'bottom' }
+                legend: {
+                    display: true,
+                    position: 'bottom'
                 },
                 scales: type === 'doughnut' ? {} : {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true,
+                            stepSize: 1
+                        }
+                    }]
                 }
             }
         });

@@ -15,7 +15,7 @@
             </p>
         </div>
         <div class="page-heading__actions">
-            <a href="{{ $isCompany ? route('company.departments.create') : route('departments.create') }}" class="btn btn-primary btn-lg shadow-sm">
+            <a href="{{ route('departments.create') }}" class="btn btn-primary btn-lg shadow-sm">
                 <i class="fas fa-plus-circle me-2"></i> Add Department
             </a>
         </div>
@@ -38,7 +38,7 @@
             </div>
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ $isCompany ? route('company.departments.index') : route('departments.index') }}" id="searchForm" class="row g-3 mt-2">
+            <form method="GET" action="{{ route('departments.index') }}" id="searchForm" class="row g-3 mt-2">
                 <div class="col-md-4">
                     <div class="input-group">
                         <input type="text" 
@@ -51,7 +51,7 @@
                             <i class="fas fa-search me-1"></i> Search
                         </button>
                         @if(request()->has('search'))
-                            <a href="{{ $isCompany ? route('company.departments.index') : route('departments.index') }}" 
+                            <a href="{{ route('departments.index') }}" 
                                class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-1"></i> Clear
                             </a>
@@ -93,7 +93,7 @@
                         <button class="btn btn-primary" type="submit">
                             <i class="fas fa-filter me-1"></i> Apply
                         </button>
-                        <a href="{{ $isCompany ? route('company.departments.index') : route('departments.index') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('departments.index') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-undo me-1"></i> Reset
                         </a>
                     </div>
@@ -106,7 +106,7 @@
         <div class="card-body p-0">
             @if(request()->has('search') && $departments->isEmpty())
                 <div class="alert alert-warning m-3">
-                    No departments found matching your search. <a href="{{ $isCompany ? route('company.departments.index') : route('departments.index') }}" class="alert-link">Clear search</a>
+                    No departments found matching your search. <a href="{{ route('departments.index') }}" class="alert-link">Clear search</a>
                 </div>
             @else
                 <div class="table-responsive">
@@ -128,14 +128,14 @@
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
                                             {{-- Edit Button --}}
-                                            <a href="{{ $isCompany ? route('company.departments.edit', $department->id) : route('departments.edit', $department->id) }}"
+                                            <a href="{{ route('departments.edit', $department->id) }}"
                                                class="action-btn action-btn--edit action-btn--icon"
                                                title="Edit Department">
                                                 <i class="fas fa-edit"></i>
                                             </a>
 
                                             {{-- Delete Form --}}
-                                            <form action="{{ $isCompany ? route('company.departments.destroy', $department->id) : route('departments.destroy', $department->id) }}"
+                                            <form action="{{ route('departments.destroy', $department->id) }}"
                                                   method="POST"
                                                   onsubmit="return confirm('Are you sure?')">
                                                 @csrf

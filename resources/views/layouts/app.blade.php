@@ -503,6 +503,9 @@
 
         @yield('content')
     </main>
+    
+    <!-- Visitor Notification Trigger -->
+    @include('partials.visitor-notification')
 
     <!-- Sidebar Toggle Script -->
     <!-- Sidebar Toggle Script -->
