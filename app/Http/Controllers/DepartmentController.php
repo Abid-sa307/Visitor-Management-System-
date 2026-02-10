@@ -11,7 +11,13 @@ class DepartmentController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        // Resolve user from company guard first, then default guard
+        $user = auth('company')->user() ?? auth()->user();
+        
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
+
         $isSuper = $user->role === 'superadmin';
 
         $query = Department::with(['company', 'branch'])->latest();
@@ -48,21 +54,30 @@ class DepartmentController extends Controller
             : Company::where('id', $user->company_id)->get();
 
         $branches = collect();
-        if (request()->filled('company_id')) {
-            $branches = Branch::where('company_id', request('company_id'))->orderBy('name')->get();
-        } elseif (!$isSuper) {
-            $user = auth()->user();
-            // Get user's assigned branch IDs from the pivot table
-            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
-            
-            if (!empty($userBranchIds)) {
-                $branches = Branch::whereIn('id', $userBranchIds)->orderBy('name')->get();
+        if ($isSuper) {
+            if (request()->filled('company_id')) {
+                $branches = Branch::where('company_id', request('company_id'))->orderBy('name')->get();
+            }
+        } else {
+            // For Company context
+            if ($user->role === 'company' || $user->role === 'company_admin') {
+                // Company Admins see all branches
+                $branches = Branch::where('company_id', $user->company_id)->orderBy('name')->get();
             } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
+                // Regular employees/staff see assigned branches
+                $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+                
+                if (!empty($userBranchIds)) {
+                    $branches = Branch::whereIn('id', $userBranchIds)->orderBy('name')->get();
+                } elseif ($user->branch_id) {
                     $branches = Branch::where('id', $user->branch_id)->orderBy('name')->get();
                 } else {
-                    // If no branches assigned, filter by company
+                    // Fallback: if no specific assignment, maybe they should see all? 
+                    // Or maybe none. Let's assume they might need to see all if not restricted.
+                    // But usually 'company' role implies admin. 
+                    // If just a user without branches, let's show all for now to avoid locking, 
+                    // or keep it restricted if that's the intent. 
+                    // The issue is likely 'company' role users not seeing branches.
                     $branches = Branch::where('company_id', $user->company_id)->orderBy('name')->get();
                 }
             }

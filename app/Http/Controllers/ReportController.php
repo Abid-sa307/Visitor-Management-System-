@@ -176,58 +176,61 @@ class ReportController extends Controller
     // Hourly Report
     public function hourlyReport(Request $request)
     {
+        $from = $request->input('from') ?: now()->format('Y-m-d');
+        $to = $request->input('to') ?: now()->format('Y-m-d');
+
         $query = Visitor::whereNotNull('in_time')
+            ->leftJoin('branches', 'visitors.branch_id', '=', 'branches.id')
             ->select(
-                DB::raw('HOUR(in_time) as hour'),
-                DB::raw('COUNT(*) as total_visits'),
-                DB::raw('COUNT(CASE WHEN out_time IS NULL THEN 1 END) as current_visitors')
+                DB::raw('DATE_FORMAT(in_time, "%Y-%m-%d %H:00:00") as hour'),
+                DB::raw('COUNT(*) as count'),
+                'branches.name as branch_name'
             );
 
         // Apply company filter for non-superadmins
         if (auth()->user()->role !== 'superadmin') {
-            $query->where('company_id', auth()->user()->company_id);
+            $query->where('visitors.company_id', auth()->user()->company_id);
             
             // If user has specific departments assigned
             if (auth()->user()->departments->isNotEmpty()) {
-                $query->whereIn('department_id', auth()->user()->departments->pluck('id'));
+                $query->whereIn('visitors.department_id', auth()->user()->departments->pluck('id'));
             }
         }
 
-        // Apply date filter
-        if ($request->filled('date')) {
-            $query->whereDate('in_time', $request->date);
-        } else {
-            $query->whereDate('in_time', now()->format('Y-m-d'));
-        }
+        // Apply date filter range
+        $query->whereDate('in_time', '>=', $from)
+              ->whereDate('in_time', '<=', $to);
 
         // Apply company filter
         if ($request->filled('company_id')) {
-            $query->where('company_id', $request->company_id);
+            $query->where('visitors.company_id', $request->company_id);
         }
 
         // Apply branch filter
         if ($request->filled('branch_id')) {
             $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
-            $query->whereIn('branch_id', $branchIds);
+            $query->whereIn('visitors.branch_id', $branchIds);
         }
 
         // Apply department filter
         if ($request->filled('department_id')) {
             $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
-            $query->whereIn('department_id', $departmentIds);
+            $query->whereIn('visitors.department_id', $departmentIds);
         }
 
-        $hourlyData = $query->groupBy('hour')
+        $series = $query->groupBy('hour', 'branch_name')
             ->orderBy('hour')
-            ->get();
+            ->get()
+            ->toArray();
 
         $companies = $this->getCompanies();
         $departments = $this->getDepartments($request);
         $branches = $this->getBranches($request);
         
         return view('visitors.reports_hourly', [
-            'hourlyData' => $hourlyData,
-            'selectedDate' => $request->date ?? now()->format('Y-m-d'),
+            'series' => $series,
+            'from' => $from,
+            'to' => $to,
             'companies' => $companies,
             'departments' => $departments,
             'branches' => $branches,
