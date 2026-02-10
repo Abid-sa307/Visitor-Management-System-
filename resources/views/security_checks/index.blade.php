@@ -43,11 +43,11 @@
                         {{-- 1️⃣ Date Range (first) --}}
                         <div class="col-lg-4 col-md-6"> 
                             @php
-                                $from = request('from', now()->format('Y-m-d'));
-                                $to = request('to', now()->format('Y-m-d'));
+                                $from = request('from');
+                                $to = request('to');
                             @endphp
                             <label class="form-label fw-semibold">Date Range</label>
-                            @include('components.basic_date_range', ['from' => $from, 'to' => $to])
+                            @include('components.basic_date_range', ['from' => $from, 'to' => $to, 'allow_empty' => true])
                         </div>
 
                         {{-- 2️⃣ Company (superadmin only) --}}
@@ -381,13 +381,13 @@
                 // Ensure action input exists before accessing value
                 const action = actionInput ? actionInput.value : 'unknown';
                 
-                console.log('DEBUG: Form action:', form.action);
+                console.log('DEBUG: Form action:', form.getAttribute('action'));
                 console.log('DEBUG: Action value:', action);
                 
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
                 
-                fetch(form.action, {
+                fetch(form.getAttribute('action'), {
                     method: 'POST',
                     body: new FormData(form),
                     headers: {
@@ -402,6 +402,13 @@
                     console.log('DEBUG: Fetch response data:', data);
                     if (data.success) {
                         console.log('DEBUG: Security check-in/out successful');
+                        
+                        // Handle redirect if present (e.g. to security form)
+                        if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                            return;
+                        }
+
                         // Show notification for check-in/out
                         const visitorNameCell = form.closest('tr').querySelector('td:first-child');
                         const visitorName = visitorNameCell ? visitorNameCell.textContent.trim() : 'Visitor';

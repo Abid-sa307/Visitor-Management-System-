@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,14 +17,14 @@
 
     @include('layouts.partials.theme')
     @stack('styles')
-    
+
     <!-- Face API JS -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         // Simple check to see if face-api is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             if (typeof faceapi === 'undefined') {
                 console.error('Face API not loaded!');
                 // Show error in the console
@@ -45,36 +46,37 @@
 </head>
 
 <body id="page-top" class="has-sidebar">
-@php
-    /**
-     * Normalize & gate page access for the current user
-     * (No json_decode on arrays; supports legacy JSON strings too)
-     */
-    $authUser = auth()->user();
+    @php
+        /**
+         * Normalize & gate page access for the current user
+         * (No json_decode on arrays; supports legacy JSON strings too)
+         */
+        $authUser = auth()->user();
 
-    // Super admins see everything
-    $isSuper = $authUser && in_array($authUser->role, ['super_admin','superadmin'], true);
+        // Super admins see everything
+        $isSuper = $authUser && in_array($authUser->role, ['super_admin', 'superadmin'], true);
 
-    // Normalize master_pages to an array (works for casted arrays and legacy JSON strings)
-    $normalizeToArray = function ($value) {
-        if (is_array($value)) return $value;
-        if (is_string($value) && $value !== '') {
-            $decoded = json_decode($value, true);
-            return is_array($decoded) ? $decoded : [];
-        }
-        return [];
-    };
+        // Normalize master_pages to an array (works for casted arrays and legacy JSON strings)
+        $normalizeToArray = function ($value) {
+            if (is_array($value))
+                return $value;
+            if (is_string($value) && $value !== '') {
+                $decoded = json_decode($value, true);
+                return is_array($decoded) ? $decoded : [];
+            }
+            return [];
+        };
 
-    // Prefer model accessor if present; else normalize raw column
-    $masterPages = $authUser
-        ? (method_exists($authUser, 'getMasterPagesListAttribute')
-            ? ($authUser->master_pages_list ?? [])
-            : $normalizeToArray($authUser->master_pages ?? []))
-        : [];
+        // Prefer model accessor if present; else normalize raw column
+        $masterPages = $authUser
+            ? (method_exists($authUser, 'getMasterPagesListAttribute')
+                ? ($authUser->master_pages_list ?? [])
+                : $normalizeToArray($authUser->master_pages ?? []))
+            : [];
 
-    // Tiny helper for sidebar/topbar/anywhere:
-    $can = fn (string $key) => $isSuper || in_array($key, $masterPages, true);
-@endphp
+        // Tiny helper for sidebar/topbar/anywhere:
+        $can = fn(string $key) => $isSuper || in_array($key, $masterPages, true);
+    @endphp
 
     <!-- Mobile Sidebar Overlay -->
     <div class="sidebar-overlay"></div>
@@ -94,24 +96,27 @@
 
                 <!-- Topbar -->
                 @include('partials.topbar')
-                
+
                 <!-- Notification Permission Request -->
-                <div id="notification-request-banner" class="alert alert-info border-0 rounded-0 mb-0 text-center" style="display: none;">
-                    <strong><i class="fas fa-bell"></i> Enable Notifications:</strong> 
+                <div id="notification-request-banner" class="alert alert-info border-0 rounded-0 mb-0 text-center"
+                    style="display: none;">
+                    <strong><i class="fas fa-bell"></i> Enable Notifications:</strong>
                     Get real-time alerts for visitor arrivals and approvals.
                     <button id="enable-notifs-btn" class="btn btn-sm btn-primary ml-3">
                         Enable Now
                     </button>
-                    <button onclick="document.getElementById('notification-request-banner').style.display='none'; localStorage.setItem('hide_notif_banner', 'true')" class="btn btn-sm btn-link text-muted ml-2">
+                    <button
+                        onclick="document.getElementById('notification-request-banner').style.display='none'; localStorage.setItem('hide_notif_banner', 'true')"
+                        class="btn btn-sm btn-link text-muted ml-2">
                         Dismiss
                     </button>
                 </div>
 
                 <script>
-                    document.addEventListener('DOMContentLoaded', function() {
+                    document.addEventListener('DOMContentLoaded', function () {
                         const banner = document.getElementById('notification-request-banner');
                         const status = Notification.permission;
-                        
+
                         if (status === 'default' && !localStorage.getItem('hide_notif_banner')) {
                             banner.style.display = 'block';
                             banner.classList.add('alert-info');
@@ -123,16 +128,16 @@
                             // Granted - Hide banner
                             banner.style.display = 'none';
                         }
-                        
+
                         // Handler for enable button 
                         const btn = document.getElementById('enable-notifs-btn');
                         if (btn) {
-                            btn.addEventListener('click', function() {
-                                Notification.requestPermission().then(function(result) {
+                            btn.addEventListener('click', function () {
+                                Notification.requestPermission().then(function (result) {
                                     if (result === 'granted') {
                                         // Play test sound to unlock audio engine
                                         if (window.visitorNotifications) {
-                                            window.visitorNotifications.playNotificationSound(); 
+                                            window.visitorNotifications.playNotificationSound();
                                         }
                                         banner.style.display = 'none';
                                         alert('Notifications enabled! You will now hear alerts.');
@@ -151,21 +156,21 @@
 
                     {{-- Flash error from access middleware (or other redirects) --}}
                     @if(session('error'))
-                      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                          {{ session('error') }}
-                          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                      </div>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
                     @endif
 
                     {{-- Flash success messages --}}
                     @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle-fill mr-2"></i>
-                        {{ session('success') }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill mr-2"></i>
+                            {{ session('success') }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
                     @endif
 
                     @yield('content')
@@ -179,7 +184,8 @@
             <footer class="sticky-footer bg-white mt-auto">
                 <div class="container my-auto">
                     <div class="text-center my-auto">
-                        <span>&copy; 2025 Visitor Management System  <br> <a href="https://www.nntsoftware.com" target="_blank">(Developed By N&T Software)</a></span>
+                        <span>&copy; 2025 Visitor Management System <br> <a href="https://www.nntsoftware.com"
+                                target="_blank">(Developed By N&T Software)</a></span>
                     </div>
                 </div>
             </footer>
@@ -260,13 +266,13 @@
             /* Using Bootstrap defaults */
             cursor: pointer;
         }
-        
+
         .form-select:focus {
             border-color: #86b7fe;
             outline: 0;
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
         }
-        
+
         /* Modern Date Range Picker Button */
         .date-range-picker {
             background: #007bff;
@@ -282,7 +288,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .date-range-picker::before {
             content: '';
             position: absolute;
@@ -293,37 +299,37 @@
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
             transition: left 0.5s ease;
         }
-        
+
         .date-range-picker:hover::before {
             left: 100%;
         }
-        
+
         .date-range-picker:hover {
             background: #0056b3;
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
         }
-        
+
         .date-range-picker:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3), 0 6px 20px rgba(0, 123, 255, 0.4);
         }
-        
+
         .date-range-picker i {
             font-size: 1rem;
             opacity: 0.9;
         }
-        
+
         .date-range-picker i.fa-chevron-down {
             font-size: 0.8rem;
             transition: transform 0.3s ease;
         }
-        
+
         .date-range-picker[aria-expanded="true"] i.fa-chevron-down {
             transform: rotate(180deg);
         }
-        
-        .date-range-dropdown.show, 
+
+        .date-range-dropdown.show,
         .dropdown-menu.show {
             display: block !important;
             visibility: visible !important;
@@ -339,7 +345,7 @@
             letter-spacing: 1px !important;
             margin-bottom: 12px !important;
         }
-        
+
         /* Modern Preset Buttons */
         .date-range-dropdown .date-preset {
             background: #f8f9fa;
@@ -359,12 +365,14 @@
             display: block !important;
         }
 
-        #dateRangeDropdown .small.text-muted.fw-semibold, .date-range-dropdown .small.text-muted.fw-semibold {
+        #dateRangeDropdown .small.text-muted.fw-semibold,
+        .date-range-dropdown .small.text-muted.fw-semibold {
             color: #4e73df !important;
             margin-bottom: 10px;
         }
 
-        #dateRangeDropdown .date-preset, .date-range-dropdown .date-preset {
+        #dateRangeDropdown .date-preset,
+        .date-range-dropdown .date-preset {
             padding: 8px 12px;
             border-radius: 8px;
             color: #4e73df;
@@ -375,29 +383,34 @@
             border: 1px solid transparent;
         }
 
-        #dateRangeDropdown .date-preset:hover, .date-range-dropdown .date-preset:hover {
+        #dateRangeDropdown .date-preset:hover,
+        .date-range-dropdown .date-preset:hover {
             background-color: #f8f9fc;
             border-color: #4e73df;
             color: #2e59d9;
         }
 
-        #dateRangeDropdown .date-preset:active, .date-range-dropdown .date-preset:active {
+        #dateRangeDropdown .date-preset:active,
+        .date-range-dropdown .date-preset:active {
             background-color: #eaecf4;
         }
 
-        #dateRangeDropdown .form-control, .date-range-dropdown .form-control {
+        #dateRangeDropdown .form-control,
+        .date-range-dropdown .form-control {
             border-radius: 8px;
             border: 1px solid #d1d3e2;
             padding: 8px 12px;
             font-size: 14px;
         }
 
-        #dateRangeDropdown .form-control:focus, .date-range-dropdown .form-control:focus {
+        #dateRangeDropdown .form-control:focus,
+        .date-range-dropdown .form-control:focus {
             border-color: #bac8f3;
             box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
         }
 
-        #dateRangeDropdown .btn-outline-secondary, .date-range-dropdown .btn-outline-secondary {
+        #dateRangeDropdown .btn-outline-secondary,
+        .date-range-dropdown .btn-outline-secondary {
             border-radius: 8px;
             padding: 8px 15px;
             font-size: 14px;
@@ -405,12 +418,14 @@
             border: 1px solid #d1d3e2;
         }
 
-        #dateRangeDropdown .btn-outline-secondary:hover, .date-range-dropdown .btn-outline-secondary:hover {
+        #dateRangeDropdown .btn-outline-secondary:hover,
+        .date-range-dropdown .btn-outline-secondary:hover {
             background-color: #f8f9fc;
             color: #5a5c69;
         }
 
-        #dateRangeDropdown .btn-primary, .date-range-dropdown .btn-primary {
+        #dateRangeDropdown .btn-primary,
+        .date-range-dropdown .btn-primary {
             border-radius: 8px;
             padding: 8px 15px;
             font-size: 14px;
@@ -418,13 +433,16 @@
             border: none;
         }
 
-        #dateRangeDropdown .btn-primary:hover, .date-range-dropdown .btn-primary:hover {
+        #dateRangeDropdown .btn-primary:hover,
+        .date-range-dropdown .btn-primary:hover {
             background-color: #2e59d9;
             box-shadow: 0 4px 12px rgba(78, 115, 223, 0.35);
         }
 
         @media (max-width: 768px) {
-            #dateRangeDropdown, .date-range-dropdown {
+
+            #dateRangeDropdown,
+            .date-range-dropdown {
                 width: 100%;
                 min-width: unset;
                 left: 0 !important;
@@ -435,7 +453,6 @@
 
     <!-- Dashboard Visual System -->
     <style>
-
         .dashboard-hero {
             background: var(--brand-primary);
             color: white;
@@ -480,7 +497,7 @@
             border-radius: 14px;
             padding: 16px 18px;
             min-width: 160px;
-            border: 1px solid rgba(255,255,255,0.25);
+            border: 1px solid rgba(255, 255, 255, 0.25);
         }
 
         .metric-label {
@@ -578,9 +595,20 @@
             font-size: 0.85rem;
         }
 
-        .accent-success .stat-card__icon { color: #198754; background: rgba(25,135,84,0.12); }
-        .accent-warning .stat-card__icon { color: #ffb300; background: rgba(255,179,0,0.12); }
-        .accent-danger .stat-card__icon  { color: #dc3545; background: rgba(220,53,69,0.12); }
+        .accent-success .stat-card__icon {
+            color: #198754;
+            background: rgba(25, 135, 84, 0.12);
+        }
+
+        .accent-warning .stat-card__icon {
+            color: #ffb300;
+            background: rgba(255, 179, 0, 0.12);
+        }
+
+        .accent-danger .stat-card__icon {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.12);
+        }
 
         .panel-heading {
             display: flex;
@@ -600,7 +628,7 @@
         .panel-count {
             font-weight: 600;
             color: var(--brand-primary);
-            background: rgba(0,123,255,0.1);
+            background: rgba(0, 123, 255, 0.1);
             padding: 6px 14px;
             border-radius: 999px;
         }
@@ -629,8 +657,13 @@
             border-bottom: none;
         }
 
-        .modern-table tbody tr td:first-child { border-radius: 14px 0 0 14px; }
-        .modern-table tbody tr td:last-child { border-radius: 0 14px 14px 0; }
+        .modern-table tbody tr td:first-child {
+            border-radius: 14px 0 0 14px;
+        }
+
+        .modern-table tbody tr td:last-child {
+            border-radius: 0 14px 14px 0;
+        }
 
         .avatar-chip {
             width: 40px;
@@ -651,9 +684,21 @@
             font-size: 0.85rem;
             text-transform: capitalize;
         }
-        .status-approved { background: rgba(25,135,84,0.15); color: #0f5132; }
-        .status-pending  { background: rgba(255,193,7,0.2); color: #7a5200; }
-        .status-rejected { background: rgba(220,53,69,0.15); color: #842029; }
+
+        .status-approved {
+            background: rgba(25, 135, 84, 0.15);
+            color: #0f5132;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #7a5200;
+        }
+
+        .status-rejected {
+            background: rgba(220, 53, 69, 0.15);
+            color: #842029;
+        }
 
         .empty-state {
             text-align: center;
@@ -671,251 +716,252 @@
             .dashboard-hero {
                 flex-direction: column;
             }
+
             .hero-metrics {
                 width: 100%;
             }
         }
     </style>
-    
+
     <!-- SB Admin 2 Scripts -->
     <script src="{{ asset('sb-admin/vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
     <script src="{{ asset('sb-admin/vendor/chart.js/Chart.bundle.min.js') }}"></script>
     <script src="{{ asset('sb-admin/js/sb-admin-2.min.js') }}"></script>
-    
+
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+
     @include('partials.visitor-notification')
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let sidebarOpen = false;
-        
-        // Hide sidebar initially on mobile
-        if (window.innerWidth <= 991.98) {
-            const sidebar = document.querySelector('#accordionSidebar');
-            if (sidebar) {
-                sidebar.classList.add('mobile-hidden');
-            }
-        }
-        
-        // Mobile sidebar toggle
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('#sidebarToggle')) {
-                e.preventDefault();
-                
-                if (window.innerWidth <= 991.98) {
-                    const sidebar = document.querySelector('#accordionSidebar');
-                    const overlay = document.querySelector('.sidebar-overlay');
-                    
-                    if (sidebarOpen) {
-                        // Hide sidebar
-                        sidebar.classList.add('mobile-hidden');
-                        overlay.classList.remove('show');
-                        sidebarOpen = false;
-                    } else {
-                        // Show sidebar
-                        sidebar.classList.remove('mobile-hidden');
-                        overlay.classList.add('show');
-                        sidebarOpen = true;
-                    }
+        document.addEventListener('DOMContentLoaded', function () {
+            let sidebarOpen = false;
+
+            // Hide sidebar initially on mobile
+            if (window.innerWidth <= 991.98) {
+                const sidebar = document.querySelector('#accordionSidebar');
+                if (sidebar) {
+                    sidebar.classList.add('mobile-hidden');
                 }
             }
-            
-            // Close on overlay click
-            if (e.target.classList.contains('sidebar-overlay')) {
-                const sidebar = document.querySelector('#accordionSidebar');
-                const overlay = document.querySelector('.sidebar-overlay');
-                sidebar.classList.add('mobile-hidden');
-                overlay.classList.remove('show');
-                sidebarOpen = false;
-            }
-            
-            // Close sidebar when clicking on sidebar links (but not Reports dropdown)
-            const sidebarLink = e.target.closest('#accordionSidebar a[href]');
-            if (sidebarLink && !sidebarLink.hasAttribute('data-bs-toggle')) {
-                const sidebar = document.querySelector('#accordionSidebar');
-                const overlay = document.querySelector('.sidebar-overlay');
-                sidebar.classList.add('mobile-hidden');
-                overlay.classList.remove('show');
-                sidebarOpen = false;
-            }
+
+            // Mobile sidebar toggle
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('#sidebarToggle')) {
+                    e.preventDefault();
+
+                    if (window.innerWidth <= 991.98) {
+                        const sidebar = document.querySelector('#accordionSidebar');
+                        const overlay = document.querySelector('.sidebar-overlay');
+
+                        if (sidebarOpen) {
+                            // Hide sidebar
+                            sidebar.classList.add('mobile-hidden');
+                            overlay.classList.remove('show');
+                            sidebarOpen = false;
+                        } else {
+                            // Show sidebar
+                            sidebar.classList.remove('mobile-hidden');
+                            overlay.classList.add('show');
+                            sidebarOpen = true;
+                        }
+                    }
+                }
+
+                // Close on overlay click
+                if (e.target.classList.contains('sidebar-overlay')) {
+                    const sidebar = document.querySelector('#accordionSidebar');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    sidebar.classList.add('mobile-hidden');
+                    overlay.classList.remove('show');
+                    sidebarOpen = false;
+                }
+
+                // Close sidebar when clicking on sidebar links (but not Reports dropdown)
+                const sidebarLink = e.target.closest('#accordionSidebar a[href]');
+                if (sidebarLink && !sidebarLink.hasAttribute('data-bs-toggle')) {
+                    const sidebar = document.querySelector('#accordionSidebar');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    sidebar.classList.add('mobile-hidden');
+                    overlay.classList.remove('show');
+                    sidebarOpen = false;
+                }
+            });
         });
-    });
     </script>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const processedPairs = new WeakMap();
+        document.addEventListener('DOMContentLoaded', function () {
+            const processedPairs = new WeakMap();
 
-        const bindBranchToDepartment = (branchSelect, departmentSelect) => {
-            if (!branchSelect || !departmentSelect) {
-                return;
-            }
-
-            if (processedPairs.get(branchSelect) === departmentSelect) {
-                return;
-            }
-
-            processedPairs.set(branchSelect, departmentSelect);
-
-            const includeEmpty = departmentSelect.dataset.includeEmpty !== 'false';
-            const placeholder = departmentSelect.dataset.placeholder || (departmentSelect.options[0]?.text ?? 'Select Department');
-            const loadingText = departmentSelect.dataset.loadingText || 'Loading departments...';
-            const errorText = departmentSelect.dataset.errorText || 'Unable to load departments';
-            const emptyText = departmentSelect.dataset.emptyText || 'Select a branch first';
-
-            const setOptions = (optionsHtml) => {
-                departmentSelect.innerHTML = optionsHtml;
-            };
-
-            const setDisabledState = (text, disabled) => {
-                const baseOption = includeEmpty ? `<option value="">${text}</option>` : `<option value="">${text}</option>`;
-                setOptions(baseOption);
-                if (disabled) {
-                    departmentSelect.value = '';
-                } else {
-                    const selected = departmentSelect.dataset.selected || '';
-                    departmentSelect.value = selected;
-                    if (departmentSelect.value !== selected) {
-                        departmentSelect.value = '';
-                    }
-                }
-                departmentSelect.disabled = disabled;
-            };
-
-            const populateDepartments = (departments) => {
-                let optionsHtml = '';
-                if (includeEmpty) {
-                    optionsHtml += `<option value="">${placeholder}</option>`;
-                }
-
-                const selectedValue = departmentSelect.dataset.selected || '';
-
-                departments.forEach(dep => {
-                    const value = String(dep.id);
-                    const selected = value === selectedValue ? 'selected' : '';
-                    optionsHtml += `<option value="${value}" ${selected}>${dep.name}</option>`;
-                });
-
-                setOptions(optionsHtml);
-                departmentSelect.disabled = departments.length === 0;
-
-                if (departments.length === 0) {
-                    departmentSelect.value = '';
-                } else if (selectedValue) {
-                    departmentSelect.value = selectedValue;
-                    if (departmentSelect.value !== selectedValue) {
-                        departmentSelect.value = '';
-                        departmentSelect.dataset.selected = '';
-                    }
-                }
-            };
-
-            const loadDepartments = (branchId) => {
-                if (!branchId) {
-                    setDisabledState(emptyText, true);
+            const bindBranchToDepartment = (branchSelect, departmentSelect) => {
+                if (!branchSelect || !departmentSelect) {
                     return;
                 }
 
-                setDisabledState(loadingText, true);
+                if (processedPairs.get(branchSelect) === departmentSelect) {
+                    return;
+                }
 
-                fetch(`/api/branches/${branchId}/departments`, {
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                processedPairs.set(branchSelect, departmentSelect);
+
+                const includeEmpty = departmentSelect.dataset.includeEmpty !== 'false';
+                const placeholder = departmentSelect.dataset.placeholder || (departmentSelect.options[0]?.text ?? 'Select Department');
+                const loadingText = departmentSelect.dataset.loadingText || 'Loading departments...';
+                const errorText = departmentSelect.dataset.errorText || 'Unable to load departments';
+                const emptyText = departmentSelect.dataset.emptyText || 'Select a branch first';
+
+                const setOptions = (optionsHtml) => {
+                    departmentSelect.innerHTML = optionsHtml;
+                };
+
+                const setDisabledState = (text, disabled) => {
+                    const baseOption = includeEmpty ? `<option value="">${text}</option>` : `<option value="">${text}</option>`;
+                    setOptions(baseOption);
+                    if (disabled) {
+                        departmentSelect.value = '';
+                    } else {
+                        const selected = departmentSelect.dataset.selected || '';
+                        departmentSelect.value = selected;
+                        if (departmentSelect.value !== selected) {
+                            departmentSelect.value = '';
+                        }
                     }
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const departments = Array.isArray(data)
-                            ? data
-                            : Object.entries(data).map(([id, name]) => ({ id, name }));
+                    departmentSelect.disabled = disabled;
+                };
 
-                        if (departments.length === 0) {
-                            setDisabledState('No departments available', true);
-                            return;
-                        }
+                const populateDepartments = (departments) => {
+                    let optionsHtml = '';
+                    if (includeEmpty) {
+                        optionsHtml += `<option value="">${placeholder}</option>`;
+                    }
 
-                        populateDepartments(departments);
-                    })
-                    .catch(() => {
-                        setDisabledState(errorText, true);
+                    const selectedValue = departmentSelect.dataset.selected || '';
+
+                    departments.forEach(dep => {
+                        const value = String(dep.id);
+                        const selected = value === selectedValue ? 'selected' : '';
+                        optionsHtml += `<option value="${value}" ${selected}>${dep.name}</option>`;
                     });
-            };
 
-            departmentSelect.dataset.selected = departmentSelect.dataset.selected || departmentSelect.value || '';
+                    setOptions(optionsHtml);
+                    departmentSelect.disabled = departments.length === 0;
 
-            branchSelect.addEventListener('change', function () {
-                departmentSelect.dataset.selected = departmentSelect.value || '';
-                loadDepartments(this.value);
-            });
+                    if (departments.length === 0) {
+                        departmentSelect.value = '';
+                    } else if (selectedValue) {
+                        departmentSelect.value = selectedValue;
+                        if (departmentSelect.value !== selectedValue) {
+                            departmentSelect.value = '';
+                            departmentSelect.dataset.selected = '';
+                        }
+                    }
+                };
 
-            const initialBranch = branchSelect.value || branchSelect.dataset.selected || '';
-            if (initialBranch) {
-                loadDepartments(initialBranch);
-            } else {
-                setDisabledState(emptyText, true);
-            }
-        };
-
-        const initialiseBindings = () => {
-            document.querySelectorAll('[data-department-target]').forEach(branchSelect => {
-                const selector = branchSelect.dataset.departmentTarget;
-                const departmentSelect = selector ? document.querySelector(selector) : null;
-                if (departmentSelect) {
-                    bindBranchToDepartment(branchSelect, departmentSelect);
-                }
-            });
-
-            document.querySelectorAll('select[name="branch_id"]').forEach(branchSelect => {
-                const form = branchSelect.closest('form');
-                const departmentSelect = form ? form.querySelector('select[name="department_id"]') : null;
-                if (departmentSelect) {
-                    bindBranchToDepartment(branchSelect, departmentSelect);
-                }
-            });
-
-            // Conflicting global handler removed. Specific pages (departments/create, users/_form) handle this.
-            // document.querySelectorAll('select[name="company_id"]').forEach(...)
-        };
-
-        initialiseBindings();
-
-        const observer = new MutationObserver(mutations => {
-            let needsInit = false;
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => {
-                    if (!(node instanceof Element)) {
+                const loadDepartments = (branchId) => {
+                    if (!branchId) {
+                        setDisabledState(emptyText, true);
                         return;
                     }
 
-                    if (
-                        node.matches?.('[data-department-target]') ||
-                        node.matches?.('select[name="branch_id"]') ||
-                        node.querySelector?.('[data-department-target]') ||
-                        node.querySelector?.('select[name="branch_id"]')
-                    ) {
-                        needsInit = true;
+                    setDisabledState(loadingText, true);
+
+                    fetch(`/api/branches/${branchId}/departments`, {
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const departments = Array.isArray(data)
+                                ? data
+                                : Object.entries(data).map(([id, name]) => ({ id, name }));
+
+                            if (departments.length === 0) {
+                                setDisabledState('No departments available', true);
+                                return;
+                            }
+
+                            populateDepartments(departments);
+                        })
+                        .catch(() => {
+                            setDisabledState(errorText, true);
+                        });
+                };
+
+                departmentSelect.dataset.selected = departmentSelect.dataset.selected || departmentSelect.value || '';
+
+                branchSelect.addEventListener('change', function () {
+                    departmentSelect.dataset.selected = departmentSelect.value || '';
+                    loadDepartments(this.value);
+                });
+
+                const initialBranch = branchSelect.value || branchSelect.dataset.selected || '';
+                if (initialBranch) {
+                    loadDepartments(initialBranch);
+                } else {
+                    setDisabledState(emptyText, true);
+                }
+            };
+
+            const initialiseBindings = () => {
+                document.querySelectorAll('[data-department-target]').forEach(branchSelect => {
+                    const selector = branchSelect.dataset.departmentTarget;
+                    const departmentSelect = selector ? document.querySelector(selector) : null;
+                    if (departmentSelect) {
+                        bindBranchToDepartment(branchSelect, departmentSelect);
                     }
                 });
+
+                document.querySelectorAll('select[name="branch_id"]').forEach(branchSelect => {
+                    const form = branchSelect.closest('form');
+                    const departmentSelect = form ? form.querySelector('select[name="department_id"]') : null;
+                    if (departmentSelect) {
+                        bindBranchToDepartment(branchSelect, departmentSelect);
+                    }
+                });
+
+                // Conflicting global handler removed. Specific pages (departments/create, users/_form) handle this.
+                // document.querySelectorAll('select[name="company_id"]').forEach(...)
+            };
+
+            initialiseBindings();
+
+            const observer = new MutationObserver(mutations => {
+                let needsInit = false;
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (!(node instanceof Element)) {
+                            return;
+                        }
+
+                        if (
+                            node.matches?.('[data-department-target]') ||
+                            node.matches?.('select[name="branch_id"]') ||
+                            node.querySelector?.('[data-department-target]') ||
+                            node.querySelector?.('select[name="branch_id"]')
+                        ) {
+                            needsInit = true;
+                        }
+                    });
+                });
+
+                if (needsInit) {
+                    initialiseBindings();
+                }
             });
 
-            if (needsInit) {
-                initialiseBindings();
-            }
+            observer.observe(document.body, { childList: true, subtree: true });
         });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-    });
     </script>
 
     @php
@@ -923,9 +969,39 @@
         $visitorName = session('visitor_name', 'Unknown');
         $notificationMessage = session('notification_message', 'New visitor registered');
     @endphp
-    
 
+
+
+    <script>
+        // Check if page was reloaded and clear query parameters (filters)
+        (function () {
+            try {
+                if (window.performance) {
+                    let isReload = false;
+                    // Check deprecated performance.navigation property
+                    if (performance.navigation && performance.navigation.type === 1) {
+                        isReload = true;
+                    }
+                    // Check modern PerformanceNavigationTiming API
+                    else if (performance.getEntriesByType) {
+                        const navEntries = performance.getEntriesByType("navigation");
+                        if (navEntries.length > 0 && navEntries[0].type === 'reload') {
+                            isReload = true;
+                        }
+                    }
+
+                    // If it's a reload and there are query parameters, clear them
+                    if (isReload && window.location.search) {
+                        window.location.href = window.location.pathname;
+                    }
+                }
+            } catch (e) {
+                console.error("Error checking navigation type for filter clearing:", e);
+            }
+        })();
+    </script>
 
     @stack('scripts')
 </body>
+
 </html>

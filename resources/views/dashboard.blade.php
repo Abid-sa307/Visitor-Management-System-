@@ -541,7 +541,20 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        fetch(`/api/companies/${companyId}/departments`, {
+        let url = `/api/companies/${companyId}/departments`;
+        
+        // If loading the currently selected company and we have branch filters, Apply them
+        if (String(companyId) === String(selectedCompany) && selectedBranch) {
+            const params = new URLSearchParams();
+            const branches = Array.isArray(selectedBranch) ? selectedBranch : [selectedBranch];
+            
+            if (branches.length > 0) {
+                branches.forEach(id => params.append('branch_id[]', id));
+                url += `?${params.toString()}`;
+            }
+        }
+
+        fetch(url, {
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'

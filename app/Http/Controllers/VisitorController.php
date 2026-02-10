@@ -287,7 +287,7 @@ class VisitorController extends Controller
             $query->whereIn('department_id', $departmentIds);
         }
         
-        $visitors = $query->paginate(10);
+        $visitors = $query->paginate(10)->withQueryString();
         
         // Get filter data
     $companies = $this->isSuper() ? Company::pluck('name', 'id') : [];
@@ -1082,7 +1082,7 @@ class VisitorController extends Controller
         ]);
 
         // Get the data
-        $visitors = $query->latest()->paginate(20);
+        $visitors = $query->latest()->paginate(20)->withQueryString();
 
         // Get filter data
         $companies = $this->isSuper() 
@@ -1443,7 +1443,7 @@ class VisitorController extends Controller
                 $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
                 $q->whereIn('department_id', $departmentIds);
             })
-            ->latest('created_at'))->paginate(10);
+            ->latest('created_at'))->paginate(10)->withQueryString();
         $isCompany = $this->isCompany();
         
         // Get companies for superadmin
@@ -2851,7 +2851,7 @@ class VisitorController extends Controller
             ]);
         }
 
-        $visitors = $query->paginate(10)->appends($request->query());
+        $visitors = $query->paginate(10)->withQueryString();
 
         // 4. Prepare Filter Data (Exact match to DashboardController logic)
         $branches    = collect();

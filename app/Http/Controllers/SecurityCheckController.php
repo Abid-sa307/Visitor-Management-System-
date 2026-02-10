@@ -30,10 +30,15 @@ class SecurityCheckController extends Controller
             ->latest('created_at');
 
         // Apply date range filter if provided
-        $fromDate = $request->input('from') ?: now()->format('Y-m-d');
-        $toDate = $request->input('to') ?: now()->format('Y-m-d');
-        $visitorQuery->whereDate('created_at', '>=', $fromDate)
-                    ->whereDate('created_at', '<=', $toDate);
+        $fromDate = $request->input('from');
+        $toDate = $request->input('to');
+        
+        if ($fromDate) {
+            $visitorQuery->whereDate('created_at', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $visitorQuery->whereDate('created_at', '<=', $toDate);
+        }
 
         // Company filter (for superadmin)
         $companyId = null;
@@ -401,67 +406,64 @@ class SecurityCheckController extends Controller
         $visitor = Visitor::findOrFail($visitorId);
         $action = $request->input('action', 'checkin');
         
+        // Helper to return response based on request type
+        $respond = function($success, $message, $redirectUrl = null) use ($request) {
+            if ($request->ajax() || $request->wantsJson()) {
+                $data = ['success' => $success, 'message' => $message];
+                if ($redirectUrl) $data['redirect_url'] = $redirectUrl;
+                return response()->json($data);
+            }
+            
+            if ($redirectUrl) return redirect($redirectUrl);
+            return redirect()->back()->with($success ? 'success' : 'error', $message);
+        };
+
         // Debug logging
         \Log::info('toggleSecurity called', [
             'visitor_id' => $visitorId,
             'action' => $action,
             'visitor_status' => $visitor->status,
             'visit_form_completed' => $this->hasCompletedVisitForm($visitor),
-            'company_id' => $visitor->company_id,
-            'company_security_check_service' => $visitor->company ? $visitor->company->security_check_service : 'no company',
-            'company_security_checkin_type' => $visitor->company ? $visitor->company->security_checkin_type : 'no company',
-            'security_checks_exist' => $visitor->securityChecks()->exists(),
         ]);
         
         // Check if visitor has completed visit form (required step before security check)
         if (!$this->hasCompletedVisitForm($visitor)) {
-            \Log::info('Visit form not completed, returning error');
-            return redirect()->back()->with('error', 'Security check can only be performed after the visitor has completed the visit form.');
+            return $respond(false, 'Security check can only be performed after the visitor has completed the visit form.');
         }
 
         // For check-in, ensure visitor is approved and has visit form
         if ($action === 'checkin') {
             if ($visitor->status !== 'Approved') {
-                \Log::info('Visitor not approved, returning error');
-                return redirect()->back()->with('error', 'Visitor must be approved before security check-in.');
+                return $respond(false, 'Visitor must be approved before security check-in.');
             }
             
             // Check if security form is required based on company settings
             $requiresSecurityForm = false;
             if ($visitor->company && $visitor->company->security_check_service) {
                 $securityType = $visitor->company->security_checkin_type;
-                \Log::info('Security check enabled, type: ' . $securityType);
-                
-                // Check if security form is required for this action
                 if (in_array($securityType, ['checkin', 'both']) && !$visitor->securityChecks()->exists()) {
                     $requiresSecurityForm = true;
-                    \Log::info('Security form required for check-in');
                 }
             }
             
             if ($requiresSecurityForm) {
-                \Log::info('Redirecting to security form');
                 $routeName = $request->routeIs('company.*') ? 'company.security-checks.create' : 'security-checks.create';
-                return redirect()->route($routeName, [
-                    'visitorId' => $visitor->id,
-                    'access_form' => 1,
-                ]);
+                $url = route($routeName, ['visitorId' => $visitor->id, 'access_form' => 1]);
+                return $respond(true, 'Redirecting to security form...', $url);
             }
         }
         
         // For check-out, ensure visitor has checked in first
         if ($action === 'checkout') {
             if (!$visitor->in_time) {
-                return redirect()->back()->with('error', 'Visitor must check in before security check-out.');
+                return $respond(false, 'Visitor must check in before security check-out.');
             }
             
             // For checkout, if security checks are enabled and no security check exists, send to security form
             if ($visitor->company && $visitor->company->security_check_service && $visitor->securityChecks()->doesntExist()) {
                 $routeName = $request->routeIs('company.*') ? 'company.security-checks.create' : 'security-checks.create';
-                return redirect()->route($routeName, [
-                    'visitorId' => $visitor->id,
-                    'access_form' => 1,
-                ]);
+                $url = route($routeName, ['visitorId' => $visitor->id, 'access_form' => 1]);
+                return $respond(true, 'Redirecting to security form...', $url);
             }
         }
         
@@ -490,7 +492,7 @@ class SecurityCheckController extends Controller
                 }
             } elseif ($action === 'undo_checkin') {
                 if (!$visitor->security_checkin_time || \Carbon\Carbon::parse($visitor->security_checkin_time)->diffInMinutes(now()) > 30) {
-                    return redirect()->back()->with('error', 'Undo is only available within 30 minutes of security check-in.');
+                    return $respond(false, 'Undo is only available within 30 minutes of security check-in.');
                 }
                 $visitor->security_checkin_time = null;
                 // Delete the security check record to allow fresh form
@@ -498,7 +500,7 @@ class SecurityCheckController extends Controller
                 $message = 'Security check-in has been undone successfully.';
             } elseif ($action === 'undo_checkout') {
                 if (!$visitor->security_checkout_time || \Carbon\Carbon::parse($visitor->security_checkout_time)->diffInMinutes(now()) > 30) {
-                    return redirect()->back()->with('error', 'Undo is only available within 30 minutes of security check-out.');
+                    return $respond(false, 'Undo is only available within 30 minutes of security check-out.');
                 }
                 $visitor->security_checkout_time = null;
                 $message = 'Security check-out has been undone successfully.';
@@ -506,10 +508,10 @@ class SecurityCheckController extends Controller
             
             $visitor->save();
             
-            return redirect()->back()->with('success', $message);
+            return $respond(true, $message);
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+            return $respond(false, 'An error occurred: ' . $e->getMessage());
         }
     }
 }

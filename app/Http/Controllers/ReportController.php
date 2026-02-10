@@ -82,8 +82,8 @@ class ReportController extends Controller
 
         $filters = [];
         
-        $from = $request->input('from', now()->format('Y-m-d'));
-        $to = $request->input('to', now()->format('Y-m-d'));
+        $from = $request->input('from') ?: now()->format('Y-m-d');
+        $to = $request->input('to') ?: now()->format('Y-m-d');
         
         $query->whereDate('security_checks.created_at', '>=', $from)
               ->whereDate('security_checks.created_at', '<=', $to);
@@ -266,8 +266,8 @@ class ReportController extends Controller
     {
         $filters = [];
         
-        $from = $request->input('from', now()->format('Y-m-d'));
-        $to = $request->input('to', now()->format('Y-m-d'));
+        $from = $request->input('from') ?: now()->format('Y-m-d');
+        $to = $request->input('to') ?: now()->format('Y-m-d');
         
         $query->whereDate('created_at', '>=', $from)
               ->whereDate('created_at', '<=', $to);

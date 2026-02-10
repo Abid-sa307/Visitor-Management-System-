@@ -365,6 +365,158 @@
         updateSelectAllDepartmentsState();
     }
 
+    // Initialize branches (Just update text state)
+    function initBranches() {
+        updateBranchText();
+        updateSelectAllBranchesState();
+        
+        // Enable branch button if branches are available (HTML check)
+        const branchOptions = document.getElementById('branchOptions');
+        if (branchOptions && branchOptions.children.length > 0) {
+            const branchBtn = document.getElementById('branchBtn');
+            if (branchBtn) {
+                branchBtn.disabled = false;
+                branchBtn.style.opacity = '1';
+                branchBtn.style.cursor = 'pointer';
+            }
+        }
+    }
+    
+    // Initialize departments (Just update text state)
+    function initDepartments() {
+        updateDepartmentText();
+        updateSelectAllDepartmentsState();
+        
+        // Enable department button if departments are available (HTML check)
+        const departmentOptions = document.getElementById('departmentOptions');
+        if (departmentOptions && departmentOptions.children.length > 0) {
+            const departmentBtn = document.getElementById('departmentBtn');
+            if (departmentBtn) {
+                departmentBtn.disabled = false;
+                departmentBtn.style.opacity = '1';
+                departmentBtn.style.cursor = 'pointer';
+            }
+        }
+    }
+    
+    // Load branches by company
+    function loadBranchesByCompany(companyId) {
+        const branchOptions = document.getElementById('branchOptions');
+        if (!companyId) return;
+        
+        fetch(`/api/companies/${companyId}/branches`)
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch branches');
+                return response.json();
+            })
+            .then(data => {
+                branchOptions.innerHTML = '';
+                const selectedBranches = @json(request('branch_id', []));
+                
+                const branches = Array.isArray(data) ? data : Object.entries(data).map(([id, name]) => ({ id, name }));
+                
+                branches.forEach(branch => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    const isChecked = selectedBranches.includes(branch.id.toString());
+                    div.innerHTML = `
+                        <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${branch.id}" id="branch_${branch.id}" onchange="updateBranchText()" ${isChecked ? 'checked' : ''}>
+                        <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
+                    `;
+                    branchOptions.appendChild(div);
+                });
+                
+                updateBranchText();
+                updateSelectAllBranchesState();
+                
+                const branchBtn = document.getElementById('branchBtn');
+                if (branchBtn) {
+                    branchBtn.disabled = false;
+                    branchBtn.style.opacity = '1';
+                    branchBtn.style.cursor = 'pointer';
+                }
+            })
+            .catch(error => console.error('Error loading branches:', error));
+    }
+    
+    // Load departments by selected branches
+    function loadDepartmentsByBranches() {
+        const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
+        const departmentOptions = document.getElementById('departmentOptions');
+        const departmentBtn = document.getElementById('departmentBtn');
+        
+        if (selectedBranches.length === 0) {
+            departmentOptions.innerHTML = '';
+            if(departmentBtn) {
+                departmentBtn.disabled = true;
+                departmentBtn.style.opacity = '0.5';
+                departmentBtn.style.cursor = 'not-allowed';
+            }
+            document.getElementById('departmentText').textContent = 'All Departments';
+            return;
+        }
+        
+        departmentOptions.innerHTML = '<div class="text-muted">Loading...</div>';
+        
+        Promise.all(selectedBranches.map(branchId => 
+            fetch(`/api/branches/${branchId}/departments`).then(r => {
+                if (!r.ok) throw new Error('Failed to fetch departments');
+                return r.json();
+            })
+        )).then(results => {
+            const deptMap = [];
+            results.forEach(depts => {
+                let deptArray = [];
+                if (Array.isArray(depts)) {
+                    deptArray = depts;
+                } else if (depts.data && Array.isArray(depts.data)) {
+                    deptArray = depts.data;
+                } else {
+                    deptArray = Object.entries(depts || {}).map(([key, val]) => {
+                        if (typeof val === 'object' && val !== null) return { id: key, ...val };
+                        return { id: key, name: val };
+                    });
+                }
+                
+                deptArray.forEach(dept => {
+                    if (!deptMap.find(d => d.id == dept.id)) {
+                        deptMap.push(dept);
+                    }
+                });
+            });
+            
+            departmentOptions.innerHTML = '';
+            const selectedDepartments = @json(request('department_id', []));
+            
+            if (deptMap.length === 0) {
+                departmentOptions.innerHTML = '<div class="text-muted">No departments available</div>';
+            } else {
+                deptMap.forEach(dept => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    const isChecked = selectedDepartments.includes(dept.id.toString());
+                    div.innerHTML = `
+                        <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
+                        <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
+                    `;
+                    departmentOptions.appendChild(div);
+                });
+            }
+            
+            updateDepartmentText();
+            updateSelectAllDepartmentsState();
+            
+            if (departmentBtn) {
+                departmentBtn.disabled = false;
+                departmentBtn.style.opacity = '1';
+                departmentBtn.style.cursor = 'pointer';
+            }
+        }).catch(error => {
+            console.error('Error loading departments:', error);
+            departmentOptions.innerHTML = '<div class="text-muted">Error</div>';
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const companySelect = document.getElementById('company_id');
         const branchBtn = document.getElementById('branchBtn');
@@ -373,170 +525,14 @@
         // Close dropdowns when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('#branchBtn') && !e.target.closest('#branchDropdownMenu')) {
-                document.getElementById('branchDropdownMenu').style.display = 'none';
+                const menu = document.getElementById('branchDropdownMenu');
+                if(menu) menu.style.display = 'none';
             }
             if (!e.target.closest('#departmentBtn') && !e.target.closest('#departmentDropdownMenu')) {
-                document.getElementById('departmentDropdownMenu').style.display = 'none';
+                const menu = document.getElementById('departmentDropdownMenu');
+                if(menu) menu.style.display = 'none';
             }
         });
-        
-        // Initialize branches (Just update text state)
-        function initBranches() {
-            updateBranchText();
-            updateSelectAllBranchesState();
-            
-            // Enable branch button if branches are available (HTML check)
-            const branchOptions = document.getElementById('branchOptions');
-            if (branchOptions && branchOptions.children.length > 0) {
-                if (branchBtn) {
-                    branchBtn.disabled = false;
-                    branchBtn.style.opacity = '1';
-                    branchBtn.style.cursor = 'pointer';
-                }
-            }
-        }
-        
-        // Initialize departments (Just update text state)
-        function initDepartments() {
-            updateDepartmentText();
-            updateSelectAllDepartmentsState();
-            
-            // Enable department button if departments are available (HTML check)
-            const departmentOptions = document.getElementById('departmentOptions');
-            if (departmentOptions && departmentOptions.children.length > 0) {
-                if (departmentBtn) {
-                    departmentBtn.disabled = false;
-                    departmentBtn.style.opacity = '1';
-                    departmentBtn.style.cursor = 'pointer';
-                }
-            }
-        }
-        
-        // Load branches by company
-        function loadBranchesByCompany(companyId) {
-            const branchOptions = document.getElementById('branchOptions');
-            if (!companyId) return;
-            
-            fetch(`/api/companies/${companyId}/branches`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Failed to fetch branches');
-                    return response.json();
-                })
-                .then(data => {
-                    branchOptions.innerHTML = '';
-                    const selectedBranches = @json(request('branch_id', []));
-                    
-                    const branches = Array.isArray(data) ? data : Object.entries(data).map(([id, name]) => ({ id, name }));
-                    
-                    branches.forEach(branch => {
-                        const div = document.createElement('div');
-                        div.className = 'form-check';
-                        const isChecked = selectedBranches.includes(branch.id.toString());
-                        div.innerHTML = `
-                            <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${branch.id}" id="branch_${branch.id}" onchange="updateBranchText()" ${isChecked ? 'checked' : ''}>
-                            <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
-                        `;
-                        branchOptions.appendChild(div);
-                    });
-                    
-                    updateBranchText();
-                    updateSelectAllBranchesState();
-                    
-                    if (branchBtn) {
-                        branchBtn.disabled = false;
-                        branchBtn.style.opacity = '1';
-                        branchBtn.style.cursor = 'pointer';
-                    }
-                })
-                .catch(error => console.error('Error loading branches:', error));
-        }
-        
-        // Load departments by selected branches
-        function loadDepartmentsByBranches() {
-            const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
-            const departmentOptions = document.getElementById('departmentOptions');
-            
-            // If no branches selected but we are initialized, maybe we shouldn't clear? 
-            // Dashboard logic says: if no branches selected, lock dept unless initialized differently.
-            // But here we'll follow previous logic: clear depts if branch selection changes.
-            
-            // However, initially, we might have depts without branches selected (if logic allows).
-            // But usually depts depend on branches.
-            
-            if (selectedBranches.length === 0) {
-                // If branches deselected, clear depts? Or keep if not strictly dependent?
-                // Let's clear to be safe and dynamic
-                departmentOptions.innerHTML = '';
-                departmentBtn.disabled = true;
-                departmentBtn.style.opacity = '0.5';
-                departmentBtn.style.cursor = 'not-allowed';
-                document.getElementById('departmentText').textContent = 'All Departments';
-                return;
-            }
-            
-            departmentOptions.innerHTML = '<div class="text-muted">Loading...</div>';
-            
-            Promise.all(selectedBranches.map(branchId => 
-                fetch(`/api/branches/${branchId}/departments`).then(r => {
-                    if (!r.ok) throw new Error('Failed to fetch departments');
-                    return r.json();
-                })
-            )).then(results => {
-                const deptMap = [];
-                results.forEach(depts => {
-                    // Normalize data
-                    // Normalize data with robust checking
-                    let deptArray = [];
-                    if (Array.isArray(depts)) {
-                        deptArray = depts;
-                    } else if (depts.data && Array.isArray(depts.data)) {
-                        deptArray = depts.data;
-                    } else {
-                        // Handle object format {id: name, ...} or {id: {name: ...}, ...}
-                        deptArray = Object.entries(depts || {}).map(([key, val]) => {
-                            if (typeof val === 'object' && val !== null) return { id: key, ...val };
-                            return { id: key, name: val };
-                        });
-                    }
-                    
-                    deptArray.forEach(dept => {
-                        if (!deptMap.find(d => d.id == dept.id)) {
-                            deptMap.push(dept);
-                        }
-                    });
-                });
-                
-                departmentOptions.innerHTML = '';
-                const selectedDepartments = @json(request('department_id', []));
-                
-                if (deptMap.length === 0) {
-                    departmentOptions.innerHTML = '<div class="text-muted">No departments available</div>';
-                } else {
-                    deptMap.forEach(dept => {
-                        const div = document.createElement('div');
-                        div.className = 'form-check';
-                        const isChecked = selectedDepartments.includes(dept.id.toString());
-                        div.innerHTML = `
-                            <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${dept.id}" id="department_${dept.id}" onchange="updateDepartmentText()" ${isChecked ? 'checked' : ''}>
-                            <label class="form-check-label" for="department_${dept.id}">${dept.name}</label>
-                        `;
-                        departmentOptions.appendChild(div);
-                    });
-                }
-                
-                updateDepartmentText();
-                updateSelectAllDepartmentsState();
-                
-                if (departmentBtn) {
-                    departmentBtn.disabled = false;
-                    departmentBtn.style.opacity = '1';
-                    departmentBtn.style.cursor = 'pointer';
-                }
-            }).catch(error => {
-                console.error('Error loading departments:', error);
-                departmentOptions.innerHTML = '<div class="text-muted">Error</div>';
-            });
-        }
         
         // Initialize on load
         initBranches();
@@ -548,7 +544,8 @@
                 const companyId = this.value;
                 
                 // Reset dropdowns
-                document.getElementById('branchDropdownMenu').style.display = 'none'; // Close menu
+                const branchMenu = document.getElementById('branchDropdownMenu');
+                if(branchMenu) branchMenu.style.display = 'none'; 
                 
                 const bo = document.getElementById('branchOptions');
                 const doo = document.getElementById('departmentOptions');
@@ -574,15 +571,7 @@
                 }
             });
         }
-        
-        // Make functions global
-        window.toggleAllBranches = toggleAllBranches;
-        window.toggleAllDepartments = toggleAllDepartments;
-        window.updateBranchText = updateBranchText;
-        window.updateDepartmentText = updateDepartmentText;
-        window.updateSelectAllBranchesState = updateSelectAllBranchesState;
-        window.updateSelectAllDepartmentsState = updateSelectAllDepartmentsState;
-        window.loadDepartmentsByBranches = loadDepartmentsByBranches;
+
 
         // Timer for undo buttons (if you use .js-undo-time anywhere)
         setInterval(() => {

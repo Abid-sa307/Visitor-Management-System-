@@ -184,48 +184,66 @@ document.addEventListener('DOMContentLoaded', function() {
     let allBranches = @json($branches ?? []);
     let allDepartments = @json($departments ?? []);
 
+    // Helper to get URL params
+    function getUrlParamValues(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.getAll(param);
+    }
+
     // Initialize branches
     function initBranches() {
         branchOptions.innerHTML = '';
         const branches = Array.isArray(allBranches) ? allBranches : Object.entries(allBranches).map(([id, name]) => ({id, name}));
+        const selectedIds = getUrlParamValues('branch_id[]');
+        
         branches.forEach(branch => {
             const id = branch.id;
             const name = branch.name;
+            const isChecked = selectedIds.includes(String(id));
             const div = document.createElement('div');
             div.className = 'form-check';
             div.innerHTML = `
-                <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${id}" id="branch_${id}" onchange="updateBranchText(); loadDepartmentsByBranches()">
+                <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${id}" id="branch_${id}" ${isChecked ? 'checked' : ''} onchange="updateBranchText(); loadDepartmentsByBranches()">
                 <label class="form-check-label" for="branch_${id}">${name}</label>
             `;
             branchOptions.appendChild(div);
         });
+        
         if (branches.length > 0) {
             branchBtn.disabled = false;
             branchBtn.style.opacity = '1';
             branchBtn.style.cursor = 'pointer';
         }
+        
+        updateBranchText();
     }
 
     // Initialize departments
     function initDepartments() {
         departmentOptions.innerHTML = '';
         const departments = Array.isArray(allDepartments) ? allDepartments : Object.entries(allDepartments).map(([id, name]) => ({id, name}));
+        const selectedIds = getUrlParamValues('department_id[]');
+        
         departments.forEach(dept => {
             const id = dept.id;
             const name = dept.name;
+            const isChecked = selectedIds.includes(String(id));
             const div = document.createElement('div');
             div.className = 'form-check';
             div.innerHTML = `
-                <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${id}" id="dept_${id}" onchange="updateDepartmentText()">
+                <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${id}" id="dept_${id}" ${isChecked ? 'checked' : ''} onchange="updateDepartmentText()">
                 <label class="form-check-label" for="dept_${id}">${name}</label>
             `;
             departmentOptions.appendChild(div);
         });
+        
         if (departments.length > 0) {
             departmentBtn.disabled = false;
             departmentBtn.style.opacity = '1';
             departmentBtn.style.cursor = 'pointer';
         }
+        
+        updateDepartmentText();
     }
 
     // Load branches by company
@@ -254,16 +272,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => console.error('Error loading branches:', error));
         });
-    } else {
-        // Non-superadmin: initialize with existing data
-        const branchCount = Array.isArray(allBranches) ? allBranches.length : Object.keys(allBranches).length;
-        const deptCount = Array.isArray(allDepartments) ? allDepartments.length : Object.keys(allDepartments).length;
-        if (branchCount > 0) {
-            initBranches();
-        }
-        if (deptCount > 0) {
-            initDepartments();
-        }
     }
 
     // Load departments by selected branches
@@ -271,12 +279,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
         
         departmentOptions.innerHTML = '';
-        departmentBtn.disabled = true;
-        departmentBtn.style.opacity = '0.5';
-        departmentBtn.style.cursor = 'not-allowed';
-        document.getElementById('departmentText').textContent = 'All Departments';
-
-        if (selectedBranches.length === 0) return;
+        departmentBtn.disabled = false; // Keep enabled to show loading or empty state properly?
+        // Actually, if fetching, we might want to disable or show loading.
+        // But for now keeping inconsistent with existing logic which disabled it.
+        // Let's assume initialized state.
+        
+        if (selectedBranches.length === 0) {
+            // If no branches selected, reset to all company departments? 
+            // Or clear departments as per previous logic?
+            // Previous logic: "departmentBtn.disabled = true... return"
+            // But if we want to show all departments when no branch is selected (if that's the desired behavior), we should reload all.
+            // However, usually cascading means "filter by branch". If no branch, maybe no departments?
+            // Let's stick to: No branch -> No departments (or disabled).
+            
+            departmentBtn.disabled = true;
+            departmentBtn.style.opacity = '0.5';
+            departmentBtn.style.cursor = 'not-allowed';
+            document.getElementById('departmentText').textContent = 'All Departments';
+            return;
+        }
+        
+        departmentBtn.disabled = true; // temporal disable while loading
+        document.getElementById('departmentText').textContent = 'Loading...';
 
         Promise.all(selectedBranches.map(branchId => 
             fetch(`/api/branches/${branchId}/departments`).then(r => r.json())
@@ -292,7 +316,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             allDepartments = deptMap;
             initDepartments();
-        }).catch(error => console.error('Error loading departments:', error));
+        }).catch(error => {
+            console.error('Error loading departments:', error);
+            departmentBtn.disabled = false; // Re-enable if error?
+            document.getElementById('departmentText').textContent = 'Error';
+        });
     };
 
     window.toggleAllBranches = function() {
@@ -331,6 +359,33 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('departmentDropdownMenu').style.display = 'none';
         }
     });
+
+    // Initial Load Logic
+    if (companySelect) {
+        // Superadmin: if company selected, trigger logic? 
+        // We already have allBranches/allDepartments populated from server if company is selected.
+        initBranches();
+        
+        // Check if branches are selected in URL to trigger department load
+        if (document.querySelectorAll('.branch-checkbox:checked').length > 0) {
+             loadDepartmentsByBranches();
+        } else {
+             // If no branches selected, verify if we should show all departments or none.
+             // If allDepartments has data (from controller), we can show it?
+             // But loadDepartmentsByBranches logic implies strict dependency.
+             // Let's initialize departments regardless, to show whatever the server sent.
+             // If the server sent all departments (because company is selected), we show them.
+             initDepartments();
+        }
+    } else {
+        // Company User
+        initBranches();
+        if (document.querySelectorAll('.branch-checkbox:checked').length > 0) {
+             loadDepartmentsByBranches();
+        } else {
+             initDepartments();
+        }
+    }
 });
 </script>
 @endpush
