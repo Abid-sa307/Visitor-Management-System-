@@ -141,7 +141,10 @@
       
       // Get unique branches that have data
       $branches = collect($series)
-        ->map(fn($row) => $row['branch_name'] ?? 'Unknown Branch')
+        ->map(function($row) {
+          $name = trim($row['branch_name'] ?? '');
+          return $name !== '' ? $name : 'Unknown Branch';
+        })
         ->unique()
         ->sort()
         ->values();
@@ -150,7 +153,11 @@
       $branchDates = [];
       foreach ($branches as $branch) {
         $branchDates[$branch] = collect($series)
-          ->filter(fn($row) => ($row['branch_name'] ?? 'Unknown Branch') === $branch)
+          ->filter(function($row) use ($branch) {
+            $name = trim($row['branch_name'] ?? '');
+            $rowBranch = $name !== '' ? $name : 'Unknown Branch';
+            return $rowBranch === $branch;
+          })
           ->map(fn($row) => \Carbon\Carbon::parse($row['hour'])->format('Y-m-d'))
           ->unique()
           ->sort()
@@ -179,9 +186,7 @@
                 $dateFormatted = \Carbon\Carbon::parse($date)->format('d M Y');
               @endphp
               <tr>
-                @if($loop->first)
-                  <th class="text-center" rowspan="{{ $branchDates[$branch]->count() }}">{{ $branch }}</th>
-                @endif
+                <th class="text-center">{{ $branch }}</th>
                 <th class="text-center">{{ $dateFormatted }}</th>
                 @foreach($timeSlots as $index => $slot)
                   @php
@@ -192,7 +197,8 @@
                       ->filter(function($row) use ($branch, $date, $startHour) {
                         $rowDate = date('Y-m-d', strtotime($row['hour']));
                         $rowHour = date('H', strtotime($row['hour']));
-                        $rowBranch = $row['branch_name'] ?? 'Unknown Branch';
+                        $name = trim($row['branch_name'] ?? '');
+                        $rowBranch = $name !== '' ? $name : 'Unknown Branch';
                         return $rowBranch === $branch && $rowDate === $date && $rowHour === $startHour;
                       })
                       ->sum('count');
