@@ -184,7 +184,7 @@ class ReportController extends Controller
             ->select(
                 DB::raw('DATE_FORMAT(in_time, "%Y-%m-%d %H:00:00") as hour'),
                 DB::raw('COUNT(*) as count'),
-                'branches.name as branch_name'
+                DB::raw('COALESCE(NULLIF(branches.name, ""), "Unknown Branch") as branch_name')
             );
 
         // Apply company filter for non-superadmins
