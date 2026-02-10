@@ -140,7 +140,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">
-                                        <i class="bi bi-award me-2"></i>Badge/ID Number
+                                        <i class="bi bi-award me-2"></i>Badge/ID Number 
                                     </label>
                                     <input type="text" name="officer_badge" class="form-control" 
                                            placeholder="Enter badge/ID number">

@@ -139,24 +139,31 @@
         $timeSlots[] = "$start-$end";
       }
       
-      // Get unique branches that have data
-      $branches = collect($series)
+      // Get unique combinations of branches and departments that have data
+      $groups = collect($series)
         ->map(function($row) {
-          $name = trim($row['branch_name'] ?? '');
-          return $name !== '' ? $name : 'Unknown Branch';
+          $branch = trim($row['branch_name'] ?? '');
+          $dept = trim($row['department_name'] ?? '');
+          return [
+            'branch' => $branch !== '' ? $branch : 'Unknown Branch',
+            'department' => $dept !== '' ? $dept : 'Unknown Department'
+          ];
         })
-        ->unique()
-        ->sort()
+        ->unique(fn($g) => $g['branch'] . '|' . $g['department'])
+        ->sortBy([['branch', 'asc'], ['department', 'asc']])
         ->values();
       
-      // Get unique dates for each branch
-      $branchDates = [];
-      foreach ($branches as $branch) {
-        $branchDates[$branch] = collect($series)
-          ->filter(function($row) use ($branch) {
-            $name = trim($row['branch_name'] ?? '');
-            $rowBranch = $name !== '' ? $name : 'Unknown Branch';
-            return $rowBranch === $branch;
+      // Get unique dates for each branch+department group
+      $groupDates = [];
+      foreach ($groups as $group) {
+        $groupKey = $group['branch'] . '|' . $group['department'];
+        $groupDates[$groupKey] = collect($series)
+          ->filter(function($row) use ($group) {
+            $b = trim($row['branch_name'] ?? '');
+            $d = trim($row['department_name'] ?? '');
+            $rowBranch = $b !== '' ? $b : 'Unknown Branch';
+            $rowDept = $d !== '' ? $d : 'Unknown Department';
+            return $rowBranch === $group['branch'] && $rowDept === $group['department'];
           })
           ->map(fn($row) => \Carbon\Carbon::parse($row['hour'])->format('Y-m-d'))
           ->unique()
@@ -170,6 +177,7 @@
         <thead class="table-primary">
           <tr>
             <th class="text-center">Branch</th>
+            <th class="text-center">Department</th>
             <th class="text-center">Date</th>
             @foreach($timeSlots as $slot)
               <th class="text-center small" style="min-width: 80px;">{{ $slot }}</th>
@@ -179,36 +187,46 @@
         </thead>
 
         <tbody>
-          @foreach($branches as $branch)
-            @foreach($branchDates[$branch] as $date)
+          @foreach($groups as $group)
+            @php $groupKey = $group['branch'] . '|' . $group['department']; @endphp
+            @foreach($groupDates[$groupKey] as $date)
               @php
                 $dateTotal = 0;
                 $dateFormatted = \Carbon\Carbon::parse($date)->format('d M Y');
               @endphp
               <tr>
-                <th class="text-center">{{ $branch }}</th>
-                <th class="text-center">{{ $dateFormatted }}</th>
+                <td class="text-center">{{ $group['branch'] }}</td>
+                <td class="text-center">{{ $group['department'] }}</td>
+                <td class="text-center">{{ $dateFormatted }}</td>
                 @foreach($timeSlots as $index => $slot)
                   @php
                     $startHour = str_pad($index, 2, '0', STR_PAD_LEFT);
-                    $endHour = str_pad(($index + 1) % 24, 2, '0', STR_PAD_LEFT);
                     
                     $count = collect($series)
-                      ->filter(function($row) use ($branch, $date, $startHour) {
+                      ->filter(function($row) use ($group, $date, $startHour) {
                         $rowDate = date('Y-m-d', strtotime($row['hour']));
                         $rowHour = date('H', strtotime($row['hour']));
-                        $name = trim($row['branch_name'] ?? '');
-                        $rowBranch = $name !== '' ? $name : 'Unknown Branch';
-                        return $rowBranch === $branch && $rowDate === $date && $rowHour === $startHour;
+                        
+                        $b = trim($row['branch_name'] ?? '');
+                        $d = trim($row['department_name'] ?? '');
+                        $rowBranch = $b !== '' ? $b : 'Unknown Branch';
+                        $rowDept = $d !== '' ? $d : 'Unknown Department';
+                        
+                        return $rowBranch === $group['branch'] && 
+                               $rowDept === $group['department'] && 
+                               $rowDate === $date && 
+                               $rowHour === $startHour;
                       })
                       ->sum('count');
                     
                     $dateTotal += $count;
                   @endphp
+                  
                   <td class="{{ $count > 0 ? 'bg-light' : '' }}">
                     {{ $count > 0 ? $count : '-' }}
                   </td>
                 @endforeach
+
                 <td class="fw-bold bg-light">{{ $dateTotal > 0 ? $dateTotal : '-' }}</td>
               </tr>
             @endforeach

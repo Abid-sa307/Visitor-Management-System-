@@ -260,7 +260,7 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-6"> 
                         <h6 class="fw-bold mb-3">Visitor Information</h6>
                         <table class="table table-sm table-borderless">
                             <tr>

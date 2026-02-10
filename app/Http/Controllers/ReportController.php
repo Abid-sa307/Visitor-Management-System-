@@ -181,10 +181,12 @@ class ReportController extends Controller
 
         $query = Visitor::whereNotNull('in_time')
             ->leftJoin('branches', 'visitors.branch_id', '=', 'branches.id')
+            ->leftJoin('departments', 'visitors.department_id', '=', 'departments.id')
             ->select(
                 DB::raw('DATE_FORMAT(in_time, "%Y-%m-%d %H:00:00") as hour'),
                 DB::raw('COUNT(*) as count'),
-                DB::raw('COALESCE(NULLIF(TRIM(branches.name), ""), "Unknown Branch") as branch_name')
+                DB::raw('COALESCE(NULLIF(TRIM(branches.name), ""), "Unknown Branch") as branch_name'),
+                DB::raw('COALESCE(NULLIF(TRIM(departments.name), ""), "Unknown Department") as department_name')
             );
 
         // Apply company filter for non-superadmins
@@ -218,7 +220,7 @@ class ReportController extends Controller
             $query->whereIn('visitors.department_id', $departmentIds);
         }
 
-        $series = $query->groupBy('hour', 'branch_name')
+        $series = $query->groupBy('hour', 'branch_name', 'department_name')
             ->orderBy('hour')
             ->get()
             ->toArray();
