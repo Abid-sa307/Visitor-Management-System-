@@ -31,6 +31,34 @@
                 </div>
                 
                 <div class="card-body p-0">
+                    @php
+                        $isClosed = false;
+                        if (isset($branch) && $branch) {
+                            $isClosed = $branch->isOutsideOperatingHours();
+                            $startTime = date('h:i A', strtotime($branch->start_time));
+                            $endTime = date('h:i A', strtotime($branch->end_time));
+                        } elseif (isset($company) && $company) {
+                            $isClosed = $company->isVisitorOutsideOperatingHours();
+                            $startTime = date('h:i A', strtotime($company->operation_start_time));
+                            $endTime = date('h:i A', strtotime($company->operation_end_time));
+                        }
+                    @endphp
+
+                    @if($isClosed)
+                        <div class="p-4 pb-0">
+                            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-0" role="alert">
+                                <i class="bi bi-clock-fill fs-4 me-3"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">Operational Hours Alert</h5>
+                                    <p class="mb-0">
+                                        We are currently outside of our visitor registration hours ({{ $startTime }} - {{ $endTime }}). 
+                                        Registration is disabled at this time. Please return during operational hours.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     @if($visitor)
                         <!-- Visitor Exists -->
                         <div class="p-4">
@@ -468,10 +496,17 @@
                                     </div>
                                     
                                     <div class="d-grid gap-3 col-lg-6 mx-auto">
-                                        <a href="{{ isset($branch) && $branch ? route('qr.visitor.create.branch', [$company->id, $branch->id]) : route('qr.visitor.create', $company->id) }}" 
-                                           class="btn btn-primary btn-lg rounded-pill py-3">
-                                            <i class="bi bi-person-plus me-2"></i> Register New Visit
-                                        </a>
+                                        @if($isClosed)
+                                            <button class="btn btn-secondary btn-lg rounded-pill py-3" disabled 
+                                                    title="Registration is disabled outside of operational hours">
+                                                <i class="bi bi-person-plus-fill me-2"></i> Register New Visit (Closed)
+                                            </button>
+                                        @else
+                                            <a href="{{ isset($branch) && $branch ? route('qr.visitor.create.branch', [$company->id, $branch->id]) : route('qr.visitor.create', $company->id) }}" 
+                                               class="btn btn-primary btn-lg rounded-pill py-3">
+                                                <i class="bi bi-person-plus me-2"></i> Register New Visit
+                                            </a>
+                                        @endif
                                         @if(isset($branch) && $branch)
                                             <small class="text-muted">Branch: {{ $branch->name }}</small>
                                         @endif
@@ -484,10 +519,17 @@
                                     <p class="lead text-muted mb-4">Please register as a visitor to continue your visit</p>
                                     
                                     <div class="d-grid gap-3 col-lg-6 mx-auto">
-                                        <a href="{{ isset($branch) && $branch ? route('qr.visitor.create.branch', [$company->id, $branch->id]) : route('qr.visitor.create', $company->id) }}" 
-                                           class="btn btn-primary btn-lg rounded-pill py-3">
-                                            <i class="bi bi-person-plus me-2"></i> Register as Visitor
-                                        </a>
+                                        @if($isClosed)
+                                            <button class="btn btn-secondary btn-lg rounded-pill py-3" disabled 
+                                                    title="Registration is disabled outside of operational hours">
+                                                <i class="bi bi-person-plus-fill me-2"></i> Register as Visitor (Closed)
+                                            </button>
+                                        @else
+                                            <a href="{{ isset($branch) && $branch ? route('qr.visitor.create.branch', [$company->id, $branch->id]) : route('qr.visitor.create', $company->id) }}" 
+                                               class="btn btn-primary btn-lg rounded-pill py-3">
+                                                <i class="bi bi-person-plus me-2"></i> Register as Visitor
+                                            </a>
+                                        @endif
                                         @if(isset($branch) && $branch)
                                             <small class="text-muted">Branch: {{ $branch->name }}</small>
                                         @endif

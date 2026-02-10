@@ -125,8 +125,25 @@ public function __construct()
         
         if ($branchId) {
             $branchModel = $company->branches()->find($branchId);
+            
+            // Check operational hours for branch
+            if ($branchModel && $branchModel->isOutsideOperatingHours()) {
+                $startTime = date('h:i A', strtotime($branchModel->start_time));
+                $endTime = date('h:i A', strtotime($branchModel->end_time));
+                return redirect()->route('qr.scan', ['company' => $company->id, 'branch' => $branchId])
+                    ->with('error', "Visitor registration is closed. Branch operating hours are {$startTime} to {$endTime}.");
+            }
+            
             // Store branch ID in session for later use
             session(['scanned_branch_id' => $branchId]);
+        } else {
+            // Check operational hours for company if no branch
+            if ($company->isVisitorOutsideOperatingHours()) {
+                $startTime = date('h:i A', strtotime($company->operation_start_time));
+                $endTime = date('h:i A', strtotime($company->operation_end_time));
+                return redirect()->route('qr.scan', ['company' => $company->id])
+                    ->with('error', "Visitor registration is closed. Operating hours are {$startTime} to {$endTime}.");
+            }
         }
         
         // Get the necessary data for the form
@@ -175,6 +192,19 @@ public function __construct()
     }
     
     $validated = $request->validate($rules);
+
+    // Backend enforcement for operational hours
+    $branchId = $branch ?? session('scanned_branch_id');
+    if ($branchId) {
+        $branchModel = $company->branches()->find($branchId);
+        if ($branchModel && $branchModel->isOutsideOperatingHours()) {
+            return redirect()->route('qr.scan', ['company' => $company->id, 'branch' => $branchId])
+                ->with('error', 'Registration failed: Outside of operational hours.');
+        }
+    } elseif ($company->isVisitorOutsideOperatingHours()) {
+        return redirect()->route('qr.scan', ['company' => $company->id])
+            ->with('error', 'Registration failed: Outside of operational hours.');
+    }
 
     try {
         $visitorData = [
@@ -276,8 +306,20 @@ public function showVisitForm(Company $company, \App\Models\Visitor $visitor)
             ->get();
             
         $branchModel = $company->branches()->find($branchId);
+        
+        // Check operational hours for branch
+        if ($branchModel && $branchModel->isOutsideOperatingHours()) {
+            return redirect()->route('qr.scan', ['company' => $company->id, 'branch' => $branchId])
+                ->with('error', 'Visitor registration is closed for this branch.');
+        }
+        
         $branches = $branchModel ? collect([$branchModel]) : $company->branches;
     } else {
+        // Check operational hours for company if no branch
+        if ($company->isVisitorOutsideOperatingHours()) {
+            return redirect()->route('qr.scan', ['company' => $company->id])
+                ->with('error', 'Visitor registration is currently closed.');
+        }
         $visitorCategories = \App\Models\VisitorCategory::where('company_id', $company->id)->get();
         $departments = \App\Models\Department::where('company_id', $company->id)->get();
         $employees = \App\Models\Employee::where('company_id', $company->id)->get();
@@ -323,6 +365,25 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             'branch_id' => 'nullable|exists:branches,id',
             'visit_date' => 'nullable|date',
         ]);
+
+        // Backend enforcement for operational hours during visit completion
+        $branchId = $validated['branch_id'] ?? session('scanned_branch_id');
+        if ($branchId) {
+            $branchModel = $company->branches()->find($branchId);
+            if ($branchModel && $branchModel->isOutsideOperatingHours()) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Operational hours closed for this branch.'], 403);
+                }
+                return redirect()->route('qr.scan', ['company' => $company->id, 'branch' => $branchId])
+                    ->with('error', 'Visit completion failed: Branch currently closed.');
+            }
+        } elseif ($company->isVisitorOutsideOperatingHours()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Operational hours closed.'], 403);
+            }
+            return redirect()->route('qr.scan', ['company' => $company->id])
+                ->with('error', 'Visit completion failed: Currently closed.');
+        }
         
         // Update visitor with visit details
         $visitor->fill([

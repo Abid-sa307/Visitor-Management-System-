@@ -37,4 +37,23 @@ class Branch extends Model
     {
         return $this->hasMany(Department::class);
     }
+
+    /**
+     * Check if a visitor is created outside operating hours for this branch
+     */
+    public function isOutsideOperatingHours($visitorCreatedAt = null)
+    {
+        // If no operating hours are set, return false
+        if (!$this->start_time || !$this->end_time) {
+            return false;
+        }
+        
+        $createdAt = $visitorCreatedAt ?: now();
+        $currentTime = $createdAt->format('H:i');
+        $startTime = date('H:i', strtotime($this->start_time));
+        $endTime = date('H:i', strtotime($this->end_time));
+        
+        // Check if current time is outside operating hours
+        return $currentTime < $startTime || $currentTime > $endTime;
+    }
 }
