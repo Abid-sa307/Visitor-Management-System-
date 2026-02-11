@@ -1,12 +1,33 @@
 @extends('layouts.sb')
 
+@push('styles')
+<style>
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table {
+        width: 100% !important;
+        margin-bottom: 0;
+    }
+    .table th {
+        white-space: nowrap;
+        font-size: 0.85rem;
+    }
+    .table td {
+        font-size: 0.9rem;
+    }
+</style>
+@endpush
+
 @section('content')
 @php
     $isCompany = request()->is('company/*');
     $reportExportRoute = ($isCompany ? 'company.' : '') . 'reports.visitors.export';
 @endphp
 
-<div class="container py-4">
+<div class="container-fluid px-4 py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h2 class="fw-bold text-primary m-0">Visitor Report</h2>
         <form method="GET" action="{{ route($reportExportRoute) }}" class="d-flex gap-2">

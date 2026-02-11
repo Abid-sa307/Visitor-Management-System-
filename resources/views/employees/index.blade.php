@@ -1,8 +1,8 @@
 @extends('layouts.sb')
 
 @section('content')
-<div class="container py-4">
-    <div class="page-heading mb-4">
+<div class="container-fluid px-4 py-4">
+        <div class="page-heading mb-4">
         <div>
             <div class="page-heading__eyebrow">People</div>
             <h1 class="page-heading__title">Employee Hub</h1>

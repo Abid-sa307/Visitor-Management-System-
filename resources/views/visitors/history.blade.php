@@ -1,8 +1,8 @@
 @extends('layouts.sb')
 
 @section('content')
-<div class="container py-4">
-    {{-- =================== FILTERS CARD =================== --}}
+<div class="container-fluid px-4 py-4">
+        {{-- =================== FILTERS CARD =================== --}}
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
             <h6 class="m-0 font-weight-bold">Filter Records</h6>

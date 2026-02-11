@@ -78,6 +78,11 @@
     .table-responsive {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        width: 100%;
+    }
+    .table {
+        width: 100% !important;
+        margin-bottom: 0;
     }
     .filter-section .col-md-3 {
         margin-bottom: 1rem;
@@ -102,7 +107,7 @@
     $baseRoute = ($isCompany ? 'company.' : '') . 'reports.visits';
 @endphp
 
-<div class="container py-4">
+<div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 text-gray-800">Visitor In/Out Reports</h2>
         <form method="GET" action="{{ route($exportRoute) }}" class="d-inline">

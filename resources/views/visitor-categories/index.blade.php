@@ -12,7 +12,7 @@
 @endpush
 
 @section('content')
-<div class="container">
+<div class="container-fluid px-4 py-4">    
     <div class="page-heading mb-4">
         <div>
             <div class="page-heading__eyebrow">Visitor Experience</div>

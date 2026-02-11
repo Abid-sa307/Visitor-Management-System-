@@ -1,7 +1,24 @@
 @extends('layouts.sb')
 
+@push('styles')
+<style>
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table {
+        width: 100% !important;
+        margin-bottom: 0;
+    }
+    .table th {
+        white-space: nowrap;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container py-4">
+<div class="container-fluid px-4 py-4">
     @php
         $isCompanyContext = request()->is('company/*');
         $createSecurityRoute = $isCompanyContext

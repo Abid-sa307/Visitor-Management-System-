@@ -616,7 +616,7 @@ class VisitorController extends Controller
             // Email notifications
             try {
                 if (!empty($visitor->email)) {
-                    \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
+                    // VisitorCreatedMail moved to submitVisit as per request
                     if ($visitor->status === 'Approved') {
                         \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
                     }
@@ -835,12 +835,23 @@ class VisitorController extends Controller
             $visitor->save();
 
             // If transitioned to Approved, send mail to visitor
+            \Log::info('Checking approval email logic (AJAX)', [
+                'previous_status' => $previousStatus,
+                'new_status' => $newStatus,
+                'email' => $visitor->email,
+                'visitor_id' => $visitor->id
+            ]);
+            
             if ($previousStatus !== 'Approved' && $newStatus === 'Approved' && !empty($visitor->email)) {
                 try {
-                    \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+                    \Log::info('Attempting to send visitor approval email (AJAX)');
+                    \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+                    \Log::info('Visitor approval email dispatched successfully (AJAX)');
                 } catch (\Throwable $e) {
                     \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
                 }
+            } else {
+                 \Log::info('Condition for approval email not met (AJAX)');
             }
             
             // Send Google notification if enabled
@@ -1010,12 +1021,22 @@ class VisitorController extends Controller
         $visitor->save();
 
         // Send approval email if status changed to Approved
+        \Log::info('Checking approval email logic (Full Update)', [
+            'is_being_approved' => $isBeingApproved,
+            'email' => $visitor->email,
+            'visitor_id' => $visitor->id
+        ]);
+
         if ($isBeingApproved && !empty($visitor->email)) {
             try {
-                \App\Jobs\SendVisitorEmail::dispatch(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+                \Log::info('Attempting to send visitor approval email (Full Update)');
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+                \Log::info('Visitor approval email dispatched successfully (Full Update)');
             } catch (\Throwable $e) {
                 \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
             }
+        } else {
+             \Log::info('Condition for approval email not met (Full Update)');
         }
         
         // Send approval notification emails to company users
@@ -1337,6 +1358,15 @@ class VisitorController extends Controller
                     \Log::info('Visit form submitted - Visitor notifications ENABLED for company: ' . $visitor->company->name . ', playing notification for visitor: ' . $visitor->name);
                 } else {
                     \Log::info('Visit form submitted - Visitor notifications DISABLED');
+                }
+
+                // Send Visitor Created Email (Moved from store method)
+                try {
+                     if (!empty($visitor->email)) {
+                         \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
+                     }
+                } catch (\Throwable $e) {
+                     \Log::warning('submitVisit: VisitorCreated mail dispatch failed: '.$e->getMessage());
                 }
 
                 \DB::commit();

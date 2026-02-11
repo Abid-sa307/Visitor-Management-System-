@@ -1,7 +1,7 @@
 @extends('layouts.sb')
 
 @section('content')
-<div class="container py-5">
+<div class="container-fluid px-4 py-4">
 
   @php  
       // Are we inside /company/* ?
