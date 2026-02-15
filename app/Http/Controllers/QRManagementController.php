@@ -662,7 +662,6 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
             ]);
         } else {
             // Public access - show public QR code view
-            $branchName = $branch ? $branch->name : null;
             
             // Generate the URL for the QR code
             if ($branch) {
@@ -676,7 +675,7 @@ public function publicVisitorIndex(Company $company, $visitor = null, $branch = 
                 ->margin(2)
                 ->generate($url);
             
-            return view('companies.public-qr', compact('company', 'qrCode', 'url', 'branchName'));
+            return view('companies.public-qr', compact('company', 'qrCode', 'url', 'branch'));
         }
     }
 
