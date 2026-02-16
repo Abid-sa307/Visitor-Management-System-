@@ -35,80 +35,97 @@ class UserController extends Controller
     }
 
     public function index(Request $request)
-{
-    $isCompany = auth()->guard('company')->check();
-    $isSuper = auth()->user()->isSuperAdmin();
+    {
+        $isCompany = auth()->guard('company')->check();
+        $user = $isCompany ? auth()->guard('company')->user() : auth()->user();
+        $isSuper = $user && method_exists($user, 'isSuperAdmin') ? $user->isSuperAdmin() : false;
 
-    // Get companies for the filter (only for super admins)
-    $companies = [];
-    if ($isSuper) {
-        $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
-    }
-
-    $query = User::query()->with(['company', 'departments', 'branches']);
-
-    // Filter by company for non-super admins
-    if (!$isSuper) {
-        $query->where('company_id', auth()->user()->company_id)
-              ->whereNotIn('role', ['super_admin', 'superadmin']);
-    }
-
-    // Apply search
-    if ($request->filled('search')) {
-        $search = $request->input('search');
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%");
-        });
-    }
-
-    // Rest of your existing filters...
-    if ($request->filled('company_id')) {
-        $query->where('company_id', $request->input('company_id'));
-    }
-
-    if ($request->filled('status')) {
-        $query->where('is_active', $request->input('status') === 'active');
-    }
-
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('created_at', [
-            $request->input('from'),
-            \Carbon\Carbon::parse($request->input('to'))->endOfDay()
-        ]);
-    }
-
-    // Filter by branch (handle both single and multi-select for compatibility)
-    $branchIds = $request->input('branch_ids');
-    if (!$branchIds && $request->filled('branch_id')) {
-        $branchIds = [$request->input('branch_id')];
-    }
-    
-    if (!empty($branchIds)) {
-        $query->whereHas('branches', function($q) use ($branchIds) {
-            $q->whereIn('branches.id', (array)$branchIds);
-        });
-    }
-
-    $users = $query->latest()->paginate(15);
-
-    // Get branches for dropdown
-    $branches = [];
-    if ($isSuper) {
-        if ($request->filled('company_id')) {
-            $branches = \App\Models\Branch::where('company_id', $request->company_id)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
-        } else {
-            $branches = \App\Models\Branch::orderBy('name')->pluck('name', 'id')->toArray();
+        // Get companies for the filter (only for super admins)
+        $companies = [];
+        if ($isSuper) {
+            $companies = Company::orderBy('name')->pluck('name', 'id')->toArray();
         }
-    } elseif ($isCompany) {
-        $branches = \App\Models\Branch::where('company_id', auth()->user()->company_id)
-            ->orderBy('name')
-            ->pluck('name', 'id')
-            ->toArray();
-    }
+
+        $query = User::query()->with(['company', 'departments', 'branches']);
+
+        // Filter by company for non-super admins
+        if (!$isSuper && $user) {
+            $query->where('company_id', $user->company_id)
+                  ->whereNotIn('role', ['super_admin', 'superadmin']);
+        }
+
+        // Apply search
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Rest of your existing filters...
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->input('company_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->input('status') === 'active');
+        }
+
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('created_at', [
+                $request->input('from'),
+                \Carbon\Carbon::parse($request->input('to'))->endOfDay()
+            ]);
+        }
+
+        // Filter by branch (handle both single and multi-select for compatibility)
+        $branchIds = $request->input('branch_ids');
+        if (!$branchIds && $request->filled('branch_id')) {
+            $branchIds = [$request->input('branch_id')];
+        }
+        
+        if (!empty($branchIds)) {
+            $query->whereHas('branches', function($q) use ($branchIds) {
+                $q->whereIn('branches.id', (array)$branchIds);
+            });
+        }
+
+        $users = $query->latest()->paginate(15);
+
+        // Get branches for dropdown
+        $branches = [];
+        if ($isSuper) {
+            if ($request->filled('company_id')) {
+                $branches = \App\Models\Branch::where('company_id', $request->company_id)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } else {
+                $branches = \App\Models\Branch::orderBy('name')->pluck('name', 'id')->toArray();
+            }
+        } elseif (!$isSuper && $user) {
+             // For company users (both guards), get their assigned branches
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = \App\Models\Branch::whereIn('id', $userBranchIds)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } elseif ($user->branch_id) {
+                $branches = \App\Models\Branch::where('id', $user->branch_id)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } else {
+                // Fallback: show all company branches
+                $branches = \App\Models\Branch::where('company_id', $user->company_id)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            }
+        }
 
     return view('users.index', [
         'users' => $users,

@@ -54,7 +54,7 @@
                     <div class="col-md-4">
                         <label class="form-label">Branch</label>
                         <div class="position-relative">
-                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'">
                                 <span id="branchText">All Branches</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -156,6 +156,12 @@
 </div>
 
 @push('scripts')
+<script>
+    // Pass server-side data to JavaScript for company users
+    @if(auth()->user()->role !== 'superadmin')
+        window.serverBranches = {!! json_encode($branches->pluck('name', 'id')) !!};
+    @endif
+</script>
 <script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
 <script>
 window.toggleAllBranches = function() {

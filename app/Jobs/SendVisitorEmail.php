@@ -28,8 +28,14 @@ class SendVisitorEmail implements ShouldQueue
 
     public function handle()
     {
+        Log::info('SendVisitorEmail Job Started', [
+            'recipient' => $this->recipient,
+            'mailable_class' => get_class($this->mailable)
+        ]);
+        
         try {
             Mail::to($this->recipient)->send($this->mailable);
+            Log::info('SendVisitorEmail Job Completed Successfully');
         } catch (\Exception $e) {
             Log::error('Failed to send visitor email: ' . $e->getMessage(), [
                 'recipient' => $this->recipient,

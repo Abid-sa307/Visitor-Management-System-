@@ -224,7 +224,7 @@
                        title="Print Pass">
                       <i class="fas fa-print"></i>
                     </a>
-                    <a href="{{ route('visitors.pass.pdf', $visitor->id) }}" target="_blank"
+                    <a href="{{ route('public.visitors.pass.pdf', $visitor->id) }}" target="_blank"
                        class="action-btn action-btn--view action-btn--icon"
                        title="Download PDF">
                       <i class="fas fa-file-pdf"></i>

@@ -49,15 +49,10 @@ class SecurityQuestionController extends Controller
             
             if (!empty($userBranchIds)) {
                 $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
+            } elseif ($user->branch_id) {
+                $branches = Branch::where('id', $user->branch_id)->get();
             }
+            // If no branches assigned, $branches remains empty
         }
         
         return view('security-questions.index', compact('questions', 'companies', 'branches'));
@@ -76,15 +71,10 @@ class SecurityQuestionController extends Controller
             
             if (!empty($userBranchIds)) {
                 $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
+            } elseif ($user->branch_id) {
+                $branches = Branch::where('id', $user->branch_id)->get();
             }
+            // If no branches assigned, $branches remains empty
         }
         
         return view('security-questions.create', compact('companies', 'branches'));
@@ -103,15 +93,10 @@ class SecurityQuestionController extends Controller
             
             if (!empty($userBranchIds)) {
                 $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
+            } elseif ($user->branch_id) {
+                $branches = Branch::where('id', $user->branch_id)->get();
             }
+            // If no branches assigned, $branches remains empty
         }
         
         return view('security-questions.create', compact('companies', 'branches'))->with('check_type', 'checkin');
@@ -130,15 +115,10 @@ class SecurityQuestionController extends Controller
             
             if (!empty($userBranchIds)) {
                 $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
+            } elseif ($user->branch_id) {
+                $branches = Branch::where('id', $user->branch_id)->get();
             }
+            // If no branches assigned, $branches remains empty
         }
         
         return view('security-questions.create', compact('companies', 'branches'))->with('check_type', 'checkout');
@@ -188,15 +168,10 @@ class SecurityQuestionController extends Controller
             
             if (!empty($userBranchIds)) {
                 $branches = Branch::whereIn('id', $userBranchIds)->get();
-            } else {
-                // Fallback to single branch if user has branch_id set
-                if ($user->branch_id) {
-                    $branches = Branch::where('id', $user->branch_id)->get();
-                } else {
-                    // If no branches assigned, filter by company
-                    $branches = Branch::where('company_id', $user->company_id)->get();
-                }
+            } elseif ($user->branch_id) {
+                $branches = Branch::where('id', $user->branch_id)->get();
             }
+            // If no branches assigned, $branches remains empty
         } else {
             $branches = Branch::where('company_id', $securityQuestion->company_id)->get();
         }

@@ -320,7 +320,7 @@ class ReportController extends Controller
 
     private function getDepartments($request)
     {
-        $query = Department::query();
+        $query = Department::select('id', 'name', 'branch_id');
         
         // For non-superadmins, filter by user's company
         if (auth()->user()->role !== 'superadmin') {
@@ -336,7 +336,7 @@ class ReportController extends Controller
         }
         // If superadmin and no company selected, return all departments
         
-        return $query->pluck('name', 'id')->toArray();
+        return $query->get()->keyBy('id')->toArray();
     }
 
     private function getBranches($request)

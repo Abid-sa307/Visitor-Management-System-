@@ -114,6 +114,12 @@
                                                     @endif
                                                 @endif
                                                 
+                                                <div class="mt-3">
+                                                    <label for="attachment_{{ $index }}" class="form-label small text-muted">
+                                                        <i class="bi bi-paperclip me-1"></i>Attach File (Optional)
+                                                    </label>
+                                                    <input type="file" class="form-control form-control-sm" name="attachments[{{ $index }}]" id="attachment_{{ $index }}">
+                                                </div>
                                                 <input type="hidden" name="questions[{{ $index }}]" value="{{ $question->id }}">
                                             </div>
                                         </div>

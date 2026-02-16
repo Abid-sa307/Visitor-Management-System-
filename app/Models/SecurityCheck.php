@@ -12,12 +12,14 @@ class SecurityCheck extends Model
         'check_type',
         'questions', 
         'responses', 
+        'attachments',
         'security_officer_name'
     ];
 
     protected $casts = [
         'questions' => 'array',
         'responses' => 'array',
+        'attachments' => 'array',
     ];
     
     protected $appends = ['visitor_photo_url', 'signature_url'];

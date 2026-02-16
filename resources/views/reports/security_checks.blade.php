@@ -97,6 +97,8 @@
                             @endforeach
                         </select>
                     </div>
+                    @else
+                        <input type="hidden" id="company_id" value="{{ auth()->user()->company_id }}">
                     @endif
 
                     {{-- 3️⃣ Branch --}}
@@ -104,8 +106,7 @@
                         <label class="form-label fw-semibold">Branch</label>
                         <div class="position-relative">
                             <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" 
-                                id="branchDropdownBtn"
-                                {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                                id="branchDropdownBtn">
                                 <span id="branchText">All Branches</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -127,8 +128,7 @@
                         <label class="form-label fw-semibold">Department</label>
                         <div class="position-relative">
                             <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="department" 
-                                id="departmentDropdownBtn"
-                                {{ !request('company_id') && auth()->user()->role === 'superadmin' ? 'disabled' : '' }}>
+                                id="departmentDropdownBtn">
                                 <span id="departmentText">All Departments</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -323,6 +323,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips
@@ -334,72 +335,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const companySelect = document.getElementById('company_id');
     const branchBtn = document.querySelector('[data-dropdown="branch"]');
     const departmentBtn = document.querySelector('[data-dropdown="department"]');
-    
-    // Server data
-    let allBranches = @json($branches ?? []);
-    // Store original full list of departments for the company
-    let initialDepartments = @json($departments ?? []);
-    // Current working list of departments (filtered or full)
-    let currentDepartments = initialDepartments;
-
-    // Helper to get URL params
-    function getUrlParamValues(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.getAll(param);
-    }
-
-    // Initialize Branches
-    function initBranches() {
-        const branchOptions = document.getElementById('branchOptions');
-        if (!branchOptions) return;
-        
-        branchOptions.innerHTML = '';
-        const branches = Array.isArray(allBranches) ? allBranches : Object.entries(allBranches).map(([id, name]) => ({id, name}));
-        const selectedIds = getUrlParamValues('branch_id[]');
-        
-        branches.forEach(branch => {
-            const id = branch.id;
-            const name = branch.name;
-            const isChecked = selectedIds.includes(String(id));
-            
-            const div = document.createElement('div');
-            div.className = 'form-check';
-            div.innerHTML = `
-                <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${id}" id="branch_${id}" ${isChecked ? 'checked' : ''} onchange="updateBranchText(); loadDepartmentsByBranches()">
-                <label class="form-check-label" for="branch_${id}">${name}</label>
-            `;
-            branchOptions.appendChild(div);
-        });
-        
-        updateBranchText();
-    }
-
-    // Initialize Departments
-    function initDepartments() {
-        const departmentOptions = document.getElementById('departmentOptions');
-        if (!departmentOptions) return;
-        
-        departmentOptions.innerHTML = '';
-        // Use currentDepartments instead of allDepartments (initialDepartments)
-        const departments = Array.isArray(currentDepartments) ? currentDepartments : Object.entries(currentDepartments).map(([id, name]) => ({id, name}));
-        const selectedIds = getUrlParamValues('department_id[]');
-        
-        departments.forEach(dept => {
-            const id = dept.id;
-            const name = dept.name;
-            const isChecked = selectedIds.includes(String(id));
-            
-            const div = document.createElement('div');
-            div.className = 'form-check';
-            div.innerHTML = `
-                <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${id}" id="dept_${id}" ${isChecked ? 'checked' : ''} onchange="updateDepartmentText()">
-                <label class="form-check-label" for="dept_${id}">${name}</label>
-            `;
-            departmentOptions.appendChild(div);
-        });
-        
-        updateDepartmentText();
-    }
 
     // Update Text Functions
     window.updateBranchText = function() {
@@ -436,40 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // Load Departments based on selected branches
-    window.loadDepartmentsByBranches = function() {
-        const selectedBranches = Array.from(document.querySelectorAll('.branch-checkbox:checked')).map(cb => cb.value);
-        const departmentText = document.getElementById('departmentText');
-        
-        // If no branches selected, reset to full company list
-        if (selectedBranches.length === 0) {
-            currentDepartments = initialDepartments;
-            initDepartments();
-            return;
-        }
-        
-        if (departmentText) departmentText.textContent = 'Loading...';
-        
-        Promise.all(selectedBranches.map(branchId => 
-            fetch(`/api/branches/${branchId}/departments`).then(r => r.json())
-        )).then(results => {
-            // results is array of arrays of departments [{id, name, ...}]
-            const deptMap = new Map();
-            results.forEach(deptList => {
-                deptList.forEach(dept => {
-                    deptMap.set(String(dept.id), dept.name);
-                });
-            });
-            
-            // Update currentDepartments to normalized format
-            currentDepartments = Array.from(deptMap.entries()).map(([id, name]) => ({id, name}));
-            initDepartments();
-        }).catch(err => {
-            console.error('Error loading departments', err);
-            // Optionally handle error state
-        });
-    };
-
     // Toggle Dropdowns
     if (branchBtn) {
         branchBtn.addEventListener('click', function(e) {
@@ -508,9 +409,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAllBranches = document.getElementById('selectAllBranches');
     if (selectAllBranches) {
         selectAllBranches.addEventListener('change', function() {
-            document.querySelectorAll('.branch-checkbox').forEach(cb => cb.checked = this.checked);
+            const checkboxes = document.querySelectorAll('.branch-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
             updateBranchText();
-            loadDepartmentsByBranches();
+            // Trigger change event so cascading-dropdowns.js detects the update and loads departments
+            if (checkboxes.length > 0) {
+                checkboxes[0].dispatchEvent(new Event('change', { bubbles: true }));
+            }
         });
     }
 
@@ -542,28 +447,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             window.location.href = url.toString();
         });
-    }
-    
-    // Initial Load
-    initBranches();
-    // If we have selected branches in URL, filtering should happen automatically
-    // But initDepartments is called safely; let's check if we need to filter departments immediately.
-    // If branches are selected, the currentDepartments (initialized with ALL) might show incorrect options 
-    // until user interacts, UNLESS we call loadDepartmentsByBranches here.
-    // BUT loadDepartmentsByBranches does async fetch.
-    
-    // Should we trigger load?
-    if (document.querySelectorAll('.branch-checkbox:checked').length > 0) {
-        loadDepartmentsByBranches();
-        // Note: this will async refresh departments.
-        // The checkboxes for departments will be re-drawn.
-        // If a department is selected causing the page load, `initDepartments` (called below) 
-        // will visually check it based on URL. 
-        // THEN `loadDepartmentsByBranches` finishes and re-draws the list. 
-        // We need to ensure `initDepartments` logic of re-checking boxes persists in `loadDepartmentsByBranches`.
-        // `initDepartments` logic reads URL, so even after async re-draw, it should check the boxes if valid.
-    } else {
-        initDepartments();
     }
 });
 </script>

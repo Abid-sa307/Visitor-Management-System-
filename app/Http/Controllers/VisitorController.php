@@ -26,6 +26,8 @@ use App\Exports\ArrayExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VisitorNotificationMail;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\CompanyUser;
 
 
@@ -1031,6 +1033,10 @@ class VisitorController extends Controller
             try {
                 \Log::info('Attempting to send visitor approval email (Full Update)');
                 \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorApprovedMail($visitor), $visitor->email);
+                
+                // Notify Company Users
+                $this->notifyCompanyUsers($visitor, 'approved');
+                
                 \Log::info('Visitor approval email dispatched successfully (Full Update)');
             } catch (\Throwable $e) {
                 \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
@@ -1121,6 +1127,36 @@ class VisitorController extends Controller
             $departments = Department::where('company_id', $request->company_id)
                 ->orderBy('name')
                 ->get();
+        } elseif (!$this->isSuper()) {
+            // Company user - get their assigned branches
+            $user = Auth::guard('company')->check() ? Auth::guard('company')->user() : Auth::user();
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)->orderBy('name')->get();
+                
+                // Get user's assigned department IDs
+                $userDepartmentIds = $user->departments()->pluck('departments.id')->toArray();
+                
+                if (!empty($userDepartmentIds)) {
+                    // Filter departments by user's assigned departments
+                    $departments = Department::whereIn('id', $userDepartmentIds)->orderBy('name')->get();
+                } else {
+                    // Fallback: filter departments by user's assigned branches
+                    $departments = Department::whereIn('branch_id', $userBranchIds)->orderBy('name')->get();
+                }
+            } elseif ($user->branch_id) {
+                $branches = Branch::where('id', $user->branch_id)->get();
+                
+                // Get user's assigned department IDs
+                $userDepartmentIds = $user->departments()->pluck('departments.id')->toArray();
+                
+                if (!empty($userDepartmentIds)) {
+                    $departments = Department::whereIn('id', $userDepartmentIds)->orderBy('name')->get();
+                } else {
+                    $departments = Department::where('branch_id', $user->branch_id)->get();
+                }
+            }
         }
 
         return view('visitors.history', compact(
@@ -1365,8 +1401,15 @@ class VisitorController extends Controller
                      if (!empty($visitor->email)) {
                          \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorCreatedMail($visitor), $visitor->email);
                      }
+                     
+                     // Send Visit Request Email to Host
+                     $this->sendVisitRequestEmail($visitor);
+                     
+                     // Send Notification to Company Users
+                     $this->notifyCompanyUsers($visitor, 'created');
+                     
                 } catch (\Throwable $e) {
-                     \Log::warning('submitVisit: VisitorCreated mail dispatch failed: '.$e->getMessage());
+                     \Log::warning('submitVisit: Mail dispatch failed: '.$e->getMessage());
                 }
 
                 \DB::commit();
@@ -1869,9 +1912,15 @@ class VisitorController extends Controller
                     if ($action === 'in' || ($action !== 'out' && $action !== 'undo_in' && $action !== 'undo_out' && $visitor->in_time)) {
                         // Send check-in confirmation email
                         \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorStatusChangedMail($visitor, 'checked_in'), $visitor->email);
+                        // Notify Company Users
+                        $this->notifyCompanyUsers($visitor, 'checked_in');
+                         // For now, sticking to request at creation and status update at check-in.
+                         
                     } elseif ($action === 'out' || $visitor->out_time) {
                         // Send check-out confirmation email
                         \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorStatusChangedMail($visitor, 'checked_out'), $visitor->email);
+                        // Notify Company Users
+                        $this->notifyCompanyUsers($visitor, 'checked_out');
                     }
                 }
             } catch (\Throwable $e) {
@@ -3057,6 +3106,107 @@ class VisitorController extends Controller
         $visitor = Visitor::with(['company', 'branch', 'department'])->findOrFail($id);
         $company = $visitor->company;
         
-        return view('visitors.pass_pdf', compact('visitor', 'company'));
+        $pdf = Pdf::loadView('visitors.pass_pdf', compact('visitor', 'company'));
+        $pdf->setPaper([0, 0, 340.16, 204.09]); // 90mm x 54mm in points (approx)
+        
+        return $pdf->download('Visitor_Pass_' . $visitor->visitor_id . '.pdf');
+    }
+    /**
+     * Send ID card status notification (Optional, if needed for future)
+     */
+    public function sendIdCardStatusNotification($visitor, $status)
+    {
+        // Implementation if needed
+    }
+
+    /**
+     * Send Visit Request Email to Host
+     */
+    private function sendVisitRequestEmail(Visitor $visitor)
+    {
+        try {
+            if (empty($visitor->person_to_visit)) {
+                return;
+            }
+
+            // Find employee by name (and company/branch if possible)
+            $query = \App\Models\Employee::where('name', $visitor->person_to_visit)
+                ->where('company_id', $visitor->company_id);
+                
+            if ($visitor->branch_id) {
+                // strict check might fail if branch names differ slightly, so rely on company first
+                // but if we can filter by branch, better.
+                $query->where(function($q) use ($visitor) {
+                    $q->where('branch_id', $visitor->branch_id)
+                      ->orWhereNull('branch_id');
+                });
+            }
+            
+            $employee = $query->first();
+
+            if ($employee && !empty($employee->email)) {
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitRequestMail($visitor), $employee->email);
+                \Log::info("Visit Request email sent to host: {$employee->email}");
+            } else {
+                \Log::info("Host email not found for: {$visitor->person_to_visit}");
+            }
+        } catch (\Throwable $e) {
+            \Log::error("Failed to send Visit Request email: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify Company Users about visitor events
+     * 
+     * @param Visitor $visitor
+     * @param string $type 'created', 'approved', 'checked_in', 'checked_out'
+     */
+    private function notifyCompanyUsers(Visitor $visitor, string $type)
+    {
+        try {
+            if (!$visitor->company) {
+                return;
+            }
+            
+            $users = \App\Models\CompanyUser::where('company_id', $visitor->company_id)->get();
+            
+            foreach ($users as $user) {
+                // Check if user belongs to visitor's branch (if applicable and property exists)
+                if (!empty($visitor->branch_id) && !empty($user->branch_id) && $user->branch_id != $visitor->branch_id) {
+                    continue;
+                }
+                
+                if (empty($user->email)) {
+                    continue;
+                }
+
+                // Determine Mailable based on type
+                $mailable = null;
+                switch ($type) {
+                    case 'created':
+                        // Re-using VisitorNotificationMail but passing 'created' type
+                        $mailable = new \App\Mail\VisitorNotificationMail($visitor, $user, 'created');
+                        break;
+                    case 'approved':
+                         // Re-using VisitorNotificationMail but passing 'approved' type
+                        $mailable = new \App\Mail\VisitorNotificationMail($visitor, $user, 'approved');
+                        break;
+                    case 'checked_in':
+                        $mailable = new \App\Mail\VisitorStatusChangedMail($visitor, 'Checked In', true);
+                        break;
+                    case 'checked_out':
+                        $mailable = new \App\Mail\VisitorStatusChangedMail($visitor, 'Checked Out', true);
+                        break;
+                }
+
+                if ($mailable) {
+                    \App\Jobs\SendVisitorEmail::dispatchSync($mailable, $user->email);
+                }
+            }
+            \Log::info("Company users notified for event: {$type}");
+
+        } catch (\Throwable $e) {
+            \Log::error("Failed to notify company users: " . $e->getMessage());
+        }
     }
 }

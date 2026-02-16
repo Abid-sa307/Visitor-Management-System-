@@ -125,29 +125,19 @@
 <strong>Behavior:</strong> If disabled, dropdown is locked with "None" option. If enabled, dropdown unlocks for selection.</small>
                 </div>
 
-                <div class="mb-3" id="security_none_container" style="{{ old('security_check_service', $company->security_check_service ?? 0) ? 'display: none;' : '' }}">
+                <div class="mb-3">
                     <label for="security_checkin_type" class="form-label">Security Check Type</label>
                     @php
                         $isSecurityEnabled = old('security_check_service', $company->security_check_service ?? 0);
+                        $currentType = old('security_checkin_type', $company->security_checkin_type);
+                        // If enabled but no type set, default to checkin. If disabled, force none.
+                        $selectedValue = $isSecurityEnabled ? ($currentType ?: 'checkin') : 'none';
                     @endphp
                     <select class="form-select" id="security_checkin_type" name="security_checkin_type" {{ !$isSecurityEnabled ? 'disabled' : '' }}>
-                        <option value="none" {{ !$isSecurityEnabled ? 'selected' : '' }}>None</option>
-                    </select>
-                    @php
-                        $isSecurityEnabled = old('security_check_service', $company->security_check_service ?? 0);
-                        $currentType = old('security_checkin_type', $company->security_checkin_type ?? 'both');
-                        $hiddenValue = $isSecurityEnabled ? $currentType : 'none';
-                    @endphp
-                    <input type="hidden" id="security_checkin_type_hidden" name="security_checkin_type_hidden" value="{{ old('security_checkin_type_hidden', $hiddenValue) }}">
-                    <small class="form-text text-muted d-block">Specify when security checks are required.</small>
-                </div>
-                
-                <div class="mb-3" id="security_options_container" style="{{ old('security_check_service', $company->security_check_service ?? 0) ? '' : 'display: none;' }}">
-                    <label for="security_checkin_type_enabled" class="form-label">Security Check Type</label>
-                    <select class="form-select" id="security_checkin_type_enabled" name="security_checkin_type">
-                        <option value="checkin" {{ old('security_checkin_type', $company->security_checkin_type) === 'checkin' ? 'selected' : ((old('security_checkin_type', $company->security_checkin_type)) ? '' : 'selected') }}>Check-in Only</option>
-                        <option value="checkout" {{ old('security_checkin_type', $company->security_checkin_type) === 'checkout' ? 'selected' : '' }}>Check-out Only</option>
-                        <option value="both" {{ old('security_checkin_type', $company->security_checkin_type) === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
+                        <option value="none" {{ $selectedValue === 'none' ? 'selected' : '' }}>None (Service Disabled)</option>
+                        <option value="checkin" {{ $selectedValue === 'checkin' ? 'selected' : '' }}>Check-in Only</option>
+                        <option value="checkout" {{ $selectedValue === 'checkout' ? 'selected' : '' }}>Check-out Only</option>
+                        <option value="both" {{ $selectedValue === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
                     </select>
                     <small class="form-text text-muted d-block">Specify when security checks are required.</small>
                 </div>
@@ -315,42 +305,30 @@ document.addEventListener('DOMContentLoaded', function(){
   const body = document.getElementById('branchesBody');
   const addBtn = document.getElementById('addBranchBtn');
   const securityCheckbox = document.getElementById('security_check_service');
-  const noneContainer = document.getElementById('security_none_container');
-  const optionsContainer = document.getElementById('security_options_container');
-  const optionsDropdown = document.getElementById('security_checkin_type_enabled');
-  const hiddenField = document.getElementById('security_checkin_type_hidden');
+  const typeDropdown = document.getElementById('security_checkin_type');
   
-  function toggleSecurityDropdown(isChange) {
-    if (!securityCheckbox) return;
+  function toggleSecurityDropdown() {
+    if (!securityCheckbox || !typeDropdown) return;
+    
     if (securityCheckbox.checked) {
-      noneContainer.style.display = 'none';
-      optionsContainer.style.display = 'block';
-      optionsDropdown.disabled = false;
-      
-      // If toggled by user, OR if no value is set, default to 'checkin'
-      if (isChange) {
-          optionsDropdown.value = 'checkin';
-      } else if (!optionsDropdown.value) {
-          optionsDropdown.value = 'checkin';
+      typeDropdown.disabled = false;
+      // If currently "none", switch to default "checkin"
+      if (typeDropdown.value === 'none') {
+          typeDropdown.value = 'checkin';
       }
-      
-      hiddenField.value = optionsDropdown.value;
     } else {
-      noneContainer.style.display = 'block';
-      optionsContainer.style.display = 'none';
-      optionsDropdown.disabled = true;
-      hiddenField.value = 'none';
+      typeDropdown.value = 'none';
+      typeDropdown.disabled = true;
     }
   }
   
   if (securityCheckbox) {
-    // Initial load: don't force 'checkin' if we have old/existing data
-    toggleSecurityDropdown(false);
+    // Initial load: logic handled by Blade for initial value/disabled state, 
+    // but we can ensure consistency or just attach listener.
+    // Actually Blade handles "disabled" attribute and "selected" value.
+    // So we just need listener for changes.
     
-    // User interaction: force 'checkin' default
-    securityCheckbox.onchange = function() { toggleSecurityDropdown(true); };
-    
-    if (optionsDropdown) optionsDropdown.onchange = function() { hiddenField.value = this.value; };
+    securityCheckbox.addEventListener('change', toggleSecurityDropdown);
   }
   
   document.querySelectorAll('.form-check-input[type="checkbox"]').forEach(function(checkbox) {

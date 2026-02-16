@@ -260,23 +260,14 @@
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
                                 <div class="btn-group" role="group">
                                     @if(in_array(trim($visitor->status), ['Approved', 'Completed']) || ($visitor->status !== 'Rejected' && $visitor->visitor_pass))
-                                        <a href="{{ route('public.visitors.pass', $visitor->id) }}" 
-                                           class="btn btn-success px-3" 
-                                           target="_blank"
-                                           title="Print Pass">
-                                            <i class="bi bi-printer me-2"></i>Print Pass
-                                        </a>
                                         <a href="{{ route('public.visitors.pass.pdf', $visitor->id) }}" 
-                                           class="btn btn-danger px-3"
-                                           title="Download PDF">
-                                            <i class="bi bi-file-pdf me-2"></i>Download PDF
+                                           class="btn btn-success px-3" 
+                                           title="Download Pass">
+                                            <i class="bi bi-printer me-2"></i> Download Pass
                                         </a>
                                     @else
                                         <button type="button" class="btn btn-secondary px-3" disabled title="Pass available after approval">
-                                            <i class="bi bi-lock-fill me-2"></i>Print Pass
-                                        </button>
-                                        <button type="button" class="btn btn-secondary px-3" disabled title="Pass available after approval">
-                                            <i class="bi bi-lock-fill me-2"></i>Download PDF
+                                            <i class="bi bi-lock-fill me-2"></i>Download Pass
                                         </button>
                                     @endif
                                 </div>

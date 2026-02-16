@@ -18,7 +18,7 @@
     ];
 @endphp
 
-<div class="container py-4">
+<div class="container-fluid px-4 py-4">
     <div class="bg-white shadow-sm rounded-4 p-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <h2 class="fw-bold text-primary m-0">Users</h2>

@@ -10,12 +10,7 @@
                     <h1 class="h3 mb-0 text-gray-800">Profile Settings</h1>
                     <p class="text-muted mb-0">Manage your account information and security settings</p>
                 </div>
-                <div class="text-end">
-                    <span class="badge bg-primary px-3 py-2 rounded-pill">
-                        <i class="fas fa-user me-1"></i>
-                        {{ Auth::guard('company')->check() ? 'Company User' : 'Admin User' }}
-                    </span>
-                </div>
+                
             </div>
 
             @if ($errors->any())
@@ -167,16 +162,7 @@
                             </div>
                             
                             <div class="info-list">
-                                <div class="info-item d-flex justify-content-between py-2 border-bottom">
-                                    <span class="text-muted">Account Type</span>
-                                    <span class="fw-medium">{{ Auth::guard('company')->check() ? 'Company' : 'Admin' }}</span>
-                                </div>
-                                @if(Auth::guard('company')->check() && $user->company)
-                                <div class="info-item d-flex justify-content-between py-2 border-bottom">
-                                    <span class="text-muted">Company</span>
-                                    <span class="fw-medium">{{ $user->company->name }}</span>
-                                </div>
-                                @endif
+                                
                                 <div class="info-item d-flex justify-content-between py-2 border-bottom">
                                     <span class="text-muted">Member Since</span>
                                     <span class="fw-medium">{{ $user->created_at->format('M Y') }}</span>

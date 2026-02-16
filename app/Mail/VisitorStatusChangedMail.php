@@ -25,7 +25,7 @@ class VisitorStatusChangedMail extends Mailable
     public function build()
     {
         $subject = $this->isCompanyUser 
-            ? "Visitor {$this->visitor->name} has been {$this->status}"
+            ? "Visitor Status Update: {$this->visitor->name} - {$this->status}"
             : "Your visit has been " . ($this->status === 'approved' ? 'approved' : $this->status);
             
         return $this->subject($subject . ' - ' . config('app.name'))

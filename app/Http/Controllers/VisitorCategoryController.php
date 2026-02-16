@@ -52,14 +52,30 @@ class VisitorCategoryController extends Controller
                 $branches = Branch::orderBy('name')->pluck('name', 'id')->toArray();
             }
         } else {
-            // For company users, get their company's branches
-            // Respect user's branch assignment if any?
-            // Usually keeping it consistently "Company Branches" for filtering is safer for now, 
-            // similar to User controller logic.
-            $branches = Branch::where('company_id', $user->company_id)
-                ->orderBy('name')
-                ->pluck('name', 'id')
-                ->toArray();
+            // For company users, get their assigned branches
+            $userBranchIds = $user->branches()->pluck('branches.id')->toArray();
+            
+            if (!empty($userBranchIds)) {
+                $branches = Branch::whereIn('id', $userBranchIds)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } elseif ($user->branch_id) {
+                $branches = Branch::where('id', $user->branch_id)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } else {
+                // Determine if we should show all branches or none if no assignment
+                // For now, if no explicit assignment, maybe show all (legacy behavior) or none?
+                // Based on other controllers, if no assignment, we might default to company wide or restricted.
+                // But usually users have at least one branch or are admins.
+                // Let's stick to: if no branches assigned via pivot or direct id, show all company branches (as fallback)
+                $branches = Branch::where('company_id', $user->company_id)
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            }
         }
 
         return view('visitor-categories.index', compact('categories', 'companies', 'branches', 'isSuper'));

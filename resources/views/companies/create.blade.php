@@ -188,19 +188,11 @@
                             <small class="form-text text-muted d-block">When enabled, visitors must complete security check-in and check-out procedures.</small>
                         </div>
 
-                        <div class="mb-3" id="security_check_type_container">
+                        <div class="mb-3">
                             <label for="security_checkin_type" class="form-label">Security Check Type</label>
                             <select class="form-select" id="security_checkin_type" name="security_checkin_type" disabled>
-                                <option value="none" selected>None (Security Check Service Disabled)</option>
-                            </select>
-                            <input type="hidden" id="security_checkin_type_hidden" name="security_checkin_type" value="none">
-                            <small class="form-text text-muted d-block">Enable Security Check Service above to configure security check options.</small>
-                        </div>
-                        
-                        <div class="mb-3" id="security_options_container" style="display: none;">
-                            <label for="security_checkin_type_enabled" class="form-label">Security Check Type</label>
-                            <select class="form-select" id="security_checkin_type_enabled" name="security_checkin_type">
-                                <option value="checkin" {{ old('security_checkin_type') === 'checkin' ? 'selected' : (old('security_checkin_type') ? '' : 'selected') }}>Check-in Only</option>
+                                <option value="none">None (Service Disabled)</option>
+                                <option value="checkin" {{ old('security_checkin_type') === 'checkin' ? 'selected' : '' }}>Check-in Only</option>
                                 <option value="checkout" {{ old('security_checkin_type') === 'checkout' ? 'selected' : '' }}>Check-out Only</option>
                                 <option value="both" {{ old('security_checkin_type') === 'both' ? 'selected' : '' }}>Both Check-in & Check-out</option>
                             </select>
@@ -268,42 +260,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Security toggle
     const securityCheckbox = document.getElementById('security_check_service');
-    const noneContainer = document.getElementById('security_check_type_container');
-    const optionsContainer = document.getElementById('security_options_container');
-    const optionsDropdown = document.getElementById('security_checkin_type_enabled');
-    const hiddenField = document.getElementById('security_checkin_type_hidden');
+    const typeDropdown = document.getElementById('security_checkin_type');
     
-    function updateSecurityState(isChange) {
-        if (!securityCheckbox) return;
+    function updateSecurityState() {
+        if (!securityCheckbox || !typeDropdown) return;
+        
         if (securityCheckbox.checked) {
-            noneContainer.style.display = 'none';
-            optionsContainer.style.display = 'block';
-            optionsDropdown.disabled = false;
-            
-            // If toggled by user, OR if no value is set, default to 'checkin'
-            if (isChange) {
-                optionsDropdown.value = 'checkin';
-            } else if (!optionsDropdown.value) {
-                optionsDropdown.value = 'checkin';
+            typeDropdown.disabled = false;
+            // If currently "none", switch to default "checkin"
+            if (typeDropdown.value === 'none') {
+                typeDropdown.value = 'checkin';
             }
-            
-            hiddenField.value = optionsDropdown.value;
         } else {
-            noneContainer.style.display = 'block';
-            optionsContainer.style.display = 'none';
-            optionsDropdown.disabled = true;
-            hiddenField.value = 'none';
+            typeDropdown.value = 'none';
+            typeDropdown.disabled = true;
         }
     }
     
     if (securityCheckbox) {
-        // Initial load: preserve old value if present
-        updateSecurityState(false);
+        // Initial state
+        updateSecurityState();
         
-        // User interaction: force 'checkin' default
-        securityCheckbox.onchange = function() { updateSecurityState(true); };
-        
-        if (optionsDropdown) optionsDropdown.onchange = function() { hiddenField.value = this.value; };
+        // Change listener
+        securityCheckbox.addEventListener('change', updateSecurityState);
     }
     
     // Toggle labels

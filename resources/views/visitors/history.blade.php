@@ -41,7 +41,7 @@
                     <div class="col-lg-2 col-md-6">
                         <label for="branch_id" class="form-label">Branch</label>
                         <div class="position-relative">
-                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" id="branchDropdownBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" id="branchDropdownBtn">
                                 <span id="branchText">All Branches</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -51,8 +51,8 @@
                                     <label class="form-check-label fw-bold" for="selectAllBranches">Select All</label>
                                 </div>
                                 <hr class="my-1">
-                                <div style="max-height: 120px; overflow-y: auto;">
-                                @if(request('company_id'))
+                                <div style="max-height: 120px; overflow-y: auto;" id="branchOptions">
+                                @if($branches->count() > 0)
                                     @foreach($branches as $branch)
                                         <div class="form-check">
                                             <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="{{ $branch->id }}" id="branch{{ $branch->id }}"
@@ -83,7 +83,7 @@
                                 </div>
                                 <hr class="my-1">
                                 <div style="max-height: 120px; overflow-y: auto;" id="departmentList">
-                                @if(request('company_id'))
+                                @if($departments->count() > 0)
                                     @foreach($departments as $dept)
                                         <div class="form-check">
                                             <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="{{ $dept->id }}" id="dept{{ $dept->id }}"
@@ -192,7 +192,7 @@
 @push('scripts')
 <script>
 // Pass server-side data to JavaScript for company users
-window.serverBranches = @json($branches ?? []);
+window.serverBranches = @json($branches->pluck('name', 'id'));
 
 // Get full department data with branch_id
 @php

@@ -72,7 +72,7 @@
                 @endif
                 <div class="col-md-3">
                     <div class="position-relative">
-                        <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if($isSuper && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @elseif(!$isSuper && $branches->isEmpty()) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
+                        <button class="btn btn-outline-secondary w-100 text-start" type="button" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if($isSuper && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
                             <span id="branchText">All Branches</span>
                             <i class="fas fa-chevron-down float-end mt-1"></i>
                         </button>
@@ -165,6 +165,12 @@
 </div>
 
 @push('scripts')
+<script>
+// Make branches available to cascading-dropdowns.js
+@if(!$isSuper)
+    window.serverBranches = @json($branches->pluck('name', 'id'));
+@endif
+</script>
 <script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
 <script>
 const allBranches = @json($branches ?? []);
@@ -172,23 +178,31 @@ const branchOptions = document.getElementById('branchOptions');
 const branchBtn = document.querySelector('[data-dropdown="branch"]');
 
 // Initialize branches for company users
-if (!@json($isSuper) && allBranches.length > 0) {
+if (!@json($isSuper)) {
+    // Convert to array if it's an object or already an array
     const branches = Array.isArray(allBranches) ? allBranches : Object.values(allBranches);
-    branches.forEach(branch => {
-        const div = document.createElement('div');
-        div.className = 'form-check';
-        div.innerHTML = `
-            <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${branch.id}" id="branch_${branch.id}" onchange="updateBranchText()">
-            <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
-        `;
-        branchOptions.appendChild(div);
-    });
-    if (branchBtn) {
-        branchBtn.disabled = false;
-        branchBtn.style.opacity = '1';
-        branchBtn.style.cursor = 'pointer';
+    
+    if (branches.length > 0) {
+        branches.forEach(branch => {
+            const div = document.createElement('div');
+            div.className = 'form-check';
+            div.innerHTML = `
+                <input class="form-check-input branch-checkbox" type="checkbox" name="branch_id[]" value="${branch.id}" id="branch_${branch.id}" onchange="updateBranchText()">
+                <label class="form-check-label" for="branch_${branch.id}">${branch.name}</label>
+            `;
+            branchOptions.appendChild(div);
+        });
+        
+        // Unlock the button
+        if (branchBtn) {
+            branchBtn.disabled = false;
+            branchBtn.style.opacity = '1';
+            branchBtn.style.cursor = 'pointer';
+        }
     }
 }
+
+
 
 window.toggleAllBranches = function() {
     const selectAll = document.getElementById('selectAllBranches');

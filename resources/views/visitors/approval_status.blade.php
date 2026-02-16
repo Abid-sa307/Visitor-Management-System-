@@ -53,7 +53,7 @@
                     <div class="col-lg-2 col-md-6">
                         <label class="form-label">Branch</label>
                         <div class="position-relative">
-                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchBtn" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchBtn" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'">
                                 <span id="branchText">All Branches</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -74,7 +74,7 @@
                     <div class="col-lg-2 col-md-6">
                         <label class="form-label">Department</label>
                         <div class="position-relative">
-                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="departmentBtn" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="departmentBtn" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'">
                                 <span id="departmentText">All Departments</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -179,6 +179,10 @@
 </div>
 
 @push('scripts')
+<script>
+    window.serverBranches = @json($branches ?? []);
+    window.serverDepartments = @json($departments ?? []);
+</script>
 <script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
 <script>
     // Multi-select functions

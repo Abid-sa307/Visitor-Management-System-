@@ -50,7 +50,6 @@ class CascadingDropdowns {
 
         // Branch selection handler
         if (this.branchMenu) {
-            let departmentsLoaded = false;
             this.branchMenu.addEventListener("change", (e) => {
                 if (e.target.classList.contains("branch-checkbox")) {
                     const anyChecked =
@@ -58,14 +57,11 @@ class CascadingDropdowns {
                             .length > 0;
                     if (anyChecked && this.companySelect.value) {
                         this.unlockDropdown("department");
-                        if (!departmentsLoaded) {
-                            this.loadDepartments(this.companySelect.value);
-                            departmentsLoaded = true;
-                        }
+                        // Always reload departments when branch selection changes
+                        this.loadDepartments(this.companySelect.value);
                     } else {
                         this.lockDropdown("department");
                         this.clearDropdown("department");
-                        departmentsLoaded = false;
                     }
                 }
             });
@@ -161,20 +157,29 @@ class CascadingDropdowns {
         departmentOptions.innerHTML = "";
         let hasMatchingDepartments = false;
 
-        Object.entries(this.allDepartments).forEach(([id, dept]) => {
+        Object.entries(this.allDepartments).forEach(([key, dept]) => {
+            const id = (typeof dept === 'object' && dept.id) ? dept.id : key;
+            const name = (typeof dept === 'object' && dept.name) ? dept.name : dept;
+
             // Only show departments that belong to one of the selected branches
-            if (branchIds.includes(String(dept.branch_id))) {
+            const match = dept.branch_id && branchIds.includes(String(dept.branch_id));
+
+            if (match) {
                 hasMatchingDepartments = true;
                 const isChecked = selectedDepartments.includes(String(id));
                 const div = document.createElement("div");
                 div.className = "form-check";
                 div.innerHTML = `
                     <input class="form-check-input department-checkbox" type="checkbox" name="department_id[]" value="${id}" id="department_${id}" ${isChecked ? "checked" : ""} onchange="window.updateDepartmentText ? window.updateDepartmentText() : null">
-                    <label class="form-check-label" for="department_${id}">${dept.name}</label>
+                    <label class="form-check-label" for="department_${id}">${name}</label>
                 `;
                 departmentOptions.appendChild(div);
             }
         });
+
+        if (!hasMatchingDepartments) {
+             departmentOptions.innerHTML = '<div class="text-muted">No departments for selected branch(es)</div>';
+        }
 
         if (!hasMatchingDepartments) {
             departmentOptions.innerHTML =

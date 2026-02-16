@@ -211,6 +211,7 @@ class SecurityCheckController extends Controller
             'officer_badge' => 'nullable|string|max:100',
             'captured_photo' => 'nullable|string',
             'photo_responses' => 'nullable|array',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
         ]);
 
         // Check if visitor has completed the visit form
@@ -241,12 +242,28 @@ class SecurityCheckController extends Controller
                 }
             }
 
+            // Process file attachments for questions
+            $attachments = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    if ($file) {
+                        try {
+                            $path = $file->store('security_attachments', 'public');
+                            $attachments[$index] = $path;
+                        } catch (\Exception $e) {
+                            \Log::error('File upload failed: ' . $e->getMessage());
+                        }
+                    }
+                }
+            }
+
             // Create the security check record
             $securityCheck = SecurityCheck::create([
                 'visitor_id' => $request->visitor_id,
                 'check_type' => $request->check_type,
                 'questions' => $request->questions ?? [],
                 'responses' => $request->responses ?? [],
+                'attachments' => $attachments,
                 'security_officer_name' => $request->security_officer_name,
             ]);
 

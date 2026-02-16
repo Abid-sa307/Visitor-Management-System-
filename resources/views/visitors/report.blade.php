@@ -40,7 +40,8 @@
     {{-- =================== FILTERS CARD =================== --}}
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form method="GET" id="reportFilterForm">
+
+            <form method="GET" action="{{ route($isCompany ? 'company.reports.visitors' : 'reports.visitors') }}" id="inoutFilterForm">
                 <div class="row g-3 align-items-end">
                     {{-- 1️⃣ Date Range (first) --}}
                     <div class="col-lg-4 col-md-6">
@@ -58,13 +59,15 @@
                             @endforeach
                         </select>
                     </div>
+                    @else
+                        <input type="hidden" id="company_id" value="{{ auth()->user()->company_id }}">
                     @endif
 
                     {{-- 3️⃣ Branch --}}
                     <div class="col-lg-2 col-md-6">
                         <label class="form-label">Branch</label>
                         <div class="position-relative">
-                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchBtn" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'" @if(auth()->user()->role === 'superadmin' && !request('company_id')) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="branchBtn" data-dropdown="branch" onclick="document.getElementById('branchDropdownMenu').style.display = document.getElementById('branchDropdownMenu').style.display === 'block' ? 'none' : 'block'">
                                 <span id="branchText">All Branches</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -86,7 +89,7 @@
                     <div class="col-lg-2 col-md-6">
                         <label class="form-label">Department</label>
                         <div class="position-relative">
-                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="departmentBtn" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <button class="btn btn-outline-secondary w-100 text-start" type="button" id="departmentBtn" data-dropdown="department" onclick="document.getElementById('departmentDropdownMenu').style.display = document.getElementById('departmentDropdownMenu').style.display === 'block' ? 'none' : 'block'">
                                 <span id="departmentText">All Departments</span>
                                 <i class="fas fa-chevron-down float-end mt-1"></i>
                             </button>
@@ -117,6 +120,8 @@
             </form>
         </div>
     </div>
+
+
 
     @push('scripts')
     <script src="{{ asset('js/cascading-dropdowns.js') }}"></script>
