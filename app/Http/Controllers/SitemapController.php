@@ -57,6 +57,23 @@ class SitemapController extends Controller
             $urls[] = ['loc' => url('/' . $uri), 'changefreq' => 'weekly', 'priority' => '0.7'];
         }
 
+        // Add country pages from VmsLandingController
+        $countries = array_keys($this->getCountriesFromController());
+        foreach ($countries as $country) {
+            if (Route::has('vms.country')) {
+                $urls[] = [
+                    'loc' => route('vms.country', $country),
+                    'changefreq' => 'monthly',
+                    'priority' => '0.6'
+                ];
+            }
+        }
+
         return $urls;
+    }
+
+    private function getCountriesFromController(): array
+    {
+        return VmsLandingController::getCountries();
     }
 }

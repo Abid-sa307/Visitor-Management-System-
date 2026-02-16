@@ -69,6 +69,9 @@ Route::view('/healthcare-facilities', 'pages.healthcare-facilities')->name('heal
 Route::view('/malls-and-events', 'pages.malls-and-events')->name('malls-and-events');
 Route::view('/temple-and-dargah', 'pages.temple-and-dargah')->name('temple-and-dargah');
 
+// Country Pages
+Route::get('/visitor-management-system-in-{country}', [App\Http\Controllers\VmsLandingController::class, 'country'])->name('vms.country');
+
 // Public QR Code Routes (no auth required) - MUST be before any middleware groups
 Route::get('/companies/{company}/public/qr', [QRManagementController::class, 'show'])->name('companies.public.qr');
 Route::get('/companies/{company}/public-qr', [QRManagementController::class, 'show'])->name('companies.public-qr'); // Alias with hyphen
