@@ -37,8 +37,8 @@ Route::get('/', function () {
 // Public Static Pages
 Route::view('/about', 'about')->name('about');
 Route::view('/contact', 'contact')->name('contact');
-Route::view('/pricing', 'pricing')->name('pricing');
-Route::view('/partner', 'partner')->name('partner');
+Route::view('/pricing-visitor-management-system', 'pricing')->name('pricing');
+Route::view('/partner-visitor-management-system', 'partner')->name('partner');
 
 // Blog
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
@@ -48,15 +48,15 @@ Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/company/login', [CompanyLoginController::class, 'showLoginForm'])->name('company.login');
 
 // Solutions / Industries
-Route::view('/industrial-manufacturing-unit', 'pages.industrial-manufacturing-unit')->name('industrial-manufacturing-unit');
-Route::view('/industrial-and-cold-storage', 'pages.industrial-and-cold-storage')->name('industrial-and-cold-storage');
-Route::view('/school-and-colleges', 'pages.school-and-colleges')->name('school-and-colleges');
-Route::view('/resident-societies', 'pages.resident-societies')->name('resident-societies');
-Route::view('/resident-buildings', 'pages.resident-buildings')->name('resident-buildings');
-Route::view('/office-workplace-management', 'pages.office-workplace-management')->name('office-workplace-management');
-Route::view('/healthcare-facilities', 'pages.healthcare-facilities')->name('healthcare-facilities');
-Route::view('/malls-and-events', 'pages.malls-and-events')->name('malls-and-events');
-Route::view('/temple-and-dargah', 'pages.temple-and-dargah')->name('temple-and-dargah');
+Route::view('/industrial-manufacturing-unit-visitor-management-system', 'pages.industrial-manufacturing-unit')->name('industrial-manufacturing-unit');
+Route::view('/industrial-and-cold-storage-visitor-management-system', 'pages.industrial-and-cold-storage')->name('industrial-and-cold-storage');
+Route::view('/school-and-colleges-visitor-management-system', 'pages.school-and-colleges')->name('school-and-colleges');
+Route::view('/resident-societies-visitor-management-system', 'pages.resident-societies')->name('resident-societies');
+Route::view('/resident-building-visitor-management-systems', 'pages.resident-buildings')->name('resident-buildings');
+Route::view('/office-workplace-management-visitor-management-system', 'pages.office-workplace-management')->name('office-workplace-management');
+Route::view('/healthcare-facilities-visitor-management-system', 'pages.healthcare-facilities')->name('healthcare-facilities');
+Route::view('/malls-and-events-visitor-management-system', 'pages.malls-and-events')->name('malls-and-events');
+Route::view('/holy-places-visitor-management-system', 'pages.temple-and-dargah')->name('temple-and-dargah');
 
 // Public QR Code Routes (no auth required) - MUST be before any middleware groups
 Route::get('/companies/{company}/public/qr', [QRManagementController::class, 'show'])->name('companies.public.qr');

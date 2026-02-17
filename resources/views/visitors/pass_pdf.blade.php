@@ -16,8 +16,9 @@
         }
         .visitor-pass {
             width: 100%;
-            height: 100%;
+            /* height: 100%; Removed to prevent forcing 2nd page */
             border: 1px solid #d1d5db;
+            page-break-inside: avoid;
         }
         table {
             width: 100%;

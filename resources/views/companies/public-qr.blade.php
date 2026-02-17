@@ -213,12 +213,12 @@ function downloadQRCode() {
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.font = 'bold 90px Arial, sans-serif';
-        ctx.fillText('{{ addslashes($company->name) }}', width / 2, 180);
+        ctx.fillText({!! json_encode($company->name) !!}, width / 2, 180);
         
         @if($branch)
         // Branch name in header
         ctx.font = '60px Arial, sans-serif';
-        ctx.fillText('{{ addslashes($branch->name) }} Branch', width / 2, 280);
+        ctx.fillText({!! json_encode($branch->name) !!} + ' Branch', width / 2, 280);
         @endif
         
         // Branch Contact Details Section (below header)
@@ -234,18 +234,18 @@ function downloadQRCode() {
         detailsY += 70;
         
         @if($branch->phone)
-        ctx.fillText('📞 {{ addslashes($branch->phone) }}', width / 2, detailsY);
+        ctx.fillText('📞 ' + {!! json_encode($branch->phone) !!}, width / 2, detailsY);
         detailsY += 60;
         @endif
         
         @if($branch->email)
-        ctx.fillText('✉️ {{ addslashes($branch->email) }}', width / 2, detailsY);
+        ctx.fillText('✉️ ' + {!! json_encode($branch->email) !!}, width / 2, detailsY);
         detailsY += 60;
         @endif
         
         @if($branch->address)
         // Handle long addresses by wrapping text
-        const address = '{{ addslashes($branch->address) }}';
+        const address = {!! json_encode($branch->address) !!};
         const maxWidth = width - 400;
         const words = address.split(' ');
         let line = '';
@@ -299,7 +299,7 @@ function downloadQRCode() {
         ctx.textAlign = 'center';
         const instructionY = qrY + qrSize + 150;
         @if($branch)
-        ctx.fillText('Scan to Visitor Form at {{ addslashes($branch->name) }}', width / 2, instructionY);
+        ctx.fillText('Scan to Visitor Form at ' + {!! json_encode($branch->name) !!}, width / 2, instructionY);
         @else
         ctx.fillText('Scan to Visitor Form', width / 2, instructionY);
         @endif
@@ -307,7 +307,7 @@ function downloadQRCode() {
         // URL section
         ctx.fillStyle = '#7f8c8d';
         ctx.font = '45px Arial, sans-serif';
-        const urlText = '{{ $url }}';
+        const urlText = {!! json_encode($url) !!};
         ctx.fillText(urlText, width / 2, instructionY + 100);
         
         // Instructions section

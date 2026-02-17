@@ -207,10 +207,11 @@
                                     </span>
                                 </td>
                                 <td class="text-center action-buttons">
-                                    <button class="btn btn-sm btn-outline-primary" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#detailsModal{{ $check->id }}">
-                                        <i class="fas fa-eye"></i> View
+                                    <button class="btn btn-sm btn-outline-primary text-nowrap" 
+                                            data-toggle="modal" 
+                                            data-target="#detailsModal{{ $check->id }}">
+                                        <i class="fas fa-file-alt me-1"></i>
+                                        {{ ucfirst($check->check_type ?? 'checkin') }} Report
                                     </button>
                                 </td>
                             </tr>
@@ -249,6 +250,8 @@
     </div>
 </div>
 
+
+
 @foreach($securityChecks as $check)
 <!-- Details Modal -->
 <div class="modal fade" id="detailsModal{{ $check->id }}" tabindex="-1" aria-hidden="true">
@@ -256,7 +259,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Security Check Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="row">
@@ -268,7 +273,7 @@
                                 <td>{{ $check->visitor->name }}</td>
                             </tr>
                             <tr>
-                                <th>Phone:</th>
+                                <th class="w-25">Phone:</th>
                                 <td>{{ $check->visitor->phone }}</td>
                             </tr>
                             <tr>
@@ -311,9 +316,53 @@
                         </table>
                     </div>
                 </div>
+
+                <hr>
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Security Questions & Responses</h6>
+                        @if(is_array($check->questions) && count($check->questions) > 0)
+                            <div class="accordion" id="accordionQuestions{{ $check->id }}">
+                                @foreach($check->questions as $index => $question)
+                                    <div class="card mb-2 border-light bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="fw-bold text-dark mb-1">Q{{ $loop->iteration }}: {{ $question }}</div>
+                                            <div class="text-secondary ms-3 small">
+                                                <i class="fas fa-reply fa-flip-horizontal me-1"></i>
+                                                {{ $check->responses[$index] ?? 'No response recorded' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="alert alert-light text-center text-muted">
+                                No security questions recorded for this check.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Attachments Section (if applicable) -->
+                @if(isset($check->attachments) && !empty($check->attachments))
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Attachments</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach($check->attachments as $attachment)
+                                <a href="{{ asset('storage/' . $attachment) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-paperclip me-1"></i> View Attachment
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
