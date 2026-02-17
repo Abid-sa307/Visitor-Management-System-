@@ -276,7 +276,7 @@ function downloadQRCode() {
         @if($branch)
         ctx.fillText('Scan to fill visitor form at ' + {!! json_encode($branch->name) !!}, width / 2, instructionY);
         @else
-        ctx.fillText('Scan to Check-in', width / 2, instructionY);
+        ctx.fillText('Scan to fill visitor form', width / 2, instructionY);
         @endif
         
         // URL section
