@@ -17,6 +17,7 @@ use App\Http\Controllers\Auth\CompanyLoginController;
 use App\Http\Controllers\SecurityQuestionController;
 use App\Http\Controllers\QRManagementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SitemapController;
 use App\Models\Company;
 
 /*
@@ -39,6 +40,18 @@ Route::view('/about', 'about')->name('about');
 Route::view('/contact', 'contact')->name('contact');
 Route::view('/pricing-visitor-management-system', 'pricing')->name('pricing');
 Route::view('/partner-visitor-management-system', 'partner')->name('partner');
+Route::view('/pricing', 'pricing')->name('pricing');
+Route::view('/partner', 'partner')->name('partner');
+Route::view('/privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
+Route::view('/terms-of-use', 'pages.terms-of-use')->name('terms-of-use');
+Route::view('/refund-and-cancellation', 'pages.refund-and-cancellation')->name('refund-and-cancellation');
+Route::view('/service-agreement', 'pages.service-agreement')->name('service-agreement');
+
+// SEO Pages
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
+Route::get('/robots.txt', function() {
+    return response("User-agent: *\nAllow: /\nSitemap: " . url('/sitemap.xml') . "\nHost: https://visitormanagmentsoftware.com")->header('Content-Type', 'text/plain');
+});
 
 // Blog
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
@@ -57,6 +70,9 @@ Route::view('/office-workplace-management-visitor-management-system', 'pages.off
 Route::view('/healthcare-facilities-visitor-management-system', 'pages.healthcare-facilities')->name('healthcare-facilities');
 Route::view('/malls-and-events-visitor-management-system', 'pages.malls-and-events')->name('malls-and-events');
 Route::view('/holy-places-visitor-management-system', 'pages.temple-and-dargah')->name('temple-and-dargah');
+
+// Country Pages
+Route::get('/visitor-management-system-in-{country}', [App\Http\Controllers\VmsLandingController::class, 'country'])->name('vms.country');
 
 // Public QR Code Routes (no auth required) - MUST be before any middleware groups
 Route::get('/companies/{company}/public/qr', [QRManagementController::class, 'show'])->name('companies.public.qr');

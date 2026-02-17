@@ -6,19 +6,9 @@ use Illuminate\Http\Request;
 
 class VmsLandingController extends Controller
 {
-    public function country(string $country)
+    public static function getCountries(): array
     {
-        $country = strtolower(trim($country));
-
-        // Optional aliases
-        $aliases = [
-            'united-states' => 'usa',
-            'us' => 'usa',
-            'india' => 'india',
-        ];
-        $country = $aliases[$country] ?? $country;
-
-        $countries = [
+        return [
             'usa' => [
                 'name' => 'USA',
                 'full' => 'USA',
@@ -80,6 +70,20 @@ class VmsLandingController extends Controller
                 'demo_label' => 'Request Demo in Africa',
             ],
         ];
+    }
+    public function country(string $country)
+    {
+        $country = strtolower(trim($country));
+
+        // Optional aliases
+        $aliases = [
+            'united-states' => 'usa',
+            'us' => 'usa',
+            'india' => 'india',
+        ];
+        $country = $aliases[$country] ?? $country;
+
+        $countries = self::getCountries();
 
         abort_unless(isset($countries[$country]), 404);
 
