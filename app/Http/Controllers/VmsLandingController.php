@@ -91,7 +91,7 @@ class VmsLandingController extends Controller
 
         // ✅ SEO (dynamic)
         $seo = [
-            'title' => "Top Visitor Management System & Software in {$c['name']} | N&T Software",
+            'title' => "Top Visitor Management Software in {$c['name']} | Top Visitor Management System  in South Africa",
             'description' => "Visitor Management System & Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),

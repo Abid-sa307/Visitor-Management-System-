@@ -1,6 +1,6 @@
 @extends('layouts.website')
 
-@section('title', 'Top Visitor Management System & Software | N&T Software')
+@section('title', 'Top Visitor Management Software | Top Visitor Management System')
 
 @section('head')
     {{-- SEO Meta Tags --}}
