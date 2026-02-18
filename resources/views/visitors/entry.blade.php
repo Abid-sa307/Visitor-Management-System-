@@ -342,7 +342,11 @@
                                 @endphp
                             @if(auth()->user()->role !== 'guard')
                                 @if(!$visitor->out_time)
-    <div class="d-flex gap-2 toggle-buttons" data-visitor-id="{{ $visitor->id }}" data-visitor-status="{{ $visitor->status }}" data-visit-completed="{{ $visitor->visit_completed_at ? 'true' : 'false' }}">
+    <div class="d-flex gap-2 toggle-buttons" 
+         data-visitor-id="{{ $visitor->id }}" 
+         data-visitor-status="{{ $visitor->status }}" 
+         data-visit-completed="{{ $visitor->visit_completed_at ? 'true' : 'false' }}"
+         data-in-time="{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->toIso8601String() : '' }}">
         @php
             // Determine the correct route based on user type
             $routeName = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
@@ -459,6 +463,37 @@
     </div>
 </div>
 
+<!-- Time Input Modal -->
+<div class="modal fade" id="timeInputModal" tabindex="-1" aria-labelledby="timeInputModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="timeInputModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close btn-close-white" id="timeInputCloseBtn" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="timeInputMessage" class="mb-3"></p>
+                
+                <div class="mb-3">
+                    <label for="customDateInput" class="form-label fw-bold">Date</label>
+                    <input type="date" class="form-control" id="customDateInput" readonly>
+                    <div class="form-text text-muted">Date is locked to current date.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="customTimeInput" class="form-label fw-bold">Time</label>
+                    <input type="time" class="form-control" id="customTimeInput">
+                    <div class="form-text text-muted">24-hour format. Defaults to current time.</div>
+                    <div id="timeInputError" class="invalid-feedback d-block"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="timeInputCancelBtn" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmTimeEntryBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Face Verification Modal -->
 <div class="modal fade" id="faceVerificationModal" tabindex="-1" aria-labelledby="faceVerificationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -546,7 +581,23 @@ function showToast(type, message, title = null) {
 }
 
 // Handle toggle entry button clicks
+// Handle toggle entry button clicks
 document.addEventListener('DOMContentLoaded', function() {
+    let pendingActionData = null;
+    const timeInputModalElement = document.getElementById('timeInputModal');
+    const timeInputModal = new bootstrap.Modal(timeInputModalElement);
+    
+    // Explicitly handle Close and Cancel buttons
+    document.getElementById('timeInputCloseBtn').addEventListener('click', () => timeInputModal.hide());
+    document.getElementById('timeInputCancelBtn').addEventListener('click', () => timeInputModal.hide());
+    
+    // Reset data when modal is hidden
+    timeInputModalElement.addEventListener('hidden.bs.modal', function () {
+        pendingActionData = null;
+        document.getElementById('timeInputError').textContent = '';
+        document.getElementById('customTimeInput').value = '';
+    });
+    
     // Handle toggle entry button clicks
     document.addEventListener('click', function(e) {
         const toggleBtn = e.target.closest('.toggle-entry-btn');
@@ -559,24 +610,158 @@ document.addEventListener('DOMContentLoaded', function() {
         const visitorId = container.dataset.visitorId;
         const visitorStatus = container.dataset.visitorStatus || 'Pending';
         const visitCompleted = container.dataset.visitCompleted || 'false';
-        // Check if visitor is approved (visit form completion is separate from visit completion)
-        const visitFormCompleted = visitorStatus === 'Approved';
         
         const action = toggleBtn.dataset.action;
         const url = toggleBtn.dataset.url;
         const buttonText = toggleBtn.textContent.trim();
         
-        console.log('Validation check:', {
-            visitorStatus,
-            visitCompleted,
-            visitFormCompleted,
-            visitorId
-        });
-        
-        if (!confirm(`Are you sure you want to ${buttonText.toLowerCase()} this visitor?`)) {
+        // Handle Undo actions immediately (no custom time needed)
+        if (action.startsWith('undo_')) {
+             if (!confirm(`Are you sure you want to ${buttonText.toLowerCase()}?`)) {
+                return;
+            }
+            executeEntryAction(url, visitorId, action, null, toggleBtn);
             return;
         }
         
+        // For Mark In / Mark Out, open the modal
+        pendingActionData = { url, visitorId, action, btn: toggleBtn };
+        
+        // Set message
+        document.getElementById('timeInputMessage').textContent = `Are you sure you want to ${buttonText.toLowerCase()} this visitor?`;
+        
+        // Get limits and Current Time
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayDateString = `${year}-${month}-${day}`;
+        
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const currentTimeString = `${hours}:${minutes}`;
+        
+        // Setup Date Input (Readonly, Today)
+        const dateInput = document.getElementById('customDateInput');
+        dateInput.value = todayDateString;
+        
+        // Setup Time Input
+        const timeInput = document.getElementById('customTimeInput');
+        timeInput.value = currentTimeString;
+        timeInput.removeAttribute('min'); 
+        timeInput.removeAttribute('max'); // Reset max first
+        
+        // Logic based on User Request:
+        // Mark In: Locked after current time (Max = Now).
+        // Mark Out: Can range till 24h of that date. (Max = 23:59 implies no specific 'max' attribute needed unless locking to today? 
+        //          Actually, if date is today, '24h of that date' is end of today. 
+        //          Wait, 'future' in general? For today, 23:59 is future relative to now. 
+        //          User said: "after of cuurent time should be locked means that cannot be added while marking in"
+        //          And: "mark out can be added till 24 hour of that date"
+        //          This implies Mark In has Strict Future Lock. Mark Out does NOT have Strict Future Lock (can go to end of day).
+        
+        if (action === 'in') {
+            timeInput.max = currentTimeString;
+        } else if (action === 'out') {
+             // For Mark Out, we don't set max=now. We allow up to 23:59.
+             // But we definitely set Min = In Time.
+            const inTimeStr = container.dataset.inTime;
+            if (inTimeStr) {
+                const inTime = new Date(inTimeStr);
+                // Check if in_time is today
+                const isSameDay = inTime.toDateString() === now.toDateString();
+                if (isSameDay) {
+                    const inHours = String(inTime.getHours()).padStart(2, '0');
+                    const inMinutes = String(inTime.getMinutes()).padStart(2, '0');
+                    timeInput.min = `${inHours}:${inMinutes}`;
+                }
+            }
+        }
+        
+        // Clear errors
+        document.getElementById('timeInputError').textContent = '';
+        
+        timeInputModal.show();
+    });
+    
+    // Immediate validation on input change
+    document.getElementById('customTimeInput').addEventListener('input', function() {
+        validateTimeInput(this, pendingActionData ? pendingActionData.action : null);
+    });
+    
+    // Handle Modal Confirmation
+    document.getElementById('confirmTimeEntryBtn').addEventListener('click', function() {
+        if (!pendingActionData) return;
+        
+        const timeInput = document.getElementById('customTimeInput');
+        
+        if (!validateTimeInput(timeInput, pendingActionData.action)) {
+            return;
+        }
+        
+        const customTimeStr = timeInput.value;
+        const [hours, minutes] = customTimeStr.split(':');
+        const now = new Date();
+        const selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+        
+        // Format to Send: YYYY-MM-DD HH:mm:ss
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const fullCustomTime = `${year}-${month}-${day} ${hours}:${minutes}:00`;
+        
+        // Hide modal
+        timeInputModal.hide();
+        
+        // Execute Action
+        executeEntryAction(
+            pendingActionData.url, 
+            pendingActionData.visitorId, 
+            pendingActionData.action, 
+            fullCustomTime, 
+            pendingActionData.btn
+        );
+    });
+    
+    function validateTimeInput(inputElement, action) {
+        const customTimeStr = inputElement.value; // HH:mm
+        const errorDiv = document.getElementById('timeInputError');
+        
+        if (!customTimeStr) {
+            errorDiv.textContent = 'Please select a time.';
+            return false;
+        }
+        
+        const now = new Date();
+        const [hours, minutes] = customTimeStr.split(':');
+        // We use the 'now' date components because date input is locked to today
+        const selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+        
+        // Validation Rules:
+        // 1. Mark In: Cannot be in future (Strict).
+        if (action === 'in') {
+             if (selectedDate > now) {
+                 errorDiv.textContent = 'Mark In time cannot be in the future.';
+                 return false;
+             }
+        }
+        
+        // 2. Mark Out: Defaults to no future check (as per "till 24 hour" request), 
+        //    BUT logic usually dictates strict chronology. 
+        //    However, restricting to User Request: "mark out can be added till 24 hour of that date".
+        //    This implies we ALLOW future check-out times for the current day.
+        
+        // 3. Min Time Check (for Mark Out > Mark In)
+        if (action === 'out' && inputElement.min && customTimeStr < inputElement.min) {
+             errorDiv.textContent = `Check-out cannot be before check-in time (${inputElement.min}).`;
+             return false;
+        }
+        
+        errorDiv.textContent = '';
+        return true;
+    }
+    
+    function executeEntryAction(url, visitorId, action, customTime, toggleBtn) {
         // Show loading state
         const originalHtml = toggleBtn.innerHTML;
         toggleBtn.disabled = true;
@@ -591,6 +776,10 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('_method', 'POST');
         formData.append('visitor_id', visitorId);
         formData.append('action', action);
+        
+        if (customTime) {
+            formData.append('custom_time', customTime);
+        }
 
         // Send AJAX request
         fetch(url, {
@@ -609,13 +798,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (contentType && contentType.includes('application/json')) {
                 const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(data.message || 'An error occurred');
+                    throw new Error(data.message || data.error || 'An error occurred');
                 }
                 
-                // If successful and visitor was updated, refresh the page to get updated status
+                // If successful
                 if (data.success) {
-                    // Trigger notification for check-in/out
-                    if (typeof showPersistentNotification === 'function') {
+                    // Trigger notification logic... (kept same as before)
+                   if (typeof showPersistentNotification === 'function') {
                         const visitorName = data.visitor ? data.visitor.name : 'Visitor';
                         const location = '{{ auth()->user()->company->name ?? "Security" }}';
                         
@@ -632,16 +821,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                     
-                    // Update visitor status in the button data immediately
-                    const toggleBtn = document.querySelector(`[data-visitor-id="${visitorId}"]`);
-                    if (toggleBtn) {
-                        // Check if visitor status exists in response and update accordingly
-                        if (data.visitor && data.visitor.status) {
-                            toggleBtn.dataset.visitorStatus = data.visitor.status;
-                        }
-                    }
-                    
-                    // Show success message and refresh after a delay
                     showToast('success', data.message || 'Action completed successfully');
                     setTimeout(() => {
                         window.location.reload();
@@ -652,44 +831,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 return data;
             }
             
-            // Handle HTML response (like redirects)
+            // Handle HTML response
             const text = await response.text();
             if (response.redirected) {
                 window.location.href = response.url;
                 return { redirect: true };
             }
-            
-            // If we get HTML, it might be a validation error or something else
             throw new Error('Unexpected response from server');
         })
         .then(data => {
-            // If we have a redirect URL, use it
-            if (data.redirect) {
+            if (data && data.redirect) {
                 window.location.href = data.redirect;
                 return;
             }
-            
-            // Play notification if check-in or check-out was successful
-            if (data.play_notification && typeof playVisitorNotification === 'function') {
+             // Logic for playNotification (kept same)
+            if (data && data.play_notification && typeof playVisitorNotification === 'function') {
                 playVisitorNotification();
             }
-            
-            // Otherwise, show success message and reload
-            let successMessage = 'Action completed successfully';
-            if (action === 'in') {
-                successMessage = 'Visitor checked in successfully';
-            } else if (action === 'out') {
-                successMessage = 'Visitor checked out successfully';
-            } else if (action === 'undo_in') {
-                successMessage = 'Check-in has been undone successfully';
-            } else if (action === 'undo_out') {
-                successMessage = 'Check-out has been undone successfully';
-            }
-            
-            showToast('success', successMessage);
-            
-            // Reload after a short delay to show the success message
-            setTimeout(() => window.location.reload(), 1500);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -700,25 +858,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show error message
             let errorMessage = 'An error occurred. Please try again.';
-            
-            if (error.message) {
-                errorMessage = error.message;
-                
-                // Handle common error cases
-                if (errorMessage.includes('419')) {
-                    errorMessage = 'Your session has expired. Please refresh the page and try again.';
-                } else if (errorMessage.includes('403')) {
-                    errorMessage = 'You do not have permission to perform this action.';
-                } else if (errorMessage.includes('404')) {
-                    errorMessage = 'The requested resource was not found.';
-                } else if (errorMessage.includes('500')) {
-                    errorMessage = 'A server error occurred. Please try again later.';
-                }
-            }
+            if (error.message) errorMessage = error.message;
             
             showToast('error', errorMessage);
         });
-    });
+    }
 });
 
 // Handle undo security check-out

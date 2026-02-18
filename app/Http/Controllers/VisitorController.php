@@ -1749,6 +1749,35 @@ class VisitorController extends Controller
         $originalStatus = $visitor->status;
         $action = request()->input('action', (!$visitor->in_time ? 'in' : 'out'));
         
+        // Parse custom time if provided
+        $customTime = request()->input('custom_time');
+        $actionTimestamp = $customTime ? \Carbon\Carbon::parse($customTime) : now();
+        
+        // Basic time validation
+        // Basic time validation
+        if ($customTime && $actionTimestamp->isFuture()) {
+             // If action is IN, block future
+             if ($action === 'in') {
+                 $message = 'Time cannot be in the future.';
+                 if (request()->ajax()) {
+                     return response()->json(['error' => $message], 400);
+                 }
+                 return back()->with('error', $message);
+             }
+             
+             // If action is OUT, allow future time as long as it's SAMEDAY (e.g. later today).
+             // Per user request: "mark out can be added till 24 hour of that date". 
+             // This implies if they pick a future date (tomorrow), block it.
+             // If they pick today but later time, allow it.
+             if (!$actionTimestamp->isSameDay(now())) {
+                 $message = 'Date cannot be in the future.';
+                 if (request()->ajax()) {
+                     return response()->json(['error' => $message], 400);
+                 }
+                 return back()->with('error', $message);
+             }
+        }
+        
         try {
             DB::beginTransaction();
 
@@ -1825,7 +1854,7 @@ class VisitorController extends Controller
                     return back()->with('error', $message);
                 }
                 
-                $visitor->in_time = now();
+                $visitor->in_time = $actionTimestamp;
                 $message = 'Visitor checked in successfully.';
                 $playNotification = !$isPublicRequest;
                 
@@ -1867,7 +1896,16 @@ class VisitorController extends Controller
                     }
                     return back()->with('error', $message);
                 }
-                $visitor->out_time = now();
+                // Validate Out Time > In Time
+                if ($visitor->in_time && $actionTimestamp->lt($visitor->in_time)) {
+                    $message = 'Check-out time cannot be earlier than check-in time.';
+                    if (request()->ajax()) {
+                        return response()->json(['error' => $message], 400);
+                    }
+                    return back()->with('error', $message);
+                }
+
+                $visitor->out_time = $actionTimestamp;
                 if ($visitor->status === 'Approved') {
                     $visitor->status = 'Completed';
                 }
