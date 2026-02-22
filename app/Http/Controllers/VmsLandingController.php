@@ -69,6 +69,111 @@ class VmsLandingController extends Controller
                 'full' => 'Africa',
                 'demo_label' => 'Request Demo in Africa',
             ],
+            'ethiopia' => [
+                'name' => 'Ethiopia',
+                'full' => 'Ethiopia',
+                'demo_label' => 'Request Demo in Ethiopia',
+            ],
+            'ghana' => [
+                'name' => 'Ghana',
+                'full' => 'Ghana',
+                'demo_label' => 'Request Demo in Ghana',
+            ],
+            'tanzania' => [
+                'name' => 'Tanzania',
+                'full' => 'Tanzania',
+                'demo_label' => 'Request Demo in Tanzania',
+            ],
+            'kenya' => [
+                'name' => 'Kenya',
+                'full' => 'Kenya',
+                'demo_label' => 'Request Demo in Kenya',
+            ],
+            'canada' => [
+                'name' => 'Canada',
+                'full' => 'Canada',
+                'demo_label' => 'Request Demo in Canada',
+            ],
+            'mexico' => [
+                'name' => 'Mexico',
+                'full' => 'Mexico',
+                'demo_label' => 'Request Demo in Mexico',
+            ],
+            'guatemala' => [
+                'name' => 'Guatemala',
+                'full' => 'Guatemala',
+                'demo_label' => 'Request Demo in Guatemala',
+            ],
+            'belize' => [
+                'name' => 'Belize',
+                'full' => 'Belize',
+                'demo_label' => 'Request Demo in Belize',
+            ],
+            'el-salvador' => [
+                'name' => 'El Salvador',
+                'full' => 'El Salvador',
+                'demo_label' => 'Request Demo in El Salvador',
+            ],
+            'honduras' => [
+                'name' => 'Honduras',
+                'full' => 'Honduras',
+                'demo_label' => 'Request Demo in Honduras',
+            ],
+            'nicaragua' => [
+                'name' => 'Nicaragua',
+                'full' => 'Nicaragua',
+                'demo_label' => 'Request Demo in Nicaragua',
+            ],
+            'costa-rica' => [
+                'name' => 'Costa Rica',
+                'full' => 'Costa Rica',
+                'demo_label' => 'Request Demo in Costa Rica',
+            ],
+            'panama' => [
+                'name' => 'Panama',
+                'full' => 'Panama',
+                'demo_label' => 'Request Demo in Panama',
+            ],
+            'cuba' => [
+                'name' => 'Cuba',
+                'full' => 'Cuba',
+                'demo_label' => 'Request Demo in Cuba',
+            ],
+            'haiti' => [
+                'name' => 'Haiti',
+                'full' => 'Haiti',
+                'demo_label' => 'Request Demo in Haiti',
+            ],
+            'dominican-republic' => [
+                'name' => 'Dominican Republic',
+                'full' => 'Dominican Republic',
+                'demo_label' => 'Request Demo in Dominican Republic',
+            ],
+            'bahamas' => [
+                'name' => 'Bahamas',
+                'full' => 'Bahamas',
+                'demo_label' => 'Request Demo in Bahamas',
+            ],
+            'jamaica' => [
+                'name' => 'Jamaica',
+                'full' => 'Jamaica',
+                'demo_label' => 'Request Demo in Jamaica',
+            ],
+            'barbados' => [
+                'name' => 'Barbados',
+                'full' => 'Barbados',
+                'demo_label' => 'Request Demo in Barbados',
+            ],
+            'trinidad-and-tobago' => [
+                'name' => 'Trinidad and Tobago',
+                'full' => 'Trinidad and Tobago',
+                'demo_label' => 'Request Demo in Trinidad and Tobago',
+            ],
+            'antigua-and-barbuda' => [
+                'name' => 'Antigua and Barbuda',
+                'full' => 'Antigua and Barbuda',
+                'demo_label' => 'Request Demo in Antigua and Barbuda',
+            ],
         ];
     }
     public function country(string $country)
@@ -91,8 +196,8 @@ class VmsLandingController extends Controller
 
         // ✅ SEO (dynamic)
         $seo = [
-            'title' => "Top Visitor Management Software in {$c['name']} | Top Visitor Management System {$c['name']}",
-            'description' => "Visitor Management Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
+            'title' => "Top Visitor Management System & Software in {$c['name']} | N&T Software",
+            'description' => "Visitor Management System & Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
