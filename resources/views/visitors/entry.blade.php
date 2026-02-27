@@ -2152,24 +2152,30 @@ document.addEventListener('click', function(e) {
         if (decoded && decoded.data) {
             const url = decoded.data;
             // Validate: must be a URL containing /visitors/{id}/toggle-entry
-            const isValidToggle = /\/visitors\/\d+\/toggle-entry/.test(url);
-            if (isValidToggle && qrPendingBtn) {
+            const toggleMatch = /\/visitors\/(\d+)\/toggle-entry/.exec(url);
+            if (toggleMatch && qrPendingBtn) {
+                const scannedVisitorId = toggleMatch[1];
+                const expectedVisitorId = qrPendingBtn.dataset.visitorId;
+
                 stopQrCamera();
                 qrModal.hide();
 
+                if (scannedVisitorId !== expectedVisitorId) {
+                    showToast('error', 'Scanned QR code does not belong to this visitor!');
+                    qrPendingBtn = null;
+                    return;
+                }
+
                 const apiUrl = qrPendingBtn.dataset.url;
-                const visitorId = qrPendingBtn.dataset.visitorId;
+                const visitorId = expectedVisitorId;
                 const action    = qrPendingBtn.dataset.action;
                 qrPendingBtn = null;
 
                 showToast('info', 'QR code scanned! Processing...');
 
-                const now  = new Date();
-                const pad  = n => String(n).padStart(2,'0');
-                const fullTime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
-
+                // Pass null for time so server uses exact current time (fixes "future time" browser vs server validation bugs)
                 // Pass qr_bypass=1 so OTP is skipped — scanning the physical pass IS the authentication
-                executeEntryAction(apiUrl, visitorId, action, fullTime, null, null, true);
+                executeEntryAction(apiUrl, visitorId, action, null, null, null, true);
                 return;
             }
         }
