@@ -5,7 +5,8 @@
     <!-- Search Bar Section -->
     <div class="card shadow-sm mb-4">
         <div class="card-body p-3">
-<form method="GET" action="{{ route('qr-management.index') }}" class="d-flex">                <div class="input-group">
+            <form method="GET" action="{{ route('qr-management.index') }}">
+                <div class="input-group mb-3">
                     <span class="input-group-text bg-white border-end-0">
                         <i class="fas fa-search text-muted"></i>
                     </span>
@@ -15,8 +16,8 @@
                            placeholder="Search companies or branches by name, email, or contact..." 
                            value="{{ request('search') }}"
                            aria-label="Search companies and branches">
-                            @if(request()->has('search'))
-                            <a href="{{ route('qr.index') }}" class="btn btn-outline-secondary" type="button"> 
+                    @if(request()->has('search'))
+                        <a href="{{ route('qr.index') }}" class="btn btn-outline-secondary" type="button"> 
                             <i class="fas fa-times me-1"></i> Clear
                         </a>
                     @endif
@@ -24,6 +25,24 @@
                         <i class="fas fa-search me-1"></i> Search
                     </button>
                 </div>
+
+                @if(isset($isSuperAdmin) && $isSuperAdmin && isset($allCompanies) && count($allCompanies) > 0)
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-filter text-muted me-2"></i>
+                        <select name="company_id" class="form-select form-select-sm me-2" style="max-width: 300px;">
+                            <option value="">Filter by Company: All</option>
+                            @foreach($allCompanies as $id => $name)
+                                <option value="{{ $id }}" {{ request('company_id') == $id ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary me-2">Apply</button>
+                        @if(request()->has('company_id') && request('company_id'))
+                            <a href="{{ route('qr-management.index', request()->except('company_id')) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                        @endif
+                    </div>
+                @endif
             </form>
         </div>
     </div>

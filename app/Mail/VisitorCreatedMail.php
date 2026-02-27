@@ -20,7 +20,7 @@ class VisitorCreatedMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Visitor Check-in Confirmation')
+        return $this->subject('Visitor creation Confirmation')
             ->view('emails.visitor_created')
             ->with([
                 'visitor' => $this->visitor,

@@ -71,6 +71,9 @@ Route::view('/healthcare-facilities-visitor-management-system', 'pages.healthcar
 Route::view('/malls-and-events-visitor-management-system', 'pages.malls-and-events')->name('malls-and-events');
 Route::view('/holy-places-visitor-management-system', 'pages.temple-and-dargah')->name('temple-and-dargah');
 
+// Indian State Pages (must be defined BEFORE country route to avoid wildcard conflict)
+Route::get('/visitor-management-system-in-{state}-india', [App\Http\Controllers\VmsLandingController::class, 'state'])->name('vms.state');
+
 // Country Pages
 Route::get('/visitor-management-system-in-{country}', [App\Http\Controllers\VmsLandingController::class, 'country'])->name('vms.country');
 
@@ -139,6 +142,7 @@ Route::middleware('auth')->group(function () {
     Route::post('visitors/{visitor}/archive', [VisitorController::class, 'archive'])->name('visitors.archive');
     Route::post('visitors/{visitor}/checkin', [VisitorController::class, 'checkIn'])->name('visitors.checkin');
     Route::post('visitors/{visitor}/checkout', [VisitorController::class, 'checkOut'])->name('visitors.checkout');
+    Route::post('visitors/{visitor}/send-otp', [VisitorController::class, 'sendEntryOtp'])->name('visitors.entry.send-otp');
 
     // QR Management (Auth Required)
     Route::prefix('qr')->name('qr.')->group(function() {
@@ -249,6 +253,7 @@ Route::middleware('auth')->group(function() {
         Route::get('visitors/{visitor}/visit', [VisitorController::class, 'visitForm'])->name('visitors.visit.form');
         Route::post('visitors/{visitor}/visit', [VisitorController::class, 'submitVisit'])->name('visitors.visit.submit');
         Route::post('visitors/{visitor}/undo', [VisitorController::class, 'undoVisit'])->name('visitors.visit.undo');
+        Route::post('visitors/{visitor}/send-otp', [VisitorController::class, 'sendEntryOtp'])->name('visitors.entry.send-otp');
         Route::get('visitors/{visitor}/pass', [VisitorController::class, 'showPass'])->name('visitors.pass');
         
         Route::post('logout', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'destroy'])->name('logout');
@@ -282,4 +287,26 @@ Route::get('/debug-company-settings', function() {
         echo "<tr><td>{$company->id}</td><td>{$company->name}</td><td style='text-align: center; color: " . ($company->enable_visitor_notifications ? 'green' : 'red') . "; font-weight: bold;'>" . ($company->enable_visitor_notifications ? '✅ YES' : '❌ NO') . "</td></tr>";
     }
     echo "</table>";
+});
+
+// Debug: Check QR pass state for a visitor
+Route::get('/debug-visitor-qr/{id}', function($id) {
+    $visitor = \App\Models\Visitor::with('company')->find($id);
+    if (!$visitor) return "Visitor not found";
+    $company = $visitor->company;
+    echo "<h2>Visitor QR Debug</h2>";
+    echo "<b>Visitor:</b> {$visitor->name} (ID: {$visitor->id})<br>";
+    echo "<b>Status:</b> {$visitor->status}<br>";
+    echo "<b>Company:</b> " . ($company?->name ?? 'NONE') . "<br>";
+    echo "<b>qr_visitor_pass_scan:</b> " . ($company?->qr_visitor_pass_scan ? '✅ TRUE' : '❌ FALSE') . "<br>";
+    if ($company && $company->qr_visitor_pass_scan) {
+        try {
+            $url = route('visitors.entry.toggle', $visitor->id);
+            $qr  = 'data:image/png;base64,' . base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(120)->errorCorrection('H')->generate($url));
+            echo "<b>QR URL:</b> {$url}<br>";
+            echo "<b>QR Generated:</b> ✅<br><img src='{$qr}' style='width:120px;height:120px;'>";
+        } catch (\Throwable $e) {
+            echo "<b>QR Error:</b> ❌ " . $e->getMessage();
+        }
+    }
 });

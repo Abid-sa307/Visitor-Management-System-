@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SecurityCheckExport;
-use App\Exports\VisitorExport;
+use App\Exports\VisitorsExport;
 use App\Exports\VisitExport;
 use App\Exports\ApprovalExport;
 
@@ -243,7 +243,7 @@ class ReportController extends Controller
     // Export Methods
     public function exportVisitors(Request $request)
     {
-        return Excel::download(new VisitorExport($request), 'visitors_'.now()->format('Y-m-d').'.xlsx');
+        return Excel::download(new VisitorsExport($request), 'visitors_'.now()->format('Y-m-d').'.xlsx');
     }
 
     public function exportVisits(Request $request)

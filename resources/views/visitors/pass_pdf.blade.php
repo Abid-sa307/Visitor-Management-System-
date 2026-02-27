@@ -213,12 +213,20 @@
                 </table>
                 
                 <div class="barcode-section">
-                    <div style="font-family: monospace; font-size: 14px; letter-spacing: 2px; font-weight: bold;">
-                        *{{ $visitor->visitor_id ?? 'VISITOR' }}*
-                    </div>
-                    <div class="pass-footer">
-                        Please keep this pass visible at all times.
-                    </div>
+                    @if(!empty($qrSvg))
+                        <div style="width:80px;height:80px;display:inline-block;">{!! $qrSvg !!}</div>
+                        <div class="pass-footer">Scan QR to check in / check out</div>
+                    @elseif(!empty($qrCodeData))
+                        <img src="{{ $qrCodeData }}" style="width:80px;height:80px;" alt="QR">
+                        <div class="pass-footer">Scan QR to check in / check out</div>
+                    @else
+                        <div style="font-family: monospace; font-size: 14px; letter-spacing: 2px; font-weight: bold;">
+                            *{{ $visitor->visitor_id ?? 'VISITOR' }}*
+                        </div>
+                        <div class="pass-footer">
+                            Please keep this pass visible at all times.
+                        </div>
+                    @endif
                 </div>
             </td>
         </tr>

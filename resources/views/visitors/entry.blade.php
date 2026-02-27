@@ -332,6 +332,7 @@
                                     $hasCheckOutSecurityCheck = $visitor->securityChecks()->where('check_type', 'checkout')->exists();
                                     $securityServiceEnabled = $visitor->company->security_check_service ?? false;
                                     $securityType = $visitor->company->security_checkin_type ?? '';
+                                     $otpMarkInOutEnabled = $visitor->company->otp_mark_in_out ?? false;
                                     
                                     // Only allow mark in/out for approved visitors (visit form completion is separate from visit completion)
                                     $canMarkEntry = $visitor->status === 'Approved';
@@ -385,10 +386,24 @@
                         class="btn btn-sm rounded-pill btn-{{ $buttonClass }} toggle-entry-btn" 
                         data-visitor-id="{{ $visitor->id }}" 
                         data-action="{{ $action }}"
-                        data-url="{{ route($routeName, $visitor->id) }}">
+                        data-url="{{ route($routeName, $visitor->id) }}"
+                        data-otp-required="{{ ($otpMarkInOutEnabled && !empty($visitor->email)) ? 'true' : 'false' }}"
+                        data-visitor-email="{{ $visitor->email ?? '' }}">
                     <i class="fas fa-{{ $buttonIcon }} me-1"></i>
                     {{ $buttonText }}
                 </button>
+                @php $qrPassScanEnabled = $visitor->company->qr_visitor_pass_scan ?? false; @endphp
+                @if($qrPassScanEnabled)
+                <button type="button"
+                        class="btn btn-sm rounded-pill btn-info qr-scan-btn"
+                        data-visitor-id="{{ $visitor->id }}"
+                        data-action="{{ $action }}"
+                        data-url="{{ route($routeName, $visitor->id) }}"
+                        title="Scan visitor pass QR code">
+                    <i class="fas fa-qrcode me-1"></i>
+                    QR {{ $action === 'in' ? 'In' : 'Out' }}
+                </button>
+                @endif
             @endif
         @else
             <span class="text-muted small">Visitor must be approved first</span>
@@ -530,9 +545,97 @@
     </div>
 </div>
 
+<!-- OTP Verification Modal -->
+<div class="modal fade" id="otpVerificationModal" tabindex="-1" aria-labelledby="otpVerificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="otpVerificationModalLabel">Visitor Verification</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                </div>
+                <h5 class="mb-3">Enter OTP</h5>
+                <p class="text-muted mb-4">A One-Time Password has been sent to the visitor's email address <strong id="otpEmailDisplay"></strong>.</p>
+                
+                <div class="mb-3">
+                    <input type="text" id="otpInput" class="form-control form-control-lg text-center letter-spacing-2" placeholder="Enter 6-digit OTP" maxlength="6" autocomplete="one-time-code" style="letter-spacing: 5px; font-weight: bold;">
+                    <div id="otpError" class="invalid-feedback d-block mt-2"></div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <button type="button" class="btn btn-link text-decoration-none" id="resendOtpBtn">Resend OTP</button>
+                    <span id="otpTimer" class="text-muted small"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4" id="verifyOtpBtn">Verify & Check In</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Scanner Modal -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="qrScannerModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>
+                    <span id="qrModalTitle">Scan QR Code</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+
+                {{-- Camera not started yet --}}
+                <div id="qrStartScreen" class="p-4 text-center">
+                    <i class="fas fa-camera fa-3x text-info mb-3 d-block"></i>
+                    <p class="mb-3">Click the button below to open your camera and scan the QR code on the visitor pass.</p>
+                    <button type="button" id="qrStartCameraBtn" class="btn btn-info px-4 py-2">
+                        <i class="fas fa-camera me-2"></i> Start Camera
+                    </button>
+                    <div id="qrErrorBox" class="alert alert-danger mt-3 d-none text-start small"></div>
+                </div>
+
+                {{-- Camera active view --}}
+                <div id="qrCameraScreen" class="d-none">
+                    <div class="position-relative" style="background:#000;">
+                        <video id="qrCameraFeed" playsinline muted style="width:100%;display:block;max-height:340px;object-fit:cover;"></video>
+                        <canvas id="qrCanvas" style="display:none;"></canvas>
+                        {{-- scan overlay --}}
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                            <div style="width:190px;height:190px;border:3px solid #0dcaf0;border-radius:12px;box-shadow:0 0 0 2000px rgba(0,0,0,0.45);animation:qrPulse 1.5s ease-in-out infinite;"></div>
+                        </div>
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-muted mb-0 small" id="qrStatusText">Point the camera at the QR code on the visitor pass</p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+@keyframes qrPulse {
+    0%, 100% { border-color: #0dcaf0; box-shadow: 0 0 0 2000px rgba(0,0,0,0.45), 0 0 0 0 rgba(13,202,240,0.4); }
+    50%       { border-color: #fff;    box-shadow: 0 0 0 2000px rgba(0,0,0,0.45), 0 0 0 8px rgba(13,202,240,0); }
+}
+</style>
+
+
 @push('scripts')
 <!-- Load face-api.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<!-- jsQR for QR code scanning -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
 // Toast notification function
@@ -587,6 +690,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeInputModalElement = document.getElementById('timeInputModal');
     const timeInputModal = new bootstrap.Modal(timeInputModalElement);
     
+    // OTP Modal
+    const otpModalElement = document.getElementById('otpVerificationModal');
+    const otpModal = new bootstrap.Modal(otpModalElement);
+    let otpCountdownInterval;
+    let pendingOtpData = null;
+    
     // Explicitly handle Close and Cancel buttons
     document.getElementById('timeInputCloseBtn').addEventListener('click', () => timeInputModal.hide());
     document.getElementById('timeInputCancelBtn').addEventListener('click', () => timeInputModal.hide());
@@ -614,6 +723,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const action = toggleBtn.dataset.action;
         const url = toggleBtn.dataset.url;
         const buttonText = toggleBtn.textContent.trim();
+        const otpRequired = toggleBtn.dataset.otpRequired === 'true'; // true only when company has otp_mark_in_out enabled
         
         // Handle Undo actions immediately (no custom time needed)
         if (action.startsWith('undo_')) {
@@ -624,8 +734,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // For Mark In / Mark Out, open the modal
-        pendingActionData = { url, visitorId, action, btn: toggleBtn };
+        // For Mark In / Mark Out, open the time confirmation modal
+        pendingActionData = { url, visitorId, action, btn: toggleBtn, otpRequired };
         
         // Set message
         document.getElementById('timeInputMessage').textContent = `Are you sure you want to ${buttonText.toLowerCase()} this visitor?`;
@@ -713,14 +823,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hide modal
         timeInputModal.hide();
         
-        // Execute Action
-        executeEntryAction(
-            pendingActionData.url, 
-            pendingActionData.visitorId, 
-            pendingActionData.action, 
-            fullCustomTime, 
-            pendingActionData.btn
-        );
+        // If OTP is required for this action, send OTP and show OTP modal instead
+        if (pendingActionData.otpRequired) {
+            sendOtpAndShowModal(
+                pendingActionData.visitorId,
+                pendingActionData.url,
+                pendingActionData.action,
+                fullCustomTime,
+                pendingActionData.btn
+            );
+        } else {
+            // Execute Action directly
+            executeEntryAction(
+                pendingActionData.url, 
+                pendingActionData.visitorId, 
+                pendingActionData.action, 
+                fullCustomTime, 
+                pendingActionData.btn
+            );
+        }
     });
     
     function validateTimeInput(inputElement, action) {
@@ -761,11 +882,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
     
-    function executeEntryAction(url, visitorId, action, customTime, toggleBtn) {
-        // Show loading state
-        const originalHtml = toggleBtn.innerHTML;
-        toggleBtn.disabled = true;
-        toggleBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    function executeEntryAction(url, visitorId, action, customTime, toggleBtn, otp = null, qrBypass = false) {
+        // Save original HTML at function scope so the .catch() block can restore the button
+        let originalHtml = null;
+        if (!otp && toggleBtn && toggleBtn.tagName === 'BUTTON' && !toggleBtn.disabled) {
+            originalHtml = toggleBtn.innerHTML;
+            toggleBtn.setAttribute('data-original-html', originalHtml);
+            toggleBtn.disabled = true;
+            toggleBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        }
         
         // Get CSRF token
         const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -779,6 +904,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (customTime) {
             formData.append('custom_time', customTime);
+        }
+        
+        if (otp) {
+            formData.append('otp', otp);
+        }
+
+        if (qrBypass) {
+            formData.append('qr_bypass', '1');
         }
 
         // Send AJAX request
@@ -797,6 +930,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Handle JSON response
             if (contentType && contentType.includes('application/json')) {
                 const data = await response.json();
+                
+                // Check if OTP is required
+                if (response.status === 403 && data.otp_required) {
+                    // Restore button before opening OTP modal
+                    if (originalHtml !== null) {
+                        toggleBtn.disabled = false;
+                        toggleBtn.innerHTML = originalHtml;
+                    }
+                    sendOtpAndShowModal(visitorId, url, action, customTime, toggleBtn);
+                    return;
+                }
+                
                 if (!response.ok) {
                     throw new Error(data.message || data.error || 'An error occurred');
                 }
@@ -852,17 +997,160 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error:', error);
             
-            // Re-enable button
-            toggleBtn.disabled = false;
-            toggleBtn.innerHTML = originalHtml;
+            // Re-enable button using function-scoped originalHtml
+            if (originalHtml !== null && toggleBtn) {
+                toggleBtn.disabled = false;
+                toggleBtn.innerHTML = originalHtml;
+            }
             
-            // Show error message
             let errorMessage = 'An error occurred. Please try again.';
             if (error.message) errorMessage = error.message;
             
             showToast('error', errorMessage);
         });
     }
+
+    // ---- OTP flow ----
+    function sendOtpAndShowModal(visitorId, url, action, customTime, toggleBtn) {
+        showToast('info', 'Sending OTP to visitor\'s email...');
+
+        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Build the send-OTP URL using Blade to respect admin vs company route prefix
+        @if($isCompany)
+        const sendOtpBaseUrl = '{{ url("company/visitors") }}';
+        @else
+        const sendOtpBaseUrl = '{{ url("visitors") }}';
+        @endif
+        const sendOtpUrl = `${sendOtpBaseUrl}/${visitorId}/send-otp`;
+
+        fetch(sendOtpUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ _token: token })
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to send OTP.');
+            return data;
+        })
+        .then(() => {
+            // Store pending action data on the modal element
+            const modalEl = document.getElementById('otpVerificationModal');
+            modalEl.dataset.pendingUrl          = url;
+            modalEl.dataset.pendingVisitorId    = visitorId;
+            modalEl.dataset.pendingAction       = action;
+            modalEl.dataset.pendingCustomTime   = customTime || '';
+            modalEl._pendingToggleBtn           = toggleBtn;
+
+            // Clear previous OTP input & errors
+            document.getElementById('otpInput').value = '';
+            document.getElementById('otpError').textContent = '';
+
+            otpModal.show();
+            startOtpCountdown();
+        })
+        .catch(err => {
+            showToast('error', err.message || 'Failed to send OTP. Please try again.');
+        });
+    }
+
+    function startOtpCountdown() {
+        if (otpCountdownInterval) clearInterval(otpCountdownInterval);
+        let seconds = 120;
+        const timerEl  = document.getElementById('otpTimer');
+        const resendBtn = document.getElementById('resendOtpBtn');
+        resendBtn.disabled = true;
+
+        function tick() {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            timerEl.textContent = `Resend in ${m}:${String(s).padStart(2, '0')}`;
+            if (seconds <= 0) {
+                clearInterval(otpCountdownInterval);
+                timerEl.textContent = '';
+                resendBtn.disabled = false;
+            }
+            seconds--;
+        }
+        tick();
+        otpCountdownInterval = setInterval(tick, 1000);
+    }
+
+    // Wire up "Verify & Check In" button inside OTP modal
+    document.getElementById('verifyOtpBtn').addEventListener('click', function() {
+        const otp     = document.getElementById('otpInput').value.trim();
+        const errorEl = document.getElementById('otpError');
+
+        if (!otp || otp.length !== 6) {
+            errorEl.textContent = 'Please enter a valid 6-digit OTP.';
+            return;
+        }
+        errorEl.textContent = '';
+
+        const modalEl   = document.getElementById('otpVerificationModal');
+        const url        = modalEl.dataset.pendingUrl;
+        const visitorId  = modalEl.dataset.pendingVisitorId;
+        const action     = modalEl.dataset.pendingAction;
+        const customTime = modalEl.dataset.pendingCustomTime || null;
+        const toggleBtn  = modalEl._pendingToggleBtn;
+
+        const verifyBtn = this;
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verifying...';
+
+        const token    = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const formData = new FormData();
+        formData.append('_token', token);
+        formData.append('action', action);
+        formData.append('otp', otp);
+        if (customTime) formData.append('custom_time', customTime);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json, text/plain, */*'
+            },
+            body: formData
+        })
+        .then(async response => {
+            const data = await response.json();
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = 'Verify &amp; Check In';
+            if (response.ok && data.success) {
+                otpModal.hide();
+                if (otpCountdownInterval) clearInterval(otpCountdownInterval);
+                showToast('success', data.message || 'Visitor checked in successfully.');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                errorEl.textContent = data.error || 'Invalid or expired OTP.';
+            }
+        })
+        .catch(() => {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = 'Verify &amp; Check In';
+            errorEl.textContent = 'An error occurred. Please try again.';
+        });
+    });
+
+    // Wire up "Resend OTP" button
+    document.getElementById('resendOtpBtn').addEventListener('click', function() {
+        const modalEl   = document.getElementById('otpVerificationModal');
+        const visitorId = modalEl.dataset.pendingVisitorId;
+        const url       = modalEl.dataset.pendingUrl;
+        const action    = modalEl.dataset.pendingAction;
+        const customTime= modalEl.dataset.pendingCustomTime || null;
+        const toggleBtn = modalEl._pendingToggleBtn;
+        sendOtpAndShowModal(visitorId, url, action, customTime, toggleBtn);
+    });
+
 });
 
 // Handle undo security check-out
@@ -1715,6 +2003,179 @@ document.addEventListener('click', function(e) {
         if (deptMenu) deptMenu.style.display = 'none';
     }
 });
+
+// ---- QR Scanner Logic ----
+(function() {
+    let qrStream     = null;
+    let qrAnimFrame  = null;
+    let qrPendingBtn = null;
+
+    const qrModalEl    = document.getElementById('qrScannerModal');
+    const qrModal      = qrModalEl ? new bootstrap.Modal(qrModalEl) : null;
+    const qrVideo      = document.getElementById('qrCameraFeed');
+    const qrCanvas     = document.getElementById('qrCanvas');
+    const qrStatus     = document.getElementById('qrStatusText');
+    const qrTitle      = document.getElementById('qrModalTitle');
+    const qrStartBtn   = document.getElementById('qrStartCameraBtn');
+    const qrStartScr   = document.getElementById('qrStartScreen');
+    const qrCameraScr  = document.getElementById('qrCameraScreen');
+    const qrErrorBox   = document.getElementById('qrErrorBox');
+
+    function showQrError(msg) {
+        if (!qrErrorBox) return;
+        qrErrorBox.textContent = msg;
+        qrErrorBox.classList.remove('d-none');
+    }
+    function hideQrError() {
+        if (qrErrorBox) qrErrorBox.classList.add('d-none');
+    }
+    function resetModalUI() {
+        if (qrStartScr)  qrStartScr.classList.remove('d-none');
+        if (qrCameraScr) qrCameraScr.classList.add('d-none');
+        if (qrStartBtn)  { qrStartBtn.disabled = false; qrStartBtn.innerHTML = '<i class="fas fa-camera me-2"></i> Start Camera'; }
+        hideQrError();
+    }
+
+    // Open QR scanner when a QR button is clicked
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.qr-scan-btn');
+        if (!btn || !qrModal) return;
+        e.preventDefault();
+        qrPendingBtn = btn;
+        const action = btn.dataset.action;
+        if (qrTitle) qrTitle.textContent = action === 'in' ? 'Scan QR to Mark In' : 'Scan QR to Mark Out';
+        resetModalUI();
+        qrModal.show();
+    });
+
+    // Reset UI on every open; stop camera on close
+    if (qrModalEl) {
+        qrModalEl.addEventListener('shown.bs.modal', function() {
+            resetModalUI();
+        });
+        qrModalEl.addEventListener('hidden.bs.modal', function() {
+            stopQrCamera();
+            resetModalUI();
+        });
+    }
+
+    // Start camera when user explicitly clicks the button
+    if (qrStartBtn) {
+        qrStartBtn.addEventListener('click', function() {
+            hideQrError();
+            qrStartBtn.disabled = true;
+            qrStartBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Opening camera...';
+
+            const constraints = [
+                { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } } },
+                { video: true }
+            ];
+
+            function tryNext(idx) {
+                if (idx >= constraints.length) {
+                    showQrError('Could not access any camera. Check browser permissions (🔒 icon in address bar) and try again.');
+                    qrStartBtn.disabled = false;
+                    qrStartBtn.innerHTML = '<i class="fas fa-camera me-2"></i> Try Again';
+                    return;
+                }
+                navigator.mediaDevices.getUserMedia(constraints[idx])
+                    .then(function(stream) {
+                        qrStream = stream;
+                        qrVideo.srcObject = stream;
+
+                        // Show camera screen, hide start screen
+                        if (qrStartScr)  qrStartScr.classList.add('d-none');
+                        if (qrCameraScr) qrCameraScr.classList.remove('d-none');
+
+                        // Explicitly call play() — required in some browsers
+                        const playPromise = qrVideo.play();
+                        if (playPromise !== undefined) {
+                            playPromise
+                                .then(function() {
+                                    // Video is playing, start scanning
+                                    qrAnimFrame = requestAnimationFrame(scanFrame);
+                                })
+                                .catch(function(err) {
+                                    console.warn('video.play() rejected:', err);
+                                    // Still try scanning — readyState check handles it
+                                    qrAnimFrame = requestAnimationFrame(scanFrame);
+                                });
+                        } else {
+                            // Browser didn't return a promise; just start scanning
+                            qrAnimFrame = requestAnimationFrame(scanFrame);
+                        }
+                    })
+                    .catch(function(err) {
+                        console.warn('Camera attempt', idx, 'failed:', err.name, err.message);
+                        tryNext(idx + 1);
+                    });
+            }
+
+            // Check we have the API
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showQrError('Camera API not available. Make sure you are on HTTPS or localhost.');
+                qrStartBtn.disabled = false;
+                qrStartBtn.innerHTML = '<i class="fas fa-camera me-2"></i> Start Camera';
+                return;
+            }
+            tryNext(0);
+        });
+    }
+
+    function stopQrCamera() {
+        if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
+        if (qrStream) {
+            qrStream.getTracks().forEach(function(t) { t.stop(); });
+            qrStream = null;
+        }
+        if (qrVideo) { qrVideo.srcObject = null; qrVideo.load(); }
+    }
+
+    function scanFrame() {
+        if (!qrStream) return;
+
+        // Keep looping if video isn't ready yet
+        if (!qrVideo || qrVideo.readyState < qrVideo.HAVE_ENOUGH_DATA || qrVideo.videoWidth === 0) {
+            qrAnimFrame = requestAnimationFrame(scanFrame);
+            return;
+        }
+
+        const ctx = qrCanvas.getContext('2d');
+        qrCanvas.width  = qrVideo.videoWidth;
+        qrCanvas.height = qrVideo.videoHeight;
+        ctx.drawImage(qrVideo, 0, 0, qrCanvas.width, qrCanvas.height);
+        const imageData = ctx.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
+        const decoded   = (typeof jsQR !== 'undefined')
+            ? jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
+            : null;
+
+        if (decoded && decoded.data) {
+            const url = decoded.data;
+            // Validate: must be a URL containing /visitors/{id}/toggle-entry
+            const isValidToggle = /\/visitors\/\d+\/toggle-entry/.test(url);
+            if (isValidToggle && qrPendingBtn) {
+                stopQrCamera();
+                qrModal.hide();
+
+                const apiUrl = qrPendingBtn.dataset.url;
+                const visitorId = qrPendingBtn.dataset.visitorId;
+                const action    = qrPendingBtn.dataset.action;
+                qrPendingBtn = null;
+
+                showToast('info', 'QR code scanned! Processing...');
+
+                const now  = new Date();
+                const pad  = n => String(n).padStart(2,'0');
+                const fullTime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
+
+                // Pass qr_bypass=1 so OTP is skipped — scanning the physical pass IS the authentication
+                executeEntryAction(apiUrl, visitorId, action, fullTime, null, null, true);
+                return;
+            }
+        }
+        qrAnimFrame = requestAnimationFrame(scanFrame);
+    }
+})();
 </script>
 @endpush
 

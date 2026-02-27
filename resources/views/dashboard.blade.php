@@ -197,6 +197,57 @@
     </div>
 </div>
 
+
+
+{{-- =================== CHARTS =================== --}}
+<div class="row gx-4 gy-4 mt-4">
+    <div class="col-lg-6">
+        <div class="card shadow h-100">
+            <div class="card-header bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">Monthly Visitor Report</h6>
+            </div>
+            <div class="card-body chart-container">
+                <canvas id="visitorChartCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow h-100">
+            <div class="card-header bg-info text-white">
+                <h6 class="m-0 font-weight-bold">Hourly Visitor Activity</h6>
+            </div>
+            <div class="card-body chart-container">
+                <canvas id="hourChartCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row gx-4 gy-4 mt-2">
+    <div class="col-lg-6">
+        <div class="card shadow h-100">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="m-0 font-weight-bold">Visitor Trends (Last 7 Days)</h6>
+            </div>
+            <div class="card-body chart-container">
+                <canvas id="dayChartCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow h-100">
+            <div class="card-header bg-success text-white">
+                <h6 class="m-0 font-weight-bold">Visitors Per Department</h6>
+            </div>
+            <div class="card-body chart-container-small">
+                <canvas id="deptChartCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- =================== VISITORS TABLE =================== --}}
 <div class="modern-panel fade-in-up" style="animation-delay: 0.35s;">
     <div class="panel-heading">
@@ -257,56 +308,6 @@
         @endif
     </div>
 </div>
-
-{{-- =================== CHARTS =================== --}}
-<div class="row gx-4 gy-4 mt-4">
-    <div class="col-lg-6">
-        <div class="card shadow h-100">
-            <div class="card-header bg-primary text-white">
-                <h6 class="m-0 font-weight-bold">Monthly Visitor Report</h6>
-            </div>
-            <div class="card-body chart-container">
-                <canvas id="visitorChartCanvas"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <div class="card shadow h-100">
-            <div class="card-header bg-info text-white">
-                <h6 class="m-0 font-weight-bold">Hourly Visitor Activity</h6>
-            </div>
-            <div class="card-body chart-container">
-                <canvas id="hourChartCanvas"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row gx-4 gy-4 mt-2">
-    <div class="col-lg-6">
-        <div class="card shadow h-100">
-            <div class="card-header bg-warning text-dark">
-                <h6 class="m-0 font-weight-bold">Visitor Trends (Last 7 Days)</h6>
-            </div>
-            <div class="card-body chart-container">
-                <canvas id="dayChartCanvas"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <div class="card shadow h-100">
-            <div class="card-header bg-success text-white">
-                <h6 class="m-0 font-weight-bold">Visitors Per Department</h6>
-            </div>
-            <div class="card-body chart-container-small">
-                <canvas id="deptChartCanvas"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- =================== SCRIPTS =================== --}}
 
 @push('scripts')
