@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\VisitorNotificationMail;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Barryvdh\DomPDF\Facade\Pdf;
+use BaconQrCode\Common\ErrorCorrectionLevel;
+use BaconQrCode\Encoder\Encoder as QrEncoder;
 use App\Models\CompanyUser;
 
 
@@ -1516,6 +1518,12 @@ class VisitorController extends Controller
                 $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
                 $q->whereIn('department_id', $departmentIds);
             })
+            ->when($request->filled('from'), function($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->from);
+            })
+            ->when($request->filled('to'), function($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->to);
+            })
             ->latest('created_at'))->paginate(10)->withQueryString();
         $isCompany = $this->isCompany();
         
@@ -1676,6 +1684,45 @@ class VisitorController extends Controller
             
             return redirect()->route('company.visitors.entry.page')
                 ->with('error', 'An error occurred. Please try again.');
+        }
+    }
+
+    /**
+     * Send OTP for visitor entry
+     */
+    public function sendEntryOtp(Request $request, $id)
+    {
+        try {
+            $visitor = Visitor::findOrFail($id);
+            $this->authorizeVisitor($visitor);
+            
+            if (empty($visitor->email)) {
+                return response()->json(['error' => 'Visitor does not have an email address.'], 422);
+            }
+            
+            // Generate 6-digit OTP
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            
+            // Store in Cache (10 minutes)
+            $cacheKey = 'visitor_entry_otp_' . $visitor->id;
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $otp, 600);
+            
+            // Send Email
+            try {
+                \Illuminate\Support\Facades\Mail::to($visitor->email)->send(new \App\Mail\VisitorEntryOtpMail($visitor, $otp));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send Entry OTP: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to send OTP email. Please try again.'], 500);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP sent to visitor\'s email address.',
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error sending Entry OTP: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred. Please try again.'], 500);
         }
     }
 
@@ -1853,6 +1900,34 @@ class VisitorController extends Controller
                     }
                     return back()->with('error', $message);
                 }
+
+                // OTP Verification Logic for Check-in
+                // Only if: not a public request, visitor has email, AND company has OTP mark-in/out enabled
+                // SKIP OTP if this is a QR scan (qr_bypass=1) AND company has QR pass scanning enabled
+                $isQrBypass = request()->input('qr_bypass') === '1' && optional($visitor->company)->qr_visitor_pass_scan;
+                if (!$isPublicRequest && !$isQrBypass && !empty($visitor->email) && optional($visitor->company)->otp_mark_in_out) {
+                    $otp = request()->input('otp');
+                    
+                    if (empty($otp)) {
+                         if (request()->ajax()) {
+                             return response()->json(['otp_required' => true, 'message' => 'OTP Verification Required'], 403);
+                         }
+                         return back()->with('error', 'OTP Verification Required');
+                    }
+                    
+                    $cacheKey = 'visitor_entry_otp_' . $visitor->id;
+                    $cachedOtp = \Illuminate\Support\Facades\Cache::get($cacheKey);
+                    
+                    if (!$cachedOtp || $cachedOtp !== $otp) {
+                         if (request()->ajax()) {
+                             return response()->json(['error' => 'Invalid or expired OTP.'], 400);
+                         }
+                         return back()->with('error', 'Invalid or expired OTP.');
+                    }
+                    
+                    // OTP Valid - Clear cache
+                    \Illuminate\Support\Facades\Cache::forget($cacheKey);
+                }
                 
                 $visitor->in_time = $actionTimestamp;
                 $message = 'Visitor checked in successfully.';
@@ -1903,6 +1978,29 @@ class VisitorController extends Controller
                         return response()->json(['error' => $message], 400);
                     }
                     return back()->with('error', $message);
+                }
+
+                // OTP Verification Logic for Check-out
+                // Only if: not a public request, visitor has email, AND company has OTP mark-in/out enabled
+                // SKIP OTP if this is a QR scan (qr_bypass=1) AND company has QR pass scanning enabled
+                $isQrBypass = request()->input('qr_bypass') === '1' && optional($visitor->company)->qr_visitor_pass_scan;
+                if (!$isPublicRequest && !$isQrBypass && !empty($visitor->email) && optional($visitor->company)->otp_mark_in_out) {
+                    $otp = request()->input('otp');
+                    if (empty($otp)) {
+                        if (request()->ajax()) {
+                            return response()->json(['otp_required' => true, 'message' => 'OTP Verification Required'], 403);
+                        }
+                        return back()->with('error', 'OTP Verification Required');
+                    }
+                    $cacheKey = 'visitor_entry_otp_' . $visitor->id;
+                    $cachedOtp = \Illuminate\Support\Facades\Cache::get($cacheKey);
+                    if (!$cachedOtp || $cachedOtp !== $otp) {
+                        if (request()->ajax()) {
+                            return response()->json(['error' => 'Invalid or expired OTP.'], 400);
+                        }
+                        return back()->with('error', 'Invalid or expired OTP.');
+                    }
+                    \Illuminate\Support\Facades\Cache::forget($cacheKey);
                 }
 
                 $visitor->out_time = $actionTimestamp;
@@ -1965,20 +2063,6 @@ class VisitorController extends Controller
                 \Log::error('Failed to send visitor mark-in/out email: ' . $e->getMessage());
             }
 
-            if (request()->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $message,
-                    'play_notification' => $playNotification ?? false,
-                    'visitor' => [
-                        'id' => $visitor->id,
-                        'in_time' => $visitor->in_time,
-                        'out_time' => $visitor->out_time,
-                        'status' => $visitor->status
-                    ]
-                ]);
-            }
-
             // Update status history if status changed
             if ($visitor->isDirty('status')) {
                 $visitor->last_status = $originalStatus;
@@ -1999,6 +2083,21 @@ class VisitorController extends Controller
                     ->with('success', $message)
                     ->with('play_notification', $playNotification ?? false)
                     ->with('visit_completed', $visitor->out_time && $visitor->status === 'Completed');
+            }
+
+            // Handle AJAX responses (like QR scan) AFTER save and commit
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'play_notification' => $playNotification ?? false,
+                    'visitor' => [
+                        'id' => $visitor->id,
+                        'in_time' => $visitor->in_time,
+                        'out_time' => $visitor->out_time,
+                        'status' => $visitor->status
+                    ]
+                ]);
             }
 
             return redirect()->route('visitors.entry.page')
@@ -2040,9 +2139,25 @@ class VisitorController extends Controller
             return redirect()->back()->with('error', 'Pass not available.');
         }
 
+        // Generate QR code if company has QR scanning enabled
+        $qrCodeData = null;
+        $qrSvg      = null;
+        $company = $visitor->company;
+        if ($company && $company->qr_visitor_pass_scan) {
+            try {
+                $toggleUrl  = route('visitors.entry.toggle', $visitor->id);
+                $qrSvg      = (string) QrCode::format('svg')->size(120)->errorCorrection('H')->generate($toggleUrl);
+                $qrCodeData = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
+            } catch (\Throwable $e) {
+                \Log::warning('QR code generation failed for printPass: ' . $e->getMessage());
+            }
+        }
+
         return view('visitors.pass', [
-            'visitor' => $visitor,
-            'company' => $visitor->company
+            'visitor'    => $visitor,
+            'company'    => $company,
+            'qrCodeData' => $qrCodeData,
+            'qrSvg'      => $qrSvg,
         ]);
     }
 
@@ -2065,21 +2180,37 @@ class VisitorController extends Controller
             return redirect()->back()->with('error', 'Pass not available.');
         }
 
+        // Generate QR code for PDF using GD-rendered PNG (no Imagick needed)
+        $qrCodeData = null;
+        $qrSvg      = null;
+        $company = $visitor->company;
+        if ($company && $company->qr_visitor_pass_scan) {
+            try {
+                $toggleUrl  = route('visitors.entry.toggle', $visitor->id);
+                $pngBytes   = $this->qrCodeToPng($toggleUrl, 200);
+                $qrCodeData = 'data:image/png;base64,' . base64_encode($pngBytes);
+            } catch (\Throwable $e) {
+                \Log::warning('QR code generation failed for downloadPassPDF: ' . $e->getMessage());
+            }
+        }
+
         // Generate PDF using the pass_pdf view
-        $pdf = \PDF::loadView('visitors.pass_pdf', [
-            'visitor' => $visitor,
-            'company' => $visitor->company
+        $pdf = Pdf::loadView('visitors.pass_pdf', [
+            'visitor'    => $visitor,
+            'company'    => $company,
+            'qrCodeData' => $qrCodeData,
+            'qrSvg'      => null,   // PDF uses PNG img tag — inline SVG unreliable in DomPDF
         ]);
 
         // Configure PDF to maintain design
         $pdf->setPaper('a4', 'portrait');
         $pdf->setOptions([
-            'defaultFont' => 'Arial',
-            'isRemoteEnabled' => true,
+            'defaultFont'          => 'Arial',
+            'isRemoteEnabled'      => true,
             'isHtml5ParserEnabled' => true,
-            'isPhpEnabled' => true,
-            'enable_fontsubsetting' => true,
-            'font_dir' => public_path('fonts'),
+            'isPhpEnabled'         => true,
+            'enable_fontsubsetting'=> true,
+            'font_dir'             => public_path('fonts'),
         ]);
 
         // Download the PDF
@@ -3129,8 +3260,21 @@ class VisitorController extends Controller
     {
         $visitor = Visitor::with(['company', 'branch', 'department'])->findOrFail($id);
         $company = $visitor->company;
+
+        // Generate QR code if company has QR scanning enabled
+        $qrCodeData = null;
+        $qrSvg      = null;
+        if ($company && $company->qr_visitor_pass_scan) {
+            try {
+                $toggleUrl  = route('visitors.entry.toggle', $visitor->id);
+                $qrSvg      = (string) QrCode::format('svg')->size(120)->errorCorrection('H')->generate($toggleUrl);
+                $qrCodeData = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
+            } catch (\Throwable $e) {
+                Log::warning('QR code generation failed for pass: ' . $e->getMessage());
+            }
+        }
         
-        return view('visitors.pass', compact('visitor', 'company'));
+        return view('visitors.pass', compact('visitor', 'company', 'qrCodeData', 'qrSvg'));
     }
 
     /**
@@ -3143,12 +3287,26 @@ class VisitorController extends Controller
     {
         $visitor = Visitor::with(['company', 'branch', 'department'])->findOrFail($id);
         $company = $visitor->company;
+
+        // Generate QR code for PDF using GD-rendered PNG (no Imagick needed)
+        $qrCodeData = null;
+        $qrSvg      = null;
+        if ($company && $company->qr_visitor_pass_scan) {
+            try {
+                $toggleUrl  = route('visitors.entry.toggle', $visitor->id);
+                $pngBytes   = $this->qrCodeToPng($toggleUrl, 200);
+                $qrCodeData = 'data:image/png;base64,' . base64_encode($pngBytes);
+            } catch (\Throwable $e) {
+                Log::warning('QR code PDF generation failed: ' . $e->getMessage());
+            }
+        }
         
-        $pdf = Pdf::loadView('visitors.pass_pdf', compact('visitor', 'company'));
+        $pdf = Pdf::loadView('visitors.pass_pdf', compact('visitor', 'company', 'qrCodeData', 'qrSvg'));
         $pdf->setPaper([0, 0, 340.16, 204.09]); // 90mm x 54mm in points (approx)
         
         return $pdf->download('Visitor_Pass_' . $visitor->visitor_id . '.pdf');
     }
+
     /**
      * Send ID card status notification (Optional, if needed for future)
      */
@@ -3246,5 +3404,45 @@ class VisitorController extends Controller
         } catch (\Throwable $e) {
             \Log::error("Failed to notify company users: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Generate a QR code as a GD-rendered PNG (no Imagick required).
+     * Uses BaconQrCode's Encoder to get the bit matrix, then draws each
+     * module as a filled rectangle with GD's imagecreatetruecolor.
+     */
+    private function qrCodeToPng(string $text, int $size = 200): string
+    {
+        $qrCode  = QrEncoder::encode($text, ErrorCorrectionLevel::forBits(2)); // H
+        $matrix  = $qrCode->getMatrix();
+        $width   = $matrix->getWidth();
+        $height  = $matrix->getHeight();
+
+        $quiet     = 4; // quiet zone in modules
+        $totalMods = $width + $quiet * 2;
+        $scale     = max(1, (int) ($size / $totalMods));
+        $imgSize   = $totalMods * $scale;
+
+        $img   = imagecreatetruecolor($imgSize, $imgSize);
+        $white = imagecolorallocate($img, 255, 255, 255);
+        $black = imagecolorallocate($img, 0, 0, 0);
+        imagefill($img, 0, 0, $white);
+
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                if ($matrix->get($x, $y) === 1) {
+                    $px = ($quiet + $x) * $scale;
+                    $py = ($quiet + $y) * $scale;
+                    imagefilledrectangle($img, $px, $py, $px + $scale - 1, $py + $scale - 1, $black);
+                }
+            }
+        }
+
+        ob_start();
+        imagepng($img);
+        $png = ob_get_clean();
+        imagedestroy($img);
+
+        return $png;
     }
 }

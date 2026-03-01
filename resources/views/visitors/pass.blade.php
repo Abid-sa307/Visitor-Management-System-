@@ -314,10 +314,18 @@
 
             <div>
                 <div class="barcode-section">
-                    <div class="barcode">
-                        <!-- *{{ $visitor->visitor_id ?? 'VISITOR' }}* -->
-                    </div>
-                    <div class="barcode-label">VISITOR ID</div>
+                    @if(!empty($qrSvg))
+                        <div style="width:90px;height:90px;display:block;margin:0 auto;">{!! $qrSvg !!}</div>
+                        <div class="barcode-label">SCAN TO CHECK IN/OUT</div>
+                    @elseif(!empty($qrCodeData))
+                        <img src="{{ $qrCodeData }}" alt="QR Code" style="width:90px;height:90px;display:block;margin:0 auto;">
+                        <div class="barcode-label">SCAN TO CHECK IN/OUT</div>
+                    @else
+                        <div class="barcode">
+                            <!-- *{{ $visitor->visitor_id ?? 'VISITOR' }}* -->
+                        </div>
+                        <div class="barcode-label">VISITOR ID</div>
+                    @endif
                 </div>
 
                 <div class="pass-footer">

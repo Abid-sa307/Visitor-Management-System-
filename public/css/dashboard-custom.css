@@ -1,0 +1,207 @@
+/* Dashboard V2 Custom UI */
+:root {
+    --primary-color: #2563eb;
+    --primary-light: #eff6ff;
+    --success-color: #10b981;
+    --success-light: #ecfdf5;
+    --warning-color: #f59e0b;
+    --warning-light: #fffbeb;
+    --danger-color: #ef4444;
+    --danger-light: #fef2f2;
+    --dark-color: #1e293b;
+    --gray-color: #64748b;
+    --border-color: #e2e8f0;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    font-family: var(--font-sans);
+    color: var(--dark-color);
+}
+
+/* --- Layout Utilities --- */
+.dashboard-container {
+    padding: 1.5rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.grid-cols-4 {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* --- Stats Widgets --- */
+.stat-widget {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-widget:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-content h3 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+    color: var(--dark-color);
+}
+
+.stat-content p {
+    color: var(--gray-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0.25rem 0 0;
+}
+
+/* Color Variants */
+.theme-primary .stat-icon { background: var(--primary-light); color: var(--primary-color); }
+.theme-success .stat-icon { background: var(--success-light); color: var(--success-color); }
+.theme-warning .stat-icon { background: var(--warning-light); color: var(--warning-color); }
+.theme-danger .stat-icon { background: var(--danger-light); color: var(--danger-color); }
+
+/* --- Cards --- */
+.v2-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.v2-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.v2-card-header h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--dark-color);
+}
+
+.v2-card-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+/* --- Quick Filters (Compact) --- */
+.quick-filter-bar {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+/* --- Recent Table --- */
+.v2-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.v2-table th {
+    background: var(--bg-color);
+    color: var(--gray-color);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.v2-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+.v2-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* --- Avatar & Status --- */
+.v2-avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.v2-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-approved { background: var(--success-light); color: var(--success-color); }
+.badge-pending { background: var(--warning-light); color: var(--warning-color); }
+.badge-rejected { background: var(--danger-light); color: var(--danger-color); }
+
+/* --- Chart Overrides --- */
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+.chart-wrapper-sm {
+    height: 220px;
+}

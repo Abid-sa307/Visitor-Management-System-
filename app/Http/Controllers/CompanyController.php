@@ -12,8 +12,12 @@ class CompanyController extends Controller
 {
     public function index()
     {
-        $companies = Company::orderBy('name')->paginate(10);
-        return view('companies.index', compact('companies'));
+        $companies   = Company::orderBy('name')->paginate(10);
+        $autoApprove = Company::where('auto_approve_visitors', true)->count();
+        $otpEnabled  = Company::where('otp_mark_in_out', true)->count();
+        $qrEnabled   = Company::where('qr_visitor_pass_scan', true)->count();
+
+        return view('companies.index', compact('companies', 'autoApprove', 'otpEnabled', 'qrEnabled'));
     }
 
     /**
@@ -50,6 +54,8 @@ class CompanyController extends Controller
                 'visitor_notifications_enabled' => 'sometimes|boolean',
                 'enable_visitor_notifications' => 'sometimes|boolean',
                 'mark_in_out_in_qr_flow' => 'sometimes|boolean',
+            'otp_mark_in_out' => 'sometimes|boolean',
+            'qr_visitor_pass_scan' => 'sometimes|boolean',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
@@ -69,6 +75,8 @@ class CompanyController extends Controller
             $company->visitor_notifications_enabled = $request->boolean('visitor_notifications_enabled');
             $company->enable_visitor_notifications = $request->boolean('enable_visitor_notifications');
             $company->mark_in_out_in_qr_flow = $request->boolean('mark_in_out_in_qr_flow');
+        $company->otp_mark_in_out = $request->boolean('otp_mark_in_out');
+        $company->qr_visitor_pass_scan = $request->boolean('qr_visitor_pass_scan');
             
             // Handle security_checkin_type
             if ($request->boolean('security_check_service')) {
@@ -192,6 +200,8 @@ class CompanyController extends Controller
                 'visitor_notifications_enabled' => 'sometimes|boolean',
                 'enable_visitor_notifications' => 'sometimes|boolean',
                 'mark_in_out_in_qr_flow' => 'sometimes|boolean',
+                'otp_mark_in_out' => 'sometimes|boolean',
+                'qr_visitor_pass_scan' => 'sometimes|boolean',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
@@ -212,6 +222,8 @@ class CompanyController extends Controller
             $company->visitor_notifications_enabled = $request->boolean('visitor_notifications_enabled');
             $company->enable_visitor_notifications = $request->boolean('enable_visitor_notifications');
             $company->mark_in_out_in_qr_flow = $request->boolean('mark_in_out_in_qr_flow');
+        $company->otp_mark_in_out = $request->boolean('otp_mark_in_out');
+        $company->qr_visitor_pass_scan = $request->boolean('qr_visitor_pass_scan');
             
             // Handle security_checkin_type
             if ($request->boolean('security_check_service')) {

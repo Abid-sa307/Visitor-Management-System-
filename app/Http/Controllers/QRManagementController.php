@@ -80,6 +80,15 @@ public function __construct()
             });
         }
 
+        $allCompanies = [];
+        if ($isSuperAdmin) {
+            $allCompanies = Company::orderBy('name')->pluck('name', 'id');
+        }
+
+        if (request()->has('company_id') && request('company_id')) {
+            $query->where('id', request('company_id'));
+        }
+
         $companies = $query->get();
         
         // For company users, filter branches to only show assigned ones
@@ -99,7 +108,7 @@ public function __construct()
             $companies->load('branches');
         }
 
-        return view('qr-management.index', compact('companies'));
+        return view('qr-management.index', compact('companies', 'allCompanies', 'isSuperAdmin'));
     }
 
 

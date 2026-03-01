@@ -70,6 +70,18 @@ class SitemapController extends Controller
             }
         }
 
+        // Add Indian state pages from VmsLandingController
+        $states = array_keys(VmsLandingController::getStates());
+        foreach ($states as $state) {
+            if (Route::has('vms.state')) {
+                $urls[] = [
+                    'loc' => route('vms.state', $state),
+                    'changefreq' => 'monthly',
+                    'priority' => '0.6'
+                ];
+            }
+        }
+
         return $urls;
     }
 
