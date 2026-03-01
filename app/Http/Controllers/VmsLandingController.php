@@ -174,6 +174,81 @@ class VmsLandingController extends Controller
                 'full' => 'Antigua and Barbuda',
                 'demo_label' => 'Request Demo in Antigua and Barbuda',
             ],
+            'dubai' => [
+                'name' => 'Dubai',
+                'full' => 'Dubai',
+                'demo_label' => 'Request Demo in Dubai',
+            ],
+            'abu-dhabi' => [
+                'name' => 'Abu Dhabi',
+                'full' => 'Abu Dhabi',
+                'demo_label' => 'Request Demo in Abu Dhabi',
+            ],
+            'sharjah' => [
+                'name' => 'Sharjah',
+                'full' => 'Sharjah',
+                'demo_label' => 'Request Demo in Sharjah',
+            ],
+            'ajman' => [
+                'name' => 'Ajman',
+                'full' => 'Ajman',
+                'demo_label' => 'Request Demo in Ajman',
+            ],
+            'ras-al-khaimah' => [
+                'name' => 'Ras Al Khaimah',
+                'full' => 'Ras Al Khaimah',
+                'demo_label' => 'Request Demo in Ras Al Khaimah',
+            ],
+            'al-ain' => [
+                'name' => 'Al Ain',
+                'full' => 'Al Ain',
+                'demo_label' => 'Request Demo in Al Ain',
+            ],
+            'riyadh' => [
+                'name' => 'Riyadh',
+                'full' => 'Riyadh',
+                'demo_label' => 'Request Demo in Riyadh',
+            ],
+            'jeddah' => [
+                'name' => 'Jeddah',
+                'full' => 'Jeddah',
+                'demo_label' => 'Request Demo in Jeddah',
+            ],
+            'dammam' => [
+                'name' => 'Dammam',
+                'full' => 'Dammam',
+                'demo_label' => 'Request Demo in Dammam',
+            ],
+            'al-khobar' => [
+                'name' => 'Al Khobar',
+                'full' => 'Al Khobar',
+                'demo_label' => 'Request Demo in Al Khobar',
+            ],
+            'dhahran' => [
+                'name' => 'Dhahran',
+                'full' => 'Dhahran',
+                'demo_label' => 'Request Demo in Dhahran',
+            ],
+            'makkah' => [
+                'name' => 'Makkah',
+                'full' => 'Makkah',
+                'demo_label' => 'Request Demo in Makkah',
+            ],
+            'madinah' => [
+                'name' => 'Madinah',
+                'full' => 'Madinah',
+                'demo_label' => 'Request Demo in Madinah',
+            ],
+            'doha' => [
+                'name' => 'Doha',
+                'full' => 'Doha',
+                'demo_label' => 'Request Demo in Doha',
+            ],
+            'lusail' => [
+                'name' => 'Lusail',
+                'full' => 'Lusail',
+                'demo_label' => 'Request Demo in Lusail',
+            ],
         ];
     }
     public function country(string $country)
@@ -196,7 +271,7 @@ class VmsLandingController extends Controller
 
         // ✅ SEO (dynamic)
         $seo = [
-            'title' => "Top Visitor Management System & Software in {$c['name']} | N&T Software",
+            'title' => "Top Visitor Management Software in {$c['name']} | Top Visitor Management System {$c['name']}",
             'description' => "Visitor Management System & Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
