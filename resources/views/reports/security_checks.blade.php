@@ -322,12 +322,12 @@
                 <div class="row mt-3">
                     <div class="col-12">
                         <h6 class="fw-bold mb-3">Security Questions & Responses</h6>
-                        @if(is_array($check->questions) && count($check->questions) > 0)
+                        @if(is_array($check->question_texts) && count($check->question_texts) > 0)
                             <div class="accordion" id="accordionQuestions{{ $check->id }}">
-                                @foreach($check->questions as $index => $question)
+                                @foreach($check->question_texts as $index => $questionText)
                                     <div class="card mb-2 border-light bg-light">
                                         <div class="card-body py-2">
-                                            <div class="fw-bold text-dark mb-1">Q{{ $loop->iteration }}: {{ $question }}</div>
+                                            <div class="fw-bold text-dark mb-1">Q{{ $loop->iteration }}: {{ $questionText }}</div>
                                             <div class="text-secondary ms-3 small">
                                                 <i class="fas fa-reply fa-flip-horizontal me-1"></i>
                                                 {{ $check->responses[$index] ?? 'No response recorded' }}
