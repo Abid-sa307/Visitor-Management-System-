@@ -15,7 +15,14 @@
         <div class="col-lg-4 col-md-6 mb-4">
           <a class="navbar-brand d-flex align-items-center" href="/">
             {{-- <img src="images/vmslogo.png" alt="N&N TVMS Logo" style="height:60px; width:auto; object-fit:contain;"> --}}
-            <img src="{{ asset('images/vmslogo.png') }}" alt="VMS Logo" class="logo-img" />
+            <img
+              src="{{ asset('images/vmslogo-141.webp') }}"
+              width="141"
+              height="69"
+              alt="VMS Logo"
+              class="logo-img"
+              loading="lazy"
+              decoding="async" />
 
           </a>
 

@@ -1,11 +1,11 @@
 @extends('layouts.website')
 
-@section('title', 'Top Visitor Management Software | Top Visitor Management System')
+@section('title', 'Top Smart Visitor Management Software (vms) | Top Smart Visitor Management System (vms)')
 
 @section('head')
     {{-- SEO Meta Tags --}}
     <meta name="description"
-        content="Visitor Management System & Software for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, healthcare facilities, schools, Holy place, universities, hotels, malls, events, residential societies, apartments and public entry gates. Single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.">
+        content="Top Smart Visitor Management System &amp; Software (Vms) for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, healthcare facilities, schools, Holy place, universities, hotels, malls, events, residential societies, apartments and public entry gates. Single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.">
 
     <meta name="keywords"
         content="visitor management system, visitor management software, single location visitor management, multi location visitor management, centralized visitor management platform, visitor tracking system, smart self check-in, QR check-in system, OTP visitor entry, face recognition access control, office visitor management, hospital visitor management, school visitor management, hotel visitor system, mall visitor tracking, event visitor registration, residential society visitor app, industrial visitor management, cold storage visitor logs, kabrastan visitor tracking, burial ground visitor management, contractor management system, staff attendance tracking, real-time visitor dashboard, paperless visitor register">
@@ -98,15 +98,16 @@ $schema = [
         }
 
         .hero .hero-image {
-            width: 100%;
+            width: 85%;
             height: auto;
-            max-height: 650px;
             object-fit: contain;
+            transform: scale(1.15);
         }
 
         .hero-image-desktop {
-            width: 150% !important;
-            max-width: 730px !important;
+            margin-left: 50px;
+            width: 100% !important;
+            max-width: none !important;
             height: auto !important;
         }
 
@@ -618,6 +619,12 @@ $schema = [
                 display: none;
             }
 
+            .hero .hero-image {
+                width: 100%;
+                transform: scale(1);
+                margin-bottom: 0;
+            }
+
             .feature-icon {
                 width: 70px;
                 height: 70px;
@@ -650,7 +657,7 @@ $schema = [
                         Worldwide</h1>
                     <!-- Mobile Image - Only visible on mobile -->
                     <div class="mobile-image-container mb-4">
-                        <img src="/images/visitor-management-system-main-img1." alt="Visitor Management System"
+                        <img src="/images/visitor-management-system-main-img1.jpeg" alt="Visitor Management System"
                             class="hero-image hero-image-mobile-inline rounded-3 shadow-lg">
                     </div>
                     
@@ -678,13 +685,12 @@ $schema = [
                             src="/images/visitor-management-system-main-img-960.webp"
                             srcset="
                                 /images/visitor-management-system-main-img-640.webp 640w,
-                                /images/visitor-management-system-main-img-960.webp 960w,
-                                /images/visitor-management-system-main-img-1280.webp 1280w,
-                                /images/visitor-management-system-main-img.webp 1536w
+                                /images/visitor-management-system-main-img-800.webp 800w,
+                                /images/visitor-management-system-main-img-960.webp 960w
                             "
                             sizes="(min-width: 992px) 50vw, 100vw"
-                            width="913"
-                            height="608"
+                            width="1000"
+                            height="639"
                             alt="Visitor Management System"
                             class="hero-image hero-image-desktop rounded-3 shadow-lg"
                             fetchpriority="high"
@@ -903,7 +909,25 @@ $schema = [
                     <div class="industry-card h-100">
                         <a href="/office-workplace-management"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/office-img.png" alt="Office Visitor Management" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/office-img-360.webp 360w,
+                                        /images/office-img-520.webp 520w,
+                                        /images/office-img-780.webp 780w,
+                                        /images/office-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/office-img-520.webp"
+                                    alt="Office Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Offices</h3>
                                 <p class="mb-0">
@@ -922,8 +946,25 @@ $schema = [
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/school-and-colleges" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/university-img.png" alt="Schools & Universities Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/university-img-360.webp 360w,
+                                        /images/university-img-520.webp 520w,
+                                        /images/university-img-780.webp 780w,
+                                        /images/university-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/university-img-520.webp"
+                                    alt="Schools & Universities Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Schools & Universities</h3>
                                 <p class="mb-0">
@@ -943,8 +984,25 @@ $schema = [
                     <div class="industry-card h-100">
                         <a href="/industrial-and-cold-storage"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/cold-storage-img.png" alt="Industrial Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/cold-storage-img-360.webp 360w,
+                                        /images/cold-storage-img-520.webp 520w,
+                                        /images/cold-storage-img-780.webp 780w,
+                                        /images/cold-storage-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/cold-storage-img-520.webp"
+                                    alt="Industrial Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Warehouses</h3>
                                 <p class="mb-0">
@@ -963,7 +1021,25 @@ $schema = [
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/resident-societies" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/resident-gate.png" alt="Society Gate" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/resident-gate-360.webp 360w,
+                                        /images/resident-gate-520.webp 520w,
+                                        /images/resident-gate-780.webp 780w,
+                                        /images/resident-gate-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/resident-gate-520.webp"
+                                    alt="Society Gate"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h4>Residential Societies</h4>
                                 <p class="mb-0">
@@ -982,7 +1058,25 @@ $schema = [
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/malls-and-events" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/malls-gate.png" alt="Malls Gate" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/malls-gate-360.webp 360w,
+                                        /images/malls-gate-520.webp 520w,
+                                        /images/malls-gate-780.webp 780w,
+                                        /images/malls-gate-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/malls-gate-520.webp"
+                                    alt="Malls Gate"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Malls & Events</h3>
                                 <p class="mb-0">
@@ -1002,8 +1096,25 @@ $schema = [
                     <div class="industry-card h-100">
                         <a href="/healthcare-facilities"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/healthcare-img.png" alt="Healthcare Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/healthcare-img-360.webp 360w,
+                                        /images/healthcare-img-520.webp 520w,
+                                        /images/healthcare-img-780.webp 780w,
+                                        /images/healthcare-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/healthcare-img-520.webp"
+                                    alt="Healthcare Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Healthcare Facilities</h3>
                                 <p class="mb-0">
@@ -1022,8 +1133,25 @@ $schema = [
                     <div class="industry-card h-100">
                         <a href="/industrial-manufacturing-unit"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/industries-gate-img.png" alt="Industrial Manufacturing Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/industries-gate-img-360.webp 360w,
+                                        /images/industries-gate-img-520.webp 520w,
+                                        /images/industries-gate-img-780.webp 780w,
+                                        /images/industries-gate-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/industries-gate-img-520.webp"
+                                    alt="Industrial Manufacturing Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Industrial Manufacturing Unit</h3>
                                 <p class="mb-0">
@@ -1057,8 +1185,8 @@ $schema = [
                                     src="/images/resident-building-gate-520.webp"
                                     alt="Residential Building Visitor Management"
                                     class="industry-img"
-                                    width="1536"
-                                    height="738"
+                                    width="520"
+                                    height="347"
                                     loading="lazy"
                                     decoding="async">
                             </picture>
@@ -1081,7 +1209,25 @@ $schema = [
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/temple-and-dargah" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/temple.png" alt="Temple Gate" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/temple-360.webp 360w,
+                                        /images/temple-520.webp 520w,
+                                        /images/temple-780.webp 780w,
+                                        /images/temple-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/temple-520.webp"
+                                    alt="Temple Gate"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h4>Holy places</h4>
                                 <p class="mb-0">
@@ -1175,31 +1321,31 @@ $schema = [
                     [
                         'name' => 'B. A. Chavada',
                         'role' => 'Human Resource',
-                        'photo' => asset('images/testimonials/chavada.png'),
+                        'photo' => asset('images/testimonials/chavada-121.png'),
                         'quote' => 'We had a very big problem in visitor tracking at our office. With the Advanced Visitor Management System, our issue was solved. We appreciate what they built.',
                     ],
                     [
                         'name' => 'Ashraf Syed',
                         'role' => 'Project Manager, Inorbit Mall',
-                        'photo' => asset('images/testimonials/syed.png'),
+                        'photo' => asset('images/testimonials/syed-121.png'),
                         'quote' => 'In our construction site, the Visitor Management System gave us the exact data we needed to make the site more secure and improve our process.',
                     ],
                     [
                         'name' => 'Ashraf Tunvar',
                         'role' => 'Principal, Adarsh School, Manpur, Gujarat',
-                        'photo' => asset('images/testimonials/tunvar.png'),
+                        'photo' => asset('images/testimonials/tunvar-121.png'),
                         'quote' => 'In our school, we always had issues tracking visitors. With this advanced software, our problem has been solved effectively.',
                     ],
                     [
                         'name' => 'Laxman Singh F. Chauhan',
                         'role' => 'Owner & Founder, Real Paprika Factory & Warehouse',
-                        'photo' => asset('images/testimonials/lakshman.png'),
+                        'photo' => asset('images/testimonials/lakshman-121.png'),
                         'quote' => 'As the founder of Real Paprika Inka Factory & Warehouse, we always focus on safety and efficiency. This system has greatly improved our operations.',
                     ],
                     [
                         'name' => 'Mukkadas Saiyed',
                         'role' => 'Operations Head',
-                        'photo' => asset('images/testimonials/mukshad.png'),
+                        'photo' => asset('images/testimonials/mukshad-121.png'),
                         'quote' => 'At Vaishnodevi Oil Refinery, security is critical. This system ensures we have accurate visitor records and improved accountability.',
                     ],
                     [
@@ -1227,7 +1373,8 @@ $schema = [
                                     @if($item['photo'])
                                         <img src="{{ $item['photo'] }}" alt="{{ $item['name'] }}"
                                             class="rounded-circle shadow-sm border border-2 border-white position-relative"
-                                            width="100" height="100">
+                                            width="121" height="121"
+                                            loading="lazy" decoding="async">
                                     @endif
                                 </div>
 
