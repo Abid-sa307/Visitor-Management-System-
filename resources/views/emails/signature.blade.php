@@ -120,6 +120,6 @@
     
     <!-- Footer Bar -->
     <div style="background: #f1f5f9; border-top: 1px solid #e2e8f0; padding: 12px; text-align: center; font-size: 12px; color: #64748b; margin-top: 20px; border-radius: 0 0 8px 8px;">
-        Yours sincerely, N&T Software TEAM • All Rights Reserved © 2025
+        Yours sincerely, N&T Software TEAM • All Rights Reserved © 2026
     </div>
 </div>

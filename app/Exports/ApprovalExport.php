@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Http\Request;
 
-class VisitorsExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class ApprovalExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
     protected $request;
 
@@ -22,13 +22,18 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
 
     public function collection()
     {
-        $query = Visitor::with(['company', 'department', 'branch', 'category']);
+        $query = Visitor::whereNotNull('approved_at')
+            ->with(['company', 'department', 'branch', 'approvedBy', 'rejectedBy']);
 
-        $from = $this->request->input('from') ?: now()->format('Y-m-d');
-        $to   = $this->request->input('to')   ?: now()->format('Y-m-d');
+        $from = $this->request->input('from');
+        $to   = $this->request->input('to');
 
-        $query->whereDate('created_at', '>=', $from)
-              ->whereDate('created_at', '<=', $to);
+        if ($from) {
+            $query->whereDate('created_at', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('created_at', '<=', $to);
+        }
 
         if ($this->request->filled('company_id')) {
             $query->where('company_id', $this->request->company_id);
@@ -44,6 +49,10 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
             $query->whereIn('department_id', $departmentIds);
         }
 
+        if ($this->request->filled('status')) {
+            $query->where('status', $this->request->status);
+        }
+
         // Non-superadmin: restrict to own company
         if (auth()->user()->role !== 'superadmin') {
             $query->where('company_id', auth()->user()->company_id);
@@ -52,21 +61,30 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
             }
         }
 
-        return $query->latest()->get();
+        return $query->latest('approved_at')->get();
     }
 
     public function headings(): array
     {
         return [
             'Name', 'Email', 'Phone', 'Company', 'Branch', 'Department',
-            'Category', 'Person to Visit', 'Purpose', 'Vehicle Type', 'Vehicle No.',
-            'Goods in Car', 'Document', 'Workman Policy', 'Status',
-            'In Time', 'Out Time', 'Registered At',
+            'Status', 'Approved / Rejected By', 'Approval / Rejection Date',
+            'Visit Date', 'Purpose',
         ];
     }
 
     public function map($v): array
     {
+        $handledBy = null;
+        $handledAt = null;
+        if ($v->status === 'Approved' && $v->approvedBy) {
+            $handledBy = $v->approvedBy->name;
+            $handledAt = $v->approved_at ? \Carbon\Carbon::parse($v->approved_at)->format('Y-m-d H:i:s') : 'N/A';
+        } elseif ($v->status === 'Rejected' && $v->rejectedBy) {
+            $handledBy = $v->rejectedBy->name;
+            $handledAt = $v->rejected_at ? \Carbon\Carbon::parse($v->rejected_at)->format('Y-m-d H:i:s') : 'N/A';
+        }
+
         return [
             $v->name,
             $v->email ?? 'N/A',
@@ -74,18 +92,11 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
             $v->company->name ?? 'N/A',
             $v->branch->name ?? 'N/A',
             $v->department->name ?? 'N/A',
-            $v->category->name ?? 'N/A',
-            $v->person_to_visit ?? 'N/A',
-            $v->purpose ?? 'N/A',
-            $v->vehicle_type ?? 'N/A',
-            $v->vehicle_number ?? 'N/A',
-            $v->goods_in_car ?? 'N/A',
-            $v->document ?? 'N/A',
-            $v->workman_policy ?? 'N/A',
             $v->status ?? 'N/A',
-            $v->in_time ? \Carbon\Carbon::parse($v->in_time)->format('Y-m-d H:i:s') : 'N/A',
-            $v->out_time ? \Carbon\Carbon::parse($v->out_time)->format('Y-m-d H:i:s') : 'N/A',
-            $v->created_at->format('Y-m-d H:i:s'),
+            $handledBy ?? 'N/A',
+            $handledAt ?? 'N/A',
+            $v->visit_date ? \Carbon\Carbon::parse($v->visit_date)->format('Y-m-d') : 'N/A',
+            $v->purpose ?? 'N/A',
         ];
     }
 
@@ -93,7 +104,7 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
     {
         return [
             1 => ['font' => ['bold' => true]],
-            'A:R' => ['alignment' => ['wrapText' => true]],
+            'A:K' => ['alignment' => ['wrapText' => true]],
         ];
     }
 }

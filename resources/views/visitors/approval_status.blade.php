@@ -17,7 +17,17 @@
 @endpush
 
 @section('content')
+@php
+    $isCompany = request()->is('company/*');
+    $approvalExportRoute = ($isCompany ? 'company.' : '') . 'reports.approval.export';
+@endphp
 <div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800">Approval Status Report</h2>
+        <a href="{{ route($approvalExportRoute, request()->query()) }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel
+        </a>
+    </div>
     {{-- =================== FILTERS CARD =================== --}}
     <div class="card shadow-sm mb-4">
         <div class="card-body">

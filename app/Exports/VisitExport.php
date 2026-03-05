@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Http\Request;
 
-class VisitorsExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class VisitExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
     protected $request;
 
@@ -22,13 +22,13 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
 
     public function collection()
     {
-        $query = Visitor::with(['company', 'department', 'branch', 'category']);
+        $query = Visitor::whereNotNull('in_time')->with(['company', 'department', 'branch']);
 
         $from = $this->request->input('from') ?: now()->format('Y-m-d');
         $to   = $this->request->input('to')   ?: now()->format('Y-m-d');
 
-        $query->whereDate('created_at', '>=', $from)
-              ->whereDate('created_at', '<=', $to);
+        $query->whereDate('in_time', '>=', $from)
+              ->whereDate('in_time', '<=', $to);
 
         if ($this->request->filled('company_id')) {
             $query->where('company_id', $this->request->company_id);
@@ -44,6 +44,10 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
             $query->whereIn('department_id', $departmentIds);
         }
 
+        if ($this->request->filled('visit_type')) {
+            $query->where('purpose', $this->request->visit_type);
+        }
+
         // Non-superadmin: restrict to own company
         if (auth()->user()->role !== 'superadmin') {
             $query->where('company_id', auth()->user()->company_id);
@@ -52,21 +56,23 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
             }
         }
 
-        return $query->latest()->get();
+        return $query->latest('in_time')->get();
     }
 
     public function headings(): array
     {
         return [
             'Name', 'Email', 'Phone', 'Company', 'Branch', 'Department',
-            'Category', 'Person to Visit', 'Purpose', 'Vehicle Type', 'Vehicle No.',
-            'Goods in Car', 'Document', 'Workman Policy', 'Status',
-            'In Time', 'Out Time', 'Registered At',
+            'Purpose', 'In Time', 'Out Time', 'Duration (minutes)',
         ];
     }
 
     public function map($v): array
     {
+        $inTime  = $v->in_time  ? \Carbon\Carbon::parse($v->in_time)  : null;
+        $outTime = $v->out_time ? \Carbon\Carbon::parse($v->out_time) : null;
+        $duration = ($inTime && $outTime) ? $inTime->diffInMinutes($outTime) : 'N/A';
+
         return [
             $v->name,
             $v->email ?? 'N/A',
@@ -74,18 +80,10 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
             $v->company->name ?? 'N/A',
             $v->branch->name ?? 'N/A',
             $v->department->name ?? 'N/A',
-            $v->category->name ?? 'N/A',
-            $v->person_to_visit ?? 'N/A',
             $v->purpose ?? 'N/A',
-            $v->vehicle_type ?? 'N/A',
-            $v->vehicle_number ?? 'N/A',
-            $v->goods_in_car ?? 'N/A',
-            $v->document ?? 'N/A',
-            $v->workman_policy ?? 'N/A',
-            $v->status ?? 'N/A',
-            $v->in_time ? \Carbon\Carbon::parse($v->in_time)->format('Y-m-d H:i:s') : 'N/A',
-            $v->out_time ? \Carbon\Carbon::parse($v->out_time)->format('Y-m-d H:i:s') : 'N/A',
-            $v->created_at->format('Y-m-d H:i:s'),
+            $inTime  ? $inTime->format('Y-m-d H:i:s')  : 'N/A',
+            $outTime ? $outTime->format('Y-m-d H:i:s') : 'N/A',
+            $duration,
         ];
     }
 
@@ -93,7 +91,7 @@ class VisitorsExport implements FromCollection, WithHeadings, WithMapping, Shoul
     {
         return [
             1 => ['font' => ['bold' => true]],
-            'A:R' => ['alignment' => ['wrapText' => true]],
+            'A:J' => ['alignment' => ['wrapText' => true]],
         ];
     }
 }

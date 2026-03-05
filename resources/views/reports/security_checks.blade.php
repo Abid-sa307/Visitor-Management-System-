@@ -67,6 +67,15 @@
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 text-gray-800">Security Check Reports</h2>
+        <div>
+            @php
+                $pdfRoute = ($isCompany ? 'company.' : '') . 'reports.security.export.pdf';
+                $pdfUrl = route($pdfRoute, request()->query());
+            @endphp
+            <a href="{{ $pdfUrl }}" class="btn btn-danger btn-sm" target="_blank">
+                <i class="fas fa-file-pdf me-1"></i> Export PDF
+            </a>
+        </div>
     </div>
 
     {{-- =================== FILTERS CARD =================== --}}

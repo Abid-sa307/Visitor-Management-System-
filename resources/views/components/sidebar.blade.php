@@ -299,6 +299,17 @@
                                 @endforeach
                             </div>
                         </li>
+
+                        {{-- AMC Report (superadmin only) --}}
+                        @if($isSuper)
+                            <li class="sidebar-item">
+                                <a class="sidebar-link {{ request()->routeIs('amc.*') ? 'is-active' : '' }}"
+                                   href="{{ route('amc.index') }}" data-sidebar-link>
+                                    <span class="sidebar-link__icon"><i class="fas fa-file-contract"></i></span>
+                                    <span>AMC Report</span>
+                                </a>
+                            </li>
+                        @endif
                     </ul>
                 </div>
             @endif

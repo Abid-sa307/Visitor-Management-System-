@@ -9,6 +9,7 @@ use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\SecurityCheckExport;
 use App\Exports\VisitorsExport;
 use App\Exports\VisitExport;
@@ -254,6 +255,63 @@ class ReportController extends Controller
     public function exportSecurityChecks(Request $request)
     {
         return Excel::download(new SecurityCheckExport($request), 'security_checks_'.now()->format('Y-m-d').'.xlsx');
+    }
+
+    public function exportSecurityPdf(Request $request)
+    {
+        $query = SecurityCheck::with(['visitor' => function($q) {
+            $q->with(['company', 'department', 'branch']);
+        }]);
+
+        $from = $request->input('from') ?: now()->format('Y-m-d');
+        $to   = $request->input('to')   ?: now()->format('Y-m-d');
+
+        $query->whereDate('security_checks.created_at', '>=', $from)
+              ->whereDate('security_checks.created_at', '<=', $to);
+
+        if ($request->filled('company_id')) {
+            $query->whereHas('visitor', function($q) use ($request) {
+                $q->where('company_id', $request->company_id);
+            });
+        }
+
+        if ($request->filled('department_id')) {
+            $departmentIds = is_array($request->department_id) ? $request->department_id : [$request->department_id];
+            $query->whereHas('visitor', function($q) use ($departmentIds) {
+                $q->whereIn('department_id', $departmentIds);
+            });
+        }
+
+        if ($request->filled('branch_id')) {
+            $branchIds = is_array($request->branch_id) ? $request->branch_id : [$request->branch_id];
+            $query->whereHas('visitor', function($q) use ($branchIds) {
+                $q->whereIn('branch_id', $branchIds);
+            });
+        }
+
+        if (auth()->user()->role !== 'superadmin') {
+            $query->whereHas('visitor', function($q) {
+                $q->where('company_id', auth()->user()->company_id);
+                if (auth()->user()->departments->isNotEmpty()) {
+                    $q->whereIn('department_id', auth()->user()->departments->pluck('id'));
+                }
+            });
+        }
+
+        $securityChecks = $query->latest('security_checks.created_at')->get();
+
+        $companyName = null;
+        if ($request->filled('company_id')) {
+            $companyName = Company::find($request->company_id)?->name;
+        } elseif (auth()->user()->role !== 'superadmin') {
+            $companyName = auth()->user()->company?->name;
+        }
+
+        $pdf = Pdf::loadView('reports.security_checks_pdf', compact('securityChecks', 'from', 'to', 'companyName'))
+                  ->setPaper('a3', 'landscape');
+
+        $filename = 'security_checks_' . $from . '_to_' . $to . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function exportApprovals(Request $request)

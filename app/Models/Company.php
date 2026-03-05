@@ -131,6 +131,14 @@ class Company extends Authenticatable
     {
         return $this->hasMany(Employee::class);
     }
+
+    /**
+     * Get AMC records for the company.
+     */
+    public function amcRecords()
+    {
+        return $this->hasMany(AmcRecord::class);
+    }
     
     /**
      * Check if a visitor is created outside operating hours

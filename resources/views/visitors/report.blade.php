@@ -30,11 +30,9 @@
 <div class="container-fluid px-4 py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h2 class="fw-bold text-primary m-0">Visitor Report</h2>
-        <form method="GET" action="{{ route($reportExportRoute) }}" class="d-flex gap-2">
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel
-            </button>
-        </form>
+        <a href="{{ route($reportExportRoute, request()->query()) }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel
+        </a>
     </div>
 
     {{-- =================== FILTERS CARD =================== --}}
@@ -218,11 +216,16 @@
                 <tbody>
                     @foreach ($visitors as $visitor)
                         <tr>
-                            <td>
-                                {{ $visitor->photo ? '--' : '—' }}
+                            <td class="text-center">
                                 @if ($visitor->photo)
-                                    <img src="{{ asset('storage/' . $visitor->photo) }}" alt="{{ $visitor->name }}" class="img-fluid rounded" style="max-width: 100px; max-height: 100px;"></td>
+                                    <img src="{{ asset('storage/' . $visitor->photo) }}"
+                                         alt="{{ $visitor->name }}"
+                                         class="img-fluid rounded"
+                                         style="max-width: 80px; max-height: 80px; object-fit: cover;">
+                                @else
+                                    <span class="text-muted"><i class="fas fa-user-circle fa-2x"></i></span>
                                 @endif
+                            </td>
                             <td class="fw-semibold">{{ $visitor->name }}</td>
                             <td>{{ $visitor->category->name ?? '—' }}</td>
                             <td>{{ $visitor->branch->name ?? '—' }}</td>

@@ -48,9 +48,9 @@
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ route('public.visitor.track', $visitor->id) }}" 
+                <a href="{{ route('public.visitors.pass', $visitor->id) }}" 
                    style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                    Track Your Visit Status
+                    View Your Visitor Pass
                 </a>
             </div>
 

@@ -110,12 +110,9 @@
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3 text-gray-800">Visitor In/Out Reports</h2>
-        <form method="GET" action="{{ route($exportRoute) }}" class="d-inline">
-            @csrf
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
-            </button>
-        </form>
+        <a href="{{ route($exportRoute, request()->query()) }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export
+        </a>
     </div>
 
     {{-- =================== FILTERS CARD =================== --}}

@@ -184,7 +184,7 @@
             <footer class="sticky-footer bg-white mt-auto">
                 <div class="container my-auto">
                     <div class="text-center my-auto">
-                        <span>&copy; 2025 Visitor Management System <br> <a href="https://www.nntsoftware.com"
+                        <span>&copy; 2026 Visitor Management System <br> <a href="https://www.nntsoftware.com"
                                 target="_blank">(Developed By N&T Software)</a></span>
                     </div>
                 </div>

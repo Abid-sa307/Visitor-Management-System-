@@ -7,7 +7,6 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\EmployeeController;
-// use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SecurityCheckController;
 use App\Http\Controllers\ReportController;
@@ -18,6 +17,7 @@ use App\Http\Controllers\SecurityQuestionController;
 use App\Http\Controllers\QRManagementController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\AmcController;
 use App\Models\Company;
 
 /*
@@ -210,8 +210,17 @@ Route::middleware('auth')->group(function() {
         Route::get('/visitors/export', [ReportController::class, 'exportVisitors'])->name('visitors.export');
         Route::get('/visits/export', [ReportController::class, 'exportVisits'])->name('visits.export');
         Route::get('/security/export', [ReportController::class, 'exportSecurityChecks'])->name('security.export');
+        Route::get('/security/export-pdf', [ReportController::class, 'exportSecurityPdf'])->name('security.export.pdf');
         Route::get('/approval/export', [ReportController::class, 'exportApprovals'])->name('approval.export');
         Route::get('/hourly/export', [ReportController::class, 'exportHourlyReport'])->name('hourly.export');
+    });
+
+    // AMC Report (superadmin only)
+    Route::prefix('amc')->name('amc.')->group(function () {
+        Route::get('/', [AmcController::class, 'index'])->name('index');
+        Route::post('/store', [AmcController::class, 'store'])->name('store');
+        Route::put('/{amcRecord}', [AmcController::class, 'update'])->name('update');
+        Route::delete('/{amcRecord}', [AmcController::class, 'destroy'])->name('destroy');
     });
 
     // --- COMPANY ALIASES (to support old route names in views) ---
@@ -272,6 +281,7 @@ Route::middleware('auth')->group(function() {
             Route::get('/visitors/export', [ReportController::class, 'exportVisitors'])->name('visitors.export');
             Route::get('/visits/export', [ReportController::class, 'exportVisits'])->name('visits.export');
             Route::get('/security/export', [ReportController::class, 'exportSecurityChecks'])->name('security.export');
+            Route::get('/security/export-pdf', [ReportController::class, 'exportSecurityPdf'])->name('security.export.pdf');
             Route::get('/approval/export', [ReportController::class, 'exportApprovals'])->name('approval.export');
             Route::get('/hourly/export', [ReportController::class, 'exportHourlyReport'])->name('hourly.export');
         });
