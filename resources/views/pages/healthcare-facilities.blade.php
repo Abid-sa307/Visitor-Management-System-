@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visitor Management System for Hospitals &amp; Healthcare Facilities</title>
+    <title>Top hospital visitor management system |Top hospital visitor management Software</title>
 
-    <meta name="description" content="Smart Visitor Management System for hospitals, clinics and healthcare facilities—whether you run a single hospital or a multi-location healthcare network. Digitize patient attendant &amp; visitor check-ins, OPD/IPD registration, vendor and contractor entry with QR/OTP passes, self check-in kiosks, face-recognition access, visiting-hours control, badge printing and real-time visitor logs from one centralized platform. Improve security, compliance and patient experience—book a free demo today.">
+    <meta name="description" content="Top Smart hospital visitor management system &amp; Software for hospitals, clinics and healthcare facilities—whether you run a single hospital or a multi-location healthcare network. Digitize patient attendant &amp; visitor check-ins, OPD/IPD registration, vendor and contractor entry with QR/OTP passes, self check-in kiosks, face-recognition access, visiting-hours control, badge printing and real-time visitor logs from one centralized platform. Improve security, compliance and patient experience—book a free demo today.">
 
     <meta name="keywords" content="hospital visitor management system, healthcare visitor management software, clinic visitor tracking, medical facility visitor check-in, single hospital visitor system, multi location hospital visitor management, healthcare network visitor platform, OPD visitor registration system, IPD patient attendant management, visiting hours control software, QR code visitor pass hospital, OTP visitor entry healthcare, face recognition access hospital, digital visitor register for hospitals, vendor and contractor check-in healthcare, badge printing for visitors, real-time visitor logs hospital, healthcare security and compliance software, paperless hospital reception">
 

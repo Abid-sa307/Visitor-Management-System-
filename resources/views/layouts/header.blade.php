@@ -19,7 +19,14 @@
   <div class="container">
     <!-- Logo -->
     <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-      <img src="{{ asset('images/vmslogo.png') }}" alt="VMS Logo" class="logo-img" />
+      <img
+        src="{{ asset('images/vmslogo-141.webp') }}"
+        width="141"
+        height="69"
+        alt="VMS Logo"
+        class="logo-img"
+        fetchpriority="high"
+        decoding="async" />
 
     </a>
 

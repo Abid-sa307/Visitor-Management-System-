@@ -657,8 +657,20 @@
                 <!-- Image -->
                 <div class="col-lg-6 mt-5 mt-lg-0">
                     <div class="position-relative">
-                        <img src="/images/visitor-management-system-main-img.png" alt="Visitor Management System"
-                            class="hero-image hero-image-desktop rounded-3 shadow-lg">
+                        <img
+                            src="/images/visitor-management-system-main-img-960.webp"
+                            srcset="
+                                /images/visitor-management-system-main-img-640.webp 640w,
+                                /images/visitor-management-system-main-img-800.webp 800w,
+                                /images/visitor-management-system-main-img-960.webp 960w
+                            "
+                            sizes="(min-width: 992px) 50vw, 100vw"
+                            width="1000"
+                            height="639"
+                            alt="Visitor Management System"
+                            class="hero-image hero-image-desktop rounded-3 shadow-lg"
+                            fetchpriority="high"
+                            decoding="async">
                         <img src="/images/visitor-management-system-main-img1.jpeg" alt="Visitor Management System"
                             class="hero-image hero-image-mobile rounded-3 shadow-lg">
                     </div>
@@ -871,7 +883,25 @@
                     <div class="industry-card h-100">
                         <a href="/office-workplace-management"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/office-img.png" alt="Office Visitor Management" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/office-img-360.webp 360w,
+                                        /images/office-img-520.webp 520w,
+                                        /images/office-img-780.webp 780w,
+                                        /images/office-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/office-img-520.webp"
+                                    alt="Office Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Offices</h3>
                                 <p class="mb-0">
@@ -890,8 +920,25 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/school-and-colleges" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/university-img.png" alt="Schools & Universities Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/university-img-360.webp 360w,
+                                        /images/university-img-520.webp 520w,
+                                        /images/university-img-780.webp 780w,
+                                        /images/university-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/university-img-520.webp"
+                                    alt="Schools & Universities Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Schools & Universities</h3>
                                 <p class="mb-0">
@@ -911,8 +958,25 @@
                     <div class="industry-card h-100">
                         <a href="/industrial-and-cold-storage"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/cold-storage-img.png" alt="Industrial Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/cold-storage-img-360.webp 360w,
+                                        /images/cold-storage-img-520.webp 520w,
+                                        /images/cold-storage-img-780.webp 780w,
+                                        /images/cold-storage-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/cold-storage-img-520.webp"
+                                    alt="Industrial Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Warehouses</h3>
                                 <p class="mb-0">
@@ -931,7 +995,25 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/resident-societies" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/resident-gate.png" alt="Society Gate" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/resident-gate-360.webp 360w,
+                                        /images/resident-gate-520.webp 520w,
+                                        /images/resident-gate-780.webp 780w,
+                                        /images/resident-gate-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/resident-gate-520.webp"
+                                    alt="Society Gate"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Residents' Societies</h3>
                                 <p class="mb-0">
@@ -950,7 +1032,25 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/malls-and-events" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/malls-gate.png" alt="Malls Gate" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/malls-gate-360.webp 360w,
+                                        /images/malls-gate-520.webp 520w,
+                                        /images/malls-gate-780.webp 780w,
+                                        /images/malls-gate-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/malls-gate-520.webp"
+                                    alt="Malls Gate"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Malls & Events</h3>
                                 <p class="mb-0">
@@ -970,8 +1070,25 @@
                     <div class="industry-card h-100">
                         <a href="/healthcare-facilities"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/healthcare-img.png" alt="Healthcare Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/healthcare-img-360.webp 360w,
+                                        /images/healthcare-img-520.webp 520w,
+                                        /images/healthcare-img-780.webp 780w,
+                                        /images/healthcare-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/healthcare-img-520.webp"
+                                    alt="Healthcare Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Healthcare Facilities</h3>
                                 <p class="mb-0">
@@ -990,8 +1107,25 @@
                     <div class="industry-card h-100">
                         <a href="/industrial-manufacturing-unit"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/industries-gate-img.png" alt="Industrial Manufacturing Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/industries-gate-img-360.webp 360w,
+                                        /images/industries-gate-img-520.webp 520w,
+                                        /images/industries-gate-img-780.webp 780w,
+                                        /images/industries-gate-img-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/industries-gate-img-520.webp"
+                                    alt="Industrial Manufacturing Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Industrial Manufacturing Unit</h3>
                                 <p class="mb-0">
@@ -1011,8 +1145,25 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/resident-buildings" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/resident-building-gate.png" alt="Residential Building Visitor Management"
-                                class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/resident-building-gate-360.webp 360w,
+                                        /images/resident-building-gate-520.webp 520w,
+                                        /images/resident-building-gate-780.webp 780w,
+                                        /images/resident-building-gate-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/resident-building-gate-520.webp"
+                                    alt="Residential Building Visitor Management"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Resident Buildings</h3>
                                 <p class="mb-0">
@@ -1032,7 +1183,25 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
                         <a href="/temple-and-dargah" class="text-decoration-none text-dark d-flex flex-column h-100">
-                            <img src="/images/temple.png" alt="Temple Gate" class="industry-img">
+                            <picture>
+                                <source
+                                    type="image/webp"
+                                    srcset="
+                                        /images/temple-360.webp 360w,
+                                        /images/temple-520.webp 520w,
+                                        /images/temple-780.webp 780w,
+                                        /images/temple-1040.webp 1040w
+                                    "
+                                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw">
+                                <img
+                                    src="/images/temple-520.webp"
+                                    alt="Temple Gate"
+                                    class="industry-img"
+                                    width="520"
+                                    height="347"
+                                    loading="lazy"
+                                    decoding="async">
+                            </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
                                 <h3>Holy Places</h3>
                                 <p class="mb-0">

@@ -69,6 +69,431 @@ class VmsLandingController extends Controller
                 'full' => 'Africa',
                 'demo_label' => 'Request Demo in Africa',
             ],
+            'ethiopia' => [
+                'name' => 'Ethiopia',
+                'full' => 'Ethiopia',
+                'demo_label' => 'Request Demo in Ethiopia',
+            ],
+            'ghana' => [
+                'name' => 'Ghana',
+                'full' => 'Ghana',
+                'demo_label' => 'Request Demo in Ghana',
+            ],
+            'tanzania' => [
+                'name' => 'Tanzania',
+                'full' => 'Tanzania',
+                'demo_label' => 'Request Demo in Tanzania',
+            ],
+            'kenya' => [
+                'name' => 'Kenya',
+                'full' => 'Kenya',
+                'demo_label' => 'Request Demo in Kenya',
+            ],
+            'canada' => [
+                'name' => 'Canada',
+                'full' => 'Canada',
+                'demo_label' => 'Request Demo in Canada',
+            ],
+            'mexico' => [
+                'name' => 'Mexico',
+                'full' => 'Mexico',
+                'demo_label' => 'Request Demo in Mexico',
+            ],
+            'guatemala' => [
+                'name' => 'Guatemala',
+                'full' => 'Guatemala',
+                'demo_label' => 'Request Demo in Guatemala',
+            ],
+            'belize' => [
+                'name' => 'Belize',
+                'full' => 'Belize',
+                'demo_label' => 'Request Demo in Belize',
+            ],
+            'el-salvador' => [
+                'name' => 'El Salvador',
+                'full' => 'El Salvador',
+                'demo_label' => 'Request Demo in El Salvador',
+            ],
+            'honduras' => [
+                'name' => 'Honduras',
+                'full' => 'Honduras',
+                'demo_label' => 'Request Demo in Honduras',
+            ],
+            'nicaragua' => [
+                'name' => 'Nicaragua',
+                'full' => 'Nicaragua',
+                'demo_label' => 'Request Demo in Nicaragua',
+            ],
+            'costa-rica' => [
+                'name' => 'Costa Rica',
+                'full' => 'Costa Rica',
+                'demo_label' => 'Request Demo in Costa Rica',
+            ],
+            'panama' => [
+                'name' => 'Panama',
+                'full' => 'Panama',
+                'demo_label' => 'Request Demo in Panama',
+            ],
+            'cuba' => [
+                'name' => 'Cuba',
+                'full' => 'Cuba',
+                'demo_label' => 'Request Demo in Cuba',
+            ],
+            'haiti' => [
+                'name' => 'Haiti',
+                'full' => 'Haiti',
+                'demo_label' => 'Request Demo in Haiti',
+            ],
+            'dominican-republic' => [
+                'name' => 'Dominican Republic',
+                'full' => 'Dominican Republic',
+                'demo_label' => 'Request Demo in Dominican Republic',
+            ],
+            'bahamas' => [
+                'name' => 'Bahamas',
+                'full' => 'Bahamas',
+                'demo_label' => 'Request Demo in Bahamas',
+            ],
+            'jamaica' => [
+                'name' => 'Jamaica',
+                'full' => 'Jamaica',
+                'demo_label' => 'Request Demo in Jamaica',
+            ],
+            'barbados' => [
+                'name' => 'Barbados',
+                'full' => 'Barbados',
+                'demo_label' => 'Request Demo in Barbados',
+            ],
+            'trinidad-and-tobago' => [
+                'name' => 'Trinidad and Tobago',
+                'full' => 'Trinidad and Tobago',
+                'demo_label' => 'Request Demo in Trinidad and Tobago',
+            ],
+            'antigua-and-barbuda' => [
+                'name' => 'Antigua and Barbuda',
+                'full' => 'Antigua and Barbuda',
+                'demo_label' => 'Request Demo in Antigua and Barbuda',
+            ],
+            'dubai' => [
+                'name' => 'Dubai',
+                'full' => 'Dubai',
+                'demo_label' => 'Request Demo in Dubai',
+            ],
+            'abu-dhabi' => [
+                'name' => 'Abu Dhabi',
+                'full' => 'Abu Dhabi',
+                'demo_label' => 'Request Demo in Abu Dhabi',
+            ],
+            'sharjah' => [
+                'name' => 'Sharjah',
+                'full' => 'Sharjah',
+                'demo_label' => 'Request Demo in Sharjah',
+            ],
+            'ajman' => [
+                'name' => 'Ajman',
+                'full' => 'Ajman',
+                'demo_label' => 'Request Demo in Ajman',
+            ],
+            'ras-al-khaimah' => [
+                'name' => 'Ras Al Khaimah',
+                'full' => 'Ras Al Khaimah',
+                'demo_label' => 'Request Demo in Ras Al Khaimah',
+            ],
+            'al-ain' => [
+                'name' => 'Al Ain',
+                'full' => 'Al Ain',
+                'demo_label' => 'Request Demo in Al Ain',
+            ],
+            'riyadh' => [
+                'name' => 'Riyadh',
+                'full' => 'Riyadh',
+                'demo_label' => 'Request Demo in Riyadh',
+            ],
+            'jeddah' => [
+                'name' => 'Jeddah',
+                'full' => 'Jeddah',
+                'demo_label' => 'Request Demo in Jeddah',
+            ],
+            'dammam' => [
+                'name' => 'Dammam',
+                'full' => 'Dammam',
+                'demo_label' => 'Request Demo in Dammam',
+            ],
+            'al-khobar' => [
+                'name' => 'Al Khobar',
+                'full' => 'Al Khobar',
+                'demo_label' => 'Request Demo in Al Khobar',
+            ],
+            'dhahran' => [
+                'name' => 'Dhahran',
+                'full' => 'Dhahran',
+                'demo_label' => 'Request Demo in Dhahran',
+            ],
+            'makkah' => [
+                'name' => 'Makkah',
+                'full' => 'Makkah',
+                'demo_label' => 'Request Demo in Makkah',
+            ],
+            'madinah' => [
+                'name' => 'Madinah',
+                'full' => 'Madinah',
+                'demo_label' => 'Request Demo in Madinah',
+            ],
+            'doha' => [
+                'name' => 'Doha',
+                'full' => 'Doha',
+                'demo_label' => 'Request Demo in Doha',
+            ],
+            'lusail' => [
+                'name' => 'Lusail',
+                'full' => 'Lusail',
+                'demo_label' => 'Request Demo in Lusail',
+            ],
+            'algeria' => [
+                'name' => 'Algeria',
+                'full' => 'Algeria',
+                'demo_label' => 'Request Demo in Algeria',
+            ],
+            'angola' => [
+                'name' => 'Angola',
+                'full' => 'Angola',
+                'demo_label' => 'Request Demo in Angola',
+            ],
+            'benin' => [
+                'name' => 'Benin',
+                'full' => 'Benin',
+                'demo_label' => 'Request Demo in Benin',
+            ],
+            'botswana' => [
+                'name' => 'Botswana',
+                'full' => 'Botswana',
+                'demo_label' => 'Request Demo in Botswana',
+            ],
+            'burkina-faso' => [
+                'name' => 'Burkina Faso',
+                'full' => 'Burkina Faso',
+                'demo_label' => 'Request Demo in Burkina Faso',
+            ],
+            'burundi' => [
+                'name' => 'Burundi',
+                'full' => 'Burundi',
+                'demo_label' => 'Request Demo in Burundi',
+            ],
+            'cabo-verde' => [
+                'name' => 'Cabo Verde',
+                'full' => 'Cabo Verde',
+                'demo_label' => 'Request Demo in Cabo Verde',
+            ],
+            'cameroon' => [
+                'name' => 'Cameroon',
+                'full' => 'Cameroon',
+                'demo_label' => 'Request Demo in Cameroon',
+            ],
+            'central-african-republic' => [
+                'name' => 'Central African Republic',
+                'full' => 'Central African Republic',
+                'demo_label' => 'Request Demo in Central African Republic',
+            ],
+            'chad' => [
+                'name' => 'Chad',
+                'full' => 'Chad',
+                'demo_label' => 'Request Demo in Chad',
+            ],
+            'comoros' => [
+                'name' => 'Comoros',
+                'full' => 'Comoros',
+                'demo_label' => 'Request Demo in Comoros',
+            ],
+            'republic-of-the-congo' => [
+                'name' => 'Republic of the Congo',
+                'full' => 'Republic of the Congo',
+                'demo_label' => 'Request Demo in Republic of the Congo',
+            ],
+            'cote-d-ivoire' => [
+                'name' => 'Côte d\'Ivoire',
+                'full' => 'Côte d\'Ivoire',
+                'demo_label' => 'Request Demo in Côte d\'Ivoire',
+            ],
+            'democratic-republic-of-the-congo' => [
+                'name' => 'Democratic Republic of the Congo',
+                'full' => 'Democratic Republic of the Congo',
+                'demo_label' => 'Request Demo in Democratic Republic of the Congo',
+            ],
+            'djibouti' => [
+                'name' => 'Djibouti',
+                'full' => 'Djibouti',
+                'demo_label' => 'Request Demo in Djibouti',
+            ],
+            'egypt' => [
+                'name' => 'Egypt',
+                'full' => 'Egypt',
+                'demo_label' => 'Request Demo in Egypt',
+            ],
+            'equatorial-guinea' => [
+                'name' => 'Equatorial Guinea',
+                'full' => 'Equatorial Guinea',
+                'demo_label' => 'Request Demo in Equatorial Guinea',
+            ],
+            'eritrea' => [
+                'name' => 'Eritrea',
+                'full' => 'Eritrea',
+                'demo_label' => 'Request Demo in Eritrea',
+            ],
+            'eswatini' => [
+                'name' => 'Eswatini',
+                'full' => 'Eswatini',
+                'demo_label' => 'Request Demo in Eswatini',
+            ],
+            'gabon' => [
+                'name' => 'Gabon',
+                'full' => 'Gabon',
+                'demo_label' => 'Request Demo in Gabon',
+            ],
+            'the-gambia' => [
+                'name' => 'The Gambia',
+                'full' => 'The Gambia',
+                'demo_label' => 'Request Demo in The Gambia',
+            ],
+            'guinea' => [
+                'name' => 'Guinea',
+                'full' => 'Guinea',
+                'demo_label' => 'Request Demo in Guinea',
+            ],
+            'guinea-bissau' => [
+                'name' => 'Guinea-Bissau',
+                'full' => 'Guinea-Bissau',
+                'demo_label' => 'Request Demo in Guinea-Bissau',
+            ],
+            'lesotho' => [
+                'name' => 'Lesotho',
+                'full' => 'Lesotho',
+                'demo_label' => 'Request Demo in Lesotho',
+            ],
+            'liberia' => [
+                'name' => 'Liberia',
+                'full' => 'Liberia',
+                'demo_label' => 'Request Demo in Liberia',
+            ],
+            'libya' => [
+                'name' => 'Libya',
+                'full' => 'Libya',
+                'demo_label' => 'Request Demo in Libya',
+            ],
+            'madagascar' => [
+                'name' => 'Madagascar',
+                'full' => 'Madagascar',
+                'demo_label' => 'Request Demo in Madagascar',
+            ],
+            'malawi' => [
+                'name' => 'Malawi',
+                'full' => 'Malawi',
+                'demo_label' => 'Request Demo in Malawi',
+            ],
+            'mali' => [
+                'name' => 'Mali',
+                'full' => 'Mali',
+                'demo_label' => 'Request Demo in Mali',
+            ],
+            'mauritania' => [
+                'name' => 'Mauritania',
+                'full' => 'Mauritania',
+                'demo_label' => 'Request Demo in Mauritania',
+            ],
+            'mauritius' => [
+                'name' => 'Mauritius',
+                'full' => 'Mauritius',
+                'demo_label' => 'Request Demo in Mauritius',
+            ],
+            'morocco' => [
+                'name' => 'Morocco',
+                'full' => 'Morocco',
+                'demo_label' => 'Request Demo in Morocco',
+            ],
+            'mozambique' => [
+                'name' => 'Mozambique',
+                'full' => 'Mozambique',
+                'demo_label' => 'Request Demo in Mozambique',
+            ],
+            'namibia' => [
+                'name' => 'Namibia',
+                'full' => 'Namibia',
+                'demo_label' => 'Request Demo in Namibia',
+            ],
+            'niger' => [
+                'name' => 'Niger',
+                'full' => 'Niger',
+                'demo_label' => 'Request Demo in Niger',
+            ],
+            'nigeria' => [
+                'name' => 'Nigeria',
+                'full' => 'Nigeria',
+                'demo_label' => 'Request Demo in Nigeria',
+            ],
+            'rwanda' => [
+                'name' => 'Rwanda',
+                'full' => 'Rwanda',
+                'demo_label' => 'Request Demo in Rwanda',
+            ],
+            'sao-tome-and-principe' => [
+                'name' => 'São Tomé and Príncipe',
+                'full' => 'São Tomé and Príncipe',
+                'demo_label' => 'Request Demo in São Tomé and Príncipe',
+            ],
+            'senegal' => [
+                'name' => 'Senegal',
+                'full' => 'Senegal',
+                'demo_label' => 'Request Demo in Senegal',
+            ],
+            'seychelles' => [
+                'name' => 'Seychelles',
+                'full' => 'Seychelles',
+                'demo_label' => 'Request Demo in Seychelles',
+            ],
+            'sierra-leone' => [
+                'name' => 'Sierra Leone',
+                'full' => 'Sierra Leone',
+                'demo_label' => 'Request Demo in Sierra Leone',
+            ],
+            'somalia' => [
+                'name' => 'Somalia',
+                'full' => 'Somalia',
+                'demo_label' => 'Request Demo in Somalia',
+            ],
+            'south-sudan' => [
+                'name' => 'South Sudan',
+                'full' => 'South Sudan',
+                'demo_label' => 'Request Demo in South Sudan',
+            ],
+            'sudan' => [
+                'name' => 'Sudan',
+                'full' => 'Sudan',
+                'demo_label' => 'Request Demo in Sudan',
+            ],
+            'togo' => [
+                'name' => 'Togo',
+                'full' => 'Togo',
+                'demo_label' => 'Request Demo in Togo',
+            ],
+            'tunisia' => [
+                'name' => 'Tunisia',
+                'full' => 'Tunisia',
+                'demo_label' => 'Request Demo in Tunisia',
+            ],
+            'uganda' => [
+                'name' => 'Uganda',
+                'full' => 'Uganda',
+                'demo_label' => 'Request Demo in Uganda',
+            ],
+            'zambia' => [
+                'name' => 'Zambia',
+                'full' => 'Zambia',
+                'demo_label' => 'Request Demo in Zambia',
+            ],
+            'zimbabwe' => [
+                'name' => 'Zimbabwe',
+                'full' => 'Zimbabwe',
+                'demo_label' => 'Request Demo in Zimbabwe',
+            ],
         ];
     }
     public function country(string $country)
@@ -92,7 +517,7 @@ class VmsLandingController extends Controller
         // ✅ SEO (dynamic)
         $seo = [
             'title' => "Top Visitor Management Software in {$c['name']} | Top Visitor Management System {$c['name']}",
-            'description' => "Visitor Management Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
+            'description' => "Visitor Management System & Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];

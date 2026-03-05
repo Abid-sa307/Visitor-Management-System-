@@ -348,7 +348,13 @@
       <div class="container">
         <!-- Logo -->
         <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-          <img src="{{ asset('images/vmslogo.png') }}" alt="VMS Logo" class="logo-img" />
+          <img
+            src="{{ asset('images/vmslogo-141.webp') }}"
+            width="141"
+            height="69"
+            alt="VMS Logo"
+            class="logo-img"
+            decoding="async" />
         </a>
 
         <!-- Mobile hamburger (custom, no offcanvas attributes) -->
@@ -1037,7 +1043,14 @@
                     <!-- Company Information -->
                     <div class="col-lg-4 col-md-6 mb-4">
                         <a class="navbar-brand d-flex align-items-center" href="/">
-                            <img src="{{ asset('images/vmslogo.png') }}" alt="N&N TVMS Logo" style="height:60px; width:auto; object-fit:contain;">
+                            <img
+                                src="{{ asset('images/vmslogo-141.webp') }}"
+                                width="141"
+                                height="69"
+                                alt="N&N TVMS Logo"
+                                style="height:60px; width:auto; object-fit:contain;"
+                                loading="lazy"
+                                decoding="async">
                         </a>
                         <p>Smart Visitor Management System for modern organizations. Secure, efficient, and reliable.</p>
                         <div class="mt-3">
