@@ -72,7 +72,9 @@ Route::view('/malls-and-events-visitor-management-system', 'pages.malls-and-even
 Route::view('/holy-places-visitor-management-system', 'pages.temple-and-dargah')->name('temple-and-dargah');
 
 // Indian State Pages (must be defined BEFORE country route to avoid wildcard conflict)
-Route::get('/visitor-management-system-in-{state}-india', [App\Http\Controllers\VmsLandingController::class, 'state'])->name('vms.state');
+Route::get('/visitor-management-system-in-{state}-india', [App\Http\Controllers\VmsLandingController::class, 'state'])
+    ->where('state', '[a-zA-Z0-9\-]+')
+    ->name('vms.state');
 
 // Country Pages
 Route::get('/visitor-management-system-in-{country}', [App\Http\Controllers\VmsLandingController::class, 'country'])->name('vms.country');

@@ -230,7 +230,6 @@
                       <i class="fas fa-file-pdf"></i>
                     </a>
                   @endif
-
                   {{-- Delete --}}
                   @if($deleteDisabled)
                     <button class="action-btn action-btn--delete action-btn--icon" 

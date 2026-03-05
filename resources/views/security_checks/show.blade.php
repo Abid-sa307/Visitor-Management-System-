@@ -78,10 +78,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($securityCheck->questions as $index => $question)
+                        @foreach($securityCheck->question_texts as $index => $questionText)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $question }}</td>
+                            <td>{{ $questionText }}</td>
                             <td>
                                 @if(isset($securityCheck->photo_responses[$index]))
                                     <a href="{{ asset('storage/' . $securityCheck->photo_responses[$index]) }}" target="_blank">
