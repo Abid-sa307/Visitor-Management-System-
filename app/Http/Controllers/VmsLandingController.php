@@ -489,10 +489,550 @@ class VmsLandingController extends Controller
                 'full' => 'Zambia',
                 'demo_label' => 'Request Demo in Zambia',
             ],
+            'russia' => [
+                'name' => 'Russia',
+                'full' => 'Russia',
+                'demo_label' => 'Request Demo in Russia',
+            ],
+            'germany' => [
+                'name' => 'Germany',
+                'full' => 'Germany',
+                'demo_label' => 'Request Demo in Germany',
+            ],
+            'france' => [
+                'name' => 'France',
+                'full' => 'France',
+                'demo_label' => 'Request Demo in France',
+            ],
+            'italy' => [
+                'name' => 'Italy',
+                'full' => 'Italy',
+                'demo_label' => 'Request Demo in Italy',
+            ],
+            'spain' => [
+                'name' => 'Spain',
+                'full' => 'Spain',
+                'demo_label' => 'Request Demo in Spain',
+            ],
+            'ukraine' => [
+                'name' => 'Ukraine',
+                'full' => 'Ukraine',
+                'demo_label' => 'Request Demo in Ukraine',
+            ],
+            'poland' => [
+                'name' => 'Poland',
+                'full' => 'Poland',
+                'demo_label' => 'Request Demo in Poland',
+            ],
+            'romania' => [
+                'name' => 'Romania',
+                'full' => 'Romania',
+                'demo_label' => 'Request Demo in Romania',
+            ],
+            'netherlands' => [
+                'name' => 'Netherlands',
+                'full' => 'Netherlands',
+                'demo_label' => 'Request Demo in Netherlands',
+            ],
+            'belgium' => [
+                'name' => 'Belgium',
+                'full' => 'Belgium',
+                'demo_label' => 'Request Demo in Belgium',
+            ],
+            'sweden' => [
+                'name' => 'Sweden',
+                'full' => 'Sweden',
+                'demo_label' => 'Request Demo in Sweden',
+            ],
+            'czech-republic' => [
+                'name' => 'Czech Republic',
+                'full' => 'Czech Republic',
+                'demo_label' => 'Request Demo in Czech Republic',
+            ],
+            'portugal' => [
+                'name' => 'Portugal',
+                'full' => 'Portugal',
+                'demo_label' => 'Request Demo in Portugal',
+            ],
+            'greece' => [
+                'name' => 'Greece',
+                'full' => 'Greece',
+                'demo_label' => 'Request Demo in Greece',
+            ],
+            'hungary' => [
+                'name' => 'Hungary',
+                'full' => 'Hungary',
+                'demo_label' => 'Request Demo in Hungary',
+            ],
+            'austria' => [
+                'name' => 'Austria',
+                'full' => 'Austria',
+                'demo_label' => 'Request Demo in Austria',
+            ],
+            'switzerland' => [
+                'name' => 'Switzerland',
+                'full' => 'Switzerland',
+                'demo_label' => 'Request Demo in Switzerland',
+            ],
+            'belarus' => [
+                'name' => 'Belarus',
+                'full' => 'Belarus',
+                'demo_label' => 'Request Demo in Belarus',
+            ],
+            'bulgaria' => [
+                'name' => 'Bulgaria',
+                'full' => 'Bulgaria',
+                'demo_label' => 'Request Demo in Bulgaria',
+            ],
+            'serbia' => [
+                'name' => 'Serbia',
+                'full' => 'Serbia',
+                'demo_label' => 'Request Demo in Serbia',
+            ],
+            'denmark' => [
+                'name' => 'Denmark',
+                'full' => 'Denmark',
+                'demo_label' => 'Request Demo in Denmark',
+            ],
+            'norway' => [
+                'name' => 'Norway',
+                'full' => 'Norway',
+                'demo_label' => 'Request Demo in Norway',
+            ],
+            'finland' => [
+                'name' => 'Finland',
+                'full' => 'Finland',
+                'demo_label' => 'Request Demo in Finland',
+            ],
+            'slovakia' => [
+                'name' => 'Slovakia',
+                'full' => 'Slovakia',
+                'demo_label' => 'Request Demo in Slovakia',
+            ],
+            'ireland' => [
+                'name' => 'Ireland',
+                'full' => 'Ireland',
+                'demo_label' => 'Request Demo in Ireland',
+            ],
+            'croatia' => [
+                'name' => 'Croatia',
+                'full' => 'Croatia',
+                'demo_label' => 'Request Demo in Croatia',
+            ],
+            'bosnia-and-herzegovina' => [
+                'name' => 'Bosnia and Herzegovina',
+                'full' => 'Bosnia and Herzegovina',
+                'demo_label' => 'Request Demo in Bosnia and Herzegovina',
+            ],
+            'moldova' => [
+                'name' => 'Moldova',
+                'full' => 'Moldova',
+                'demo_label' => 'Request Demo in Moldova',
+            ],
+            'lithuania' => [
+                'name' => 'Lithuania',
+                'full' => 'Lithuania',
+                'demo_label' => 'Request Demo in Lithuania',
+            ],
+            'albania' => [
+                'name' => 'Albania',
+                'full' => 'Albania',
+                'demo_label' => 'Request Demo in Albania',
+            ],
+            'slovenia' => [
+                'name' => 'Slovenia',
+                'full' => 'Slovenia',
+                'demo_label' => 'Request Demo in Slovenia',
+            ],
+            'latvia' => [
+                'name' => 'Latvia',
+                'full' => 'Latvia',
+                'demo_label' => 'Request Demo in Latvia',
+            ],
+            'north-macedonia' => [
+                'name' => 'North Macedonia',
+                'full' => 'North Macedonia',
+                'demo_label' => 'Request Demo in North Macedonia',
+            ],
+            'estonia' => [
+                'name' => 'Estonia',
+                'full' => 'Estonia',
+                'demo_label' => 'Request Demo in Estonia',
+            ],
+            'luxembourg' => [
+                'name' => 'Luxembourg',
+                'full' => 'Luxembourg',
+                'demo_label' => 'Request Demo in Luxembourg',
+            ],
+            'montenegro' => [
+                'name' => 'Montenegro',
+                'full' => 'Montenegro',
+                'demo_label' => 'Request Demo in Montenegro',
+            ],
+            'malta' => [
+                'name' => 'Malta',
+                'full' => 'Malta',
+                'demo_label' => 'Request Demo in Malta',
+            ],
+            'iceland' => [
+                'name' => 'Iceland',
+                'full' => 'Iceland',
+                'demo_label' => 'Request Demo in Iceland',
+            ],
+            'andorra' => [
+                'name' => 'Andorra',
+                'full' => 'Andorra',
+                'demo_label' => 'Request Demo in Andorra',
+            ],
+            'liechtenstein' => [
+                'name' => 'Liechtenstein',
+                'full' => 'Liechtenstein',
+                'demo_label' => 'Request Demo in Liechtenstein',
+            ],
+            'monaco' => [
+                'name' => 'Monaco',
+                'full' => 'Monaco',
+                'demo_label' => 'Request Demo in Monaco',
+            ],
+            'san-marino' => [
+                'name' => 'San Marino',
+                'full' => 'San Marino',
+                'demo_label' => 'Request Demo in San Marino',
+            ],
+            'holy-see' => [
+                'name' => 'Holy See',
+                'full' => 'Holy See',
+                'demo_label' => 'Request Demo in Holy See',
+            ],
             'zimbabwe' => [
                 'name' => 'Zimbabwe',
                 'full' => 'Zimbabwe',
                 'demo_label' => 'Request Demo in Zimbabwe',
+            ],
+            'dominica' => [
+                'name' => 'Dominica',
+                'full' => 'Dominica',
+                'demo_label' => 'Request Demo in Dominica',
+            ],
+            'grenada' => [
+                'name' => 'Grenada',
+                'full' => 'Grenada',
+                'demo_label' => 'Request Demo in Grenada',
+            ],
+            'saint-kitts-and-nevis' => [
+                'name' => 'Saint Kitts and Nevis',
+                'full' => 'Saint Kitts and Nevis',
+                'demo_label' => 'Request Demo in Saint Kitts and Nevis',
+            ],
+            'saint-lucia' => [
+                'name' => 'Saint Lucia',
+                'full' => 'Saint Lucia',
+                'demo_label' => 'Request Demo in Saint Lucia',
+            ],
+            'saint-vincent-and-the-grenadines' => [
+                'name' => 'Saint Vincent and the Grenadines',
+                'full' => 'Saint Vincent and the Grenadines',
+                'demo_label' => 'Request Demo in Saint Vincent and the Grenadines',
+            ],
+            'argentina' => [
+                'name' => 'Argentina',
+                'full' => 'Argentina',
+                'demo_label' => 'Request Demo in Argentina',
+            ],
+            'bolivia' => [
+                'name' => 'Bolivia',
+                'full' => 'Bolivia',
+                'demo_label' => 'Request Demo in Bolivia',
+            ],
+            'brazil' => [
+                'name' => 'Brazil',
+                'full' => 'Brazil',
+                'demo_label' => 'Request Demo in Brazil',
+            ],
+            'chile' => [
+                'name' => 'Chile',
+                'full' => 'Chile',
+                'demo_label' => 'Request Demo in Chile',
+            ],
+            'colombia' => [
+                'name' => 'Colombia',
+                'full' => 'Colombia',
+                'demo_label' => 'Request Demo in Colombia',
+            ],
+            'ecuador' => [
+                'name' => 'Ecuador',
+                'full' => 'Ecuador',
+                'demo_label' => 'Request Demo in Ecuador',
+            ],
+            'guyana' => [
+                'name' => 'Guyana',
+                'full' => 'Guyana',
+                'demo_label' => 'Request Demo in Guyana',
+            ],
+            'paraguay' => [
+                'name' => 'Paraguay',
+                'full' => 'Paraguay',
+                'demo_label' => 'Request Demo in Paraguay',
+            ],
+            'peru' => [
+                'name' => 'Peru',
+                'full' => 'Peru',
+                'demo_label' => 'Request Demo in Peru',
+            ],
+            'suriname' => [
+                'name' => 'Suriname',
+                'full' => 'Suriname',
+                'demo_label' => 'Request Demo in Suriname',
+            ],
+            'uruguay' => [
+                'name' => 'Uruguay',
+                'full' => 'Uruguay',
+                'demo_label' => 'Request Demo in Uruguay',
+            ],
+            'venezuela' => [
+                'name' => 'Venezuela',
+                'full' => 'Venezuela',
+                'demo_label' => 'Request Demo in Venezuela',
+            ],
+            'afghanistan' => [
+                'name' => 'Afghanistan',
+                'full' => 'Afghanistan',
+                'demo_label' => 'Request Demo in Afghanistan',
+            ],
+            'armenia' => [
+                'name' => 'Armenia',
+                'full' => 'Armenia',
+                'demo_label' => 'Request Demo in Armenia',
+            ],
+            'azerbaijan' => [
+                'name' => 'Azerbaijan',
+                'full' => 'Azerbaijan',
+                'demo_label' => 'Request Demo in Azerbaijan',
+            ],
+            'bangladesh' => [
+                'name' => 'Bangladesh',
+                'full' => 'Bangladesh',
+                'demo_label' => 'Request Demo in Bangladesh',
+            ],
+            'bhutan' => [
+                'name' => 'Bhutan',
+                'full' => 'Bhutan',
+                'demo_label' => 'Request Demo in Bhutan',
+            ],
+            'brunei' => [
+                'name' => 'Brunei',
+                'full' => 'Brunei',
+                'demo_label' => 'Request Demo in Brunei',
+            ],
+            'cambodia' => [
+                'name' => 'Cambodia',
+                'full' => 'Cambodia',
+                'demo_label' => 'Request Demo in Cambodia',
+            ],
+            'cyprus' => [
+                'name' => 'Cyprus',
+                'full' => 'Cyprus',
+                'demo_label' => 'Request Demo in Cyprus',
+            ],
+            'georgia' => [
+                'name' => 'Georgia',
+                'full' => 'Georgia',
+                'demo_label' => 'Request Demo in Georgia',
+            ],
+            'indonesia' => [
+                'name' => 'Indonesia',
+                'full' => 'Indonesia',
+                'demo_label' => 'Request Demo in Indonesia',
+            ],
+            'iran' => [
+                'name' => 'Iran',
+                'full' => 'Iran',
+                'demo_label' => 'Request Demo in Iran',
+            ],
+            'jordan' => [
+                'name' => 'Jordan',
+                'full' => 'Jordan',
+                'demo_label' => 'Request Demo in Jordan',
+            ],
+            'kazakhstan' => [
+                'name' => 'Kazakhstan',
+                'full' => 'Kazakhstan',
+                'demo_label' => 'Request Demo in Kazakhstan',
+            ],
+            'kyrgyzstan' => [
+                'name' => 'Kyrgyzstan',
+                'full' => 'Kyrgyzstan',
+                'demo_label' => 'Request Demo in Kyrgyzstan',
+            ],
+            'laos' => [
+                'name' => 'Laos',
+                'full' => 'Laos',
+                'demo_label' => 'Request Demo in Laos',
+            ],
+            'lebanon' => [
+                'name' => 'Lebanon',
+                'full' => 'Lebanon',
+                'demo_label' => 'Request Demo in Lebanon',
+            ],
+            'malaysia' => [
+                'name' => 'Malaysia',
+                'full' => 'Malaysia',
+                'demo_label' => 'Request Demo in Malaysia',
+            ],
+            'maldives' => [
+                'name' => 'Maldives',
+                'full' => 'Maldives',
+                'demo_label' => 'Request Demo in Maldives',
+            ],
+            'mongolia' => [
+                'name' => 'Mongolia',
+                'full' => 'Mongolia',
+                'demo_label' => 'Request Demo in Mongolia',
+            ],
+            'myanmar' => [
+                'name' => 'Myanmar',
+                'full' => 'Myanmar',
+                'demo_label' => 'Request Demo in Myanmar',
+            ],
+            'nepal' => [
+                'name' => 'Nepal',
+                'full' => 'Nepal',
+                'demo_label' => 'Request Demo in Nepal',
+            ],
+            'philippines' => [
+                'name' => 'Philippines',
+                'full' => 'Philippines',
+                'demo_label' => 'Request Demo in Philippines',
+            ],
+            'singapore' => [
+                'name' => 'Singapore',
+                'full' => 'Singapore',
+                'demo_label' => 'Request Demo in Singapore',
+            ],
+            'south-korea' => [
+                'name' => 'South Korea',
+                'full' => 'South Korea',
+                'demo_label' => 'Request Demo in South Korea',
+            ],
+            'sri-lanka' => [
+                'name' => 'Sri Lanka',
+                'full' => 'Sri Lanka',
+                'demo_label' => 'Request Demo in Sri Lanka',
+            ],
+            'syria' => [
+                'name' => 'Syria',
+                'full' => 'Syria',
+                'demo_label' => 'Request Demo in Syria',
+            ],
+            'tajikistan' => [
+                'name' => 'Tajikistan',
+                'full' => 'Tajikistan',
+                'demo_label' => 'Request Demo in Tajikistan',
+            ],
+            'thailand' => [
+                'name' => 'Thailand',
+                'full' => 'Thailand',
+                'demo_label' => 'Request Demo in Thailand',
+            ],
+            'timor-leste' => [
+                'name' => 'Timor-Leste',
+                'full' => 'Timor-Leste',
+                'demo_label' => 'Request Demo in Timor-Leste',
+            ],
+            'turkey' => [
+                'name' => 'Turkey',
+                'full' => 'Turkey',
+                'demo_label' => 'Request Demo in Turkey',
+            ],
+            'turkmenistan' => [
+                'name' => 'Turkmenistan',
+                'full' => 'Turkmenistan',
+                'demo_label' => 'Request Demo in Turkmenistan',
+            ],
+            'uzbekistan' => [
+                'name' => 'Uzbekistan',
+                'full' => 'Uzbekistan',
+                'demo_label' => 'Request Demo in Uzbekistan',
+            ],
+            'vietnam' => [
+                'name' => 'Vietnam',
+                'full' => 'Vietnam',
+                'demo_label' => 'Request Demo in Vietnam',
+            ],
+            'yemen' => [
+                'name' => 'Yemen',
+                'full' => 'Yemen',
+                'demo_label' => 'Request Demo in Yemen',
+            ],
+            'australia' => [
+                'name' => 'Australia',
+                'full' => 'Australia',
+                'demo_label' => 'Request Demo in Australia',
+            ],
+            'fiji' => [
+                'name' => 'Fiji',
+                'full' => 'Fiji',
+                'demo_label' => 'Request Demo in Fiji',
+            ],
+            'kiribati' => [
+                'name' => 'Kiribati',
+                'full' => 'Kiribati',
+                'demo_label' => 'Request Demo in Kiribati',
+            ],
+            'marshall-islands' => [
+                'name' => 'Marshall Islands',
+                'full' => 'Marshall Islands',
+                'demo_label' => 'Request Demo in Marshall Islands',
+            ],
+            'micronesia' => [
+                'name' => 'Micronesia',
+                'full' => 'Micronesia',
+                'demo_label' => 'Request Demo in Micronesia',
+            ],
+            'nauru' => [
+                'name' => 'Nauru',
+                'full' => 'Nauru',
+                'demo_label' => 'Request Demo in Nauru',
+            ],
+            'new-zealand' => [
+                'name' => 'New Zealand',
+                'full' => 'New Zealand',
+                'demo_label' => 'Request Demo in New Zealand',
+            ],
+            'palau' => [
+                'name' => 'Palau',
+                'full' => 'Palau',
+                'demo_label' => 'Request Demo in Palau',
+            ],
+            'papua-new-guinea' => [
+                'name' => 'Papua New Guinea',
+                'full' => 'Papua New Guinea',
+                'demo_label' => 'Request Demo in Papua New Guinea',
+            ],
+            'samoa' => [
+                'name' => 'Samoa',
+                'full' => 'Samoa',
+                'demo_label' => 'Request Demo in Samoa',
+            ],
+            'solomon-islands' => [
+                'name' => 'Solomon Islands',
+                'full' => 'Solomon Islands',
+                'demo_label' => 'Request Demo in Solomon Islands',
+            ],
+            'tonga' => [
+                'name' => 'Tonga',
+                'full' => 'Tonga',
+                'demo_label' => 'Request Demo in Tonga',
+            ],
+            'tuvalu' => [
+                'name' => 'Tuvalu',
+                'full' => 'Tuvalu',
+                'demo_label' => 'Request Demo in Tuvalu',
+            ],
+            'vanuatu' => [
+                'name' => 'Vanuatu',
+                'full' => 'Vanuatu',
+                'demo_label' => 'Request Demo in Vanuatu',
             ],
         ];
     }
@@ -504,6 +1044,9 @@ class VmsLandingController extends Controller
         $aliases = [
             'united-states' => 'usa',
             'us' => 'usa',
+            'united-kingdom' => 'uk',
+            'great-britain' => 'uk',
+            'britain' => 'uk',
             'india' => 'india',
         ];
         $country = $aliases[$country] ?? $country;
