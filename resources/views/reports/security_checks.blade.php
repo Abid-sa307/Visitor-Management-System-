@@ -180,6 +180,7 @@
                                 <th>Visitor</th>
                                 <th>Company</th>
                                 <th>Department</th>
+                                <th>Security Guard</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Actions</th>
                             </tr>
@@ -210,6 +211,7 @@
                                 </td>
                                 <td>{{ $check->visitor->company->name ?? 'N/A' }}</td>
                                 <td>{{ $check->visitor->department->name ?? 'N/A' }}</td>
+                                <td>{{ $check->security_officer_name ?? 'N/A' }}</td>
                                 <td class="text-center">
                                     <span class="badge {{ $check->check_type === 'checkin' ? 'bg-info' : 'bg-primary' }}">
                                         {{ ucfirst($check->check_type ?? 'checkin') }}

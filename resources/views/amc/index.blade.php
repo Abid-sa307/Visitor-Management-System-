@@ -26,6 +26,33 @@
     .fw-medium { font-weight: 500 !important; }
     .flex-wrap { flex-wrap: wrap !important; }
     .d-flex { display: flex !important; }
+
+    /* Multi-select Dropdown Styling */
+    .branch-dropdown { position: relative; min-width: 180px; }
+    .branch-dropdown-toggle { 
+        background: #fff; border: 1px solid #ced4da; border-radius: 8px; 
+        padding: 5px 12px; font-size: 13px; width: 100%; text-align: left;
+        display: flex; justify-content: space-between; align-items: center;
+        cursor: pointer; transition: border-color 0.2s;
+    }
+    .branch-dropdown-toggle:after { content: '\f078'; font-family: 'Font Awesome 5 Free'; font-weight: 900; font-size: 10px; color: #64748b; }
+    .branch-dropdown-menu { 
+        position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); 
+        margin-top: 5px; padding: 10px; display: none;
+        max-height: 250px; overflow-y: auto;
+    }
+    .branch-dropdown.show .branch-dropdown-menu { display: block; }
+    .branch-item { 
+        display: flex; align-items: center; padding: 6px 10px; 
+        border-radius: 6px; cursor: pointer; transition: background 0.2s;
+        margin-bottom: 2px;
+    }
+    .branch-item:hover { background: #f1f5f9; }
+    .branch-item input { margin-right: 10px; width: 15px; height: 15px; cursor: pointer; }
+    .branch-item span { font-size: 13px; color: #334155; pointer-events: none; }
+    .branch-dropdown-toggle.disabled { background: #f8fafc; cursor: not-allowed; opacity: 0.7; }
 </style>
 @endpush
 
@@ -39,24 +66,66 @@
                 <h2 class="fw-bold mb-1" style="font-size:1.6rem;">
                     <i class="fas fa-file-contract mr-2 text-info"></i> AMC Report
                 </h2>
-                <p class="mb-0 text-white-50 small">Annual Maintenance Contracts — all companies</p>
+                <p class="mb-0 text-white-50 small">Annual Maintenance Contracts — branch-wise</p>
             </div>
-            <form class="d-flex" method="GET" action="{{ route('amc.index') }}" style="gap:.5rem;">
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Search company…"
-                       value="{{ $search }}" style="min-width:220px; border-radius:8px;">
-                <button class="btn btn-info btn-sm font-weight-bold px-3">
-                    <i class="fas fa-search mr-1"></i> Search
-                </button>
-                @if($search)
-                    <a href="{{ route('amc.index') }}" class="btn btn-outline-light btn-sm">Clear</a>
-                @endif
+            <form class="row g-2 align-items-center" method="GET" action="{{ route('amc.index') }}">
+                <div class="col-auto">
+                    <select name="company_id" id="filterCompany" class="form-control form-control-sm" style="min-width:150px; border-radius:8px;">
+                        <option value="">All Companies</option>
+                        @foreach($companies as $company)
+                            <option value="{{ $company->id }}" {{ (string)request('company_id') === (string)$company->id ? 'selected' : '' }}>
+                                {{ $company->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <div class="branch-dropdown" id="branchDropdownContainer">
+                        <div class="branch-dropdown-toggle {{ !request('company_id') ? 'disabled' : '' }}" id="branchDropdownBtn">
+                            <span id="branchDropdownLabel">
+                                @if(count($branch_ids) > 0)
+                                    {{ count($branch_ids) }} Branches Selected
+                                @else
+                                    All Branches
+                                @endif
+                            </span>
+                        </div>
+                        <div class="branch-dropdown-menu" id="branchDropdownMenu">
+                            <div id="branchCheckboxList">
+                                @if(request('company_id'))
+                                    @foreach($branchOptions as $branch)
+                                        <label class="branch-item">
+                                            <input type="checkbox" name="branch_ids[]" value="{{ $branch->id }}" 
+                                                {{ in_array($branch->id, $branch_ids) ? 'checked' : '' }}>
+                                            <span>{{ $branch->name }}</span>
+                                        </label>
+                                    @endforeach
+                                @else
+                                    <div class="text-center py-2 text-muted small">Select a company first</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search branch…"
+                           value="{{ $search }}" style="min-width:180px; border-radius:8px;">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-info btn-sm font-weight-bold px-3">
+                        <i class="fas fa-search mr-1"></i> Filter
+                    </button>
+                    @if($search || request('company_id') || !empty($branch_ids))
+                        <a href="{{ route('amc.index') }}" class="btn btn-outline-light btn-sm ml-1">Clear</a>
+                    @endif
+                </div>
             </form>
         </div>
     </div>
 
     {{-- ===== STAT PILLS ===== --}}
     @php
-        $totalCompanies = \App\Models\Company::count();
+        $totalBranches = \App\Models\Branch::count();
         $activeAmc    = \App\Models\AmcRecord::where('status', 'active')->count();
         $expiringAmc  = \App\Models\AmcRecord::where('status', 'active')
                         ->whereDate('end_date', '<=', now()->addDays(30))->count();
@@ -65,8 +134,8 @@
     <div class="row mb-4">
         <div class="col-6 col-md-3 mb-3">
             <div class="card stat-card border-0 bg-white p-3 text-center shadow-sm">
-                <div class="text-primary h4 font-weight-bold mb-0">{{ $totalCompanies }}</div>
-                <div class="text-muted small mt-1">Total Companies</div>
+                <div class="text-primary h4 font-weight-bold mb-0">{{ $totalBranches }}</div>
+                <div class="text-muted small mt-1">Total Branches</div>
             </div>
         </div>
         <div class="col-6 col-md-3 mb-3">
@@ -106,41 +175,33 @@
                 <thead>
                     <tr>
                         <th style="width:5%">#</th>
-                        <th style="width:22%">Company</th>
-                        <th style="width:13%">Company Start Date</th>
+                        <th style="width:20%">Branch</th>
+                        <th style="width:15%">Company</th>
                         <th style="width:15%">Latest Package</th>
-                        <th style="width:12%">AMC Period</th>
+                        <th style="width:15%">AMC Period</th>
                         <th style="width:10%">Amount</th>
-                        <th style="width:9%">Status</th>
-                        <th style="width:14%">Actions</th>
+                        <th style="width:10%">Status</th>
+                        <th style="width:10%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($companies as $i => $company)
-                    @php $latest = $company->amcRecords->first(); @endphp
+                    @forelse($branches as $i => $branch)
+                    @php $latest = $branch->amcRecords->first(); @endphp
                     <tr>
-                        <td class="text-muted">{{ $companies->firstItem() + $i }}</td>
+                        <td class="text-muted">{{ $branches->firstItem() + $i }}</td>
                         <td>
-                            <div class="d-flex align-items-center" style="gap:.5rem;">
-                                @if($company->logo)
-                                    <img src="{{ asset('storage/' . $company->logo) }}" class="company-avatar" alt="">
-                                @else
-                                    <div class="company-avatar">{{ strtoupper(substr($company->name, 0, 1)) }}</div>
-                                @endif
-                                <div>
-                                    <div class="font-weight-semibold text-dark" style="font-size:13.5px;">{{ $company->name }}</div>
-                                    <div class="text-muted" style="font-size:11px;">{{ $company->email }}</div>
-                                </div>
-                            </div>
+                            <div class="font-weight-semibold text-dark">{{ $branch->name }}</div>
+                            <div class="text-muted small">{{ $branch->email }}</div>
                         </td>
                         <td>
-                            @if($company->branch_start_date)
-                                <span class="fw-medium">{{ $company->branch_start_date->format('d M Y') }}</span>
-                            @elseif($company->created_at)
-                                <span class="text-muted">{{ $company->created_at->format('d M Y') }}</span>
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
+                            <div class="d-flex align-items-center" style="gap:.5rem;">
+                                @if($branch->company?->logo)
+                                    <img src="{{ asset('storage/' . $branch->company->logo) }}" class="company-avatar" alt="" style="width:24px; height:24px;">
+                                @else
+                                    <div class="company-avatar" style="width:24px; height:24px; font-size:10px;">{{ strtoupper(substr($branch->company?->name ?? '?', 0, 1)) }}</div>
+                                @endif
+                                <span class="small text-dark fw-medium">{{ $branch->company?->name ?? 'N/A' }}</span>
+                            </div>
                         </td>
                         <td>
                             @if($latest)
@@ -183,16 +244,15 @@
                             @endif
                         </td>
                         <td>
-                            {{-- Bootstrap 4: data-toggle / data-target --}}
                             <button class="btn btn-primary btn-amc mr-1"
                                     data-toggle="modal"
-                                    data-target="#addAmcModal{{ $company->id }}">
+                                    data-target="#addAmcModal{{ $branch->id }}">
                                 <i class="fas fa-plus mr-1"></i> Add
                             </button>
-                            @if($company->amcRecords->count() > 0)
+                            @if($branch->amcRecords->count() > 0)
                                 <button class="btn btn-outline-secondary btn-amc"
                                         data-toggle="modal"
-                                        data-target="#historyModal{{ $company->id }}">
+                                        data-target="#historyModal{{ $branch->id }}">
                                     <i class="fas fa-history mr-1"></i> History
                                 </button>
                             @endif
@@ -201,8 +261,8 @@
                     @empty
                     <tr>
                         <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="fas fa-building fa-2x mb-2 d-block"></i>
-                            No companies found.
+                            <i class="fas fa-code-branch fa-2x mb-2 d-block"></i>
+                            No branches found.
                         </td>
                     </tr>
                     @endforelse
@@ -213,22 +273,22 @@
 
     {{-- Pagination --}}
     <div class="d-flex justify-content-center mt-4">
-        {{ $companies->links() }}
+        {{ $branches->links() }}
     </div>
 
 </div>
 
-{{-- ===== ADD AMC MODALS (one per company) — Bootstrap 4 syntax ===== --}}
-@foreach($companies as $company)
+{{-- ===== MODALS (one per branch) ===== --}}
+@foreach($branches as $branch)
 
 {{-- Add Modal --}}
-<div class="modal fade" id="addAmcModal{{ $company->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="addAmcModal{{ $branch->id }}" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header modal-header-custom">
                 <h5 class="modal-title font-weight-bold">
                     <i class="fas fa-plus-circle mr-2 text-info"></i>
-                    Add AMC Record — {{ $company->name }}
+                    Add AMC Record — {{ $branch->name }}
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
@@ -236,7 +296,8 @@
             </div>
             <form action="{{ route('amc.store') }}" method="POST">
                 @csrf
-                <input type="hidden" name="company_id" value="{{ $company->id }}">
+                <input type="hidden" name="company_id" value="{{ $branch->company_id }}">
+                <input type="hidden" name="branch_id" value="{{ $branch->id }}">
                 <div class="modal-body p-4">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -301,14 +362,14 @@
 </div>
 
 {{-- History Modal --}}
-@if($company->amcRecords->count() > 0)
-<div class="modal fade" id="historyModal{{ $company->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+@if($branch->amcRecords->count() > 0)
+<div class="modal fade" id="historyModal{{ $branch->id }}" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header modal-header-custom">
                 <h5 class="modal-title font-weight-bold">
                     <i class="fas fa-history mr-2 text-info"></i>
-                    AMC History — {{ $company->name }}
+                    AMC History — {{ $branch->name }}
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
@@ -330,7 +391,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($company->amcRecords->sortByDesc('start_date') as $record)
+                            @foreach($branch->amcRecords->sortByDesc('start_date') as $record)
                             <tr>
                                 <td class="px-4 font-weight-bold">{{ $record->package_name ?? '—' }}</td>
                                 <td>{{ $record->amount ? '₹' . number_format($record->amount, 0) : '—' }}</td>
@@ -371,14 +432,14 @@
 </div>
 
 {{-- Edit Modals --}}
-@foreach($company->amcRecords as $record)
+@foreach($branch->amcRecords as $record)
 <div class="modal fade" id="editAmcModal{{ $record->id }}" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header modal-header-custom">
                 <h5 class="modal-title font-weight-bold">
                     <i class="fas fa-edit mr-2 text-warning"></i>
-                    Edit AMC — {{ $company->name }}
+                    Edit AMC — {{ $branch->name }}
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
@@ -450,3 +511,75 @@
 
 @endforeach
 @endsection
+
+@push('scripts')
+<script>
+    const filterCompany = document.getElementById('filterCompany');
+    const branchDropdownBtn = document.getElementById('branchDropdownBtn');
+    const branchDropdownContainer = document.getElementById('branchDropdownContainer');
+    const branchCheckboxList = document.getElementById('branchCheckboxList');
+    const branchDropdownLabel = document.getElementById('branchDropdownLabel');
+
+    // Toggle Dropdown
+    branchDropdownBtn.addEventListener('click', function(e) {
+        if (this.classList.contains('disabled')) return;
+        branchDropdownContainer.classList.toggle('show');
+        e.stopPropagation();
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        if (!branchDropdownContainer.contains(e.target)) {
+            branchDropdownContainer.classList.remove('show');
+        }
+    });
+
+    // Handle AJAX population
+    filterCompany.addEventListener('change', function() {
+        const companyId = this.value;
+        
+        branchCheckboxList.innerHTML = '<div class="text-center py-2 text-muted small">Loading branches...</div>';
+        
+        if (companyId) {
+            branchDropdownBtn.classList.remove('disabled');
+            fetch(`/api/companies/${companyId}/branches`)
+                .then(response => response.json())
+                .then(data => {
+                    branchCheckboxList.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(branch => {
+                            const label = document.createElement('label');
+                            label.className = 'branch-item';
+                            label.innerHTML = `
+                                <input type="checkbox" name="branch_ids[]" value="${branch.id}">
+                                <span>${branch.name}</span>
+                            `;
+                            branchCheckboxList.appendChild(label);
+                        });
+                    } else {
+                        branchCheckboxList.innerHTML = '<div class="text-center py-2 text-muted small">No branches found</div>';
+                    }
+                    updateLabel();
+                });
+        } else {
+            branchDropdownBtn.classList.add('disabled');
+            branchCheckboxList.innerHTML = '<div class="text-center py-2 text-muted small">Select a company first</div>';
+            branchDropdownLabel.textContent = 'All Branches';
+        }
+    });
+
+    // Update Label on change
+    branchCheckboxList.addEventListener('change', function() {
+        updateLabel();
+    });
+
+    function updateLabel() {
+        const checked = branchCheckboxList.querySelectorAll('input:checked');
+        if (checked.length > 0) {
+            branchDropdownLabel.textContent = checked.length + ' Branches Selected';
+        } else {
+            branchDropdownLabel.textContent = 'All Branches';
+        }
+    }
+</script>
+@endpush

@@ -38,6 +38,11 @@ class Branch extends Model
         return $this->hasMany(Department::class);
     }
 
+    public function amcRecords()
+    {
+        return $this->hasMany(AmcRecord::class);
+    }
+
     /**
      * Check if a visitor is created outside operating hours for this branch
      */
@@ -47,12 +52,12 @@ class Branch extends Model
         if (!$this->start_time || !$this->end_time) {
             return false;
         }
-        
+
         $createdAt = $visitorCreatedAt ?: now();
         $currentTime = $createdAt->format('H:i');
         $startTime = date('H:i', strtotime($this->start_time));
         $endTime = date('H:i', strtotime($this->end_time));
-        
+
         // Check if current time is outside operating hours
         return $currentTime < $startTime || $currentTime > $endTime;
     }

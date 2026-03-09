@@ -129,7 +129,7 @@
             <th style="width:12%">Company</th>
             <th style="width:10%">Department</th>
             <th style="width:8%">Status</th>
-            <th style="width:12%">Checked By</th>
+            <th style="width:12%">Security Guard</th>
             <th style="width:26%">Security Q&amp;A</th>
         </tr>
     </thead>

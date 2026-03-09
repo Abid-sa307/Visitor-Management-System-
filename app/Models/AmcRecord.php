@@ -8,6 +8,7 @@ class AmcRecord extends Model
 {
     protected $fillable = [
         'company_id',
+        'branch_id',
         'package_name',
         'amount',
         'start_date',
@@ -20,10 +21,10 @@ class AmcRecord extends Model
     ];
 
     protected $casts = [
-        'start_date'   => 'date',
-        'end_date'     => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'payment_date' => 'date',
-        'amount'       => 'decimal:2',
+        'amount' => 'decimal:2',
     ];
 
     public function company()
@@ -31,12 +32,19 @@ class AmcRecord extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     /** Auto-compute status based on dates */
     public function getComputedStatusAttribute(): string
     {
         $today = now()->toDateString();
-        if ($this->end_date && $this->end_date->lt(now())) return 'expired';
-        if ($this->start_date && $this->start_date->gt(now())) return 'upcoming';
+        if ($this->end_date && $this->end_date->lt(now()))
+            return 'expired';
+        if ($this->start_date && $this->start_date->gt(now()))
+            return 'upcoming';
         return 'active';
     }
 }
