@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>@yield('title', 'Top Visitor Management Software | Top Visitor Management System')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/sb-admin/css/global.css">
 
     {{-- ✅ Google Search Console verification (global rakhna ho to yaha) --}}
     <meta name="google-site-verification" content="Z0TK86oKOkh7F64lpcdDYq4SxFx2cV4toObeeQ_wCYE" />

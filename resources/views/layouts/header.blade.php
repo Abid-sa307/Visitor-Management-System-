@@ -1,6 +1,4 @@
-<!-- Navbar -->
-{{-- <link rel="stylesheet" href="sb-admin/css/global.css"> --}}
-<link rel="stylesheet" href="{{ asset('sb-admin/css/global.css') }}">
+
 
 
 @php

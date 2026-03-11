@@ -25,7 +25,7 @@
           "url" => url()->current(),
           "logo" => asset('images/vmslogo.png'),
           "image" => asset('images/vmslogo.png'),
-          "description" => "Powerful Visitor Management System for {$c['full']}—single location or multi-location workplaces. Manage visitors for offices, factories, hospitals, schools, hotels, malls, events, residential societies, industrial units, cold storage and public entry gates from one platform.",
+          "description" => "Powerful Visitor Management System for {$c['full']}—single location or multi-location workplaces. Manage visitors for offices, factories, hospitals, schools, hotels, malls, events, residential societies, industrial units, cold storage and public entry gates in {$c['name']}.",
           "applicationCategory" => "BusinessApplication",
           "operatingSystem" => "Web",
           "publisher" => [
@@ -112,8 +112,6 @@
         .hero-content {
             position: relative;
             z-index: 1;
-            max-width: 1320px;
-            margin: 0 auto;
             padding: 0 15px;
         }
 
@@ -656,7 +654,7 @@
                 <!-- Content -->
                 <div class="col-lg-6 text-white">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
-                        Visitor Management System in {{ $c['name'] ?? 'Your Country' }} for All Workplaces Worldwide
+                        Visitor Management System in {{ $c['name'] ?? 'Your City' }} for All Workplaces Worldwide
                     </h1>
                     
                     <!-- Mobile Image - Only visible on mobile -->
