@@ -907,7 +907,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/office-workplace-management"
+                        <a href="{{ route('office-workplace-management') }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -945,7 +945,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/school-and-colleges" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('school-and-colleges') }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -982,7 +982,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/industrial-and-cold-storage"
+                        <a href="{{ route('industrial-and-cold-storage') }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1020,7 +1020,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/resident-societies" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('resident-societies') }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1057,7 +1057,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/malls-and-events" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('malls-and-events') }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1094,7 +1094,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/healthcare-facilities"
+                        <a href="{{ route('hospitals-facilities') }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1116,7 +1116,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Healthcare Facilities</h3>
+                                <h3>Hospitals Facilities</h3>
                                 <p class="mb-0">
                                     Manage patient visitors, medical representatives and service providers with timed
                                     access controls in  Visitor Management System.
@@ -1131,7 +1131,7 @@ $schema = [
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/industrial-manufacturing-unit"
+                        <a href="{{ route('industrial-manufacturing-unit') }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1170,7 +1170,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/resident-buildings" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('resident-buildings') }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1208,7 +1208,7 @@ $schema = [
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/temple-and-dargah" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('temple-and-dargah') }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"

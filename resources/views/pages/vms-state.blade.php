@@ -1068,7 +1068,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/healthcare-facilities"
+                        <a href="{{ route('hospitals-facilities') }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source

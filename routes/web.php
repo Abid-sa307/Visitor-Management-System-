@@ -67,7 +67,8 @@ Route::view('/school-and-colleges-visitor-management-system', 'pages.school-and-
 Route::view('/resident-societies-visitor-management-system', 'pages.resident-societies')->name('resident-societies');
 Route::view('/resident-building-visitor-management-systems', 'pages.resident-buildings')->name('resident-buildings');
 Route::view('/office-workplace-management-visitor-management-system', 'pages.office-workplace-management')->name('office-workplace-management');
-Route::view('/healthcare-facilities-visitor-management-system', 'pages.healthcare-facilities')->name('healthcare-facilities');
+Route::redirect('/healthcare-facilities-visitor-management-system', '/hospitals-facilities-visitor-management-system', 301);
+Route::view('/hospitals-facilities-visitor-management-system', 'pages.hospitals-facilities')->name('hospitals-facilities');
 Route::view('/malls-and-events-visitor-management-system', 'pages.malls-and-events')->name('malls-and-events');
 Route::view('/holy-places-visitor-management-system', 'pages.temple-and-dargah')->name('temple-and-dargah');
 

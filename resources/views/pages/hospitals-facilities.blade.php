@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top hospital visitor management system |Top hospital visitor management Software</title>
+    <title>Top hospital visitor management system &amp; Software - N&amp;T Software</title>
 
     <meta name="description" content="Top Smart hospital visitor management system &amp; Software for hospitals, clinics and healthcare facilities—whether you run a single hospital or a multi-location healthcare network. Digitize patient attendant &amp; visitor check-ins, OPD/IPD registration, vendor and contractor entry with QR/OTP passes, self check-in kiosks, face-recognition access, visiting-hours control, badge printing and real-time visitor logs from one centralized platform. Improve security, compliance and patient experience—book a free demo today.">
 

@@ -1068,7 +1068,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/healthcare-facilities"
+                        <a href="{{ route('hospitals-facilities') }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1090,7 +1090,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Healthcare Facilities</h3>
+                                <h3>Hospitals Facilities</h3>
                                 <p class="mb-0">
                                     Manage patient visitors, medical representatives and service providers with timed
                                     access controls in  Visitor Management System in {{ $c['full'] ?? '' }}.

@@ -10,7 +10,7 @@
     || request()->is('resident-societies')
     || request()->is('resident-buildings')
     || request()->is('office-workplace-management')
-    || request()->is('healthcare-facilities')
+    || request()->routeIs('hospitals-facilities')
     || request()->is('malls-and-events')
     || request()->is('temple-and-dargah');
 @endphp
@@ -96,8 +96,8 @@
                 <a class="dropdown-item" href="{{ route('office-workplace-management') }}">
                   Offices Workplace Management
                 </a>
-                <a class="dropdown-item" href="{{ route('healthcare-facilities') }}">
-                  Healthcare Facilities
+                <a class="dropdown-item" href="{{ route('hospitals-facilities') }}">
+                  Hospitals Facilities
                 </a>
                 <a class="dropdown-item" href="{{ route('malls-and-events') }}">
                   Malls & Event
@@ -231,10 +231,10 @@
               Offices Workplace Management
             </a>
 
-            <a class="mobile-solutions-link {{ request()->is('healthcare-facilities') ? 'text-primary fw-semibold' : '' }}"
-              href="{{ route('healthcare-facilities') }}"
+            <a class="mobile-solutions-link {{ request()->routeIs('hospitals-facilities') ? 'text-primary fw-semibold' : '' }}"
+              href="{{ route('hospitals-facilities') }}"
               style="display:block;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;margin-bottom:6px;text-decoration:none;font-size:0.85rem;">
-              Healthcare Facilities
+              Hospitals Facilities
             </a>
 
             <a class="mobile-solutions-link {{ request()->is('malls-and-events') ? 'text-primary fw-semibold' : '' }}"
