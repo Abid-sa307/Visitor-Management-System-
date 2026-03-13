@@ -1214,6 +1214,21 @@ class VmsLandingController extends Controller
                 'full' => 'New York City, USA',
                 'country' => 'USA',
             ],
+            'los-angeles' => [
+                'name' => 'Los Angeles',
+                'full' => 'Los Angeles, USA',
+                'country' => 'USA',
+            ],
+            'chicago' => [
+                'name' => 'Chicago',
+                'full' => 'Chicago, USA',
+                'country' => 'USA',
+            ],
+            'houston' => [
+                'name' => 'Houston',
+                'full' => 'Houston, USA',
+                'country' => 'USA',
+            ],
         ];
     }
 

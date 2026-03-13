@@ -112,7 +112,9 @@
         .hero-content {
             position: relative;
             z-index: 1;
-            padding: 0 15px;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
         }
 
         .hero h1 {
@@ -145,6 +147,8 @@
             max-width: none !important;
             height: auto !important;
             transition: transform 0.3s ease;
+            margin-left: 0;
+            margin-top: -280px;
         }
 
         .hero-image-desktop:hover {
@@ -649,10 +653,10 @@
 
     <!-- Hero -->
     <section class="hero">
-        <div class="container hero-content">
-            <div class="row align-items-center min-vh-75">
+        <div class="container-fluid hero-content" style="padding-right: 15px;">
+            <div class="row align-items-center min-vh-75" style="margin-right: 0;">
                 <!-- Content -->
-                <div class="col-lg-6 text-white">
+                <div class="col-lg-6 text-white" style="padding-left: 8rem;">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
                         Visitor Management System in {{ $c['name'] ?? 'Your City' }} for All Workplaces Worldwide
                     </h1>
@@ -673,8 +677,8 @@
                 </div>
 
                 <!-- Image -->
-                <div class="col-lg-6 mt-5 mt-lg-0">
-                    <div class="position-relative">
+                <div class="col-lg-6 mt-5 mt-lg-0" style="padding-right: 15px;">
+                    <div class="position-relative" style="overflow: visible;">
                         <img
                             src="/images/visitor-management-system-main-img-960.webp"
                             srcset="
