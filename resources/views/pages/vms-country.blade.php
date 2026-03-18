@@ -38,6 +38,7 @@
             ],
           ],
         ];
+        $schema['description'] = $seo['schema_description'] ?? $seo['description'] ?? '';
 
         $faqSchema = [
             "@context" => "https://schema.org",
@@ -148,7 +149,7 @@
             height: auto !important;
             transition: transform 0.3s ease;
             margin-left: 0;
-            margin-top: -230px;
+            margin-top: -900px;
         }
 
         .hero-image-desktop:hover {
@@ -484,6 +485,19 @@
             padding: 1.5rem;
         }
 
+        .industry-content h2 {
+            margin: 0 0 0.85rem;
+            font-size: 1.2rem;
+            line-height: 1.4;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .industry-content p {
+            line-height: 1.65;
+            color: #6c757d;
+        }
+
         /* Feature Cards */
         .feature-card {
             background: white;
@@ -658,7 +672,7 @@
                 <!-- Content -->
                 <div class="col-lg-6 text-white" style="padding-left: 8rem;">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
-                        Visitor Management System in {{ $c['name'] ?? 'Your Country' }} for All Workplaces
+                        {{ $hero['title'] ?? 'Smart Visitor Management Software in United States for All Workplaces' }}
                     </h1>
                     
                     <!-- Mobile Image - Only visible on mobile -->
@@ -667,9 +681,16 @@
                             class="hero-image hero-image-mobile-inline rounded-3 shadow-lg">
                     </div>
                     
+                    @if(false)
                     <p class="lead animate-fadeIn delay-1 mb-4">
                         N&T Software Pvt. Ltd.'s Visitor Management System helps you manage every type of visitor flow—offices, schools & universities, warehouses and industrial sites, residential societies and buildings, malls & events, healthcare facilities and high-footfall public places in {{ $c['full'] ?? '' }}. A single system can manage multiple branches and multiple departments within each branch, all from one centralized dashboard. From interviews and client meetings to vendor deliveries, contractors, service providers and guests, the system digitizes approvals, generates secure gate passes and sends instant notifications to hosts or residents. With real-time visitor logs, scheduled check-ins, safety/compliance checklists and capacity control, you get faster entry, stronger security and complete visibility across all locations in {{ $c['name'] ?? '' }}.
                     </p>
+                    @endif
+                    @foreach(($hero['paragraphs'] ?? []) as $paragraph)
+                        <p class="lead animate-fadeIn delay-1 mb-{{ $loop->last ? '4' : '3' }}">
+                            {{ $paragraph }}
+                        </p>
+                    @endforeach
                     <div class="d-flex flex-column flex-sm-row gap-3 animate-fadeIn delay-2">
                         <a href="/contact" class="btn btn-light btn-lg px-4">Request Demo</a>
                         <a href="/pricing" class="btn btn-light btn-lg px-4">Get Pricing</a>
@@ -925,7 +946,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Offices</h3>
+                                <h2>Offices Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Track interviews, clients and meetings using customized entry passes with automated
                                     notifications to hosts in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -962,7 +983,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Schools & Universities</h3>
+                                <h2>Schools & Universities Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Secure access for parents, students, visitors and external vendors with scheduled
                                     check-ins in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1000,7 +1021,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Warehouses</h3>
+                                <h2>Warehouses Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Control deliveries, contractors and supplies with compliance checklists and safety
                                     briefings in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1037,7 +1058,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Residents' Societies</h3>
+                                <h2>Residents' Societies Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Approve guests, deliveries and staff via QR code entry with resident
                                     pre-authorization in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1056,7 +1077,7 @@
                         <a href="/malls-and-events" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
-                                    type="image/webp"
+                                    type="image/webp"l
                                     srcset="
                                         /images/malls-gate-360.webp 360w,
                                         /images/malls-gate-520.webp 520w,
@@ -1074,7 +1095,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Malls & Events</h3>
+                                <h2>Malls & Events Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Manage entry and monitor the flow of visitors via live alerts and capacity
                                     management in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1112,7 +1133,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Hospitals Facilities</h3>
+                                <h2>Hospitals Facilities Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Manage patient visitors, medical representatives and service providers with timed
                                     access controls in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1149,7 +1170,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Industrial Manufacturing Unit</h3>
+                                <h2>Industrial Manufacturing Unit Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Control and monitor visitor entries for factories, warehouses and production floors
                                     with real-time access logs and safety compliance checks in  Visitor Management
@@ -1187,7 +1208,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Resident Buildings</h3>
+                                <h2>Resident Buildings Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Secure apartments, gated societies and residential towers with digital visitor
                                     approvals, gate pass automation and real-time notifications in Visitor
@@ -1225,7 +1246,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Holy Places</h3>
+                                <h2>Holy Places Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Digitize darshan passes, manage crowd flow with live capacity limits and keep
                                     visitor records organized across all entry gates in  Visitor Management System in {{ $c['full'] ?? '' }}.

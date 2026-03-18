@@ -4,9 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visitor Management System for Residential Societies, Apartments</title>
-  <meta name="description"
+  <title>Residential Society Visitor Management System 2026 | N&amp;T Software</title>
+  <meta name="x-description"
     content="Secure residential societies, apartments, townships and gated communities—whether it’s a single building, multi-tower complex or multi-society setup—with a smart Visitor Management System. Digitize visitor, delivery, cab, maid, staff and contractor check-ins using QR/OTP passes, self check-in, face-recognition access, flat-wise approvals, parking management and digital visitor logs from one centralized platform. Replace paper registers and enhance gate security—book a free demo today.">
+  <meta name="description"
+    content="Secure your society with N&amp;T Software's 10+ years of collective VMS expertise. Automate guest access, staff tracking, and resident alerts. Get a free demo!">
 
   <meta name="keywords"
     content="residential society visitor management system, gated community visitor management, apartment visitor tracking app, society gate security software, single building visitor system, multi tower visitor management, multi society visitor platform, township visitor management, digital visitor register for societies, QR code visitor pass society gate, OTP visitor entry flats, face recognition access residential, delivery and cab visitor logging, maid and staff attendance tracking, parking management with visitor system, senior living community visitor management, paperless society gate register, residential security management software">
@@ -550,10 +552,9 @@
   <!-- Hero Section -->
   <section class="residential-hero">
     <div class="container">
-      <h1>Visitor Management System for Residential Societies and Apartments</h1>
+      <h1>Smart Visitor Management Software for Apartments &amp; Gated Communities</h1>
 
-      <p>Enhance community security, streamline guest access and create a safer living environment with our
-        specialized visitor management system for residential societies and gated communities.</p>
+      <p>Transform your community's security with the most reliable Visitor Management System (VMS) from N&amp;T Software Private Limited. Built by a team with over 10+ years of collective expertise in residential security, we provide a specialized solution for modern apartments, housing societies, and gated communities.<br><br>Our software streamlines guest access by replacing manual registers with secure digital check-ins and instant resident notifications. Enhance your living environment with features like daily staff tracking, pre-approved visitor entries, and real-time security alerts. Whether you manage a single building or a massive residential complex, our 2026-ready contactless system ensures a safer, smarter, and more professional experience for every resident.</p>
       <a href="/contact" class="btn btn-residential btn-lg me-3" style="pointer-events: auto; z-index: 999; position: relative;">Request a Demo</a>
 
     </div>

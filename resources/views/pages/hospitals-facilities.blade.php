@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top hospital visitor management system &amp; Software - N&amp;T Software</title>
+    <title>Hospital Visitor Management System 2026 | Healthcare | N&amp;T Software</title>
+    <meta name="description" content="N&amp;T Software offers 10+ years of healthcare VMS expertise. Automate patient attendant check-ins, OPD/IPD registrations, and QR-pass entry. Secure your facility today!">
 
-    <meta name="description" content="Top Smart hospital visitor management system &amp; Software for hospitals, clinics and healthcare facilities—whether you run a single hospital or a multi-location healthcare network. Digitize patient attendant &amp; visitor check-ins, OPD/IPD registration, vendor and contractor entry with QR/OTP passes, self check-in kiosks, face-recognition access, visiting-hours control, badge printing and real-time visitor logs from one centralized platform. Improve security, compliance and patient experience—book a free demo today.">
+    <meta name="x-description" content="Top Smart hospital visitor management system &amp; Software for hospitals, clinics and healthcare facilities—whether you run a single hospital or a multi-location healthcare network. Digitize patient attendant &amp; visitor check-ins, OPD/IPD registration, vendor and contractor entry with QR/OTP passes, self check-in kiosks, face-recognition access, visiting-hours control, badge printing and real-time visitor logs from one centralized platform. Improve security, compliance and patient experience—book a free demo today.">
 
     <meta name="keywords" content="hospital visitor management system, healthcare visitor management software, clinic visitor tracking, medical facility visitor check-in, single hospital visitor system, multi location hospital visitor management, healthcare network visitor platform, OPD visitor registration system, IPD patient attendant management, visiting hours control software, QR code visitor pass hospital, OTP visitor entry healthcare, face recognition access hospital, digital visitor register for hospitals, vendor and contractor check-in healthcare, badge printing for visitors, real-time visitor logs hospital, healthcare security and compliance software, paperless hospital reception">
 
@@ -89,11 +90,10 @@
 <!-- HERO -->
 <section class="hero">
     <div class="container">
-        <h1>Visitor Management System for Hospitals, Clinics &amp; Healthcare Networks</h1>
+        <h1>Smart Visitor Management Software for Hospitals, Clinics &amp; Healthcare Networks</h1>
         <p class="lead mt-3 mx-auto" style="max-width:750px;">
-            Ensure patient privacy, safety and regulatory compliance with our
-            specialized visitor management solution built for hospitals,
-            clinics and diagnostic centers.
+            Elevate patient safety and operational efficiency with the Hospital Visitor Management System from N&amp;T Software Private Limited. With over a decade of experience in healthcare technology, our 2026-ready platform is engineered for the high-traffic demands of multi-specialty hospitals, private clinics, and expansive healthcare networks.<br><br>
+            Streamline the entry process for patient attendants, vendors, and medical representatives while maintaining strict compliance with healthcare security protocols. Our solution features digital OPD/IPD registration, automated visiting-hour controls, and instant SMS and email alerts for staff. From self-service kiosks to touchless face-recognition access, N&amp;T Software provides the secure, organized, and professional environment your patients and medical staff deserve.
         </p>
     </div>
 </section>
