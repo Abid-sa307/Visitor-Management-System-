@@ -1055,6 +1055,7 @@ class VmsLandingController extends Controller
         $c['full'] = $countryName;
         $c['country_slug'] = $resolvedCountry['slug'];
         $c['local_compliance'] = $localCompliance;
+        $locationName = $countryName;
 
         $hero = [
             'title' => "Smart Visitor Management Software in {$countryName} for All Workplaces",
