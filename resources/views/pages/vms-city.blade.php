@@ -38,6 +38,7 @@
             ],
           ],
         ];
+        $schema['description'] = $seo['schema_description'] ?? $seo['description'] ?? '';
 
         $faqSchema = [
             "@context" => "https://schema.org",
@@ -148,7 +149,7 @@
             height: auto !important;
             transition: transform 0.3s ease;
             margin-left: 0;
-            margin-top: -280px;
+            margin-top: -900px;
         }
 
         .hero-image-desktop:hover {
@@ -658,7 +659,7 @@
                 <!-- Content -->
                 <div class="col-lg-6 text-white" style="padding-left: 8rem;">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
-                        Visitor Management System in {{ $c['name'] ?? 'Your City' }} for All Workplaces Worldwide
+                        {{ $hero['title'] ?? 'Smart Visitor Management Software in United States for All Workplaces' }}
                     </h1>
                     
                     <!-- Mobile Image - Only visible on mobile -->
@@ -667,9 +668,16 @@
                             class="hero-image hero-image-mobile-inline rounded-3 shadow-lg">
                     </div>
                     
+                    @if(false)
                     <p class="lead animate-fadeIn delay-1 mb-4">
                         N&T Software Pvt. Ltd.'s Visitor Management System helps you manage every type of visitor flow—offices, schools & universities, warehouses and industrial sites, residential societies and buildings, malls & events, healthcare facilities and high-footfall public places in {{ $c['full'] ?? '' }}. A single system can manage multiple branches and multiple departments within each branch, all from one centralized dashboard. From interviews and client meetings to vendor deliveries, contractors, service providers and guests, the system digitizes approvals, generates secure gate passes and sends instant notifications to hosts or residents. With real-time visitor logs, scheduled check-ins, safety/compliance checklists and capacity control, you get faster entry, stronger security and complete visibility across all locations in {{ $c['name'] ?? '' }}.
                     </p>
+                    @endif
+                    @foreach(($hero['paragraphs'] ?? []) as $paragraph)
+                        <p class="lead animate-fadeIn delay-1 mb-{{ $loop->last ? '4' : '3' }}">
+                            {{ $paragraph }}
+                        </p>
+                    @endforeach
                     <div class="d-flex flex-column flex-sm-row gap-3 animate-fadeIn delay-2">
                         <a href="/contact" class="btn btn-light btn-lg px-4">Request Demo</a>
                         <a href="/pricing" class="btn btn-light btn-lg px-4">Get Pricing</a>

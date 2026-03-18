@@ -17,7 +17,22 @@ class SitemapController extends Controller
     private function buildUrls(): array
     {
         $excludePrefixes = ['api', 'company', 'qr', 'public', 'models', 'sanctum', 'storage', 'test', 'superadmin'];
-        $excludeUris = ['robots.txt', 'sitemap.xml', 'login', 'register', 'dashboard', 'profile', 'verify-otp', 'forgot-password', 'reset-password', 'debug-company-settings', 'up'];
+        $excludeUris = [
+            'robots.txt',
+            'sitemap.xml',
+            'login',
+            'register',
+            'dashboard',
+            'profile',
+            'verify-otp',
+            'forgot-password',
+            'reset-password',
+            'debug-company-settings',
+            'up',
+            'industrial-and-cold-storage-visitor-management-system',
+            'healthcare-facilities-visitor-management-system',
+            'hospitals-facilities-visitor-management-system',
+        ];
 
         $urls = [];
 

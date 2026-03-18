@@ -62,13 +62,15 @@ Route::get('/company/login', [CompanyLoginController::class, 'showLoginForm'])->
 
 // Solutions / Industries
 Route::view('/industrial-manufacturing-unit-visitor-management-system', 'pages.industrial-manufacturing-unit')->name('industrial-manufacturing-unit');
-Route::view('/industrial-and-cold-storage-visitor-management-system', 'pages.industrial-and-cold-storage')->name('industrial-and-cold-storage');
+Route::redirect('/industrial-and-cold-storage-visitor-management-system', '/warehouse-and-cold-storage-visitor-management-system', 301);
+Route::view('/warehouse-and-cold-storage-visitor-management-system', 'pages.industrial-and-cold-storage')->name('industrial-and-cold-storage');
 Route::view('/school-and-colleges-visitor-management-system', 'pages.school-and-colleges')->name('school-and-colleges');
 Route::view('/resident-societies-visitor-management-system', 'pages.resident-societies')->name('resident-societies');
 Route::view('/resident-building-visitor-management-systems', 'pages.resident-buildings')->name('resident-buildings');
 Route::view('/office-workplace-management-visitor-management-system', 'pages.office-workplace-management')->name('office-workplace-management');
-Route::redirect('/healthcare-facilities-visitor-management-system', '/hospitals-facilities-visitor-management-system', 301);
-Route::view('/hospitals-facilities-visitor-management-system', 'pages.hospitals-facilities')->name('hospitals-facilities');
+Route::redirect('/healthcare-facilities-visitor-management-system', '/visitor-management-system-for-hospitals', 301);
+Route::redirect('/hospitals-facilities-visitor-management-system', '/visitor-management-system-for-hospitals', 301);
+Route::view('/visitor-management-system-for-hospitals', 'pages.hospitals-facilities')->name('hospitals-facilities');
 Route::view('/malls-and-events-visitor-management-system', 'pages.malls-and-events')->name('malls-and-events');
 Route::view('/holy-places-visitor-management-system', 'pages.temple-and-dargah')->name('temple-and-dargah');
 
@@ -77,8 +79,9 @@ Route::get('/visitor-management-system-in-{state}-india', [App\Http\Controllers\
     ->name('vms.state');
 
 // City Pages (must be defined BEFORE country route to avoid wildcard conflict)
-Route::get('/visitor-management-software-in-{city}-usa', [App\Http\Controllers\VmsLandingController::class, 'city'])
+Route::get('/visitor-management-software-in-{city}-{country}', [App\Http\Controllers\VmsLandingController::class, 'city'])
     ->where('city', '[a-zA-Z0-9\-]+')
+    ->where('country', '[a-zA-Z0-9\-]+')
     ->name('vms.city');
 
 // Country Pages

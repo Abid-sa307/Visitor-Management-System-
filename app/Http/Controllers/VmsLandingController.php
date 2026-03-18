@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Support\VmsGeo;
+use Illuminate\Support\Str;
 
 class VmsLandingController extends Controller
 {
@@ -1038,34 +1039,45 @@ class VmsLandingController extends Controller
     }
     public function country(string $country)
     {
-        $country = strtolower(trim($country));
-
-        // Optional aliases
-        $aliases = [
-            'united-states' => 'usa',
-            'us' => 'usa',
-            'united-kingdom' => 'uk',
-            'great-britain' => 'uk',
-            'britain' => 'uk',
-            'india' => 'india',
-        ];
-        $country = $aliases[$country] ?? $country;
+        $country = VmsGeo::normalizeCountrySlug($country, request()->path());
 
         $countries = self::getCountries();
 
         abort_unless(isset($countries[$country]), 404);
 
         $c = $countries[$country];
+        $resolvedCountry = VmsGeo::resolveCountry($country, request()->path());
+        $countryName = $resolvedCountry['name'];
+        $localCompliance = $resolvedCountry['local_compliance'];
+        $localComplianceShort = $resolvedCountry['local_compliance_short'];
+
+        $c['name'] = $countryName;
+        $c['full'] = $countryName;
+        $c['country_slug'] = $resolvedCountry['slug'];
+        $c['local_compliance'] = $localCompliance;
+
+        $hero = [
+            'title' => "Smart Visitor Management Software in {$countryName} for All Workplaces",
+            'paragraphs' => [
+                "Modernize your facility's security with the leading Visitor Management System (VMS) in {$locationName} by N&T Software Private Limited. Built by a team with over 10+ years of collective industry expertise, our 2026-ready solution is fully {$localComplianceShort} compliant, ensuring the highest standards of data privacy and security across all sectors.",
+                "Our centralized platform provides specialized multi-location control tailored for the unique demands of {$locationName} offices, corporate parks, and high-rise residential buildings. From managing schools, colleges, and universities to securing healthcare facilities, hospitals, and diagnostic centers, N&T Software digitizes the entry process with QR-based gate passes and instant host approvals.",
+                "We offer robust, scalable security for high-stakes environments including mining sites, manufacturing units, factories, warehouses, and cold storage facilities. Whether you are coordinating large-scale events, managing shopping malls, or securing sacred holy places (temples, dargahs, churches), our system ensures total safety for residential societies, apartments, and public entry gates. Gain complete visibility with real-time visitor logs and automated alerts from a single dashboard, trusted for high-footfall public places throughout {$locationName}.",
+                "From interviews and client meetings to vendor deliveries, contractors, service providers and guests, the system digitizes approvals, generates secure gate passes and sends instant notifications to hosts or residents. With real-time visitor logs, scheduled check-ins, safety/compliance checklists and capacity control, you get faster entry, stronger security and complete visibility across all locations in {$locationName}.",
+            ],
+        ];
 
         // ✅ SEO (dynamic)
         $seo = [
-            'title' => "Top Visitor Management Software (Vms) in {$c['name']} | Top Visitor Management System (Vms) {$c['name']}",
+            'title' => "Best Visitor Management System {$locationName} 2026 | N&T Software",
             'description' => "Visitor Management System & Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
 
         // ✅ FAQs (dynamic)
+        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['schema_description'] = $hero['paragraphs'][0];
+
         $faqs = [
             [
                 'q' => "How is the visitor management system useful in {$c['name']} for the visitor ?",
@@ -1093,7 +1105,7 @@ class VmsLandingController extends Controller
             ],
         ];
 
-        return view('pages.vms-country', compact('c', 'seo', 'faqs'));
+        return view('pages.vms-country', compact('c', 'seo', 'faqs', 'hero'));
     }
 
     // ─── Indian States ────────────────────────────────────────────────────────
@@ -1173,6 +1185,7 @@ class VmsLandingController extends Controller
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
 
+
         // FAQs (dynamic)
         $faqs = [
             [
@@ -1211,40 +1224,75 @@ class VmsLandingController extends Controller
         return [
             'new-york' => [
                 'name' => 'New York',
-                'full' => 'New York City, USA',
-                'country' => 'USA',
+                'full' => 'New York City, United States',
+                'country' => 'United States',
+                'country_slug' => 'usa',
             ],
             'los-angeles' => [
                 'name' => 'Los Angeles',
-                'full' => 'Los Angeles, USA',
-                'country' => 'USA',
+                'full' => 'Los Angeles, United States',
+                'country' => 'United States',
+                'country_slug' => 'usa',
             ],
             'chicago' => [
                 'name' => 'Chicago',
-                'full' => 'Chicago, USA',
-                'country' => 'USA',
+                'full' => 'Chicago, United States',
+                'country' => 'United States',
+                'country_slug' => 'usa',
             ],
             'houston' => [
                 'name' => 'Houston',
-                'full' => 'Houston, USA',
-                'country' => 'USA',
+                'full' => 'Houston, United States',
+                'country' => 'United States',
+                'country_slug' => 'usa',
             ],
         ];
     }
 
-    public function city(string $city)
+    public function city(string $city, string $country)
     {
         $city = strtolower(trim($city));
+        $countrySlug = Str::of($country)
+            ->lower()
+            ->trim()
+            ->replace('&', 'and')
+            ->replaceMatches('/[^\pL\pN]+/u', '-')
+            ->trim('-')
+            ->toString();
+        $countrySlug = VmsGeo::aliases()[$countrySlug] ?? $countrySlug;
+
+        abort_unless(isset(VmsGeo::countries()[$countrySlug]), 404);
 
         $cities = self::getCities();
+        $c = $cities[$city] ?? [
+            'name' => Str::of($city)->replace('-', ' ')->headline()->toString(),
+            'country_slug' => $countrySlug,
+        ];
+        $resolvedCountry = VmsGeo::resolveCountry($countrySlug, request()->path());
+        $countryName = $resolvedCountry['name'];
+        $localCompliance = $resolvedCountry['local_compliance'];
+        $localComplianceShort = $resolvedCountry['local_compliance_short'];
 
-        abort_unless(isset($cities[$city]), 404);
+        $c['country_slug'] = $resolvedCountry['slug'];
+        $c['country'] = $countryName;
+        $c['country_name'] = $countryName;
+        $c['local_compliance'] = $localCompliance;
+        $c['full'] = "{$c['name']}, {$countryName}";
+        $locationName = $c['full'];
 
-        $c = $cities[$city];
+        $hero = [
+            'title' => "Smart Visitor Management Software in {$locationName} for All Workplaces",
+            'paragraphs' => [
+                "Modernize your facility's security with the leading Visitor Management System (VMS) in {$locationName} by N&T Software Private Limited. Built by a team with over 10+ years of collective industry expertise, our 2026-ready solution is fully {$localComplianceShort} compliant, ensuring the highest standards of data privacy and security across all sectors.",
+                "Our centralized platform provides specialized multi-location control tailored for the unique demands of {$locationName} offices, corporate parks, and high-rise residential buildings. From managing schools, colleges, and universities to securing healthcare facilities, hospitals, and diagnostic centers, N&T Software digitizes the entry process with QR-based gate passes and instant host approvals.",
+                "We offer robust, scalable security for high-stakes environments including mining sites, manufacturing units, factories, warehouses, and cold storage facilities. Whether you are coordinating large-scale events, managing shopping malls, or securing sacred holy places (temples, dargahs, churches), our system ensures total safety for residential societies, apartments, and public entry gates. Gain complete visibility with real-time visitor logs and automated alerts from a single dashboard, trusted for high-footfall public places throughout {$locationName}.",
+                "From interviews and client meetings to vendor deliveries, contractors, service providers and guests, the system digitizes approvals, generates secure gate passes and sends instant notifications to hosts or residents. With real-time visitor logs, scheduled check-ins, safety/compliance checklists and capacity control, you get faster entry, stronger security and complete visibility across all locations in {$locationName}.",
+            ],
+        ];
 
         // SEO (dynamic)
         $seo = [
-            'title' => "Best Visitor Management Software in {$c['name']} | Top Visitor Management System {$c['name']}",
+            'title' => "Best Visitor Management System {$locationName} 2026 | N&T Software",
             'description' => "Visitor Management Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
             'keywords' => "visitor management software {$c['name']}, visitor management system {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
@@ -1278,6 +1326,9 @@ class VmsLandingController extends Controller
             ],
         ];
 
-        return view('pages.vms-city', compact('c', 'seo', 'faqs'));
+        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['schema_description'] = $hero['paragraphs'][0];
+
+        return view('pages.vms-city', compact('c', 'seo', 'faqs', 'hero'));
     }
 }

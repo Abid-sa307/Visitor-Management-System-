@@ -1,11 +1,11 @@
 @extends('layouts.website')
 
-@section('title', 'Top Smart Visitor Management Software (vms) | Top Smart Visitor Management System (vms)')
+@section('title', 'Best Visitor Management Software 2026 | N&T Software')
 
 @section('head')
     {{-- SEO Meta Tags --}}
     <meta name="description"
-        content="Top Smart Visitor Management System &amp; Software (Vms) for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, healthcare facilities, schools, Holy place, universities, hotels, malls, events, residential societies, apartments and public entry gates. Single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.">
+        content="Secure any facility with N&amp;T Software's 10+ years of collective VMS expertise. Contactless check-ins, real-time logs, and gate passes for offices and factories. Get a demo!">
 
     <meta name="keywords"
         content="visitor management system, visitor management software, single location visitor management, multi location visitor management, centralized visitor management platform, visitor tracking system, smart self check-in, QR check-in system, OTP visitor entry, face recognition access control, office visitor management, hospital visitor management, school visitor management, hotel visitor system, mall visitor tracking, event visitor registration, residential society visitor app, industrial visitor management, cold storage visitor logs, kabrastan visitor tracking, burial ground visitor management, contractor management system, staff attendance tracking, real-time visitor dashboard, paperless visitor register">
@@ -19,7 +19,7 @@ $schema = [
   "url" => url('/'),
   "logo" => asset('images/vmslogo.png'),
   "image" => asset('images/vmslogo.png'),
-  "description" => "Powerful Visitor Management System for any setup—single location or multi-location workplaces. Manage visitors for offices, factories, hospitals, schools, hotels, malls, events, residential societies, industrial units, cold storage and even kabrastan/burial grounds from one platform.",
+  "description" => "N&T Software Private Limited delivers a 2026-ready Visitor Management System for offices, factories, hospitals, schools, malls, warehouses, and residential societies with contactless check-ins, gate passes, and real-time visitor logs.",
   "applicationCategory" => "BusinessApplication",
   "operatingSystem" => "Web",
   "publisher" => [
@@ -106,6 +106,7 @@ $schema = [
 
         .hero-image-desktop {
             margin-left: 50px;
+            margin-top: -220px;
             width: 100% !important;
             max-width: none !important;
             height: auto !important;
@@ -456,14 +457,54 @@ $schema = [
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
         }
 
+        .industry-card > a {
+            height: 100%;
+        }
+
+        .industry-card picture {
+            display: block;
+            flex-shrink: 0;
+        }
+
         .industry-img {
             height: 200px;
             object-fit: cover;
             width: 100%;
+            display: block;
         }
 
         .industry-content {
             padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .industry-content h2 {
+            font-size: 1.2rem;
+            line-height: 1.35;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 0.9rem;
+            padding: 0;
+            min-height: 3.3rem;
+        }
+
+        .industry-content h2::after {
+            display: none;
+        }
+
+        .industry-content p {
+            color: #6c757d;
+            line-height: 1.65;
+            margin: 0;
+            min-height: 6.5rem;
+        }
+
+        .industry-content .btn {
+            border-radius: 999px;
+            padding: 0.45rem 0.95rem;
+            font-weight: 600;
         }
 
         /* Feature Cards */
@@ -640,6 +681,15 @@ $schema = [
             .industry-img {
                 height: 180px;
             }
+
+            .industry-content h2 {
+                min-height: auto;
+                font-size: 1.1rem;
+            }
+
+            .industry-content p {
+                min-height: auto;
+            }
         }
     </style>
 @endverbatim
@@ -653,8 +703,7 @@ $schema = [
             <div class="row align-items-center min-vh-75">
                 <!-- Content -->
                 <div class="col-lg-6 text-white">
-                    <h1 class="display-4 fw-bold animate-fadeIn mb-4">Visitor Management System for All Workplaces
-                        Worldwide</h1>
+                    <h1 class="display-4 fw-bold animate-fadeIn mb-4">Smart Visitor Management Software for Every Industry | N&amp;T Software</h1>
                     <!-- Mobile Image - Only visible on mobile -->
                     <div class="mobile-image-container mb-4">
                         <img src="/images/visitor-management-system-main-img1.jpeg" alt="Visitor Management System"
@@ -662,15 +711,9 @@ $schema = [
                     </div>
                     
                     <p class="lead animate-fadeIn delay-1 mb-4">
-                        N&T Software Pvt. Ltd.'s Visitor Management System helps you manage every type of visitor
+                        With 10+ years of collective expertise in digital security, N&amp;T Software Private Limited provides a 2026-ready Visitor Management System (VMS) that adapts to any environment. From high-security manufacturing units and warehouses to bustling malls, hospitals, and residential societies, our software offers seamless multi-location control.<br><br><span style="display:none;">
                         flow—offices, schools & universities, warehouses and industrial sites, residential societies and
-                        buildings, malls & events, healthcare facilities and high-footfall public places. A single
-                        system can manage multiple branches and multiple departments within each branch, all from one
-                        centralized dashboard. From interviews and client meetings to vendor deliveries, contractors,
-                        service providers and guests, the system digitizes approvals, generates secure gate passes and
-                        sends instant notifications to hosts or residents. With real-time visitor logs, scheduled
-                        check-ins, safety/compliance checklists and capacity control, you get faster entry, stronger
-                        security and complete visibility across all locations.
+                        </span>Empower your security team with automated gate passes, instant host approvals, and real-time visitor logs. Whether you are managing a single corporate entrance or complex public entry gates, N&amp;T Software delivers the reliability and contactless efficiency your facility demands.<br><br>N&amp;T Software is committed to the highest standards of data protection. Our Visitor Management System is engineered to be POPIA, NDPA, and GDPR compliant, ensuring that every guest check-in across offices, mines, hospitals, and schools meets local and international legal requirements for 2026.
                     </p>
                     <div class="d-flex flex-column flex-sm-row gap-3 animate-fadeIn delay-2">
                         <a href="/contact" class="btn btn-light btn-lg px-4">Request Demo</a>
@@ -679,7 +722,7 @@ $schema = [
                 </div>
 
                 <!-- Image -->
-                <div class="col-lg-6 mt-5 mt-lg-0">
+                <div class="col-lg-6 mt-0 mt-lg-0">
                     <div class="position-relative">
                         <img
                             src="/images/visitor-management-system-main-img-960.webp"
@@ -929,7 +972,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Offices</h3>
+                                <h2>Offices Visitor Management System</h2>
                                 <p class="mb-0">
                                     Track interviews, clients and meetings using customized entry passes with automated
                                     notifications to hosts in  Visitor Management System.
@@ -966,7 +1009,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Schools & Universities</h3>
+                                <h2>Schools & Universities Visitor Management System</h2>
                                 <p class="mb-0">
                                     Secure access for parents, students, visitors and external vendors with scheduled
                                     check-ins in Visitor Management System.
@@ -1004,7 +1047,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Warehouses</h3>
+                                <h2>Warehouses Visitor Management System</h2>
                                 <p class="mb-0">
                                     Control deliveries, contractors and supplies with compliance checklists and safety
                                     briefings in Visitor Management System.
@@ -1041,7 +1084,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h4>Residential Societies</h4>
+                                <h2>Residential Societies Visitor Management System</h2>
                                 <p class="mb-0">
                                     Approve guests, deliveries and staff via QR code entry with resident
                                     pre-authorization in  Visitor Management System.
@@ -1078,7 +1121,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Malls & Events</h3>
+                                <h2>Malls & Events Visitor Management System</h2>
                                 <p class="mb-0">
                                     Manage entry and monitor the flow of visitors via live alerts and capacity
                                     management in Visitor Management System.
@@ -1116,7 +1159,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Hospitals Facilities</h3>
+                                <h2>Hospitals Facilities Visitor Management System</h2>
                                 <p class="mb-0">
                                     Manage patient visitors, medical representatives and service providers with timed
                                     access controls in  Visitor Management System.
@@ -1153,7 +1196,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Industrial Manufacturing Unit</h3>
+                                <h2>Industrial Manufacturing Unit Visitor Management System</h2>
                                 <p class="mb-0">
                                     Control and monitor visitor entries for factories, warehouses and production floors
                                     with real-time access logs and safety compliance checks in  Visitor Management
@@ -1191,7 +1234,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h4>Residential Buildings</h4>
+                                <h2>Residential Buildings Visitor Management System</h2>
                                 <p class="mb-0">
                                     Secure apartments, gated societies and residential towers with digital visitor
                                     approvals, gate pass automation and real-time notifications in Visitor
@@ -1229,7 +1272,7 @@ $schema = [
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h4>Holy places</h4>
+                                <h2>Holy places Visitor Management System</h2>
                                 <p class="mb-0">
                                     Digitize darshan passes, manage crowd flow with live capacity limits and keep
                                     visitor records organized across all entry gates in  Visitor Management System.
