@@ -56,7 +56,7 @@
         .combined-hero {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 120px 0 80px;
+            padding: 50px 0 80px;
             position: relative;
             overflow: hidden;
         }
@@ -76,6 +76,9 @@
         .combined-hero-content {
             position: relative;
             z-index: 1;
+            max-width: 1380px;
+            padding-left: 0;
+            padding-right: 0;
         }
 
         /* Section Headings */
@@ -299,7 +302,16 @@
         /* Responsive */
         @media (max-width: 768px) {
             .combined-hero {
-                padding: 80px 0 60px;
+                padding: 56px 0 60px;
+            }
+
+            .combined-hero-content {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .combined-hero .btn {
+                margin: 0 6px 12px !important;
             }
 
             .feature-icon {
@@ -324,12 +336,21 @@
 <body class="d-flex flex-column min-vh-100">
     {{-- Header --}}
     @include('layouts.header')
+    <script>
+        if (window.performance && performance.getEntriesByType) {
+            const navEntry = performance.getEntriesByType('navigation')[0];
+            if (navEntry && navEntry.type === 'reload' && window.location.hash) {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+                window.scrollTo(0, 0);
+            }
+        }
+    </script>
 
     <!-- Combined Hero Section -->
     <section class="combined-hero">
         <div class="container combined-hero-content">
             <div class="row justify-content-center">
-                <div class="col-lg-10 text-center">
+                <div class="col-lg-12 text-center">
                     <h1 class="display-4 fw-bold mb-4">
                         Secure Visitor Management Software for Logistics &amp; Cold Storage
                     </h1>
@@ -524,6 +545,32 @@
                                     Print visitor passes with photos, QR codes, validity timings and
                                     department details for better control at gates For Warehouse Visitor
                                     Management System.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="feature-card industrial">
+                                <div class="feature-icon industrial">
+                                    <i class="bi bi-shield-lock"></i>
+                                </div>
+                                <h4 class="fw-bold">OTP Based Entry</h4>
+                                <p>
+                                    Enable secure one-time password based visitor verification before
+                                    granting entry For Warehouse Visitor Management System.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="feature-card industrial">
+                                <div class="feature-icon industrial">
+                                    <i class="bi bi-qr-code-scan"></i>
+                                </div>
+                                <h4 class="fw-bold">QR Code Scan on Visitor Pass</h4>
+                                <p>
+                                    Scan the QR code on the visitor pass to validate and record visitor
+                                    entry instantly For Warehouse Visitor Management System.
                                 </p>
                             </div>
                         </div>
@@ -733,6 +780,32 @@
                                     Generate and print visitor passes instantly, including dynamic passes
                                     with QR codes For Cold Storage Visitor
                                     Management System.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="feature-card cold-storage">
+                                <div class="feature-icon cold-storage">
+                                    <i class="bi bi-shield-lock"></i>
+                                </div>
+                                <h4>OTP Based Entry</h4>
+                                <p>
+                                    Enable secure one-time password based visitor verification before
+                                    granting entry For Cold Storage Visitor Management System.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="feature-card cold-storage">
+                                <div class="feature-icon cold-storage">
+                                    <i class="bi bi-qr-code-scan"></i>
+                                </div>
+                                <h4>QR Code Scan on Visitor Pass</h4>
+                                <p>
+                                    Scan the QR code on the visitor pass to validate and record visitor
+                                    entry instantly For Cold Storage Visitor Management System.
                                 </p>
                             </div>
                         </div>

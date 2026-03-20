@@ -97,6 +97,28 @@ class SitemapController extends Controller
             }
         }
 
+        // Add city + country pages from VmsLandingController
+        $cities = VmsLandingController::getCities();
+        foreach ($cities as $citySlug => $city) {
+            $countrySlug = $city['country_slug'] ?? null;
+
+            if (!$countrySlug || !Route::has('vms.city')) {
+                continue;
+            }
+
+            $urls[] = [
+                'loc' => route('vms.city', ['city' => $citySlug, 'country' => $countrySlug]),
+                'changefreq' => 'monthly',
+                'priority' => '0.6',
+            ];
+        }
+
+        // Remove duplicates while preserving sitemap metadata shape
+        $urls = collect($urls)
+            ->unique(fn ($url) => is_array($url) ? ($url['loc'] ?? '') : $url)
+            ->values()
+            ->all();
+
         return $urls;
     }
 

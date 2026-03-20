@@ -74,11 +74,19 @@
     .hero {
       position: relative;
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      padding: 180px 0 120px;
+      padding: 50px 0 96px;
       color: #fff;
       text-align: center;
       border-radius: 0 0 60px 60px;
       overflow: hidden;
+    }
+
+    .hero .container {
+      max-width: 1380px;
+      padding-left: 0;
+      padding-right: 0;
+      position: relative;
+      z-index: 1;
     }
 
     .hero::before {
@@ -106,7 +114,7 @@
     .hero p {
       font-size: 1.3rem;
       margin: 0 auto 2.5rem;
-      max-width: 700px;
+      max-width: 1240px;
       opacity: 0.95;
       position: relative;
       z-index: 1;
@@ -427,9 +435,14 @@
     /* Responsive Adjustments */
     @media (max-width: 768px) {
       .hero {
-        padding: 120px 0 80px;
+        padding: 56px 0 72px;
         border-radius: 0 0 30px 30px;
         background-attachment: scroll;
+      }
+
+      .hero .container {
+        padding-left: 16px;
+        padding-right: 16px;
       }
 
       .hero h1 {
@@ -438,6 +451,7 @@
 
       .hero p {
         font-size: 1.1rem;
+        max-width: 100%;
       }
 
       .section-header h2 {
@@ -468,6 +482,15 @@
 
   {{-- Header --}}
   @include('layouts.header')
+  <script>
+    if (window.performance && performance.getEntriesByType) {
+      const navEntry = performance.getEntriesByType('navigation')[0];
+      if (navEntry && navEntry.type === 'reload' && window.location.hash) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        window.scrollTo(0, 0);
+      }
+    }
+  </script>
 
   <!-- ISCON Contact Section -->
   <!-- <section class="iscon-contact" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); padding: 15px 0; color: white; position: relative; overflow: hidden;">
@@ -653,6 +676,32 @@
           <p>
             Generate and print visitor passes instantly, including dynamic passes
             with QR codes For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h4>OTP Based Entry</h4>
+          <p>
+            Enable secure one-time password based visitor verification before
+            granting entry For Resident Buildings Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-qr-code-scan"></i>
+          </div>
+          <h4>QR Code Scan on Visitor Pass</h4>
+          <p>
+            Scan the QR code on the visitor pass to validate and record visitor
+            entry instantly For Resident Buildings Visitor Management System.
           </p>
         </div>
       </div>

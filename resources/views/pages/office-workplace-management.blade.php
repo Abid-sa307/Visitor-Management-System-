@@ -55,12 +55,20 @@
     .office-hero {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       color: white;
-      padding: 150px 0 100px;
+      padding: 50px 0 96px;
       text-align: center;
       border-radius: 0 0 40px 40px;
       margin-bottom: 50px;
       position: relative;
       overflow: hidden;
+    }
+
+    .office-hero .container {
+      max-width: 1380px;
+      padding-left: 0;
+      padding-right: 0;
+      position: relative;
+      z-index: 1;
     }
 
     .office-hero:before {
@@ -83,7 +91,7 @@
 
     .office-hero p {
       font-size: 1.2rem;
-      max-width: 750px;
+      max-width: 1240px;
       margin: 0 auto 30px;
     }
 
@@ -258,8 +266,22 @@
 
     /* Responsive */
     @media (max-width:768px) {
+      .office-hero {
+        padding: 56px 0 72px;
+      }
+
+      .office-hero .container {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
       .office-hero h1 {
         font-size: 2.4rem;
+      }
+
+      .office-hero p {
+        font-size: 1.05rem;
+        max-width: 100%;
       }
     }
   </style>
@@ -268,6 +290,15 @@
 <body class="office-page">
   <!-- Header -->
   @include('layouts.header')
+  <script>
+    if (window.performance && performance.getEntriesByType) {
+      const navEntry = performance.getEntriesByType('navigation')[0];
+      if (navEntry && navEntry.type === 'reload' && window.location.hash) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        window.scrollTo(0, 0);
+      }
+    }
+  </script>
 
   <!-- Hero -->
   <section class="office-hero">
@@ -401,6 +432,28 @@
           <p>
             Instantly generate and print visitor passes, including QR-code
             enabled dynamic passes For Office Workplace Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-shield-lock"></i></div>
+          <h4>OTP Based Entry</h4>
+          <p>
+            Enable secure one-time password based visitor verification before
+            granting access For Office Workplace Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-qr-code-scan"></i></div>
+          <h4>QR Code Scan on Visitor Pass</h4>
+          <p>
+            Scan the QR code on the visitor pass to validate and record visitor
+            entry instantly For Office Workplace Visitor Management System.
           </p>
         </div>
       </div>

@@ -37,13 +37,21 @@
         body {font-family: 'Poppins', sans-serif; background:#f8f9fa; color:#333;}
         .hero {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            padding: 150px 0 100px;
+            padding: 50px 0 96px;
             color: #fff;
             text-align: center;
             border-radius: 0 0 40px 40px;
             margin-bottom: 50px;
             position: relative;
             overflow: hidden;
+        }
+
+        .hero .container {
+            max-width: 1380px;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .hero:before {
@@ -82,16 +90,40 @@
             font-size:36px; color:var(--primary); margin:0 auto 25px; transition:all .3s;
         }
         .feature-card:hover .feature-icon {background:var(--primary); color:#fff;}
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 56px 0 72px;
+            }
+
+            .hero .container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .hero h1 {
+                font-size: 2.35rem;
+            }
+        }
     </style>
 </head>
 <body>
 @include('layouts.header')
+<script>
+if (window.performance && performance.getEntriesByType) {
+  const navEntry = performance.getEntriesByType('navigation')[0];
+  if (navEntry && navEntry.type === 'reload' && window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+    window.scrollTo(0, 0);
+  }
+}
+</script>
 
 <!-- HERO -->
 <section class="hero">
     <div class="container">
         <h1>Smart Visitor Management Software for Hospitals, Clinics &amp; Healthcare Networks</h1>
-        <p class="lead mt-3 mx-auto" style="max-width:750px;">
+        <p class="lead mt-3 mx-auto" style="max-width:1240px;">
             Elevate patient safety and operational efficiency with the Hospital Visitor Management System from N&amp;T Software Private Limited. With over a decade of experience in healthcare technology, our 2026-ready platform is engineered for the high-traffic demands of multi-specialty hospitals, private clinics, and expansive healthcare networks.<br><br>
             Streamline the entry process for patient attendants, vendors, and medical representatives while maintaining strict compliance with healthcare security protocols. Our solution features digital OPD/IPD registration, automated visiting-hour controls, and instant SMS and email alerts for staff. From self-service kiosks to touchless face-recognition access, N&amp;T Software provides the secure, organized, and professional environment your patients and medical staff deserve.
         </p>
@@ -217,6 +249,32 @@
           <p>
             Generate and print visitor passes instantly, including dynamic passes
             with QR codes For Healthcare Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h4>OTP Based Entry</h4>
+          <p>
+            Enable secure one-time password based visitor verification before
+            granting entry For Healthcare Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-qr-code-scan"></i>
+          </div>
+          <h4>QR Code Scan on Visitor Pass</h4>
+          <p>
+            Scan the QR code on the visitor pass to validate and record visitor
+            entry instantly For Healthcare Visitor Management System.
           </p>
         </div>
       </div>

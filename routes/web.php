@@ -79,6 +79,12 @@ Route::get('/visitor-management-system-in-{state}-india', [App\Http\Controllers\
     ->name('vms.state');
 
 // City Pages (must be defined BEFORE country route to avoid wildcard conflict)
+Route::get('/visitor-management-system-in-{city}-{country}', function (string $city, string $country) {
+    return redirect()->route('vms.city', ['city' => $city, 'country' => $country], 301);
+})
+    ->where('city', '[a-zA-Z0-9\-]+')
+    ->where('country', '[a-zA-Z0-9\-]+');
+
 Route::get('/visitor-management-software-in-{city}-{country}', [App\Http\Controllers\VmsLandingController::class, 'city'])
     ->where('city', '[a-zA-Z0-9\-]+')
     ->where('country', '[a-zA-Z0-9\-]+')

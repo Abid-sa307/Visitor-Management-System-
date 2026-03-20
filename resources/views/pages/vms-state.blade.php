@@ -133,6 +133,10 @@
         }
 
        @media (min-width: 769px) {
+            .hero-image-desktop {
+                margin-top: -550px;
+            }
+
             .hero .hero-image {
                 margin-bottom: 160px;
             }
@@ -454,6 +458,19 @@
             padding: 1.5rem;
         }
 
+        .industry-content h2 {
+            margin: 0 0 0.85rem;
+            font-size: 1.2rem;
+            line-height: 1.4;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .industry-content p {
+            line-height: 1.65;
+            color: #6c757d;
+        }
+
         /* Feature Cards */
         .feature-card {
             background: white;
@@ -628,7 +645,7 @@
                 <!-- Content -->
                 <div class="col-lg-6 text-white">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
-                        Visitor Management System in {{ $c['name'] ?? 'Worldwide' }} for All Workplaces
+                        {{ $hero['title'] ?? "Smart Visitor Management Software in " . ($c['full'] ?? ($c['name'] ?? 'Worldwide')) . " for All Workplaces" }}
                     </h1>
                     
                     <!-- Mobile Image - Only visible on mobile -->
@@ -637,6 +654,13 @@
                             class="hero-image hero-image-mobile-inline rounded-3 shadow-lg">
                     </div>
                     
+                    @if(!empty($hero['paragraphs']))
+                        @foreach ($hero['paragraphs'] as $paragraph)
+                            <p class="lead animate-fadeIn delay-1 mb-4">
+                                {{ $paragraph }}
+                            </p>
+                        @endforeach
+                    @else
                     <p class="lead animate-fadeIn delay-1 mb-4">
                         N&T Software Pvt. Ltd.'s Visitor Management System helps you manage every type of visitor
                         flow—offices, schools & universities, warehouses and industrial sites, residential societies and
@@ -648,6 +672,7 @@
                         check-ins, safety/compliance checklists and capacity control, you get faster entry, stronger
                         security and complete visibility across all locations in {{ $c['full'] ?? '' }}.
                     </p>
+                    @endif
                     <div class="d-flex flex-column flex-sm-row gap-3 animate-fadeIn delay-2">
                         <a href="/contact" class="btn btn-light btn-lg px-4">Request Demo</a>
                         <a href="/pricing" class="btn btn-light btn-lg px-4">Get Pricing </a>
@@ -833,6 +858,32 @@
                     </div>
                 </div>
 
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h4>OTP Based Entry</h4>
+                        <p>
+                            Verify visitor entry securely using one-time password based access
+                            confirmation in visitor management system in {{ $c['full'] ?? '' }}.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <h4>QR Code Scan on Visitor Pass</h4>
+                        <p>
+                            Scan the QR code printed on the visitor pass to validate and
+                            record visitor entry instantly in visitor management system in {{ $c['full'] ?? '' }}.
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Pre-Approval -->
                 <div class="col-md-4">
                     <div class="feature-card">
@@ -881,7 +932,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/office-workplace-management"
+                        <a href="{{ route('office-workplace-management', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -903,7 +954,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Offices</h3>
+                                <h2>Offices Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Track interviews, clients and meetings using customized entry passes with automated
                                     notifications to hosts in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -919,7 +970,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/school-and-colleges" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('school-and-colleges', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -940,7 +991,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Schools & Universities</h3>
+                                <h2>Schools & Universities Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Secure access for parents, students, visitors and external vendors with scheduled
                                     check-ins in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -956,7 +1007,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/industrial-and-cold-storage"
+                        <a href="{{ route('industrial-and-cold-storage', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -978,7 +1029,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Warehouses</h3>
+                                <h2>Warehouses Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Control deliveries, contractors and supplies with compliance checklists and safety
                                     briefings in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -994,7 +1045,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/resident-societies" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('resident-societies', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1015,7 +1066,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Residents' Societies</h3>
+                                <h2>Residents' Societies Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Approve guests, deliveries and staff via QR code entry with resident
                                     pre-authorization in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1031,7 +1082,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/malls-and-events" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('malls-and-events', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1052,7 +1103,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Malls & Events</h3>
+                                <h2>Malls & Events Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Manage entry and monitor the flow of visitors via live alerts and capacity
                                     management in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1068,7 +1119,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="{{ route('hospitals-facilities') }}"
+                        <a href="{{ route('hospitals-facilities', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1090,7 +1141,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Healthcare Facilities</h3>
+                                <h2>Hospitals Facilities Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Manage patient visitors, medical representatives and service providers with timed
                                     access controls in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1105,7 +1156,7 @@
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/industrial-manufacturing-unit"
+                        <a href="{{ route('industrial-manufacturing-unit', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1127,7 +1178,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Industrial Manufacturing Unit</h3>
+                                <h2>Industrial Manufacturing Unit Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Control and monitor visitor entries for factories, warehouses and production floors
                                     with real-time access logs and safety compliance checks in  Visitor Management
@@ -1144,7 +1195,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/resident-buildings" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('resident-buildings', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1165,7 +1216,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Resident Buildings</h3>
+                                <h2>Resident Buildings Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Secure apartments, gated societies and residential towers with digital visitor
                                     approvals, gate pass automation and real-time notifications in Visitor
@@ -1182,7 +1233,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/temple-and-dargah" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('temple-and-dargah', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1203,7 +1254,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Holy Places</h3>
+                                <h2>Holy Places Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Digitize darshan passes, manage crowd flow with live capacity limits and keep
                                     visitor records organized across all entry gates in  Visitor Management System in {{ $c['full'] ?? '' }}.

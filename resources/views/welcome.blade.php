@@ -900,6 +900,32 @@ $schema = [
                     </div>
                 </div>
 
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h4>OTP Based Entry</h4>
+                        <p>
+                            Verify visitor entry securely with one-time password based access
+                            confirmation in visitor management system.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <h4>QR Code Scan on Visitor Pass</h4>
+                        <p>
+                            Scan the QR code printed on the visitor pass to validate and
+                            record visitor entry instantly in visitor management system.
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Pre-Approval -->
                 <div class="col-md-4">
                     <div class="feature-card">

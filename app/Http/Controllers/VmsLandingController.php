@@ -1074,6 +1074,12 @@ class VmsLandingController extends Controller
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
+        $seo['title'] = "Best Visitor Management System {$locationName} 2026 | N&T Software";
+        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['schema_description'] = $hero['paragraphs'][0];
+        $seo['title'] = "Best Visitor Management System {$locationName} 2026 | N&T Software";
+        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['schema_description'] = $hero['paragraphs'][0];
 
         // ✅ FAQs (dynamic)
         $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
@@ -1177,6 +1183,22 @@ class VmsLandingController extends Controller
         abort_unless(isset($states[$state]), 404);
 
         $c = $states[$state];
+        $c['country'] = 'India';
+        $c['country_name'] = 'India';
+        $c['full'] = "{$c['name']}, India";
+
+        $locationName = $c['full'];
+        $localComplianceShort = 'DPDP Act and IT Act';
+
+        $hero = [
+            'title' => "Smart Visitor Management Software in {$locationName} for All Workplaces",
+            'paragraphs' => [
+                "Modernize your facility's security with the leading Visitor Management System (VMS) in {$locationName} by N&T Software Private Limited. Built by a team with over 10+ years of collective industry expertise, our 2026-ready solution is fully {$localComplianceShort} compliant, ensuring the highest standards of data privacy and security across all sectors.",
+                "Our centralized platform provides specialized multi-location control tailored for the unique demands of {$locationName} offices, corporate parks, and high-rise residential buildings. From managing schools, colleges, and universities to securing healthcare facilities, hospitals, and diagnostic centers, N&T Software digitizes the entry process with QR-based gate passes and instant host approvals.",
+                "We offer robust, scalable security for high-stakes environments including mining sites, manufacturing units, factories, warehouses, and cold storage facilities. Whether you are coordinating large-scale events, managing shopping malls, or securing sacred holy places (temples, dargahs, churches), our system ensures total safety for residential societies, apartments, and public entry gates. Gain complete visibility with real-time visitor logs and automated alerts from a single dashboard, trusted for high-footfall public places throughout {$locationName}.",
+                "From interviews and client meetings to vendor deliveries, contractors, service providers and guests, the system digitizes approvals, generates secure gate passes and sends instant notifications to hosts or residents. With real-time visitor logs, scheduled check-ins, safety/compliance checklists and capacity control, you get faster entry, stronger security and complete visibility across all locations in {$locationName}.",
+            ],
+        ];
 
         // SEO (dynamic)
         $seo = [
@@ -1185,7 +1207,9 @@ class VmsLandingController extends Controller
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
-
+        $seo['title'] = "Best Visitor Management System {$locationName} 2026 | N&T Software";
+        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['schema_description'] = $hero['paragraphs'][0];
 
         // FAQs (dynamic)
         $faqs = [
@@ -1215,7 +1239,7 @@ class VmsLandingController extends Controller
             ],
         ];
 
-        return view('pages.vms-state', compact('c', 'seo', 'faqs'));
+        return view('pages.vms-state', compact('c', 'seo', 'faqs', 'hero'));
     }
 
     // ─── International Cities ─────────────────────────────────────────────────

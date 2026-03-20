@@ -77,6 +77,11 @@
             --danger: #e74a3b;
         }
 
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
         body { font-family: 'Poppins', sans-serif; background-color: var(--light); color: #4a4a4a; }
 
         /* Injected Global Styles to bypass 404 issue */
@@ -95,7 +100,9 @@
             overflow: hidden;
             width: 100%;
             margin: 0;
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .hero:before {
@@ -113,22 +120,30 @@
         .hero-content {
             position: relative;
             z-index: 1;
-            max-width: 100%;
             margin: 0;
-            padding: 0;
+            padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
+        }
+
+        .hero-copy {
+            padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
+        }
+
+        .hero-media {
+            padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
         }
 
         .hero h1 {
             font-weight: 700;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            line-height: 1.2;
         }
 
         .hero p {
-            font-size: 1.15rem;
-            line-height: 1.7;
-            opacity: 0.95;
+            font-size: 1.1rem;
+            line-height: 1.6;
         }
 
         .min-vh-75 {
@@ -138,34 +153,30 @@
         .hero .hero-image {
             width: 100%;
             height: auto;
+            max-height: 650px;
             object-fit: contain;
             border-radius: 20px;
             box-shadow: 0 25px 50px rgba(0,0,0,0.25);
         }
 
         .hero-image-desktop {
-            width: 100% !important;
-            max-width: none !important;
+            width: 150% !important;
+            max-width: 730px !important;
             height: auto !important;
             transition: transform 0.3s ease;
-            margin-left: 0;
-            margin-top: -800px;
         }
 
         .hero-image-desktop:hover {
             transform: translateY(-5px);
         }
 
-        @media (max-width: 991px) {
-            .hero {
-                padding: 60px 0;
-                text-align: center;
-            }
+        @media (min-width: 769px) {
             .hero-image-desktop {
-                margin: 40px 0 0 0 !important;
+                margin-top: -550px;
             }
-            .hero h1 {
-                font-size: 2.2rem;
+
+            .hero .hero-image {
+                margin-bottom: 160px;
             }
         }
 
@@ -619,11 +630,33 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .hero {
-                padding: 60px 0;
+                padding: 48px 0;
             }
 
             .hero h1 {
-                font-size: 2.2rem;
+                font-size: 1.95rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+                line-height: 1.65;
+            }
+
+            .hero-copy {
+                padding: 0 1rem;
+            }
+
+            .hero-media {
+                padding: 0 1rem;
+            }
+
+            .section-title p,
+            .industry-content p,
+            .feature-card p,
+            .benefit-desc,
+            .faq-answer {
+                font-size: 0.95rem;
             }
 
             .mobile-image-container {
@@ -632,7 +665,7 @@
 
             .hero .hero-image {
                 max-height: 500px;
-              xa
+                width: 100%;
             }
 
             .hero-image-desktop {
@@ -655,8 +688,52 @@
                 font-size: 1.5rem;
             }
 
+            .feature-card,
+            .benefit-card,
+            .trust-card {
+                padding: 1.5rem;
+            }
+
+            .faq-question {
+                padding: 18px 20px;
+                font-size: 1rem;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .faq-item.active .faq-answer {
+                padding: 18px 20px;
+            }
+
             .industry-img {
                 height: 180px;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .hero {
+                padding: 40px 0;
+            }
+
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .hero-copy,
+            .hero-media {
+                padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+                padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            }
+
+            .feature-card,
+            .benefit-card,
+            .trust-card,
+            .industry-content {
+                padding: 1.25rem;
+            }
+
+            .d-flex.flex-column.flex-sm-row.gap-3.animate-fadeIn.delay-2 .btn {
+                width: 100%;
             }
         }
     </style>
@@ -667,10 +744,10 @@
 
     <!-- Hero -->
     <section class="hero">
-        <div class="container-fluid hero-content" style="padding-right: 15px;">
-            <div class="row align-items-center min-vh-75" style="margin-right: 0;">
+        <div class="container hero-content">
+            <div class="row align-items-center min-vh-75">
                 <!-- Content -->
-                <div class="col-lg-6 text-white" style="padding-left: 8rem;">
+                <div class="col-lg-6 text-white">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
                         {{ $hero['title'] ?? 'Smart Visitor Management Software in United States for All Workplaces' }}
                     </h1>
@@ -698,8 +775,8 @@
                 </div>
 
                 <!-- Image -->
-                <div class="col-lg-6 mt-5 mt-lg-0" style="padding-right: 15px;">
-                    <div class="position-relative" style="overflow: visible;">
+                <div class="col-lg-6 mt-5 mt-lg-0">
+                    <div class="position-relative">
                         <img
                             src="/images/visitor-management-system-main-img-960.webp"
                             srcset="
@@ -872,6 +949,32 @@
                         <p>
                             Generate and print visitor passes instantly, including dynamic passes
                             with QR codes in visitor management system in {{ $c['full'] ?? '' }}.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h4>OTP Based Entry</h4>
+                        <p>
+                            Verify visitor entry securely using one-time password based access
+                            confirmation in visitor management system in {{ $c['full'] ?? '' }}.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <h4>QR Code Scan on Visitor Pass</h4>
+                        <p>
+                            Scan the QR code printed on the visitor pass to validate and
+                            record visitor entry instantly in visitor management system in {{ $c['full'] ?? '' }}.
                         </p>
                     </div>
                 </div>

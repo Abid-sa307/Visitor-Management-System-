@@ -64,12 +64,20 @@
         .temple-hero {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 150px 0 100px;
+            padding: 50px 0 96px;
             text-align: center;
             border-radius: 0 0 40px 40px;
             margin-bottom: 50px;
             position: relative;
             overflow: hidden;
+        }
+
+        .temple-hero .container {
+            max-width: 1380px;
+            padding-left: 0;
+            padding-right: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .temple-hero:before {
@@ -93,7 +101,7 @@
 
         .temple-hero p {
             font-size: 1.3rem;
-            max-width: 800px;
+            max-width: 1240px;
             margin: 0 auto 40px;
             opacity: 0.95;
             line-height: 1.8;
@@ -284,12 +292,22 @@
 
         /* Mobile responsiveness */
         @media (max-width: 767px) {
+            .temple-hero {
+                padding: 56px 0 72px;
+            }
+
+            .temple-hero .container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
             .temple-hero h1 {
                 font-size: 2.5rem;
             }
 
             .temple-hero p {
                 font-size: 1rem;
+                max-width: 100%;
             }
 
             .feature-card {
@@ -306,6 +324,15 @@
 <body>
     {{-- Header --}}
     @include('layouts.header')
+    <script>
+        if (window.performance && performance.getEntriesByType) {
+            const navEntry = performance.getEntriesByType('navigation')[0];
+            if (navEntry && navEntry.type === 'reload' && window.location.hash) {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+                window.scrollTo(0, 0);
+            }
+        }
+    </script>
 
     <!-- Hero Section -->
     <section class="temple-hero">
@@ -444,6 +471,32 @@
           <h4>Print Visitor Pass</h4>
           <p>
             Generate and print visitor passes instantly, including dynamic passes with QR codes For Temple , Dargah and Church Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h4>OTP Based Entry</h4>
+          <p>
+            Enable secure one-time password based visitor verification before
+            granting entry For Temple, Dargah and Church Visitor Management System.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-qr-code-scan"></i>
+          </div>
+          <h4>QR Code Scan on Visitor Pass</h4>
+          <p>
+            Scan the QR code on the visitor pass to validate and record visitor
+            entry instantly For Temple, Dargah and Church Visitor Management System.
           </p>
         </div>
       </div>

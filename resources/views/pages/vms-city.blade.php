@@ -18,6 +18,11 @@
 
     {{-- JSON-LD (IMPORTANT: @@context nahi, @context hota hai) --}}
     @php
+        $locationDisplay = $c['full']
+            ?? collect([$c['name'] ?? null, $c['country_name'] ?? $c['country'] ?? null])
+                ->filter()
+                ->implode(', ');
+
         $schema = [
           "@context" => "https://schema.org",
           "@type" => "SoftwareApplication",
@@ -38,7 +43,9 @@
             ],
           ],
         ];
-        $schema['description'] = $seo['schema_description'] ?? $seo['description'] ?? '';
+        $schema['description'] = $seo['schema_description']
+            ?? $seo['description']
+            ?? "Powerful Visitor Management System for {$locationDisplay}.";
 
         $faqSchema = [
             "@context" => "https://schema.org",
@@ -95,7 +102,9 @@
             overflow: hidden;
             width: 100%;
             margin: 0;
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .hero:before {
@@ -113,22 +122,32 @@
         .hero-content {
             position: relative;
             z-index: 1;
-            max-width: 100%;
             margin: 0;
-            padding: 0;
+            padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
+        }
+
+        .hero-copy {
+            box-sizing: border-box;
+            padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
+        }
+
+        .hero-visual {
+            box-sizing: border-box;
+            padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
         }
 
         .hero h1 {
             font-weight: 700;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            line-height: 1.2;
         }
 
         .hero p {
-            font-size: 1.15rem;
-            line-height: 1.7;
-            opacity: 0.95;
+            font-size: 1.1rem;
+            line-height: 1.6;
         }
 
         .min-vh-75 {
@@ -138,34 +157,30 @@
         .hero .hero-image {
             width: 100%;
             height: auto;
+            max-height: 650px;
             object-fit: contain;
             border-radius: 20px;
             box-shadow: 0 25px 50px rgba(0,0,0,0.25);
         }
 
         .hero-image-desktop {
-            width: 100% !important;
-            max-width: none !important;
+            width: 150% !important;
+            max-width: 730px !important;
             height: auto !important;
             transition: transform 0.3s ease;
-            margin-left: 0;
-            margin-top: -900px;
         }
 
         .hero-image-desktop:hover {
             transform: translateY(-5px);
         }
 
-        @media (max-width: 991px) {
-            .hero {
-                padding: 60px 0;
-                text-align: center;
-            }
+        @media (min-width: 769px) {
             .hero-image-desktop {
-                margin: 40px 0 0 0 !important;
+                margin-top: -550px;
             }
-            .hero h1 {
-                font-size: 2.2rem;
+
+            .hero .hero-image {
+                margin-bottom: 160px;
             }
         }
 
@@ -181,6 +196,7 @@
             width: 100%;
             height: auto;
         }
+
 
         .btn-primary {
             background: linear-gradient(to right, var(--primary), var(--secondary));
@@ -485,6 +501,19 @@
             padding: 1.5rem;
         }
 
+        .industry-content h2 {
+            margin: 0 0 0.85rem;
+            font-size: 1.2rem;
+            line-height: 1.4;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .industry-content p {
+            line-height: 1.65;
+            color: #6c757d;
+        }
+
         /* Feature Cards */
         .feature-card {
             background: white;
@@ -606,11 +635,16 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .hero {
-                padding: 60px 0;
+                padding: 48px 0 32px;
             }
 
             .hero h1 {
-                font-size: 2.2rem;
+                font-size: 1.75rem;
+                line-height: 1.25;
+            }
+
+            .hero-copy {
+                padding: 0 0.35rem;
             }
 
             .mobile-image-container {
@@ -618,8 +652,8 @@
             }
 
             .hero .hero-image {
-                max-height: 500px;
-              xa
+                max-height: none;
+                width: 100%;
             }
 
             .hero-image-desktop {
@@ -628,6 +662,20 @@
 
             .hero-image-mobile {
                 display: none;
+            }
+
+            .hero-image-mobile-inline {
+                max-width: 100%;
+                border-radius: 18px;
+            }
+
+            .hero .btn-lg {
+                width: 100%;
+                padding: 0.9rem 1.25rem;
+            }
+
+            .hero .d-flex.gap-3 {
+                width: 100%;
             }
 
             .feature-icon {
@@ -646,6 +694,25 @@
                 height: 180px;
             }
         }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 40px 0 28px;
+            }
+
+            .hero-content {
+                padding-right: calc(var(--bs-gutter-x, 1.5rem) * .5);
+                padding-left: calc(var(--bs-gutter-x, 1.5rem) * .5);
+            }
+
+            .hero h1 {
+                font-size: 1.55rem;
+            }
+
+            .hero p {
+                font-size: 0.95rem;
+            }
+        }
     </style>
 @endverbatim
 @endpush
@@ -654,12 +721,12 @@
 
     <!-- Hero -->
     <section class="hero">
-        <div class="container-fluid hero-content" style="padding-right: 15px;">
-            <div class="row align-items-center min-vh-75" style="margin-right: 0;">
+        <div class="container hero-content">
+            <div class="row align-items-center min-vh-75">
                 <!-- Content -->
-                <div class="col-lg-6 text-white" style="padding-left: 8rem;">
+                <div class="col-lg-6 text-white">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
-                        {{ $hero['title'] ?? 'Smart Visitor Management Software in United States for All Workplaces' }}
+                        {{ $hero['title'] ?? 'Smart Visitor Management Software in ' . ($locationDisplay ?: 'your city') . ' for All Workplaces' }}
                     </h1>
                     
                     <!-- Mobile Image - Only visible on mobile -->
@@ -685,8 +752,8 @@
                 </div>
 
                 <!-- Image -->
-                <div class="col-lg-6 mt-5 mt-lg-0" style="padding-right: 15px;">
-                    <div class="position-relative" style="overflow: visible;">
+                <div class="col-lg-6 mt-5 mt-lg-0">
+                    <div class="position-relative">
                         <img
                             src="/images/visitor-management-system-main-img-960.webp"
                             srcset="
@@ -863,6 +930,32 @@
                     </div>
                 </div>
 
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h4>OTP Based Entry</h4>
+                        <p>
+                            Verify visitor entry securely using one-time password based access
+                            confirmation in visitor management system in {{ $c['full'] ?? '' }}.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <h4>QR Code Scan on Visitor Pass</h4>
+                        <p>
+                            Scan the QR code printed on the visitor pass to validate and
+                            record visitor entry instantly in visitor management system in {{ $c['full'] ?? '' }}.
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Pre-Approval -->
                 <div class="col-md-4">
                     <div class="feature-card">
@@ -911,7 +1004,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/office-workplace-management"
+                        <a href="{{ route('office-workplace-management', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -933,7 +1026,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Offices</h3>
+                                <h2>Offices Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Track interviews, clients and meetings using customized entry passes with automated
                                     notifications to hosts in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -949,7 +1042,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/school-and-colleges" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('school-and-colleges', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -970,7 +1063,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Schools & Universities</h3>
+                                <h2>Schools & Universities Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Secure access for parents, students, visitors and external vendors with scheduled
                                     check-ins in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -986,7 +1079,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/industrial-and-cold-storage"
+                        <a href="{{ route('industrial-and-cold-storage', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1008,7 +1101,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Warehouses</h3>
+                                <h2>Warehouses Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Control deliveries, contractors and supplies with compliance checklists and safety
                                     briefings in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1024,7 +1117,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/resident-societies" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('resident-societies', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1045,7 +1138,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Residents' Societies</h3>
+                                <h2>Residents' Societies Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Approve guests, deliveries and staff via QR code entry with resident
                                     pre-authorization in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1061,7 +1154,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/malls-and-events" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('malls-and-events', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1082,7 +1175,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Malls & Events</h3>
+                                <h2>Malls & Events Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Manage entry and monitor the flow of visitors via live alerts and capacity
                                     management in Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1098,7 +1191,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/healthcare-facilities"
+                        <a href="{{ route('hospitals-facilities', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1120,7 +1213,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Healthcare Facilities</h3>
+                                <h2>Hospitals Facilities Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Manage patient visitors, medical representatives and service providers with timed
                                     access controls in  Visitor Management System in {{ $c['full'] ?? '' }}.
@@ -1135,7 +1228,7 @@
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/industrial-manufacturing-unit"
+                        <a href="{{ route('industrial-manufacturing-unit', [], false) }}"
                             class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
@@ -1157,7 +1250,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Industrial Manufacturing Unit</h3>
+                                <h2>Industrial Manufacturing Unit Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Control and monitor visitor entries for factories, warehouses and production floors
                                     with real-time access logs and safety compliance checks in  Visitor Management
@@ -1174,7 +1267,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/resident-buildings" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('resident-buildings', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1195,7 +1288,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Resident Buildings</h3>
+                                <h2>Resident Buildings Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Secure apartments, gated societies and residential towers with digital visitor
                                     approvals, gate pass automation and real-time notifications in Visitor
@@ -1212,7 +1305,7 @@
 
                 <div class="col-md-6 col-lg-4">
                     <div class="industry-card h-100">
-                        <a href="/temple-and-dargah" class="text-decoration-none text-dark d-flex flex-column h-100">
+                        <a href="{{ route('temple-and-dargah', [], false) }}" class="text-decoration-none text-dark d-flex flex-column h-100">
                             <picture>
                                 <source
                                     type="image/webp"
@@ -1233,7 +1326,7 @@
                                     decoding="async">
                             </picture>
                             <div class="industry-content d-flex flex-column flex-grow-1">
-                                <h3>Holy Places</h3>
+                                <h2>Holy Places Visitor Management System In {{ $c['full'] ?? '' }}</h2>
                                 <p class="mb-0">
                                     Digitize darshan passes, manage crowd flow with live capacity limits and keep
                                     visitor records organized across all entry gates in  Visitor Management System in {{ $c['full'] ?? '' }}.
