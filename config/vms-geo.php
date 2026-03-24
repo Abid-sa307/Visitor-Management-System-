@@ -24,6 +24,7 @@ return [
         'bosnia-herz' => 'bosnia-herzegovina',
         'saint-kitts-and-nevis' => 'saint-kitts-and-nevis',
         'saint-lucia' => 'saint-lucia',
+        'saint-vincent-and-the-grenadines' => 'st-vincent-and-grenadines',
         'saint-vincent-and-grenadines' => 'st-vincent-and-grenadines',
         'saint-vincent-grenadines' => 'st-vincent-and-grenadines',
         'trinidad-tobago' => 'trinidad-and-tobago',

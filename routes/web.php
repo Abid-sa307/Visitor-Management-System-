@@ -74,24 +74,62 @@ Route::view('/visitor-management-system-for-hospitals', 'pages.hospitals-facilit
 Route::view('/malls-and-events-visitor-management-system', 'pages.malls-and-events')->name('malls-and-events');
 Route::view('/holy-places-visitor-management-system', 'pages.temple-and-dargah')->name('temple-and-dargah');
 
-// Indian State Pages (must be defined BEFORE country route to avoid wildcard conflict)
+// Indian State Pages
 Route::get('/visitor-management-system-in-{state}-india', [App\Http\Controllers\VmsLandingController::class, 'state'])
     ->name('vms.state');
 
-// City Pages (must be defined BEFORE country route to avoid wildcard conflict)
+// Country Pages - MUST be before city routes
+Route::get('/visitor-management-system-in-{country}', function(string $country) {
+    $countries = App\Http\Controllers\VmsLandingController::getCountries();
+    // Direct country match first
+    if (isset($countries[$country])) {
+        return app(App\Http\Controllers\VmsLandingController::class)->country($country);
+    }
+    // Try city-country: progressively split from right
+    if (str_contains($country, '-')) {
+        $parts = explode('-', $country);
+        for ($i = count($parts) - 1; $i >= 1; $i--) {
+            $countrySlug = implode('-', array_slice($parts, $i));
+            $citySlug = implode('-', array_slice($parts, 0, $i));
+            if (isset($countries[$countrySlug])) {
+                return app(App\Http\Controllers\VmsLandingController::class)->city($citySlug, $countrySlug);
+            }
+        }
+    }
+    abort(404);
+})->where('country', '[a-zA-Z0-9\-]+')->name('vms.country');
+
+Route::get('/visitor-management-software-in-{country}', function(string $country) {
+    $countries = App\Http\Controllers\VmsLandingController::getCountries();
+    // Direct country match first
+    if (isset($countries[$country])) {
+        return app(App\Http\Controllers\VmsLandingController::class)->country($country);
+    }
+    // Try city-country: progressively split from right
+    if (str_contains($country, '-')) {
+        $parts = explode('-', $country);
+        for ($i = count($parts) - 1; $i >= 1; $i--) {
+            $countrySlug = implode('-', array_slice($parts, $i));
+            $citySlug = implode('-', array_slice($parts, 0, $i));
+            if (isset($countries[$countrySlug])) {
+                return app(App\Http\Controllers\VmsLandingController::class)->city($citySlug, $countrySlug);
+            }
+        }
+    }
+    abort(404);
+})->where('country', '[a-zA-Z0-9\-]+');
+
+// City Pages - only single-word city and country (no hyphens allowed)
+Route::get('/visitor-management-software-in-{city}-{country}', [App\Http\Controllers\VmsLandingController::class, 'city'])
+    ->where('city', '[a-zA-Z]+')
+    ->where('country', '[a-zA-Z]+')
+    ->name('vms.city');
+
 Route::get('/visitor-management-system-in-{city}-{country}', function (string $city, string $country) {
     return redirect()->route('vms.city', ['city' => $city, 'country' => $country], 301);
 })
-    ->where('city', '[a-zA-Z0-9\-]+')
-    ->where('country', '[a-zA-Z0-9\-]+');
-
-Route::get('/visitor-management-software-in-{city}-{country}', [App\Http\Controllers\VmsLandingController::class, 'city'])
-    ->where('city', '[a-zA-Z0-9\-]+')
-    ->where('country', '[a-zA-Z0-9\-]+')
-    ->name('vms.city');
-
-// Country Pages
-Route::get('/visitor-management-system-in-{country}', [App\Http\Controllers\VmsLandingController::class, 'country'])->name('vms.country');
+    ->where('city', '[a-zA-Z]+')
+    ->where('country', '[a-zA-Z]+');
 
 // Public QR Code Routes (no auth required) - MUST be before any middleware groups
 Route::get('/companies/{company}/public/qr', [QRManagementController::class, 'show'])->name('companies.public.qr');

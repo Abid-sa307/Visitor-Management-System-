@@ -735,6 +735,11 @@ class VmsLandingController extends Controller
                 'full' => 'Saint Vincent and the Grenadines',
                 'demo_label' => 'Request Demo in Saint Vincent and the Grenadines',
             ],
+            'st-vincent-and-grenadines' => [
+                'name' => 'Saint Vincent and the Grenadines',
+                'full' => 'Saint Vincent and the Grenadines',
+                'demo_label' => 'Request Demo in Saint Vincent and the Grenadines',
+            ],
             'argentina' => [
                 'name' => 'Argentina',
                 'full' => 'Argentina',
