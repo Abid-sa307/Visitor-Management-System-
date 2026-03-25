@@ -238,5 +238,8 @@ return [
         'guyana' => ['name' => 'Guyana', 'local_compliance' => 'Data Protection Act 2023 Compliant'],
         'suriname' => ['name' => 'Suriname', 'local_compliance' => 'International Data Privacy Standards Compliant'],
         'venezuela' => ['name' => 'Venezuela', 'local_compliance' => 'Constitutional Data Privacy Standards Compliant'],
+        'japan' => ['name' => 'Japan', 'local_compliance' => 'APPI (Act on the Protection of Personal Information) Compliant'],
+        'taiwan' => ['name' => 'Taiwan', 'local_compliance' => 'PDPA (Personal Data Protection Act) Compliant'],
+        'hong-kong' => ['name' => 'Hong Kong', 'local_compliance' => 'PDPO (Personal Data (Privacy) Ordinance) Compliant'],
     ],
 ];
