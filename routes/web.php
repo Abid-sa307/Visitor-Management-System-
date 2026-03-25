@@ -88,7 +88,7 @@ Route::get('/visitor-management-system-in-{country}', function(string $country) 
     // Try city-country: progressively split from right
     if (str_contains($country, '-')) {
         $parts = explode('-', $country);
-        for ($i = count($parts) - 1; $i >= 1; $i--) {
+        for ($i = 1; $i < count($parts); $i++) {
             $countrySlug = implode('-', array_slice($parts, $i));
             $citySlug = implode('-', array_slice($parts, 0, $i));
             if (isset($countries[$countrySlug])) {
@@ -108,7 +108,7 @@ Route::get('/visitor-management-software-in-{country}', function(string $country
     // Try city-country: progressively split from right
     if (str_contains($country, '-')) {
         $parts = explode('-', $country);
-        for ($i = count($parts) - 1; $i >= 1; $i--) {
+        for ($i = 1; $i < count($parts); $i++) {
             $countrySlug = implode('-', array_slice($parts, $i));
             $citySlug = implode('-', array_slice($parts, 0, $i));
             if (isset($countries[$countrySlug])) {

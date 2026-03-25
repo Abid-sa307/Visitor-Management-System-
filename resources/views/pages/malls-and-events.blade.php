@@ -603,7 +603,7 @@
   <!-- Hero Section -->
   <section class="mall-hero">
     <div class="container">
-      <h1>Smart Visitor Management Software for Malls &amp; High-Traffic Events</h1>
+      <h1>N&amp;T Software Visitor Management Software for Malls &amp; High-Traffic Events</h1>
       <p>In the high-energy world of shopping malls and large-scale events, speed and scalability are the ultimate priorities. N&amp;T Software Private Limited leverages over 10+ years of collective industry expertise to provide a robust Visitor Management System (VMS) engineered for high-traffic environments.<br><br>Our 2026-ready solution transforms how you manage guest flow by replacing slow manual entries with ultra-fast QR code check-ins and digital gate passes. Enhance your venue security with real-time crowd analytics, automated contractor tracking, and instant emergency alerts. Whether you are managing a massive shopping centre, a corporate product launch, or an international exhibition, N&amp;T Software delivers the secure, contactless, and scalable entry management required to keep your visitors moving and your venue safe.</p>
       <a href="/contact" class="btn btn-mall btn-lg me-3">Request a Demo</a>
 

@@ -684,7 +684,7 @@
   <!-- Hero Section -->
   <section class="industrial-hero">
     <div class="container">
-     <h1>Smart Visitor Management Software for Factories &amp; Manufacturing Units</h1>
+     <h1>N&amp;T Software Visitor Management Software for Factories &amp; Manufacturing Units</h1>
       <p>Optimize your facility's security with the industry-leading Visitor Management System (VMS) from N&amp;T Software. Built by a team with over 10+ years of collective expertise in industrial automation, our software is purpose-built for the rigorous demands of manufacturing units, factories, and heavy-duty facilities.<br><br>Seamlessly manage multi-location entry points with digital gate passes, instant supervisor approvals, and automated safety alerts. Our platform ensures strong compliance by maintaining real-time visitor logs and digital records of all contractors and vendors. Whether you are securing a single plant or a global network of industrial sites, N&amp;T Software provides the secure, contactless, and scalable solution your operations require for 2026.</p>
       <a href="/contact" class="btn btn-industrial btn-lg me-3">Request a Demo</a>
       {{-- <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a> --}}

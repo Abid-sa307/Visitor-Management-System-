@@ -703,7 +703,7 @@ $schema = [
             <div class="row align-items-center min-vh-75">
                 <!-- Content -->
                 <div class="col-lg-6 text-white">
-                    <h1 class="display-4 fw-bold animate-fadeIn mb-4">Smart Visitor Management Software for Every Industry | N&amp;T Software</h1>
+                    <h1 class="display-4 fw-bold animate-fadeIn mb-4">N&amp;T Software Visitor Management Software for Every Industry | N&amp;T Software</h1>
                     <!-- Mobile Image - Only visible on mobile -->
                     <div class="mobile-image-container mb-4">
                         <img src="/images/visitor-management-system-main-img1.jpeg" alt="Visitor Management System"

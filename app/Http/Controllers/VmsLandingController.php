@@ -9,7 +9,7 @@ class VmsLandingController extends Controller
 {
     public static function getCountries(): array
     {
-        return [
+        $countries = [
             'usa' => [
                 'name' => 'USA',
                 'full' => 'USA',
@@ -64,6 +64,21 @@ class VmsLandingController extends Controller
                 'name' => 'South Africa',
                 'full' => 'South Africa',
                 'demo_label' => 'Request Demo in South Africa',
+            ],
+            'hong-kong' => [
+                'name' => 'Hong Kong',
+                'full' => 'Hong Kong',
+                'demo_label' => 'Request Demo in Hong Kong',
+            ],
+            'japan' => [
+                'name' => 'Japan',
+                'full' => 'Japan',
+                'demo_label' => 'Request Demo in Japan',
+            ],
+            'taiwan' => [
+                'name' => 'Taiwan',
+                'full' => 'Taiwan',
+                'demo_label' => 'Request Demo in Taiwan',
             ],
             'africa' => [
                 'name' => 'Africa',
@@ -1041,6 +1056,14 @@ class VmsLandingController extends Controller
                 'demo_label' => 'Request Demo in Vanuatu',
             ],
         ];
+
+        foreach (VmsGeo::aliases() as $alias => $canonical) {
+            if (! isset($countries[$canonical]) && isset($countries[$alias])) {
+                $countries[$canonical] = $countries[$alias];
+            }
+        }
+
+        return $countries;
     }
     public function country(string $country)
     {
@@ -1063,7 +1086,7 @@ class VmsLandingController extends Controller
         $locationName = $countryName;
 
         $hero = [
-            'title' => "Smart Visitor Management Software in {$countryName} for All Workplaces",
+            'title' => "N&T Software Visitor Management Software in {$countryName} for All Workplaces",
             'paragraphs' => [
                 "Modernize your facility's security with the leading Visitor Management System (VMS) in {$locationName} by N&T Software Private Limited. Built by a team with over 10+ years of collective industry expertise, our 2026-ready solution is fully {$localComplianceShort} compliant, ensuring the highest standards of data privacy and security across all sectors.",
                 "Our centralized platform provides specialized multi-location control tailored for the unique demands of {$locationName} offices, corporate parks, and high-rise residential buildings. From managing schools, colleges, and universities to securing healthcare facilities, hospitals, and diagnostic centers, N&T Software digitizes the entry process with QR-based gate passes and instant host approvals.",
@@ -1074,20 +1097,20 @@ class VmsLandingController extends Controller
 
         // ✅ SEO (dynamic)
         $seo = [
-            'title' => "Best Visitor Management System {$locationName} 2026 | N&T Software",
-            'description' => "Visitor Management System & Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
+            'title' => "Best Visitor Management System in {$locationName} 2026 | N&T Software",
+            'description' => "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
-        $seo['title'] = "Best Visitor Management System {$locationName} 2026 | N&T Software";
-        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['title'] = "Best Visitor Management System in {$locationName} 2026 | N&T Software";
+        $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
-        $seo['title'] = "Best Visitor Management System {$locationName} 2026 | N&T Software";
-        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['title'] = "Best Visitor Management System in {$locationName} 2026 | N&T Software";
+        $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
 
         // ✅ FAQs (dynamic)
-        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
 
         $faqs = [
@@ -1196,7 +1219,7 @@ class VmsLandingController extends Controller
         $localComplianceShort = 'DPDP Act and IT Act';
 
         $hero = [
-            'title' => "Smart Visitor Management Software in {$locationName} for All Workplaces",
+            'title' => "N&T Software Visitor Management Software in {$locationName} for All Workplaces",
             'paragraphs' => [
                 "Modernize your facility's security with the leading Visitor Management System (VMS) in {$locationName} by N&T Software Private Limited. Built by a team with over 10+ years of collective industry expertise, our 2026-ready solution is fully {$localComplianceShort} compliant, ensuring the highest standards of data privacy and security across all sectors.",
                 "Our centralized platform provides specialized multi-location control tailored for the unique demands of {$locationName} offices, corporate parks, and high-rise residential buildings. From managing schools, colleges, and universities to securing healthcare facilities, hospitals, and diagnostic centers, N&T Software digitizes the entry process with QR-based gate passes and instant host approvals.",
@@ -1208,12 +1231,12 @@ class VmsLandingController extends Controller
         // SEO (dynamic)
         $seo = [
             'title'       => "Top Visitor Management Software (Vms) in {$c['name']} | Top Visitor Management System (Vms) {$c['name']}",
-            'description' => "Visitor Management Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
+            'description' => "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
         $seo['title'] = "Best Visitor Management System {$locationName} 2026 | N&T Software";
-        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
 
         // FAQs (dynamic)
@@ -1311,7 +1334,7 @@ class VmsLandingController extends Controller
         $locationName = $c['full'];
 
         $hero = [
-            'title' => "Smart Visitor Management Software in {$locationName} for All Workplaces",
+            'title' => "N&T Software Visitor Management Software in {$locationName} for All Workplaces",
             'paragraphs' => [
                 "Modernize your facility's security with the leading Visitor Management System (VMS) in {$locationName} by N&T Software Private Limited. Built by a team with over 10+ years of collective industry expertise, our 2026-ready solution is fully {$localComplianceShort} compliant, ensuring the highest standards of data privacy and security across all sectors.",
                 "Our centralized platform provides specialized multi-location control tailored for the unique demands of {$locationName} offices, corporate parks, and high-rise residential buildings. From managing schools, colleges, and universities to securing healthcare facilities, hospitals, and diagnostic centers, N&T Software digitizes the entry process with QR-based gate passes and instant host approvals.",
@@ -1322,8 +1345,8 @@ class VmsLandingController extends Controller
 
         // SEO (dynamic)
         $seo = [
-            'title' => "Best Visitor Management System {$locationName} 2026 | N&T Software",
-            'description' => "Visitor Management Software in {$c['name']} for offices, corporate parks, factories, manufacturing units, warehouses, cold storage, hospitals, schools, holy places, malls, events, residential societies and public entry gates—single or multi-location control with gate passes, approvals, alerts and real-time visitor logs.",
+            'title' => "Best Visitor Management System in {$locationName} 2026 | N&T Software",
+            'description' => "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.",
             'keywords' => "visitor management software {$c['name']}, visitor management system {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
@@ -1356,7 +1379,7 @@ class VmsLandingController extends Controller
             ],
         ];
 
-        $seo['description'] = "Secure your {$locationName} facility with N&T Software's 10+ years of collective VMS expertise. {$localComplianceShort} compliant & contactless logs. Get a Demo!";
+        $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
 
         return view('pages.vms-city', compact('c', 'seo', 'faqs', 'hero'));
