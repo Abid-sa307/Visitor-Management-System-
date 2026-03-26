@@ -113,6 +113,33 @@ class SitemapController extends Controller
             ];
         }
 
+        // Add Blog Posts from Sanity CMS
+        try {
+            $projectId = '1bthezjc';
+            $dataset = 'production';
+            $apiVersion = 'v2021-10-21';
+            $groq = '*[_type == "post"]{ "slug": slug.current, "_updatedAt": _updatedAt }';
+            $url = "https://{$projectId}.api.sanity.io/{$apiVersion}/data/query/{$dataset}?query=" . urlencode($groq);
+            $response = \Illuminate\Support\Facades\Http::get($url);
+
+            if ($response->ok()) {
+                $posts = $response->json()['result'] ?? [];
+                foreach ($posts as $post) {
+                    if (!empty($post['slug']) && \Illuminate\Support\Facades\Route::has('blog.show')) {
+                        $lastmod = !empty($post['_updatedAt']) ? \Carbon\Carbon::parse($post['_updatedAt'])->toIso8601String() : null;
+                        $urls[] = [
+                            'loc' => route('blog.show', $post['slug']),
+                            'lastmod' => $lastmod,
+                            'changefreq' => 'weekly',
+                            'priority' => '0.8',
+                        ];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently ignore if API is unavailable so sitemap doesn't break
+        }
+
         // Remove duplicates while preserving sitemap metadata shape
         $urls = collect($urls)
             ->unique(fn ($url) => is_array($url) ? ($url['loc'] ?? '') : $url)
