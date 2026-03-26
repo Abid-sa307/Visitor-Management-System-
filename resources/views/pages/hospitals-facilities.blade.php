@@ -122,7 +122,7 @@ if (window.performance && performance.getEntriesByType) {
 <!-- HERO -->
 <section class="hero">
     <div class="container">
-        <h1>Smart Visitor Management Software for Hospitals, Clinics &amp; Healthcare Networks</h1>
+        <h1>N&amp;T Software Visitor Management Software for Hospitals, Clinics &amp; Healthcare Networks</h1>
         <p class="lead mt-3 mx-auto" style="max-width:1240px;">
             Elevate patient safety and operational efficiency with the Hospital Visitor Management System from N&amp;T Software Private Limited. With over a decade of experience in healthcare technology, our 2026-ready platform is engineered for the high-traffic demands of multi-specialty hospitals, private clinics, and expansive healthcare networks.<br><br>
             Streamline the entry process for patient attendants, vendors, and medical representatives while maintaining strict compliance with healthcare security protocols. Our solution features digital OPD/IPD registration, automated visiting-hour controls, and instant SMS and email alerts for staff. From self-service kiosks to touchless face-recognition access, N&amp;T Software provides the secure, organized, and professional environment your patients and medical staff deserve.

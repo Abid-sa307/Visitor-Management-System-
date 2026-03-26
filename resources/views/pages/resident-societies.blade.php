@@ -575,7 +575,7 @@
   <!-- Hero Section -->
   <section class="residential-hero">
     <div class="container">
-      <h1>Smart Visitor Management Software for Apartments &amp; Gated Communities</h1>
+      <h1>N&amp;T Software Visitor Management Software for Apartments &amp; Gated Communities</h1>
 
       <p>Transform your community's security with the most reliable Visitor Management System (VMS) from N&amp;T Software Private Limited. Built by a team with over 10+ years of collective expertise in residential security, we provide a specialized solution for modern apartments, housing societies, and gated communities.<br><br>Our software streamlines guest access by replacing manual registers with secure digital check-ins and instant resident notifications. Enhance your living environment with features like daily staff tracking, pre-approved visitor entries, and real-time security alerts. Whether you manage a single building or a massive residential complex, our 2026-ready contactless system ensures a safer, smarter, and more professional experience for every resident.</p>
       <a href="/contact" class="btn btn-residential btn-lg me-3" style="pointer-events: auto; z-index: 999; position: relative;">Request a Demo</a>

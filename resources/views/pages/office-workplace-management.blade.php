@@ -303,7 +303,7 @@
   <!-- Hero -->
   <section class="office-hero">
     <div class="container">
-      <h1>Smart Visitor Management Software for Modern Offices &amp; Workplaces</h1>
+      <h1>N&amp;T Software Visitor Management Software for Modern Offices &amp; Workplaces</h1>
       <p>Transform your front desk into a high-tech entry point with the Office Visitor Management System from N&amp;T Software Private Limited. Backed by 10+ years of experience in workplace technology, our 2026-ready solution is designed to meet the security demands of corporate campuses, co-working spaces, and multi-tenant office buildings.<br><br>Deliver a seamless check-in experience for clients and vendors while maintaining the highest levels of workplace safety. Our platform automates digital NDA signing, instant host notifications via SMS and email, and real-time visitor tracking. Whether you are managing a startup hub or a global headquarters, N&amp;T Software provides the secure, contactless, and professional VMS your modern workspace requires to stay efficient and compliant.</p>
       <a href="/contact" class="btn btn-office btn-lg" style="pointer-events: auto; z-index: 999; position: relative;">Request a Demo</a>
     </div>
