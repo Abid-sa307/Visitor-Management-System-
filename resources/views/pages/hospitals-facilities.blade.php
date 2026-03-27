@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital Visitor Management System 2026 | Healthcare | N&amp;T Software</title>
-    <meta name="description" content="N&amp;T Software offers 10+ years of healthcare VMS expertise. Automate patient attendant check-ins, OPD/IPD registrations, and QR-pass entry. Secure your facility today!">
+    <title>Best Hospital Visitor Management Software 2026 | N&T Software</title>
+    <meta name="description" content="N&T Software Pvt Ltd Top Visitor management software for hospitals, clinics, and healthcare networks with patient attendant check-in, OPD/IPD tracking, QR entry, visitor logs, and secure access control. Book a demo.">
 
     <meta name="x-description" content="Top Smart hospital visitor management system &amp; Software for hospitals, clinics and healthcare facilities—whether you run a single hospital or a multi-location healthcare network. Digitize patient attendant &amp; visitor check-ins, OPD/IPD registration, vendor and contractor entry with QR/OTP passes, self check-in kiosks, face-recognition access, visiting-hours control, badge printing and real-time visitor logs from one centralized platform. Improve security, compliance and patient experience—book a free demo today.">
 
@@ -122,7 +122,7 @@ if (window.performance && performance.getEntriesByType) {
 <!-- HERO -->
 <section class="hero">
     <div class="container">
-        <h1>N&amp;T Software Visitor Management Software for Hospitals, Clinics &amp; Healthcare Networks</h1>
+        <h1>Visitor Management Software for Hospitals, Clinics & Healthcare Networks</h1>
         <p class="lead mt-3 mx-auto" style="max-width:1240px;">
             Elevate patient safety and operational efficiency with the Hospital Visitor Management System from N&amp;T Software Private Limited. With over a decade of experience in healthcare technology, our 2026-ready platform is engineered for the high-traffic demands of multi-specialty hospitals, private clinics, and expansive healthcare networks.<br><br>
             Streamline the entry process for patient attendants, vendors, and medical representatives while maintaining strict compliance with healthcare security protocols. Our solution features digital OPD/IPD registration, automated visiting-hour controls, and instant SMS and email alerts for staff. From self-service kiosks to touchless face-recognition access, N&amp;T Software provides the secure, organized, and professional environment your patients and medical staff deserve.

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Office Visitor Management System 2026 | Corporate | N&amp;T Software</title>
+  <title>Office & Workplace Visitor Management Software 2026 | N&T Software</title>
 
   <meta name="x-description"
     content="Smart Visitor Management System for offices, corporate workplaces and co-working spaces—whether you run a single office or multiple branches worldwide. Digitize front desk check-ins, visitor, vendor and contractor entry, meeting guest registration and employee guests with QR/OTP passes, self check-in kiosks, face-recognition access, instant WhatsApp/email notifications and digital visitor logs. Centralize security, improve reception experience and eliminate paper registers from every location—book a free demo today.">
@@ -12,7 +12,7 @@
   <meta name="keywords"
     content="office visitor management system, workplace visitor management software, corporate office visitor tracking, front desk visitor system, reception management software, single office visitor system, multi location office visitor management, branch office visitor tracking, co-working space visitor management, business center visitor check-in, QR code visitor pass office, OTP visitor entry workplace, face recognition access office, digital visitor register for offices, meeting guest registration system, contractor and vendor check-in software, visitor notifications WhatsApp email, paperless office reception, office security and access control">
   <meta name="description"
-    content="N&amp;T Software brings 10+ years of VMS expertise to corporate offices. Automate guest check-ins, NDA signing, and real-time host alerts. Start your free demo today!">
+    content="N&T Software Pvt Ltd Top Visitor management software for offices and workplaces with guest check-in, NDA signing, host alerts, QR entry, visitor logs, and paperless reception. Book a demo.">
 
 
   <!-- Bootstrap & Icons -->
@@ -303,7 +303,7 @@
   <!-- Hero -->
   <section class="office-hero">
     <div class="container">
-      <h1>N&amp;T Software Visitor Management Software for Modern Offices &amp; Workplaces</h1>
+      <h1>Visitor Management Software for Modern Offices & Workplaces</h1>
       <p>Transform your front desk into a high-tech entry point with the Office Visitor Management System from N&amp;T Software Private Limited. Backed by 10+ years of experience in workplace technology, our 2026-ready solution is designed to meet the security demands of corporate campuses, co-working spaces, and multi-tenant office buildings.<br><br>Deliver a seamless check-in experience for clients and vendors while maintaining the highest levels of workplace safety. Our platform automates digital NDA signing, instant host notifications via SMS and email, and real-time visitor tracking. Whether you are managing a startup hub or a global headquarters, N&amp;T Software provides the secure, contactless, and professional VMS your modern workspace requires to stay efficient and compliant.</p>
       <a href="/contact" class="btn btn-office btn-lg" style="pointer-events: auto; z-index: 999; position: relative;">Request a Demo</a>
     </div>

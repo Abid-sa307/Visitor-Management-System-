@@ -119,16 +119,16 @@ Route::get('/visitor-management-software-in-{country}', function(string $country
     abort(404);
 })->where('country', '[a-zA-Z0-9\-]+');
 
-// City Pages - only single-word city and country (no hyphens allowed)
+// City Pages - city can contain hyphens (e.g. new-york, san-antonio), country is a single word
 Route::get('/visitor-management-software-in-{city}-{country}', [App\Http\Controllers\VmsLandingController::class, 'city'])
-    ->where('city', '[a-zA-Z]+')
+    ->where('city', '[a-zA-Z][a-zA-Z\-]+')
     ->where('country', '[a-zA-Z]+')
     ->name('vms.city');
 
 Route::get('/visitor-management-system-in-{city}-{country}', function (string $city, string $country) {
     return redirect()->route('vms.city', ['city' => $city, 'country' => $country], 301);
 })
-    ->where('city', '[a-zA-Z]+')
+    ->where('city', '[a-zA-Z][a-zA-Z\-]+')
     ->where('country', '[a-zA-Z]+');
 
 // Public QR Code Routes (no auth required) - MUST be before any middleware groups

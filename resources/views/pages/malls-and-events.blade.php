@@ -4,12 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mall &amp; Event Visitor Management System 2026 | N&amp;T Software</title>
+  <title>Mall & Event Visitor Management Software 2026 | N&T Software
+</title>
 
   <meta name="x-description"
     content="Smart Visitor Management System for malls, shopping centres, retail parks, cinemas, exhibition halls and live events—whether you manage a single venue or a multi-location chain. Digitize visitor entry, QR/OTP ticket validation, self check-in kiosks, VIP &amp; crew passes, vendor/brand-staff access, parking &amp; crowd control with real-time visitor logs, security alerts and footfall analytics from one centralized platform. Enhance security, guest experience and operations—book a free demo today.">
   <meta name="description"
-    content="Manage thousands of entries with N&amp;T Software's 10+ years of collective VMS expertise. Fast QR check-ins and crowd analytics for malls and events. Get a demo!">
+    content="N&T Software Pvt Ltd Top Visitor management software for malls and events with QR check-in, crowd entry control, vendor access, visitor logs, and real-time footfall tracking. Book a demo.">
 
   <meta name="keywords"
     content="visitor management system for malls, mall visitor management software, shopping centre visitor tracking, retail venue access control, event visitor management system, exhibition visitor registration, concert and show visitor check-in, single mall visitor system, multi location mall visitor management, QR code ticket validation, OTP entry for events, self check-in kiosks events, VIP and crew pass management, vendor and brand staff access, parking and crowd control software, real-time footfall analytics, digital visitor register for malls, paperless event entry system, mall and event security management">

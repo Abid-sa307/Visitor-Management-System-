@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Industrial &amp; Manufacturing Visitor Management System | N&amp;T Software</title>
+  <title>Best Industrial & Manufacturing Visitor Management Software 2026 | N&T Software</title>
   <!-- SEO: Meta Description -->
   <meta name="x-description"
     content="Secure your manufacturing operations—whether it’s a single plant or multiple factories—with a powerful Visitor Management System. Manage visitor and contractor check-ins, QR/OTP/face-recognition entry, gate passes, safety-compliance logs, shift-based tracking and real-time dashboards from one platform. Eliminate paper registers—book a free demo today.">
   <meta name="description"
-    content="Secure your plant with N&amp;T Software's 10+ years of collective VMS expertise. Automate gate passes, safety inductions, and real-time visitor logs. Get a free demo!">
+    content="N&T Software Pvt Ltd Top Visitor management software for factories and manufacturing plants with gate pass control, contractor check-in, QR visitor entry, safety logs, and real-time tracking. Book a demo.">
 
   <!-- SEO: Meta Keywords -->
   <meta name="keywords"
@@ -684,7 +684,7 @@
   <!-- Hero Section -->
   <section class="industrial-hero">
     <div class="container">
-     <h1>N&amp;T Software Visitor Management Software for Factories &amp; Manufacturing Units</h1>
+     <h1>Industrial & Manufacturing Visitor Management Software</h1>
       <p>Optimize your facility's security with the industry-leading Visitor Management System (VMS) from N&amp;T Software. Built by a team with over 10+ years of collective expertise in industrial automation, our software is purpose-built for the rigorous demands of manufacturing units, factories, and heavy-duty facilities.<br><br>Seamlessly manage multi-location entry points with digital gate passes, instant supervisor approvals, and automated safety alerts. Our platform ensures strong compliance by maintaining real-time visitor logs and digital records of all contractors and vendors. Whether you are securing a single plant or a global network of industrial sites, N&amp;T Software provides the secure, contactless, and scalable solution your operations require for 2026.</p>
       <a href="/contact" class="btn btn-industrial btn-lg me-3">Request a Demo</a>
       {{-- <a href="#features" class="btn btn-outline-light btn-lg">Learn More</a> --}}
