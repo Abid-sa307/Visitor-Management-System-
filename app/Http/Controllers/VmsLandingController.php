@@ -4342,7 +4342,7 @@ class VmsLandingController extends Controller
         $locationName = $c['full'];
 
         $hero = [
-            'title' => "N&T Software Visitor Management Software in {$locationName} for All Workplaces",
+            'title' => "Top Visitor Management Software in {$locationName} for All Workplaces",
             'paragraphs' => [
                 "Modernize your facility's security with the leading Visitor Management System (VMS) in {$locationName} by N&T Software Private Limited. Built by a team with over 10+ years of collective industry expertise, our 2026-ready solution is fully {$localComplianceShort} compliant, ensuring the highest standards of data privacy and security across all sectors.",
                 "Our centralized platform provides specialized multi-location control tailored for the unique demands of {$locationName} offices, corporate parks, and high-rise residential buildings. From managing schools, colleges, and universities to securing healthcare facilities, hospitals, and diagnostic centers, N&T Software digitizes the entry process with QR-based gate passes and instant host approvals.",
