@@ -726,7 +726,7 @@
                 <!-- Content -->
                 <div class="col-lg-6 text-white">
                     <h1 class="display-4 fw-bold animate-fadeIn mb-4">
-                        {{ $hero['title'] ?? 'N&T Software Visitor Management Software in ' . ($locationDisplay ?: 'your city') . ' for All Workplaces' }}
+                        {{ $hero['title'] ?? 'Visitor Management Software in ' . ($locationDisplay ?: 'your city') . ' for All Workplaces' }}
                     </h1>
                     
                     <!-- Mobile Image - Only visible on mobile -->
