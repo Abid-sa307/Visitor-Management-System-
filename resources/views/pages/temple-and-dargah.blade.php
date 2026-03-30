@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- SEO Title -->
-    <title>Holy Places Visitor Management System 2026 | N&amp;T Software</title>
+    <title>Religious Place Visitor Management Software 2026 | N&T Software</title>
 
     <!-- SEO Meta Description -->
     <meta name="x-description"
         content="Smart Visitor Management System for temples, mosques, churches, gurdwaras, kabrastan/burial grounds, cemeteries, dargahs, shrines and other holy places—whether it’s a single site or a multi-location religious trust. Digitize devotee &amp; visitor entry, QR/OTP passes, seva/donation counter visitors, funeral/prayer attendees, priest/staff/volunteer access, crowd control and emergency logs from one centralized, paperless platform. Improve safety, discipline and visitor experience—book a free demo today.">
     <meta name="description"
-        content="Ensure sacred safety with N&amp;T Software's 10+ years of collective VMS expertise. Manage crowds, track volunteers, and secure entry for holy places. Get a demo!">
+        content="N&T Software Pvt Ltd Top Visitor management software for temples, mosques, churches, dargahs, and other religious places with crowd entry control, volunteer tracking, QR check-in, visitor logs, and secure access. Book a demo.">
 
     <!-- SEO Meta Keywords -->
     <meta name="keywords"
@@ -337,7 +337,7 @@
     <!-- Hero Section -->
     <section class="temple-hero">
         <div class="container">
-            <h1>Secure Visitor Management Software for Temples, Dargahs &amp; Churches</h1>
+            <h1>Visitor Management Software for Temples, Mosques, Churches & Religious Places</h1>
             <p>Preserving the sanctity and safety of religious institutions requires a delicate balance of security and hospitality. N&amp;T Software Private Limited leverages over 10+ years of collective industry expertise to provide a specialized Visitor Management System (VMS) specifically designed for temples, dargahs, churches, and spiritual centers.<br><br>Our 2026-ready solution streamlines pilgrim registration and visitor access while ensuring the smooth functioning of holy places during peak festivals and daily prayers. Enhance community security with contactless gate passes, real-time crowd monitoring, and dedicated volunteer and staff tracking. Whether you are managing a historic shrine or a modern spiritual complex, N&amp;T Software provides the secure, respectful, and high-capacity entry management your institution deserves.</p>
             <a href="/contact" class="btn btn-temple btn-lg" style="pointer-events: auto; z-index: 999; position: relative;">Request a Demo</a>
         </div>

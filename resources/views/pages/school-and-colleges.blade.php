@@ -4,11 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>School &amp; University Visitor Management System 2026 | N&amp;T Software</title>
+  <title>Best School, College & University Visitor Management Software 2026 | N&T Software</title>
   <meta name="x-description"
     content="Secure schools, colleges and universities—whether you run a single campus or a multi-campus network—with a centralized Visitor Management System. Digitize visitor, parent, vendor and contractor check-ins; enable QR/OTP passes, face-recognition access, digital visitor logs, security alerts and audit-ready reports. Create a safer, paperless learning environment—book a free demo today.">
   <meta name="description"
-    content="Ensure campus safety with N&amp;T Software's 10+ years of collective VMS expertise. Automate visitor screening, student check-ins, and parent alerts. Get a demo!">
+    content="N&T Software Pvt Ltd Top Visitor management software for schools and colleges with visitor screening, parent check-in, student movement logs, QR entry, and campus visitor tracking. Book a demo.">
 
   <meta name="keywords"
     content="school visitor management system, college visitor management software, university visitor management, single campus visitor system, multi campus visitor management, campus visitor tracking platform, digital visitor registration for schools, parent check-in system, student check-in system, QR code visitor passes school, OTP visitor entry college, face recognition access for campus, school access control system, campus safety and security software, educational institution visitor logs, paperless visitor register schools, global school visitor management solution">
@@ -555,7 +555,7 @@
   <!-- Hero Section -->
   <section class="education-hero">
     <div class="container">
-      <h1>Secure Visitor Management Software for Schools &amp; Colleges</h1>
+      <h1>Visitor Management Software for Schools, Colleges& Universities</h1>
 
       <p>Creating a safe and secure learning environment is the top priority for modern educational institutions. N&amp;T Software Private Limited leverages over 10+ years of collective industry expertise to provide a specialized Visitor Management System (VMS) designed specifically for schools, colleges, and universities.<br><br>Our platform streamlines the entire visitor registration process, replacing outdated paper logs with secure digital entries. Enhance your campus security with instant visitor screening, automated parent alerts, and real-time student check-in logs. Whether you are managing a single primary school or a multi-campus university network, our 2026-ready contactless solution ensures that only authorized individuals enter your premises, protecting your students and staff every day.</p>
       <a href="/contact" class="btn btn-education btn-lg me-3" style="pointer-events: auto; z-index: 999; position: relative;">Request a Demo</a>
