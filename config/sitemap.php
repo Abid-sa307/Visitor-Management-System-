@@ -39,4 +39,10 @@ return [
     ],
 
     'cache_minutes' => 0,
+
+    'state_path' => public_path('sitemap-state.json'),
+
+    'state_url' => '/sitemap-state.json',
+
+    'request_timeout_seconds' => 3,
 ];

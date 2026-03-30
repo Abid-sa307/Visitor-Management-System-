@@ -468,7 +468,7 @@
               <i class="bi bi-eye-fill"></i>
             </div>
             <div class="mv-content">
-              <h3>Our Vision</h3>
+              <h3>my Vision</h3>
               <p>
                 To become the global standard for visitor management, revolutionizing how organizations welcome and
                 manage guests. We envision a world where every visitor experience is seamless, secure and

@@ -113,14 +113,20 @@
 
     .blog-card__imageWrap {
       width: 100%;
-      height: 220px;
+      aspect-ratio: 16 / 9;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      padding: 12px;
     }
 
     .blog-card__image {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
       display: block;
     }
 
@@ -189,7 +195,8 @@
 
     @media (max-width: 480px) {
       .blog-card__imageWrap {
-        height: 200px;
+        aspect-ratio: 4 / 3;
+        padding: 10px;
       }
     }
   </style>

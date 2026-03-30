@@ -69,13 +69,14 @@
         }
         .blog-cover-img {
             width: 100%;
-            height: 460px;
-            object-fit: cover;
+            height: auto;
+            object-fit: contain;
             object-position: center;
             border-radius: 16px;
             display: block;
             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
             margin-bottom: 24px;
+            background: #f8fafc;
         }
         .blog-intro {
             line-height: 1.7;
@@ -294,15 +295,20 @@
             box-shadow:0 12px 26px rgba(0,0,0,0.12);
         }
         .related-card__imageWrap{
-            height:220px;
+            aspect-ratio:16 / 9;
             overflow:hidden;
             border-top-left-radius:24px;
             border-top-right-radius:24px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#f8fafc;
+            padding:12px;
         }
         .related-card__image{
             width:100%;
             height:100%;
-            object-fit:cover;
+            object-fit:contain;
             object-position:center;
             display:block;
         }
@@ -323,6 +329,12 @@
             -webkit-line-clamp:2;
             -webkit-box-orient:vertical;
             overflow:hidden;
+        }
+        @media (max-width: 576px){
+            .related-card__imageWrap{
+                aspect-ratio:4 / 3;
+                padding:10px;
+            }
         }
 
         footer { background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
@@ -902,7 +914,7 @@
                                 $caption = e($block['caption'] ?? '');
                                 
                                 $html .= '<figure class="my-4">';
-                                $html .= '<img src="' . $imageUrl . '" alt="' . $alt . '" style="width:100%;height:420px;object-fit:cover;object-position:center;display:block;border-radius:12px" loading="lazy">';
+                                $html .= '<img src="' . $imageUrl . '" alt="' . $alt . '" style="width:100%;height:auto;object-fit:contain;object-position:center;display:block;border-radius:12px;background:#f8fafc" loading="lazy">';
                                 if ($caption) {
                                     $html .= '<figcaption class="text-muted mt-2" style="font-size:14px">' . $caption . '</figcaption>';
                                 }
