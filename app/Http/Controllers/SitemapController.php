@@ -24,7 +24,8 @@ class SitemapController extends Controller
 
         foreach ($entries as $entry) {
             $loc = $entry['loc'];
-            $previous = $previousState[$loc] ?? null;
+            $key = parse_url($loc, PHP_URL_PATH) ?: '/';
+            $previous = $previousState[$key] ?? null;
             $lastmod = $today;
 
             if (
@@ -42,7 +43,7 @@ class SitemapController extends Controller
                 'priority' => $entry['priority'],
             ];
 
-            $nextState[$loc] = [
+            $nextState[$key] = [
                 'loc' => $loc,
                 'lastmod' => $lastmod,
                 'fingerprint' => $entry['fingerprint'],
@@ -399,7 +400,8 @@ class SitemapController extends Controller
                     continue;
                 }
 
-                $state[$loc] = [
+                $key = parse_url($loc, PHP_URL_PATH) ?: '/';
+                $state[$key] = [
                     'loc' => $loc,
                     'lastmod' => $lastmod,
                     'fingerprint' => null,
@@ -416,9 +418,10 @@ class SitemapController extends Controller
     {
         $normalized = [];
 
-        foreach ($state as $key => $value) {
+        foreach ($state as $originalKey => $value) {
             if (is_array($value) && !empty($value['loc'])) {
-                $normalized[$value['loc']] = [
+                $key = parse_url($value['loc'], PHP_URL_PATH) ?: '/';
+                $normalized[$key] = [
                     'loc' => $value['loc'],
                     'lastmod' => $value['lastmod'] ?? null,
                     'fingerprint' => $value['fingerprint'] ?? null,
@@ -427,9 +430,10 @@ class SitemapController extends Controller
                 continue;
             }
 
-            if (is_string($key) && Str::startsWith($key, ['http://', 'https://']) && is_array($value)) {
+            if (is_string($originalKey) && Str::startsWith($originalKey, ['http://', 'https://']) && is_array($value)) {
+                $key = parse_url($originalKey, PHP_URL_PATH) ?: '/';
                 $normalized[$key] = [
-                    'loc' => $key,
+                    'loc' => $originalKey,
                     'lastmod' => $value['lastmod'] ?? null,
                     'fingerprint' => $value['fingerprint'] ?? null,
                 ];
@@ -498,7 +502,7 @@ class SitemapController extends Controller
         }
 
         $seen[$path] = true;
-        $contents = File::get($path);
+        $contents = str_replace("\r", "", File::get($path));
         $payload[] = [
             'path' => Str::after($path, base_path() . DIRECTORY_SEPARATOR),
             'hash' => sha1($contents),
@@ -542,7 +546,7 @@ class SitemapController extends Controller
             return [[
                 'method' => $class . '::' . $method,
                 'path' => Str::after($file, base_path() . DIRECTORY_SEPARATOR),
-                'hash' => sha1(implode("\n", $slice)),
+                'hash' => sha1(str_replace("\r", "", implode("\n", $slice))),
             ]];
         } catch (Throwable) {
             return [];
