@@ -9,9 +9,18 @@ class BlogController extends Controller
     /**
      * Sanity config.
      */
-    protected string $projectId  = '1bthezjc';      // Sanity project ID
-    protected string $dataset    = 'production';    // Sanity dataset
-    protected string $apiVersion = 'v2021-10-21';   // Sanity API version
+    protected string $projectId;
+    protected string $dataset;
+    protected string $apiVersion;
+
+    public function __construct()
+    {
+        $this->projectId  = config('sanity.project_id');
+        $this->dataset    = config('sanity.dataset');
+        // If the config version doesn't start with 'v', we add it for this controller's URL structure
+        $version = config('sanity.api_version');
+        $this->apiVersion = str_starts_with($version, 'v') ? $version : 'v' . $version;
+    }
 
     /**
      * Build Sanity query URL.

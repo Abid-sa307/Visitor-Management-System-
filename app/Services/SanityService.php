@@ -8,9 +8,9 @@ class SanityService
 {
     public function fetchPosts()
     {
-        $projectId = env('SANITY_PROJECT_ID');
-        $dataset   = env('SANITY_DATASET', 'production');
-        $version   = env('SANITY_API_VERSION', '2023-10-01');
+        $projectId = config('sanity.project_id');
+        $dataset   = config('sanity.dataset');
+        $version   = config('sanity.api_version');
 
         $query = '*[_type == "post"]{
             title,
@@ -36,9 +36,9 @@ class SanityService
      */
     public function getBlogSlugsForSitemap(): array
     {
-        $projectId = env('SANITY_PROJECT_ID');
-        $dataset   = env('SANITY_DATASET', 'production');
-        $version   = env('SANITY_API_VERSION', '2023-10-01');
+        $projectId = config('sanity.project_id');
+        $dataset   = config('sanity.dataset');
+        $version   = config('sanity.api_version');
 
         // ✅ Important: slug.current as string
         $query = '*[

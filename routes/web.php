@@ -81,18 +81,23 @@ Route::get('/visitor-management-system-in-{state}-india', [App\Http\Controllers\
 // Country Pages - MUST be before city routes
 Route::get('/visitor-management-system-in-{country}', function(string $country) {
     $countries = App\Http\Controllers\VmsLandingController::getCountries();
+    $resolvedCountry = App\Support\VmsGeo::aliases()[$country] ?? $country;
     // Direct country match first
     if (isset($countries[$country])) {
         return app(App\Http\Controllers\VmsLandingController::class)->country($country);
+    }
+    if (isset($countries[$resolvedCountry])) {
+        return app(App\Http\Controllers\VmsLandingController::class)->country($resolvedCountry);
     }
     // Try city-country: progressively split from right
     if (str_contains($country, '-')) {
         $parts = explode('-', $country);
         for ($i = 1; $i < count($parts); $i++) {
             $countrySlug = implode('-', array_slice($parts, $i));
+            $resolvedCountrySlug = App\Support\VmsGeo::aliases()[$countrySlug] ?? $countrySlug;
             $citySlug = implode('-', array_slice($parts, 0, $i));
-            if (isset($countries[$countrySlug])) {
-                return app(App\Http\Controllers\VmsLandingController::class)->city($citySlug, $countrySlug);
+            if (isset($countries[$countrySlug]) || isset($countries[$resolvedCountrySlug])) {
+                return app(App\Http\Controllers\VmsLandingController::class)->city($citySlug, $resolvedCountrySlug);
             }
         }
     }
@@ -101,18 +106,23 @@ Route::get('/visitor-management-system-in-{country}', function(string $country) 
 
 Route::get('/visitor-management-software-in-{country}', function(string $country) {
     $countries = App\Http\Controllers\VmsLandingController::getCountries();
+    $resolvedCountry = App\Support\VmsGeo::aliases()[$country] ?? $country;
     // Direct country match first
     if (isset($countries[$country])) {
         return app(App\Http\Controllers\VmsLandingController::class)->country($country);
+    }
+    if (isset($countries[$resolvedCountry])) {
+        return app(App\Http\Controllers\VmsLandingController::class)->country($resolvedCountry);
     }
     // Try city-country: progressively split from right
     if (str_contains($country, '-')) {
         $parts = explode('-', $country);
         for ($i = 1; $i < count($parts); $i++) {
             $countrySlug = implode('-', array_slice($parts, $i));
+            $resolvedCountrySlug = App\Support\VmsGeo::aliases()[$countrySlug] ?? $countrySlug;
             $citySlug = implode('-', array_slice($parts, 0, $i));
-            if (isset($countries[$countrySlug])) {
-                return app(App\Http\Controllers\VmsLandingController::class)->city($citySlug, $countrySlug);
+            if (isset($countries[$countrySlug]) || isset($countries[$resolvedCountrySlug])) {
+                return app(App\Http\Controllers\VmsLandingController::class)->city($citySlug, $resolvedCountrySlug);
             }
         }
     }
