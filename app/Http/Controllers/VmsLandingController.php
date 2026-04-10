@@ -1111,16 +1111,18 @@ class VmsLandingController extends Controller
         ];
 
         // ✅ SEO (dynamic)
+        $seoTitle = "Best Visitor Management System Provider in {$locationName} 2026 | N&T Software";
+
         $seo = [
-            'title' => "Best Visitor Management System in {$locationName} 2026 | N&T Software",
+            'title' => $seoTitle,
             'description' => "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
-        $seo['title'] = "Best Visitor Management System in {$locationName} 2026 | N&T Software";
+        $seo['title'] = $seoTitle;
         $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
-        $seo['title'] = "Best Visitor Management System in {$locationName} 2026 | N&T Software";
+        $seo['title'] = $seoTitle;
         $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
 
@@ -1244,13 +1246,15 @@ class VmsLandingController extends Controller
         ];
 
         // SEO (dynamic)
+        $seoTitle = "Best Visitor Management System Provider in {$locationName} 2026 | N&T Software";
+
         $seo = [
             'title'       => "Top Visitor Management Software (Vms) in {$c['name']} | Top Visitor Management System (Vms) {$c['name']}",
             'description' => "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.",
             'keywords' => "visitor management system {$c['name']}, visitor management software {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
         ];
-        $seo['title'] = "Best Visitor Management System {$locationName} 2026 | N&T Software";
+        $seo['title'] = $seoTitle;
         $seo['description'] = "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.";
         $seo['schema_description'] = $hero['paragraphs'][0];
 
@@ -1289,7 +1293,7 @@ class VmsLandingController extends Controller
 
     public static function getCities(): array
     {
-        return [
+        $cities = [
             'new-york' => [
                 'name' => 'New York',
                 'full' => 'New York, United States',
@@ -4307,7 +4311,18 @@ class VmsLandingController extends Controller
                 'full' => 'Allahabad, India',
                 'country' => 'India',
                 'country_slug' => 'india',
-            ],        ];
+            ],
+        ];
+
+        return array_replace($cities, self::getDynamicCities());
+    }
+
+    private static function getDynamicCities(): array
+    {
+        return array_replace(
+            config('india-cities', []),
+            config('africa-cities', [])
+        );
     }
 
     public function city(string $city, string $country)
@@ -4338,7 +4353,11 @@ class VmsLandingController extends Controller
         $c['country'] = $countryName;
         $c['country_name'] = $countryName;
         $c['local_compliance'] = $localCompliance;
-        $c['full'] = "{$c['name']}, {$countryName}";
+        $fullLocation = trim((string) ($c['full'] ?? ''));
+        if ($fullLocation === '' || !str_contains(strtolower($fullLocation), strtolower($countryName))) {
+            $fullLocation = "{$c['name']}, {$countryName}";
+        }
+        $c['full'] = $fullLocation;
         $locationName = $c['full'];
 
         $hero = [
@@ -4352,8 +4371,10 @@ class VmsLandingController extends Controller
         ];
 
         // SEO (dynamic)
+        $seoTitle = "Best Visitor Management System Provider in {$locationName} 2026 | N&T Software";
+
         $seo = [
-            'title' => "Best Visitor Management System in {$locationName} 2026 | N&T Software",
+            'title' => $seoTitle,
             'description' => "Visitor management system software in {$locationName} for secure visitor check-in, badge printing, contactless entry, and digital logs. Book a demo with N&T Software.",
             'keywords' => "visitor management software {$c['name']}, visitor management system {$c['name']}, single location visitor management {$c['name']}, multi location visitor management {$c['name']}, centralized visitor management platform {$c['name']}, visitor tracking system {$c['name']}, QR check-in system {$c['name']}, OTP visitor entry {$c['name']}, face recognition access control {$c['name']}, contractor management system {$c['name']}, paperless visitor register {$c['name']}",
             'og_image' => asset('images/visitor-management-system-main-img.png'),
