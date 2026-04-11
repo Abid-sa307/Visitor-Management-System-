@@ -38,7 +38,7 @@ return [
         'usa',
     ],
 
-    'cache_minutes' => 0,
+    'cache_minutes' => 60,
 
     'state_path' => public_path('sitemap-state.json'),
 

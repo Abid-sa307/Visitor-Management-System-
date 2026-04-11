@@ -16,6 +16,17 @@ class SitemapController extends Controller
 {
     public function index()
     {
+        // Increase resource limits for large collections (e.g. 9000+ URLs)
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
+        $cacheMinutes = (int) config('sitemap.cache_minutes', 0);
+        $cacheKey = 'sitemap_xml_v1';
+
+        if ($cacheMinutes > 0 && cache()->has($cacheKey)) {
+            return response(cache($cacheKey))->header('Content-Type', 'application/xml');
+        }
+
         $entries = $this->buildUrls();
         $previousState = $this->loadPreviousState();
         $today = now()->toDateString();
@@ -52,7 +63,13 @@ class SitemapController extends Controller
 
         $this->persistState($nextState);
 
-        return response()->view('sitemap', compact('urls'))->header('Content-Type', 'application/xml');
+        $xml = view('sitemap', compact('urls'))->render();
+
+        if ($cacheMinutes > 0) {
+            cache()->put($cacheKey, $xml, now()->addMinutes($cacheMinutes));
+        }
+
+        return response($xml)->header('Content-Type', 'application/xml');
     }
 
     private function buildUrls(): array
