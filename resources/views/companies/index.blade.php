@@ -269,6 +269,7 @@
             <table class="ci-table">
                 <thead>
                     <tr>
+                        <th class="text-center">Actions</th>
                         <th>Company</th>
                         <th>Contact</th>
                         <th>Branches</th>
@@ -279,12 +280,33 @@
                         <th class="text-center">OTP Mark In/Out</th>
                         <th class="text-center">QR Pass Scan</th>
                         <th class="text-center">Notifications</th>
-                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($companies as $company)
                     <tr>
+                        {{-- Actions --}}
+                        <td class="ci-feat-col">
+                            <div class="ci-actions" style="justify-content:center">
+                                <a href="{{ route('branches.index', ['company_id' => $company->id]) }}"
+                                   class="ci-act ci-act--branch" title="View Branches">
+                                    <i class="fas fa-code-branch"></i>
+                                </a>
+                                <a href="{{ route('companies.edit', $company->id) }}"
+                                   class="ci-act ci-act--edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ route('companies.destroy', $company->id) }}"
+                                      method="POST" class="d-inline"
+                                      onsubmit="return confirm('Delete {{ addslashes($company->name) }}? This cannot be undone.')">
+                                    @csrf @method('DELETE')
+                                    <button class="ci-act ci-act--delete" title="Delete" type="submit">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+
                         {{-- Company --}}
                         <td>
                             <div class="ci-company">
@@ -411,28 +433,6 @@
                                 <i class="fas fa-{{ $v ? 'bell' : 'bell-slash' }}"></i>
                                 {{ $v ? 'On' : 'Off' }}
                             </span>
-                        </td>
-
-                        {{-- Actions --}}
-                        <td class="ci-feat-col">
-                            <div class="ci-actions" style="justify-content:center">
-                                <a href="{{ route('branches.index', ['company_id' => $company->id]) }}"
-                                   class="ci-act ci-act--branch" title="View Branches">
-                                    <i class="fas fa-code-branch"></i>
-                                </a>
-                                <a href="{{ route('companies.edit', $company->id) }}"
-                                   class="ci-act ci-act--edit" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('companies.destroy', $company->id) }}"
-                                      method="POST" class="d-inline"
-                                      onsubmit="return confirm('Delete {{ addslashes($company->name) }}? This cannot be undone.')">
-                                    @csrf @method('DELETE')
-                                    <button class="ci-act ci-act--delete" title="Delete" type="submit">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                            </div>
                         </td>
                     </tr>
                     @empty

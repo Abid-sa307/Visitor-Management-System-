@@ -16,7 +16,7 @@ public function run(): void
         ['email' => 'contact@abcindustries.com'],
         [
             'name' => 'ABC Industries',
-            'address' => '123 Street', // ✅ required!
+            'address' => '123 Street', 
             'contact_number' => '1234567890',
             'gst_number' => 'GST123ABC',
             'website' => 'abc.com',

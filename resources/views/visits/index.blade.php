@@ -166,6 +166,7 @@
       <table class="table table-striped table-hover align-middle text-center border shadow-sm rounded-4 overflow-hidden">
         <thead class="table-primary text-uppercase">
           <tr>
+            <th class="text-center" style="min-width: 200px;">Actions</th>
             <th>Visitor Name</th>
             <th>Branch</th>
             <th>Department</th>
@@ -175,28 +176,11 @@
             <th>Vehicle Number</th>
             <th>Visit Date</th>
             <th>Status</th>
-            <th class="text-center" style="min-width: 200px;">Actions</th>
           </tr>
         </thead>
         <tbody>
           @forelse($visitors as $visitor)
             <tr>
-              <td class="fw-semibold">{{ $visitor->name }}</td>
-              <td>{{ $visitor->branch->name ?? '—' }}</td>
-              <td>{{ $visitor->department->name ?? '—' }}</td>
-              <td>{{ $visitor->category->name ?? '—' }}</td>
-              <td>{{ $visitor->person_to_visit ?? '—' }}</td>
-              <td>{{ $visitor->purpose ?? '—' }}</td>
-              <td>{{ $visitor->vehicle_number ?? '—' }}</td>
-              <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
-              <td>
-                @php
-                  $approvalStatus = $visitor->status ?? 'Pending';
-                  $approvalBadgeClass = $approvalStatus === 'Approved' ? 'success' : 
-                                      ($approvalStatus === 'Rejected' ? 'danger' : 'warning');
-                @endphp
-                <span class="badge bg-{{ $approvalBadgeClass }}">{{ $approvalStatus }}</span>
-              </td>
               <td>
                 @php
                   $isCompleted = $visitor->out_time !== null;
@@ -280,6 +264,22 @@
                     @endif
                   @endif
                 </div>
+              </td>
+              <td class="fw-semibold">{{ $visitor->name }}</td>
+              <td>{{ $visitor->branch->name ?? '—' }}</td>
+              <td>{{ $visitor->department->name ?? '—' }}</td>
+              <td>{{ $visitor->category->name ?? '—' }}</td>
+              <td>{{ $visitor->person_to_visit ?? '—' }}</td>
+              <td>{{ $visitor->purpose ?? '—' }}</td>
+              <td>{{ $visitor->vehicle_number ?? '—' }}</td>
+              <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
+              <td>
+                @php
+                  $approvalStatus = $visitor->status ?? 'Pending';
+                  $approvalBadgeClass = $approvalStatus === 'Approved' ? 'success' : 
+                                      ($approvalStatus === 'Rejected' ? 'danger' : 'warning');
+                @endphp
+                <span class="badge bg-{{ $approvalBadgeClass }}">{{ $approvalStatus }}</span>
               </td>
             </tr>
           @empty

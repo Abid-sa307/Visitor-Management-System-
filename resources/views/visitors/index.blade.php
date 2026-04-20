@@ -136,6 +136,7 @@
       <table class="table table-striped table-hover align-middle text-center border shadow-sm rounded-4 overflow-hidden">
         <thead class="table-primary text-uppercase">
     <tr>
+        <th style="min-width: 220px;">Actions</th>
         <th>Name</th>
         <th>Company</th>
         <th>Branch</th>
@@ -144,36 +145,11 @@
         <th>Visit Date</th>
         <th>Approval Status</th>
         <th>Mark In/Out</th>
-        <th style="min-width: 220px;">Actions</th>
     </tr>
 </thead>
 <tbody>
     @forelse($visitors as $visitor)
         <tr>
-            <td>{{ $visitor->name }}</td>
-            <td>{{ $visitor->company->name ?? '—' }}</td>
-            <td>{{ $visitor->branch->name ?? '—' }}</td>
-            <td>{{ $visitor->department->name ?? '—' }}</td>
-            <td>{{ $visitor->email ?? '—' }}</td>
-            <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
-            <td>
-                <span class="badge bg-warning">{{ $visitor->status ?? 'Pending' }}</span>
-            </td>
-            <td>
-                @php
-                    $status = 'Pending';
-                    $badgeClass = 'bg-secondary';
-                    
-                    if ($visitor->in_time && !$visitor->out_time) {
-                        $status = 'Marked In';
-                        $badgeClass = 'bg-success';
-                    } elseif ($visitor->in_time && $visitor->out_time) {
-                        $status = 'Completed';
-                        $badgeClass = 'bg-primary';
-                    }
-                @endphp
-                <span class="badge {{ $badgeClass }}">{{ $status }}</span>
-            </td>
               <td>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                   @php
@@ -248,6 +224,30 @@
                   @endif
                 </div>
               </td>
+            <td>{{ $visitor->name }}</td>
+            <td>{{ $visitor->company->name ?? '—' }}</td>
+            <td>{{ $visitor->branch->name ?? '—' }}</td>
+            <td>{{ $visitor->department->name ?? '—' }}</td>
+            <td>{{ $visitor->email ?? '—' }}</td>
+            <td>{{ $visitor->visit_date ? \Carbon\Carbon::parse($visitor->visit_date)->format('M d, Y') : '—' }}</td>
+            <td>
+                <span class="badge bg-warning">{{ $visitor->status ?? 'Pending' }}</span>
+            </td>
+            <td>
+                @php
+                    $status = 'Pending';
+                    $badgeClass = 'bg-secondary';
+                    
+                    if ($visitor->in_time && !$visitor->out_time) {
+                        $status = 'Marked In';
+                        $badgeClass = 'bg-success';
+                    } elseif ($visitor->in_time && $visitor->out_time) {
+                        $status = 'Completed';
+                        $badgeClass = 'bg-primary';
+                    }
+                @endphp
+                <span class="badge {{ $badgeClass }}">{{ $status }}</span>
+            </td>
             </tr>
           @empty
             <tr><td colspan="10" class="text-muted">No visitors found.</td></tr>

@@ -1,4 +1,4 @@
-﻿@extends('layouts.guest')
+@extends('layouts.guest')
 
 @section('content')
 <div class="container py-5">
@@ -1148,7 +1148,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (faceRegisterBtn) {
         faceRegisterBtn.addEventListener('click', function() {
             const visitorId = this.dataset.visitorId || '{{ $visitor->id }}';
-            const actionUrl = '{{ route("visitors.register-face", $visitor->id) }}';
             
             // For registration, we'll use a different approach
             alert('Face registration feature coming soon!');
@@ -1158,7 +1157,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (faceRegisterOutBtn) {
         faceRegisterOutBtn.addEventListener('click', function() {
             const visitorId = this.dataset.visitorId || '{{ $visitor->id }}';
-            const actionUrl = '{{ route("visitors.register-face", $visitor->id) }}';
             
             // For registration, we'll use a different approach
             alert('Face registration feature coming soon!');

@@ -104,6 +104,7 @@
                 <table class="table table-hover align-middle text-center">
                     <thead class="table-light text-secondary small">
                         <tr>
+                            <th style="width: 130px;">Actions</th>
                             <th>#</th>
                             <th>Name</th>
                             <th>Designation</th>
@@ -112,28 +113,11 @@
                             <th>Department</th>
                             <th>Email</th>
                             <th>Phone</th>
-                            <th style="width: 130px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($employees as $emp)
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td class="fw-semibold">{{ $emp->name }}</td>
-                            <td>{{ $emp->designation ?? '—' }}</td>
-                            <td>{{ $emp->company->name ?? '—' }}</td>
-                            <td>{{ $emp->branch->name ?? '—' }}</td>
-                            <td>
-                                @if($emp->departments->isNotEmpty())
-                                    @foreach($emp->departments as $dept)
-                                        <span class="badge bg-secondary">{{ $dept->name }}</span>{{ !$loop->last ? ' ' : '' }}
-                                    @endforeach
-                                @else
-                                    —
-                                @endif
-                            </td>
-                            <td>{{ $emp->email ?? '—' }}</td>
-                            <td>{{ $emp->phone ?? '—' }}</td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
                                     <a href="{{ route(request()->route()->getName() === 'company.employees.index' ? 'company.employees.edit' : 'employees.edit', $emp->id) }}"
@@ -154,6 +138,22 @@
                                     </form>
                                 </div>
                             </td>
+                            <td>{{ $loop->iteration }}</td>
+                            <td class="fw-semibold">{{ $emp->name }}</td>
+                            <td>{{ $emp->designation ?? '—' }}</td>
+                            <td>{{ $emp->company->name ?? '—' }}</td>
+                            <td>{{ $emp->branch->name ?? '—' }}</td>
+                            <td>
+                                @if($emp->departments->isNotEmpty())
+                                    @foreach($emp->departments as $dept)
+                                        <span class="badge bg-secondary">{{ $dept->name }}</span>{{ !$loop->last ? ' ' : '' }}
+                                    @endforeach
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td>{{ $emp->email ?? '—' }}</td>
+                            <td>{{ $emp->phone ?? '—' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

@@ -115,6 +115,7 @@
             <table class="table table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
+                        <th>Actions</th>
                         <th>#</th>
                         @if(auth()->user()->hasRole('superadmin'))
                         <th>Company</th>
@@ -123,24 +124,11 @@
                         <th>Name</th>
                         <th>Description</th>
                         <th>Status</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($categories as $category)
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            @if(auth()->user()->hasRole('superadmin'))
-                            <td>{{ $category->company->name ?? 'N/A' }}</td>
-                            @endif
-                            <td>{{ $category->branch->name ?? 'All Branches' }}</td>
-                            <td>{{ $category->name }}</td>
-                            <td title="{{ $category->description }}">{{ Str::limit($category->description, 30) }}</td>
-                            <td>
-                                <span class="badge bg-{{ $category->is_active ? 'success' : 'danger' }}">
-                                    {{ $category->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
                             <td class="action-buttons">
                                 <div class="d-flex flex-wrap gap-2">
                                     <a href="{{ route(request()->route()->getName() === 'company.visitor-categories.index' ? 'company.visitor-categories.edit' : 'visitor-categories.edit', $category) }}" 
@@ -170,6 +158,18 @@
                                     </span>
                                     @endif
                                 </div>
+                            </td>
+                            <td>{{ $loop->iteration }}</td>
+                            @if(auth()->user()->hasRole('superadmin'))
+                            <td>{{ $category->company->name ?? 'N/A' }}</td>
+                            @endif
+                            <td>{{ $category->branch->name ?? 'All Branches' }}</td>
+                            <td>{{ $category->name }}</td>
+                            <td title="{{ $category->description }}">{{ Str::limit($category->description, 30) }}</td>
+                            <td>
+                                <span class="badge bg-{{ $category->is_active ? 'success' : 'danger' }}">
+                                    {{ $category->is_active ? 'Active' : 'Inactive' }}
+                                </span>
                             </td>
                         </tr>
                     @endforeach

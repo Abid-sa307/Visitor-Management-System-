@@ -86,6 +86,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
+                            <th>Actions</th>
                             <th>Question</th>
                             <th>Company</th>
                             <th>Branch</th>
@@ -93,12 +94,30 @@
                             <th>Type</th>
                             <th>Required</th>
                             <th>Status</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($questions as $question)
                         <tr>
+                             <td>
+                                <div class="d-flex flex-wrap gap-2">`
+                                    <a href="{{ route('security-questions.edit', $question) }}"
+                                       class="action-btn action-btn--edit action-btn--icon"
+                                       title="Edit Question">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ route('security-questions.destroy', $question) }}" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="action-btn action-btn--delete action-btn--icon"
+                                                onclick="return confirm('Are you sure?')"
+                                                title="Delete Question"> 
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                             <td>{{ $question->question }}</td>
                             <td>{{ $question->company->name }}</td>
                             <td>{{ $question->branch->name ?? 'All Branches' }}</td>
@@ -122,25 +141,7 @@
                                     {{ $question->is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
-                            <td>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <a href="{{ route('security-questions.edit', $question) }}"
-                                       class="action-btn action-btn--edit action-btn--icon"
-                                       title="Edit Question">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form method="POST" action="{{ route('security-questions.destroy', $question) }}" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="action-btn action-btn--delete action-btn--icon"
-                                                onclick="return confirm('Are you sure?')"
-                                                title="Delete Question">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+                           
                         </tr>
                         @empty
                         <tr>

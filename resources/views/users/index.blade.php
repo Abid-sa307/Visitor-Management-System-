@@ -248,19 +248,40 @@
                     <thead class="table-light">
                         <tr>
                             <th>#</th>
+                            <th>Actions</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
                             <th>Allotted Branches</th>
                             <th>Allotted Departments</th>
                             <th>Company</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($users as $user)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route($routeEdit, $user) }}"
+                                       class="action-btn action-btn--edit action-btn--icon"
+                                       title="Edit User">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    @if($user->id !== auth()->id())
+                                        <form action="{{ route($routeDestroy, $user) }}" method="POST" 
+                                              onsubmit="return confirm('Are you sure you want to delete this user?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    class="action-btn action-btn--delete action-btn--icon"
+                                                    title="Delete User">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
                             <td>
                                 <div class="fw-semibold">{{ $user->name }}</div>
                                 @if($user->designation)
@@ -294,28 +315,6 @@
                                 @endif
                             </td>
                             <td>{{ $user->company?->name ?? '—' }}</td>
-
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <a href="{{ route($routeEdit, $user) }}"
-                                       class="action-btn action-btn--edit action-btn--icon"
-                                       title="Edit User">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    @if($user->id !== auth()->id())
-                                        <form action="{{ route($routeDestroy, $user) }}" method="POST" 
-                                              onsubmit="return confirm('Are you sure you want to delete this user?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                    class="action-btn action-btn--delete action-btn--icon"
-                                                    title="Delete User">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
                         </tr>
                         @endforeach
                     </tbody>

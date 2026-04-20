@@ -295,6 +295,7 @@
         <table class="table table-hover table-striped align-middle text-center mb-0">
             <thead class="table-primary">
                 <tr>
+                    <th>Action</th>
                     <th>Name</th>
                     <th>Company</th>
                     <th>Branch</th>
@@ -303,27 +304,11 @@
                     <th>In Time</th>
                     <th>Out Time</th>
                     <th>Approval Status</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($visitors as $visitor)
                     <tr>
-                        <td class="fw-semibold">{{ $visitor->name }}</td>
-                        <td>{{ $visitor->company->name ?? '—' }}</td>
-                        <td>{{ $visitor->branch->name ?? '—' }}</td>
-                        <td>{{ $visitor->department->name ?? '—' }}</td>
-                        <td>{{ $visitor->purpose ?? '—' }}</td>
-                        <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>
-                        <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('d M, h:i A') : '—' }}</td>
-                    
-                        <td>
-                            <span class="badge bg-{{ 
-                                $visitor->status === 'Approved' ? 'primary' : 
-                                ($visitor->status === 'Pending' ? 'warning' : 'info') }}">
-                                {{ $visitor->status === 'Approved' ? 'Approved ✓' : $visitor->status }}
-                            </span>
-                        </td>
                         <td>
                                 @php
                                     $toggleRoute = $isCompany ? 'company.visitors.entry.toggle' : 'visitors.entry.toggle';
@@ -461,6 +446,21 @@
                             @else
                                 <span class="text-muted">Guard View Only</span>
                             @endif
+                        </td>
+                        <td class="fw-semibold">{{ $visitor->name }}</td>
+                        <td>{{ $visitor->company->name ?? '—' }}</td>
+                        <td>{{ $visitor->branch->name ?? '—' }}</td>
+                        <td>{{ $visitor->department->name ?? '—' }}</td>
+                        <td>{{ $visitor->purpose ?? '—' }}</td>
+                        <td>{{ $visitor->in_time ? \Carbon\Carbon::parse($visitor->in_time)->format('d M, h:i A') : '—' }}</td>
+                        <td>{{ $visitor->out_time ? \Carbon\Carbon::parse($visitor->out_time)->format('d M, h:i A') : '—' }}</td>
+                    
+                        <td>
+                            <span class="badge bg-{{ 
+                                $visitor->status === 'Approved' ? 'primary' : 
+                                ($visitor->status === 'Pending' ? 'warning' : 'info') }}">
+                                {{ $visitor->status === 'Approved' ? 'Approved ✓' : $visitor->status }}
+                            </span>
                         </td>
                     </tr>
                 @empty

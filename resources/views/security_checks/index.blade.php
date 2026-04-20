@@ -176,6 +176,7 @@
                 <table class="table table-hover align-middle text-center">
                     <thead class="table-light">
                         <tr>
+                            <th>Action</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
@@ -187,7 +188,6 @@
                             <th>Status</th>
                             <th>Security Type</th>
                             <th>Last Visit</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -212,59 +212,6 @@
                                 $showNoSecurityButtons = $securityCheckinType === 'none';
                             @endphp
                             <tr>
-                                <td class="fw-semibold">{{ $visitor->name }}</td>
-                                <td>{{ $visitor->email ?? '—' }}</td>
-                                <td>{{ $visitor->phone ?? '—' }}</td>
-                                @if($isSuper)
-                                    <td>{{ optional($visitor->company)->name ?? '—' }}</td>
-                                @endif
-                                <td>{{ optional($visitor->branch)->name ?? '—' }}</td>
-                                <td>{{ optional($visitor->department)->name ?? '—' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ $visitor->status === 'Approved' ? 'success' : ($visitor->status === 'Rejected' ? 'danger' : 'secondary') }}">
-                                        {{ $visitor->status ?? 'Pending' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @if($visitor->company)
-                                        @if(!$visitor->company->security_check_service)
-                                            <span class="badge bg-light text-dark border border-secondary">
-                                                <i class="fas fa-ban"></i> Disabled
-                                            </span>
-                                        @else
-                                            @switch($visitor->company->security_checkin_type)
-                                                @case('checkin')
-                                                    <span class="badge bg-info">
-                                                        <i class="fas fa-sign-in-alt"></i> Check In Only
-                                                    </span>
-                                                    @break
-                                                @case('checkout')
-                                                    <span class="badge bg-warning">
-                                                        <i class="fas fa-sign-out-alt"></i> Check Out Only
-                                                    </span>
-                                                    @break
-                                                @case('both')
-                                                    <span class="badge bg-primary">
-                                                        <i class="fas fa-exchange-alt"></i> Both
-                                                    </span>
-                                                    @break
-                                                @default
-                                                    <span class="badge bg-secondary">
-                                                        <i class="fas fa-shield-alt"></i> None
-                                                    </span>
-                                            @endswitch
-                                        @endif
-                                    @else
-                                        <span class="text-muted">—</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($visitor->in_time)
-                                        {{ \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d H:i') }}
-                                    @else
-                                        —
-                                    @endif
-                                </td>
                                 <td class="d-flex gap-2">
                                     @if($showNoSecurityButtons)
                                         {{-- Company has 'none' security check type - no buttons --}}
@@ -321,6 +268,60 @@
                                         <span class="text-muted">—</span>
                                     @endif
                                 </td>
+                                <td class="fw-semibold">{{ $visitor->name }}</td>
+                                <td>{{ $visitor->email ?? '—' }}</td>
+                                <td>{{ $visitor->phone ?? '—' }}</td>
+                                @if($isSuper)
+                                    <td>{{ optional($visitor->company)->name ?? '—' }}</td>
+                                @endif
+                                <td>{{ optional($visitor->branch)->name ?? '—' }}</td>
+                                <td>{{ optional($visitor->department)->name ?? '—' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $visitor->status === 'Approved' ? 'success' : ($visitor->status === 'Rejected' ? 'danger' : 'secondary') }}">
+                                        {{ $visitor->status ?? 'Pending' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($visitor->company)
+                                        @if(!$visitor->company->security_check_service)
+                                            <span class="badge bg-light text-dark border border-secondary">
+                                                <i class="fas fa-ban"></i> Disabled
+                                            </span>
+                                        @else
+                                            @switch($visitor->company->security_checkin_type)
+                                                @case('checkin')
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-sign-in-alt"></i> Check In Only
+                                                    </span>
+                                                    @break
+                                                @case('checkout')
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-sign-out-alt"></i> Check Out Only
+                                                    </span>
+                                                    @break
+                                                @case('both')
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-exchange-alt"></i> Both
+                                                    </span>
+                                                    @break
+                                                @default
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-shield-alt"></i> None
+                                                    </span>
+                                            @endswitch
+                                        @endif
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($visitor->in_time)
+                                        {{ \Carbon\Carbon::parse($visitor->in_time)->format('Y-m-d H:i') }}
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                
                             </tr>
                         @endforeach
                     </tbody>

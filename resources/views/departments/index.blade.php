@@ -113,18 +113,15 @@
                     <table class="table table-hover table-bordered mb-0 text-center align-middle">
                         <thead class="table-primary small text-uppercase">
                             <tr>
+                                <th style="width: 160px;">Actions</th>
                                 <th>Department</th>
                                 <th>Company</th>
                                 <th>Branch</th>
-                                <th style="width: 160px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($departments as $department)
                                 <tr>
-                                    <td class="fw-semibold">{{ $department->name }}</td>
-                                    <td>{{ $department->company->name ?? 'N/A' }}</td>
-                                    <td>{{ $department->branch->name ?? 'N/A' }}</td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
                                             {{-- Edit Button --}}
@@ -146,6 +143,9 @@
                                             </form>
                                         </div>
                                     </td>
+                                    <td class="fw-semibold">{{ $department->name }}</td>
+                                    <td>{{ $department->company->name ?? 'N/A' }}</td>
+                                    <td>{{ $department->branch->name ?? 'N/A' }}</td>
                                 </tr>
                             @empty
                                 <tr>
