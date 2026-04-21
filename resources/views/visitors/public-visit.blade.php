@@ -189,9 +189,20 @@
                 @enderror
             </div>
 
-            {{-- Workman Policy --}}
+            {{-- Workman Policy (Text) --}}
             <div class="mb-3">
-                <label class="form-label fw-semibold">Upload Workman Policy Document (Optional)</label>
+                <label class="form-label fw-semibold">Workman Policy / Insurance Number (Optional)</label>
+                <input type="text" name="workman_policy" class="form-control @error('workman_policy') is-invalid @enderror" 
+                       value="{{ old('workman_policy', $visitor->workman_policy ?? '') }}"
+                       placeholder="Enter policy or insurance number">
+                @error('workman_policy')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            {{-- Workman Policy Photo --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Upload Workman Policy Photo/Document (Optional)</label>
                 <input type="file" name="workman_policy_photo" class="form-control @error('workman_policy_photo') is-invalid @enderror" 
                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp">
                 @error('workman_policy_photo')
@@ -203,6 +214,31 @@
                             <i class="bi bi-eye me-1"></i>View current document
                         </a>
                     </small>
+                @endif
+            </div>
+
+            {{-- Multiple Documents/Photos --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Other Documents / Photos (ID Proof, Item Photos, etc.)</label>
+                <input type="file" name="documents[]" class="form-control @error('documents') is-invalid @enderror" 
+                       multiple accept="image/*,.pdf">
+                <div class="form-text">You can select multiple files.</div>
+                @error('documents')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                @if(isset($visitor->documents) && !empty($visitor->documents))
+                    <div class="mt-2">
+                        <small class="fw-semibold">Attached Files:</small>
+                        <ul class="list-unstyled">
+                            @foreach($visitor->documents as $doc)
+                                <li>
+                                    <a href="{{ asset('storage/' . $doc) }}" target="_blank" class="small text-decoration-none">
+                                        <i class="bi bi-file-earmark me-1"></i>{{ basename($doc) }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 @endif
             </div>
 

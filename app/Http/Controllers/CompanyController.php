@@ -10,9 +10,20 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class CompanyController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $companies   = Company::orderBy('name')->paginate(10);
+        $query = Company::query();
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('contact_number', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $companies   = $query->orderBy('name')->paginate(10)->appends($request->query());
         $autoApprove = Company::where('auto_approve_visitors', true)->count();
         $otpEnabled  = Company::where('otp_mark_in_out', true)->count();
         $qrEnabled   = Company::where('qr_visitor_pass_scan', true)->count();

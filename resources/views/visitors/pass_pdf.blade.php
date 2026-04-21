@@ -154,7 +154,9 @@
                 </div>
                 
                 <div class="visitor-photo-container">
-                    @if($visitor->photo_url)
+                    @if($visitor->face_image)
+                         <img src="{{ public_path('storage/' . $visitor->face_image) }}" class="visitor-photo">
+                    @elseif($visitor->photo_url)
                          <img src="{{ public_path('storage/' . $visitor->photo_url) }}" class="visitor-photo">
                     @elseif($visitor->photo)
                          {{-- Legacy support if just filename --}}

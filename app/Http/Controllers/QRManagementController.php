@@ -237,7 +237,7 @@ public function __construct()
             $imageName = 'visitor_photos/' . Str::random(40) . '.jpg';
             Storage::disk('public')->put($imageName, base64_decode($imageData));
             
-            $visitorData['photo'] = $imageName;
+            $visitorData['face_image'] = $imageName;
             $visitorData['face_encoding'] = $validated['face_encoding'];
         }
 
@@ -394,6 +394,28 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
                 ->with('error', 'Visit completion failed: Currently closed.');
         }
         
+        // Handle Workman Policy Photo Upload
+        $workmanPolicyPath = $visitor->workman_policy_photo;
+        if ($request->hasFile('workman_policy_photo')) {
+            // Delete old file if exists
+            if ($workmanPolicyPath) {
+                Storage::disk('public')->delete($workmanPolicyPath);
+            }
+            $workmanPolicyPath = $request->file('workman_policy_photo')->store('visitor_documents', 'public');
+        }
+
+        // Handle Multiple Documents Upload
+        $existingDocuments = is_array($visitor->documents) ? $visitor->documents : [];
+        if ($request->hasFile('documents')) {
+            $newDocuments = [];
+            foreach ($request->file('documents') as $file) {
+                $newDocuments[] = $file->store('visitor_documents', 'public');
+            }
+            // Merge with existing or replace? User's request implies they are being "added", 
+            // so we'll merge them.
+            $existingDocuments = array_merge($existingDocuments, $newDocuments);
+        }
+
         // Update visitor with visit details
         $visitor->fill([
             'department_id'        => $validated['department_id'],
@@ -409,7 +431,9 @@ public function storeVisit(Company $company, \App\Models\Visitor $visitor, \Illu
             'vehicle_number'       => $request->input('vehicle_number') ?: null,
             'goods_in_car'         => $request->input('goods_in_car') ?: null,
             'visitor_website'      => $request->input('visitor_website') ?: null,
-            'workman_policy_photo' => $request->hasFile('workman_policy_photo') ? $visitor->workman_policy_photo : $visitor->workman_policy_photo,
+            'workman_policy'       => $request->input('workman_policy') ?: $visitor->workman_policy,
+            'workman_policy_photo' => $workmanPolicyPath,
+            'documents'            => $existingDocuments,
             'updated_at'           => now()
         ]);
         

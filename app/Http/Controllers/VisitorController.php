@@ -3204,6 +3204,17 @@ class VisitorController extends Controller
             'status_changed_at' => now(),
         ]);
 
+        // Send rejection email to visitor
+        if (!empty($visitor->email)) {
+            try {
+                // Load relationships for email display
+                $visitor->load(['company', 'branch', 'department']);
+                \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorRejectedMail($visitor), $visitor->email);
+            } catch (\Throwable $e) {
+                \Log::error('Failed to dispatch rejection email: ' . $e->getMessage());
+            }
+        }
+
         return redirect()->back()->with('success', "Visitor {$visitor->name} rejected.");
     }
 

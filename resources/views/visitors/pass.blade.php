@@ -235,6 +235,25 @@
                     {{ $company->name ?? 'Company Name' }}
                 </div>
                 
+                <div class="visitor-photo mt-3">
+                    @if(!empty($visitor->face_image))
+                        <img src="{{ asset('storage/' . $visitor->face_image) }}" alt="{{ $visitor->name }}">
+                    @elseif(!empty($visitor->photo))
+                        <img src="{{ asset('storage/' . $visitor->photo) }}" alt="{{ $visitor->name }}">
+                    @else
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-dark-subtle">
+                            <i class="bi bi-person-fill fs-1 text-white"></i>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="visitor-name">
+                    {{ $visitor->name }}
+                </div>
+                
+                <div class="visitor-id">
+                    {{ $visitor->visitor_id ?? 'VISITOR' }}
+                </div>
             </div>
         </div>
 
