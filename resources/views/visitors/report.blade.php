@@ -216,16 +216,19 @@
                 <tbody>
                     @foreach ($visitors as $visitor)
                         <tr>
-                            <td class="text-center">
-                                @if ($visitor->photo)
-                                    <img src="{{ asset('storage/' . $visitor->photo) }}"
-                                         alt="{{ $visitor->name }}"
-                                         class="img-fluid rounded"
-                                         style="max-width: 80px; max-height: 80px; object-fit: cover;">
-                                @else
-                                    <span class="text-muted"><i class="fas fa-user-circle fa-2x"></i></span>
-                                @endif
-                            </td>
+                            <td>
+                            @if($visitor->face_image)
+                                <img src="{{ asset('storage/' . $visitor->face_image) }}" 
+                                     alt="{{ $visitor->name }}'s photo" 
+                                     class="rounded-circle" 
+                                     style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #dee2e6;">
+                            @else
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px; border: 2px solid #dee2e6;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            @endif
+                        </td>
                             <td class="fw-semibold">{{ $visitor->name }}</td>
                             <td>{{ $visitor->category->name ?? '—' }}</td>
                             <td>{{ $visitor->branch->name ?? '—' }}</td>
