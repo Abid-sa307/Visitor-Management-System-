@@ -240,10 +240,30 @@
                                 {{ $vt || $vn ? trim(($vt ?: '') . ($vt && $vn ? ' / ' : '') . ($vn ?: '')) : '—' }}
                             </td>
                             <td>{{ $visitor->goods_in_car ?? '—' }}</td>
-                            <td>{{ $visitor->document ?? '—' }}
-                                @if(!empty($visitor->documents))
-                                    <div><a href="{{ asset('storage/' . $visitor->documents) }}" target="_blank" class="small">View Photo</a></div>
+                            <td>
+                                @if($visitor->documents)
+                                    @php
+                                        $docs = $visitor->documents;
+                                        if (is_string($docs)) {
+                                            $decoded = json_decode($docs, true);
+                                            if (json_last_error() === JSON_ERROR_NONE) {
+                                                $docs = $decoded;
+                                            } else {
+                                                $docs = [$docs];
+                                            }
+                                        }
+                                    @endphp
+                                    @if(is_array($docs))
+                                        @foreach($docs as $doc)
+                                            <div class="mb-1"><a href="{{ asset('storage/' . $doc) }}" target="_blank" class="small">View Doc</a></div>
+                                        @endforeach
+                                    @else
+                                        <a href="{{ asset('storage/' . $docs) }}" target="_blank" class="small">View Doc</a>
+                                    @endif
+                                @else
+                                    —
                                 @endif
+                                {{ $visitor->document ?? '' }}
                             </td>
                             <td>
                                 {{ $visitor->workman_policy ?? '—' }}

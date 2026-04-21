@@ -238,6 +238,7 @@ public function __construct()
             Storage::disk('public')->put($imageName, base64_decode($imageData));
             
             $visitorData['face_image'] = $imageName;
+            $visitorData['photo']      = $imageName; // For compatibility with other parts of the system
             $visitorData['face_encoding'] = $validated['face_encoding'];
         }
 

@@ -137,6 +137,7 @@
         <thead class="table-primary text-uppercase">
     <tr>
         <th style="min-width: 220px;">Actions</th>
+        <th>Photo</th>
         <th>Name</th>
         <th>Company</th>
         <th>Branch</th>
@@ -224,6 +225,24 @@
                   @endif
                 </div>
               </td>
+            <td>
+                @if($visitor->face_image)
+                    <img src="{{ asset('storage/' . $visitor->face_image) }}" 
+                         alt="{{ $visitor->name }}'s photo" 
+                         class="rounded-circle" 
+                         style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #dee2e6;">
+                @elseif($visitor->photo)
+                    <img src="{{ asset('storage/' . $visitor->photo) }}" 
+                         alt="{{ $visitor->name }}'s photo" 
+                         class="rounded-circle" 
+                         style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #dee2e6;">
+                @else
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" 
+                         style="width: 40px; height: 40px; border: 2px solid #dee2e6;">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                @endif
+            </td>
             <td>{{ $visitor->name }}</td>
             <td>{{ $visitor->company->name ?? '—' }}</td>
             <td>{{ $visitor->branch->name ?? '—' }}</td>

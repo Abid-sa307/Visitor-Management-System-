@@ -292,7 +292,27 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="row">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                                            @if($visitor->face_image)
+                                                <img src="{{ asset('storage/' . $visitor->face_image) }}" 
+                                                     alt="{{ $visitor->name }}" 
+                                                     class="img-fluid rounded shadow-sm" 
+                                                     style="max-height: 150px; border: 3px solid #fff;">
+                                            @elseif($visitor->photo)
+                                                <img src="{{ asset('storage/' . $visitor->photo) }}" 
+                                                     alt="{{ $visitor->name }}" 
+                                                     class="img-fluid rounded shadow-sm" 
+                                                     style="max-height: 150px; border: 3px solid #fff;">
+                                            @else
+                                                <div class="rounded bg-light d-flex align-items-center justify-content-center mx-auto" 
+                                                     style="width: 120px; height: 120px; border: 2px dashed #dee2e6;">
+                                                    <i class="bi bi-person text-secondary fs-1"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="row">
                                         <div class="col-md-6">
                                             <div class="info-item mb-3">
                                                 <div class="text-muted small mb-1">Full Name</div>

@@ -224,6 +224,11 @@
                                      alt="{{ $visitor->name }}'s photo" 
                                      class="rounded-circle" 
                                      style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #dee2e6;">
+                            @elseif($visitor->photo)
+                                <img src="{{ asset('storage/' . $visitor->photo) }}" 
+                                     alt="{{ $visitor->name }}'s photo" 
+                                     class="rounded-circle" 
+                                     style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #dee2e6;">
                             @else
                                 <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
                                      style="width: 40px; height: 40px; border: 2px solid #dee2e6;">
