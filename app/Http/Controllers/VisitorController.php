@@ -854,8 +854,20 @@ class VisitorController extends Controller
                 } catch (\Throwable $e) {
                     \Log::error('Failed to dispatch approval email: ' . $e->getMessage());
                 }
-            } else {
-                 \Log::info('Condition for approval email not met (AJAX)');
+            } 
+            // If transitioned to Rejected, send mail to visitor
+            elseif ($previousStatus !== 'Rejected' && $newStatus === 'Rejected' && !empty($visitor->email)) {
+                try {
+                    \Log::info('Attempting to send visitor rejection email (AJAX)');
+                    $visitor->load(['company', 'branch', 'department']);
+                    \App\Jobs\SendVisitorEmail::dispatchSync(new \App\Mail\VisitorRejectedMail($visitor), $visitor->email);
+                    \Log::info('Visitor rejection email dispatched successfully (AJAX)');
+                } catch (\Throwable $e) {
+                    \Log::error('Failed to dispatch rejection email: ' . $e->getMessage());
+                }
+            }
+            else {
+                 \Log::info('Condition for status email not met (AJAX)');
             }
             
             // Send Google notification if enabled
